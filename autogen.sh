@@ -152,10 +152,14 @@ do
 	echo "Running autoheader..."
 	${AUTOHEADER:-autoheader}
       fi
-      # This is a hack. Any command line arguments maens don't run Automake.
+      # This is a hack. Any command line arguments means don't run Automake.
       # This is to prevent regenerating and checking in a pile of Makefiles
       # that haven't really changed. They clutter up the checkin messages.
+      # Automake chokes if a few files are missingm, that we don't use
+      # as this is not a GNU project. So we just create them as empty
+      # files to avoid problems.
       if test x"$1" = x ; then
+	touch NEWS README AUTHORS ChangeLog
         echo "Running automake --add-missing -W none --copy $am_opt ..."
         ${AUTOMAKE:-automake} --add-missing -W none --copy $am_opt
       fi
