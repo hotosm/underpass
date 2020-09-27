@@ -36,9 +36,8 @@
 #include <memory>
 #include <string>
 #include <iostream>
-// #include <pqxx/pqxx>
 
-#include "hotosm.h"
+#include "hotosm.hh"
 
 namespace apidb {
 
@@ -129,7 +128,9 @@ QueryStats::lastUpdate(long userid, ptime &last)
     pqxx::result result = worker->exec(sql);
     std::string timestamp = pqxx::to_string(result[0][0]);
 
-    last = time_from_string(timestamp);
+    if (!timestamp.empty()) {
+	last = time_from_string(timestamp);
+    }
 
     return last;
 }
@@ -144,7 +145,10 @@ QueryStats::getLength(object obj, long userid, ptime &start, ptime &end)
     std::cout << "QUERY: " << sql << std::endl;
     pqxx::result result = worker->exec(sql);
     std::cout << "SIZE: " << result.size() <<std::endl;
-    
+
+    if (result.size() == 0) {
+	return 0;
+    }
     
     long total = 0;
     pqxx::result::const_iterator it;
@@ -206,7 +210,7 @@ QueryTM::getProjects(long userid)
 
     std::string sql = "SELECT id FROM projects";
     if (userid > 0) {
-	sql += " AND author_id=" + std::to_string(userid);
+	sql += " WHERE author_id=" + std::to_string(userid);
     }
     std::cout << "QUERY: " << sql << std::endl;
     pqxx::result result = worker->exec(sql);
@@ -218,8 +222,7 @@ QueryTM::getProjects(long userid)
 	if (!id.empty()) {
 	    projects->push_back(std::stol(id));
 	}
-    }
-    
+    }    
     return projects;
 }
 
@@ -286,8 +289,6 @@ QueryTM::getUserTeams(long userid)
     std::cout << "QUERY: " << sql << std::endl;
     pqxx::result result = worker->exec(sql);
 
-    std::cout << "SIZE: " << result.size() <<std::endl;
-    
     pqxx::result::const_iterator it;
     for (it = result.begin(); it != result.end(); ++it) {
 	std::string id = pqxx::to_string(it[0]);
