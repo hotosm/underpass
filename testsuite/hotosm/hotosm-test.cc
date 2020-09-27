@@ -31,7 +31,7 @@
 #include <dejagnu.h>
 #include <iostream>
 #include <string>
-#include "hotosm.h"
+#include "hotosm.hh"
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -46,33 +46,44 @@ TestState runtest;
 class TestPG : public QueryStats
 {
 public:
-    TestPG()
-        {
-            std::cout << "Hello World!" << std::endl;
-        };
+    TestPG() {
+        uid = 760688; 
+    };
+private:
+    long uid;
 };
 
 class TestTM : public QueryTM
 {
 public:
-    TestTM()
-        {
-            std::cout << "Hello World!" << std::endl;
-        };
+    TestTM() {
+        uid = 760688;        
+    };
+private:
+    long uid;
 };
+
+void test_pgsnapshot(void);
+void test_tm(void);
+void test_leaderboard(void);
 
 int
 main(int argc, char *argv[])
 {
-    int c;
-    bool dump = false;
-    char buffer[300];
-    std::string filespec;
 
-    // FIXME: database should be a command line argument
-    std::string database = "pgsnapshot";
-    
+    test_pgsnapshot();
+    test_tm();
+    test_leaderboard();
+}
+
+void
+test_pgsnapshot(void)
+{
+// FIXME: database should be a command line argument
+    std::string database = "pgsnapshot";    
+    long uid = 7606880;
     TestPG testpg;
+    
     // These testpgs are for the base class, which handles
     // the database connection.
     if (testpg.connect(database)) {
@@ -88,81 +99,80 @@ main(int argc, char *argv[])
         runtest.fail("QueryDB::query()");
     }
 
-    
-    ptime last;
-    last = testpg.lastUpdate(191112, last);
-    std::cout << "LAST: " << last << std::endl;
-
-    ptime start = time_from_string("2020-07-08 13:29:46");
+    ptime start = time_from_string("2010-07-08 13:29:46");
     ptime end = second_clock::local_time();
 
     // std::cout << to_simple_string(start) << std::endl;
     // std::cout << to_simple_string(end) << std::endl;
     
-    long ret = testpg.getCount(QueryStats::building, 191112,
+    long ret = testpg.getCount(QueryStats::building, uid,
                              QueryStats::totals, start, end);
-    if (ret > 0) {
+    if (ret >= 0) {
         runtest.pass("getCount(QueryStats::building)");
     } else {
         runtest.fail("getCount(QueryStats::building)");
     }
-    ret = testpg.getCount(QueryStats::highway, 191112,
+    ret = testpg.getCount(QueryStats::highway, uid,
                         QueryStats::totals, start, end);
-    if (ret > 0) {
+    if (ret >= 0) {
         runtest.pass("getCount(QueryStats::highway)");
     } else {
         runtest.fail("getCount(QueryStats::highway)");
     }
 
-    ret = testpg.getCount(QueryStats::waterway, 191112,
+    ret = testpg.getCount(QueryStats::waterway, uid,
                         QueryStats::totals, start, end);
-    if (ret > 0) {
+    if (ret >= 0) {
         runtest.pass("getCount(QueryStats::waterway)");
     } else {
         runtest.fail("getCount(QueryStats::waterway)");
     }
 
-    ret = testpg.getCount(QueryStats::highway, 191112,
+    ret = testpg.getCount(QueryStats::highway, uid,
                         QueryStats::changesets, start, end);
-    if (ret > 0) {
+    if (ret >= 0) {
         runtest.pass("getCount(QueryStats::highway,changesets)");
     } else {
         runtest.fail("getCount(QueryStats::highway,changesets)");
     }
-    ret = testpg.getCount(QueryStats::building, 191112,
+    ret = testpg.getCount(QueryStats::building, uid,
                         QueryStats::changesets, start, end);
-    if (ret > 0) {
+    if (ret >= 0) {
         runtest.pass("getCount(QueryStats::building,changesets)");
     } else {
         runtest.fail("getCount(QueryStats::building,changesets)");
     }
-    ret = testpg.getCount(QueryStats::waterway, 191112,
+    ret = testpg.getCount(QueryStats::waterway, uid,
                         QueryStats::changesets, start, end);
-    if (ret > 0) {
+    if (ret >= 0) {
         runtest.pass("getCount(QueryStats::waterway,changesets)");
     } else {
         runtest.fail("getCount(QueryStats::waterway,changesets)");
     }
     
-    ret = testpg.getLength(QueryStats::highway, 191112, start, end);
-    if (ret > 0) {
-        runtest.pass("getCount(QueryStats::getLength(highway)");
-    } else {
-        runtest.fail("getCount(QueryStats::getLength(highway)");
-    }
-    
-    ret = testpg.getLength(QueryStats::waterway, 191112, start, end);
-    if (ret > 0) {
+    ret = testpg.getLength(QueryStats::waterway, uid, start, end);
+    if (ret >= 0) {
         runtest.pass("getCount(QueryStats::getLength(waterway))");
     } else {
         runtest.fail("getCount(QueryStats::getLength(waterway)");
     }
+}
 
+void
+test_tm(void)
+{
     //
     // Tasking Manager Tests
     //
     TestTM testtm;
-    database = "tm4_git";
+    std::string database = "tmsnap";
+    long projid = 2057;
+    long uid = 7606880;
+
+    std::shared_ptr<std::vector<long>> retv;
+    int reti;
+    long retl;
+    
     // These testpgs are for the base class, which handles
     // the database connection.
     if (testtm.connect(database)) {
@@ -171,42 +181,114 @@ main(int argc, char *argv[])
         runtest.fail("QueryTM::connect()");
     }
 
-    std::shared_ptr<std::vector<long>> reta;
-    reta = testtm.getProjects(0);
-    if (reta->size() > 0) {
+    retv = testtm.getProjects(0);
+    if (retv->size() > 0) {
         runtest.pass("getProjects(0)");
     } else {
         runtest.fail("getProjects(0)");
     }
 
-    reta = testtm.getUserTasks(10, 4606673);
-    if (reta->size() > 0) {
-        runtest.pass("getProjects(10, 4606673)");
+    retv = testtm.getProjects(uid);
+    if (retv->size() >= 0) {
+        runtest.pass("getProjects(uid)");
     } else {
-        runtest.fail("getProjects(10, 4606673)");
+        runtest.fail("getProjects(uid)");
+    }
+
+    retv = testtm.getUserTasks(projid, uid);
+    if (retv->size() >= 0) {
+        runtest.pass("getProjects()");
+    } else {
+        runtest.fail("getProjects()");
     }
     
-    ret = testtm.getTasksMapped(4606673);
-    if (ret > 0) {
-        runtest.pass("getTasksMapped(4606673)");
+    reti = testtm.getTasksMapped(uid);
+    if (reti >= 0) {
+        runtest.pass("getTasksMapped()");
     } else {
-        runtest.fail("getTasksMapped(4606673)");
+        runtest.fail("getTasksMapped()");
     }
 
-    ret = testtm.getTasksValidated(4606673);
-    if (ret >= 0) {
-        runtest.pass("getTasksValidated(4606673)");
+
+    reti = testtm.getTasksValidated(uid);
+    if (reti >= 0) {
+        runtest.pass("getTasksValidated()");
     } else {
-        runtest.fail("getTasksValidated(4606673)");
+        runtest.fail("getTasksValidated()");
     }
 
-    std::shared_ptr<std::vector<int>> retb;
-    retb = testtm.getUserTeams(4606673);
-    if (retb->size() > 0) {
-        runtest.pass("getUserTeams(4606673)");
+    std::shared_ptr<std::vector<int>> retvi;
+    retvi = testtm.getUserTeams(uid);
+    if (retvi->size() >= 0) {
+        runtest.pass("getUserTeams()");
     } else {
-        runtest.fail("getUserTeams(4606673)");
+        runtest.fail("getUserTeams()");
     }
-
 }
 
+//
+// Collect all the stats the MM Leaderboard needs. This requires
+// querying both the TM database and the OSM database.
+//
+void
+test_leaderboard(void)
+{
+    TestTM testtm;
+
+    ptime start = time_from_string("2010-01-01 04:20:00");
+    ptime end = second_clock::local_time();
+
+    std::cout << "MM Leaderboard tests" << std::endl;
+    
+    std::string database = "tmsnap";
+    if (testtm.connect(database)) {
+        runtest.pass("QueryDB::connect()");
+    } else {
+        runtest.fail("QueryDB::connect()");
+    }
+    
+    TestPG testpg;
+    database = "pgsnapshot";
+    // These testpgs are for the base class, which handles
+    // the database connection.
+    if (testpg.connect(database)) {
+        runtest.pass("QueryDB::connect()");
+    } else {
+        runtest.fail("QueryDB::connect()");
+    }
+
+    // Their account name
+    // The Team
+    long uid = 7606880;
+    std::shared_ptr<std::vector<int>> retvi;
+    retvi = testtm.getUserTeams(uid);
+    if (retvi->size() >= 0) {
+        runtest.pass("QueryTM::getUserTeams()");
+    } else {
+        runtest.fail("QueryTM::getUserTeams()");
+    }
+    database = "pgsnapshot";
+
+// Total edits
+    
+    // Building Edits
+    long ret = testpg.getCount(QueryStats::building, uid,
+                             QueryStats::totals, start, end);
+    if (ret > 0) {
+        runtest.pass("getCount(QueryStats::building)");
+    } else {
+        runtest.fail("getCount(QueryStats::building)");
+    }    
+    // KM of Roads
+    ret = testpg.getLength(QueryStats::highway, uid, start, end);
+    if (ret > 0) {
+        runtest.pass("getCount(QueryStats::getLength(highway)");
+    } else {
+        runtest.fail("getCount(QueryStats::getLength(highway)");
+    }
+    
+    // Last Update
+    ptime last;
+    last = testpg.lastUpdate(uid, last);
+    std::cout << "LAST: " << last << std::endl;
+}

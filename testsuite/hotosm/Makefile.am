@@ -30,9 +30,13 @@
 AUTOMAKE_OPTIONS = dejagnu
 
 AM_CPPFLAGS = -I$(top_srcdir)
-check_PROGRAMS =  hotosm-test
+check_PROGRAMS =  hotosm-test tm-test
 hotosm_test_SOURCES = hotosm-test.cc
 hotosm_test_LDFLAGS = -L../..
 hotosm_test_LDADD = -lpqxx -lhotosm -lboost_date_time
+
+tm_test_SOURCES = tm-test.cc
+tm_test_LDFLAGS = -L../..
+tm_test_LDADD = -lpqxx -lhotosm -lboost_date_time
 
 RUNTESTFLAGS = -xml
