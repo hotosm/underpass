@@ -153,6 +153,25 @@ TaskingManager::getProjects(long projectid)
     return projects;
 };
 
+std::shared_ptr<std::vector<long>>
+TaskingManager::getProjectTeams(long projectid)
+{
+    auto teams =  std::make_shared<std::vector<long>>();
+
+    std::string sql = "SELECT team_id FROM project_teams WHERE project_id=";
+    sql +=  std::to_string(projectid);
+
+    pqxx::result result = worker->exec(sql);
+    // pqxx::array_parser parser = result[0][0].as_array();
+    pqxx::result::const_iterator rit;
+    for (rit = result.begin(); rit != result.end(); ++rit) {
+        long foo = rit[0].as(long(0));
+        teams->push_back(foo);
+    }
+
+    return teams;
+}
+
 } // EOF tmdb namespace
 // Local Variables:
 // mode: C++

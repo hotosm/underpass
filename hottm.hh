@@ -64,6 +64,7 @@ public:
     std::shared_ptr<std::vector<TMTeam>> getTeams(long teamid);
     std::shared_ptr<std::vector<long>> getTeamMembers(long teamid, bool active);
     std::shared_ptr<std::vector<TMProject>> getProjects(void) { return getProjects(0); };
+    std::shared_ptr<std::vector<long>> getProjectTeams(long projectid);
     std::shared_ptr<std::vector<TMProject>> getProjects(long projectid);
 private:
     pqxx::connection *db;
