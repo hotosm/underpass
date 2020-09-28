@@ -100,4 +100,12 @@ main(int argc, char *argv[])
     } else {
         runtest.fail("taskingManager::getProjects()");
     }
+
+    retl = testtm.getProjectTeams(1);
+    if (retl->size() >= 0) {
+        runtest.pass("taskingManager::getProjectTeams()");
+    } else {
+        runtest.fail("taskingManager::getProjectTeams()");
+    }
+
 }
