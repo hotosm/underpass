@@ -28,9 +28,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef __TM_H__
-#define __TM_H__
-
 #include <array>
 #include <vector>
 #include <memory>
@@ -157,7 +154,6 @@ TaskingManager::getProjects(long projectid)
 };
 
 } // EOF tmdb namespace
-#endif  // EOF __TMM_H__
 // Local Variables:
 // mode: C++
 // indent-tabs-mode: t
