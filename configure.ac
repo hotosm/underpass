@@ -42,7 +42,8 @@ AC_PROG_CXX
 AC_EXEEXT
 AC_PROG_INSTALL
 
-CPPFLAGS=$(pkg-config -cflags python)
+CPPFLAGS=$(pkg-config --cflags python)
+LIBS=$(pkg-config --libs python)
 
 dnl This is a C++ project only
 AC_LANG_PUSH(C++)
@@ -69,10 +70,10 @@ CPPFLAGS+=$(echo ${JNI_INCLUDE_DIRS} | sed -e 's/^/-I/' -e 's/ / -I/')
 # CPPFLAGS+=$(pkg-config -cflags webkit2gtk-4.0)
 # #include <boost/date_time.hpp>
 # /usr/lib64/libboost_date_time.so
-CPPFLAGS+=" "
-CPPFLAGS+=$(pkg-config --cflags libxml++-3.0)
-AC_CHECK_HEADERS([libxml++/libxml++.h])
-LIBS+=$(pkg-config --libx libxml++-3.0)
+LIBS+=$(pkg-config --libs expat)
+LIBS+=$(pkg-config --libs zlib)
+LIBS+=$(pkg-config --libs bzip2)
+LIBS+=" -lpthread -ldl"
 
 AC_LANG_POP(C++)
 
