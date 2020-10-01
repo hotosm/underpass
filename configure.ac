@@ -64,10 +64,15 @@ if test ! -e swig; then
 fi
 
 AX_JNI_INCLUDE_DIR
-CPPFLAGS=$(echo ${JNI_INCLUDE_DIRS} | sed -e 's/^/-I/' -e 's/ / -I/')
+CPPFLAGS+=$(echo ${JNI_INCLUDE_DIRS} | sed -e 's/^/-I/' -e 's/ / -I/')
+
 # CPPFLAGS+=$(pkg-config -cflags webkit2gtk-4.0)
 # #include <boost/date_time.hpp>
 # /usr/lib64/libboost_date_time.so
+CPPFLAGS+=" "
+CPPFLAGS+=$(pkg-config --cflags libxml++-3.0)
+AC_CHECK_HEADERS([libxml++/libxml++.h])
+LIBS+=$(pkg-config --libx libxml++-3.0)
 
 AC_LANG_POP(C++)
 
