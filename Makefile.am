@@ -38,7 +38,9 @@ instdir = /tmp
 libhotosm_la_SOURCES = hotosm.cc hottm.cc \
 	hottm/tmusers.cc \
 	hottm/tmteams.cc \
-	hottm/tmprojects.cc
+	hottm/tmprojects.cc \
+	osmstats/osmstats.cc \
+	osmstats/changeset.cc
 libhotosm_la_LDFLAGS = -avoid-version
 SWIGdir = swig
 
