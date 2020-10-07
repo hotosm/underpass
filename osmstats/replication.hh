@@ -43,6 +43,7 @@
 #include <iostream>
 #include <pqxx/pqxx>
 #include <cstdlib>
+#include <gumbo.h>
 
 #include <osmium/io/any_input.hpp>
 #include <osmium/builder/osm_object_builder.hpp>
@@ -94,10 +95,15 @@ public:
     bool mergeToDB();
 
     /// Scan remote directory from planet
-    bool scanDirectory(const std::string &dir);
+    std::shared_ptr<std::vector<std::string>> scanDirectory(const std::string &dir);
     
     /// Download a file from planet
-    bool downloadFiles(std::vector<std::string> file);
+    std::shared_ptr<std::vector<std::string>> downloadFiles(std::vector<std::string> file, bool html);
+
+    /// Extract the links in an HTML document. This is used
+    /// to find the directories on planet for replication files
+    std::shared_ptr<std::vector<std::string>> &getLinks(GumboNode* node,
+                    std::shared_ptr<std::vector<std::string>> &links);
 
 private:
     std::string server;

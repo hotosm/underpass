@@ -44,6 +44,9 @@
 #include <utility>
 #include <pqxx/pqxx>
 #include <fstream>
+#include <gumbo.h>
+#include <cctype>
+#include <libxml++/libxml++.h>
 
 #include <osmium/io/any_input.hpp>
 #include <osmium/builder/osm_object_builder.hpp>
@@ -62,6 +65,7 @@ using namespace boost::gregorian;
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/error.hpp>
 #include <boost/asio/ssl/stream.hpp>
+#include <boost/beast/http/parser.hpp>
 
 namespace beast = boost::beast;     // from <boost/beast.hpp>
 namespace net = boost::asio;        // from <boost/asio.hpp>
@@ -123,9 +127,34 @@ Replication::mergeToDB()
     return false;
 }
 
+std::shared_ptr<std::vector<std::string>> &
+Replication::getLinks(GumboNode* node, std::shared_ptr<std::vector<std::string>> &links)
+{
+    if (node->type == GUMBO_NODE_ELEMENT) {
+        // auto links =  std::make_shared<std::vector<std::string>>();
+
+        GumboAttribute* href;
+        if (node->v.element.tag == GUMBO_TAG_A &&
+            (href = gumbo_get_attribute(&node->v.element.attributes, "href"))) {
+            // All the directories are a 3 digit number
+            if (std::isalnum(href->value[0]) && std::isalnum(href->value[1])) {
+                links->push_back(href->value);
+            } else {
+                std::cout << href->value << std::endl;
+            }
+        }
+        GumboVector* children = &node->v.element.children;
+        for (unsigned int i = 0; i < children->length; ++i) {
+            getLinks(static_cast<GumboNode*>(children->data[i]), links);
+        }
+    }
+
+    return links;
+}
+
 /// Download a file from planet
-bool
-Replication::downloadFiles(std::vector<std::string> file)
+std::shared_ptr<std::vector<std::string>>
+Replication::downloadFiles(std::vector<std::string> files, bool html)
 {
     // The io_context is required for all I/O
     boost::asio::io_context ioc;
@@ -138,7 +167,6 @@ Replication::downloadFiles(std::vector<std::string> file)
     
     // These objects perform our I/O
     tcp::resolver resolver{ioc};
-    // tcp::socket socket{ioc};
     ssl::stream<tcp::socket> stream{ioc, ctx};
     
     // Look up the domain name
@@ -157,28 +185,36 @@ Replication::downloadFiles(std::vector<std::string> file)
     req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
     // Send the HTTP request to the remote host
-    // http::write(socket, req);
     http::write(stream, req);
 
-    // This buffer is used for reading and must be persisted
+    // This buffer is used for reading and must be persistant
     boost::beast::flat_buffer buffer;
 
-    // Declare a container to hold the response
-    http::response<http::dynamic_body> res;
-    
     // Receive the HTTP response
-    // http::read(socket, buffer, res);
-    http::read(stream, buffer, res);
-
-    // Write the message to standard out
-    std::cout << res << std::endl;
+    auto links =  std::make_shared<std::vector<std::string>>();
+    if (html) {
+        boost::beast::error_code ec;
+        http::response_parser<http::string_body> parser;
+        read_header(stream, buffer, parser);
+        read(stream, buffer, parser.base());
+        // Parse the HTML content to extract the hyperlinks to
+        // the directories and files
+        GumboOutput* output = gumbo_parse(parser.get().body().c_str());
+        getLinks(output->root, links);
+        gumbo_destroy_output(&kGumboDefaultOptions, output);
+    } else {
+        // Declare a container to hold the response
+        http::response<http::dynamic_body> res;
+        http::read(stream, buffer, res);
+        // Write the message to standard out
+        std::cout << res << std::endl;
+    }
     
     // Gracefully close the socket
     boost::system::error_code ec;
-    //socket.shutdown(tcp::socket::shutdown_both, ec);
+    stream.shutdown(ec);
     
-    
-    return false;
+    return links;
 }
 
 }       // EOF replication
