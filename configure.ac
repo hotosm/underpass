@@ -77,13 +77,17 @@ LIBS+=$(pkg-config --libs bzip2)
 LIBS+=$(pkg-config --libs libpqxx)
 LIBS+=$(pkg-config --libs webkit2gtk-4.0)
 LIBS+=" -lpthread -ldl"
-LIBS+=" -lboost_program_options"
+LIBS+=" -lboost_program_options -lboost_date_time"
 
 AC_LANG_POP(C++)
 
+AC_PATH_PROG(DOXYGEN, doxygen)
+AM_CONDITIONAL(ENABLE_DOXYGEN, [ test x"$DOXYGEN" != x ])
 
 AC_OUTPUT([
 Makefile
+doc/Makefile
+doc/Doxyfile
 testsuite/Makefile
 testsuite/hotosm/Makefile
 ])

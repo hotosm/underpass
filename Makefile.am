@@ -81,7 +81,10 @@ SUFFIXES = .py .cc .java .js
 	$(SWIG) $(SWIG_FLAGS) -javascript -node -o swig/$*_wrap_js.cc $(top_srcdir)/$*.i
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -I.. -I/usr/include/python3.8 -fPIC -shared swig/hotosm_wrap_js.cc -lpqxx -L.libs .libs/hotosm.o -o swig/_hotosmjs.so
 
-.PHONY: swig
+if ENABLE_DOXYGEN
+apidoc:
+	$(MAKE) -C doc $@
+endif
 
 # All of these are generated files
 CLEANFILES = swig/* swig/*/*.class
