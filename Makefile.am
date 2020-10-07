@@ -48,8 +48,10 @@ SWIG_LANGS = -python -javascript
 SWIG_FLAGS = -Wall -outcurrentdir -c++ -cppext cc -module hotosm
 EXTRA_DIST = swig/hotosm.py swig/hotosm.java
 
-# FIXME: add configure test for this
-AM_CPPFLAGS = -I/usr/include/webkitgtk-4.0/ -I..
+bin_PROGRAMS = replicator
+replicator_SOURCES = replicator.cc \
+	osmstats/replication.cc
+replicator_LIBS = -lhotosm
 
 SWIG_INTERFACE = $(libhotosm_la_SOURCES:.cc=.i)
 SWIG_OBJECTS = $(libhotosm_la_SOURCES:.cc=.o)
