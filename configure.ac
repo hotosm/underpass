@@ -43,14 +43,14 @@ AC_EXEEXT
 AC_PROG_INSTALL
 
 CPPFLAGS=$(pkg-config --cflags python)
-LIBS=$(pkg-config --libs python)
+CPPFLAGS+=$(pkg-config --cflags libpqxx)
+CPPFLAGS+=$(pkg-config --cflags webkit2gtk-4.0)
 
 dnl This is a C++ project only
 AC_LANG_PUSH(C++)
 
 dnl pqxx requires C++17
 CXXFLAGS="-std=c++17 -g -O2"
-AC_CHECK_HEADERS([pqxx/pqxx])
 dnl AC_CHECK_LIB(pqxx, [])
 
 dnl Osmium headers
@@ -70,10 +70,14 @@ CPPFLAGS+=$(echo ${JNI_INCLUDE_DIRS} | sed -e 's/^/-I/' -e 's/ / -I/')
 # CPPFLAGS+=$(pkg-config -cflags webkit2gtk-4.0)
 # #include <boost/date_time.hpp>
 # /usr/lib64/libboost_date_time.so
+LIBS=$(pkg-config --libs python)
 LIBS+=$(pkg-config --libs expat)
 LIBS+=$(pkg-config --libs zlib)
 LIBS+=$(pkg-config --libs bzip2)
+LIBS+=$(pkg-config --libs libpqxx)
+LIBS+=$(pkg-config --libs webkit2gtk-4.0)
 LIBS+=" -lpthread -ldl"
+LIBS+=" -lboost_program_options"
 
 AC_LANG_POP(C++)
 
