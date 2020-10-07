@@ -76,6 +76,7 @@ LIBS+=$(pkg-config --libs zlib)
 LIBS+=$(pkg-config --libs bzip2)
 LIBS+=$(pkg-config --libs libpqxx)
 LIBS+=$(pkg-config --libs webkit2gtk-4.0)
+LIBS+=$(pkg-config --libs openssl)
 LIBS+=" -lpthread -ldl"
 LIBS+=" -lboost_program_options -lboost_date_time"
 
