@@ -65,18 +65,39 @@ using namespace boost::gregorian;
 
 namespace replication {
 
-// The functions in this class will be called for each object in the input
+/// This class downloads replication files, and adds them to the database
 class Replication
 {
 public:
-    Replication();
-    bool getFile(std::string &file);
+    Replication() {
+        last_run = boost::posix_time::second_clock::local_time();
+        url = "https://planet.openstreetmap.org/replication/changesets/";
+        sequence = 0;
+    };
+    // Downloading a replication requires either a sequence
+    // number or a starting timestamp
+    Replication(std::string server, ptime last, long seq);
+    Replication(ptime last) { last_run = last; };
+    Replication(long seq) { sequence = seq; };
+
+    /// parse a state file for a replication file
+    bool readState(std::string &file);
+
+    /// parse a replication file containing changesets
+    bool readChanges(std::string &file);
+
+    /// Add this replication data to the changeset database
+    bool mergeToDB();
+
+    /// Download a file from planet
+    bool downloadFile(std::string &file);
+
 private:
     std::string url;
     ptime last_run;
     long sequence;
 };
-    
+
 }       // EOF replication
 
 #endif  // EOF __REPLICATION_HH__

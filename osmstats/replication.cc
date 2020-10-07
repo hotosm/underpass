@@ -43,6 +43,7 @@
 #include <exception>
 #include <utility>
 #include <pqxx/pqxx>
+#include <fstream>
 
 #include <osmium/io/any_input.hpp>
 #include <osmium/builder/osm_object_builder.hpp>
@@ -69,21 +70,61 @@ using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 
 namespace replication {
 
-Replication::Replication()
+/// parse a state file for a replication file
+bool
+Replication::readState(std::string &file)
 {
-    url = "https://planet.openstreetmap.org/replication/changesets/";
+    std::ifstream state;
+    try {
+        state.open(file);
+    }
+    catch(std::exception& e) {
+        std::cout << "ERROR opening " << file << std::endl;
+        std::cout << e.what() << std::endl;
+        return false;
+    }
+
+    std::string line;
+    // Ignore the first line
+    std::getline(state, line);
+    // Second line is the last_run timestamp
+    std::getline(state, line);
+    // The timestamp is the second field
+    std::size_t pos = line.find(" ");
+    last_run = time_from_string(line.substr(pos+1));
+
+    // Third and last line is the sequence number
+    std::getline(state, line);
+    pos = line.find(" ");
+    // The sequence is the second field
+    sequence = std::stol(line.substr(pos+1));
+
+    state.close();
+
+    return true;
 }
 
-// state.txt file
-// last_run: 2020-09-25 03:42:01.567647000 +00:00
-// sequence: 4120174
+/// parse a replication file containing changesets
 bool
-Replication::getFile(std::string &file)
+Replication::readChanges(std::string &file)
 {
-    // last_run = ;
-    // sequence =
-        
-};
+
+    return false;
+}
+
+/// Add this replication data to the changeset database
+bool
+Replication::mergeToDB()
+{
+    return false;
+}
+
+/// Download a file from planet
+bool
+Replication::downloadFile(std::string &file)
+{
+    return false;
+}
 
 }       // EOF replication
 
