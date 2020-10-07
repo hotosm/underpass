@@ -53,16 +53,20 @@
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
+using namespace boost::posix_time;
+using namespace boost::gregorian;
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
-using namespace boost::posix_time;
-using namespace boost::gregorian;
+#include <boost/asio/ssl/error.hpp>
+#include <boost/asio/ssl/stream.hpp>
+
 namespace beast = boost::beast;     // from <boost/beast.hpp>
-namespace http = beast::http;       // from <boost/beast/http.hpp>
 namespace net = boost::asio;        // from <boost/asio.hpp>
+namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
+namespace http = beast::http;       // from <boost/beast/http.hpp>
 using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 
 #include "hotosm.hh"
@@ -72,7 +76,7 @@ namespace replication {
 
 /// parse a state file for a replication file
 bool
-Replication::readState(std::string &file)
+Replication::readState(const std::string &file)
 {
     std::ifstream state;
     try {
@@ -106,7 +110,7 @@ Replication::readState(std::string &file)
 
 /// parse a replication file containing changesets
 bool
-Replication::readChanges(std::string &file)
+Replication::readChanges(const std::string &file)
 {
 
     return false;
@@ -121,8 +125,59 @@ Replication::mergeToDB()
 
 /// Download a file from planet
 bool
-Replication::downloadFile(std::string &file)
+Replication::downloadFiles(std::vector<std::string> file)
 {
+    // The io_context is required for all I/O
+    boost::asio::io_context ioc;
+
+    // The SSL context is required, and holds certificates
+    ssl::context ctx{ssl::context::sslv23_client};
+
+    // Verify the remote server's certificate
+    ctx.set_verify_mode(ssl::verify_none);
+    
+    // These objects perform our I/O
+    tcp::resolver resolver{ioc};
+    // tcp::socket socket{ioc};
+    ssl::stream<tcp::socket> stream{ioc, ctx};
+    
+    // Look up the domain name
+    auto const results = resolver.resolve(server, std::to_string(port));
+    
+    // Make the connection on the IP address we get from a lookup
+    boost::asio::connect(stream.next_layer(), results.begin(), results.end());
+
+    // Perform the SSL handshake
+    stream.handshake(ssl::stream_base::client);
+ 
+    // Set up an HTTP GET request message
+    http::request<http::string_body> req{http::verb::get, path, version };
+
+    req.set(http::field::host, server);
+    req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+
+    // Send the HTTP request to the remote host
+    // http::write(socket, req);
+    http::write(stream, req);
+
+    // This buffer is used for reading and must be persisted
+    boost::beast::flat_buffer buffer;
+
+    // Declare a container to hold the response
+    http::response<http::dynamic_body> res;
+    
+    // Receive the HTTP response
+    // http::read(socket, buffer, res);
+    http::read(stream, buffer, res);
+
+    // Write the message to standard out
+    std::cout << res << std::endl;
+    
+    // Gracefully close the socket
+    boost::system::error_code ec;
+    //socket.shutdown(tcp::socket::shutdown_both, ec);
+    
+    
     return false;
 }
 

@@ -52,11 +52,6 @@
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/asio/connect.hpp>
-#include <boost/asio/ip/tcp.hpp>
 
 using namespace boost::posix_time;
 using namespace boost::gregorian;
@@ -69,33 +64,48 @@ namespace replication {
 class Replication
 {
 public:
-    Replication() {
+    Replication(void) {
         last_run = boost::posix_time::second_clock::local_time();
-        url = "https://planet.openstreetmap.org/replication/changesets/";
+        server = "planet.openstreetmap.org";
+        path = "/replication/changesets/";
         sequence = 0;
+        port = 443;
+        version = 11;           ///! HTTP version
     };
     // Downloading a replication requires either a sequence
     // number or a starting timestamp
-    Replication(std::string server, ptime last, long seq);
+    Replication(const std::string &host, ptime last, long seq) : Replication() {
+        if (!server.empty()) { server = server; }
+        if (!last.is_not_a_date_time()) { last_run = last; }
+        if (seq > 0) { sequence = seq; }
+    }
+        
+    Replication(std::string &host, long seq) { server = host; sequence = seq; };
     Replication(ptime last) { last_run = last; };
     Replication(long seq) { sequence = seq; };
 
     /// parse a state file for a replication file
-    bool readState(std::string &file);
+    bool readState(const std::string &file);
 
     /// parse a replication file containing changesets
-    bool readChanges(std::string &file);
+    bool readChanges(const std::string &file);
 
     /// Add this replication data to the changeset database
     bool mergeToDB();
 
+    /// Scan remote directory from planet
+    bool scanDirectory(const std::string &dir);
+    
     /// Download a file from planet
-    bool downloadFile(std::string &file);
+    bool downloadFiles(std::vector<std::string> file);
 
 private:
-    std::string url;
+    std::string server;
+    std::string path;
+    int port;
     ptime last_run;
     long sequence;
+    int version;
 };
 
 }       // EOF replication
