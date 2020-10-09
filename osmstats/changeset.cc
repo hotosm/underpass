@@ -39,6 +39,11 @@
 #include <memory>
 #include <iostream>
 #include <pqxx/pqxx>
+#include <cstdlib>
+#include <cstring>
+#include <exception>
+#include <utility>
+
 
 #include <osmium/io/any_input.hpp>
 #include <osmium/builder/osm_object_builder.hpp>
@@ -50,16 +55,52 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
 using namespace boost::gregorian;
-
-#include <cstdlib>   // for std::exit
-#include <cstring>   // for std::strcmp
-#include <exception> // for std::exception
-#include <utility>   // for std::move
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 
 #include "hotosm.hh"
 #include "osmstats/changeset.hh"
 
 namespace changeset {
+
+/// parse a state file for a replication file
+StateFile::StateFile(const std::string &file, bool memory)
+{
+    std::string line;
+    std::ifstream state;
+
+    if (!memory) {
+        try {
+            state.open(file);
+        }
+        catch(std::exception& e) {
+            std::cout << "ERROR opening " << file << std::endl;
+            std::cout << e.what() << std::endl;
+            // return false;
+        }
+        std::getline(state, line);
+    }
+    
+    // This is a changeset state.txt file
+    if (line == "---") {
+        // Second line is the last_run timestamp
+        std::getline(state, line);
+        // The timestamp is the second field
+        std::size_t pos = line.find(" ");
+       timestamp = time_from_string(line.substr(pos+1));
+
+        // Third and last line is the sequence number
+        std::getline(state, line);
+        pos = line.find(" ");
+        // The sequence is the second field
+        sequence = std::stol(line.substr(pos+1));
+    }
+    
+    if (!memory) {
+        state.close();
+    }
+}
 
 }       // EOF changeset
 

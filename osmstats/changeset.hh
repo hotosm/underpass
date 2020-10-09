@@ -42,6 +42,7 @@
 #include <memory>
 #include <iostream>
 #include <pqxx/pqxx>
+#include <libxml++/libxml++.h>
 
 #include <osmium/io/any_input.hpp>
 #include <osmium/builder/osm_object_builder.hpp>
@@ -59,111 +60,45 @@ using namespace boost::gregorian;
 namespace changeset {
 
 /// This class reads a change file
-class ChangeSet : public osmium::handler::Handler
+class ChangeSet  : public xmlpp::SaxParser
 {
 public:
-    // Constructor. New data will be added to the given buffer.
-    explicit ChangeSet(osmium::memory::Buffer& buffer) :
-        m_buffer(buffer) {
-    }
-
-    /// The node handler is called for each node in the input data.
-    void node(const osmium::Node& node) {
-        // Open a new scope, because the NodeBuilder we are creating has to
-        // be destructed, before we can call commit() below.
-        {
-            // To create a node, we need a NodeBuilder object. It will create
-            // the node in the given buffer.
-            osmium::builder::NodeBuilder builder{m_buffer};
-
-            // Copy common object attributes over to the new node.
-            copy_attributes(builder, node);
-
-            // Copy the location over to the new node.
-            builder.set_location(node.location());
-
-            // Copy (changed) tags.
-            copy_tags(builder, node.tags());
-        }
-
-        // Once the object is written to the buffer completely, we have to call
-        // commit().
-        m_buffer.commit();
-    }
-
-    /// The way handler is called for each way in the input data.
-    void way(const osmium::Way& way) {
-        {
-            osmium::builder::WayBuilder builder{m_buffer};
-            copy_attributes(builder, way);
-            copy_tags(builder, way.tags());
-
-            // Copy the node list over to the new way.
-            builder.add_item(way.nodes());
-        }
-        m_buffer.commit();
-    }
-
-    /// The relation handler is called for each relation in the input data.
-    void relation(const osmium::Relation& relation) {
-        {
-            osmium::builder::RelationBuilder builder{m_buffer};
-            copy_attributes(builder, relation);
-            copy_tags(builder, relation.tags());
-
-            // Copy the relation member list over to the new way.
-            builder.add_item(relation.members());
-        }
-        m_buffer.commit();
-    }
+    bool connect(std::string &database);
+    
+    void on_start_document() override;
+    void on_end_document() override;
+    void on_start_element(const Glib::ustring& name,
+                          const AttributeList& properties) override;
+    void on_end_element(const Glib::ustring& name) override;
+    void on_characters(const Glib::ustring& characters) override;
+    void on_comment(const Glib::ustring& text) override;
+    void on_warning(const Glib::ustring& text) override;
+    void on_error(const Glib::ustring& text) override;
+    void on_fatal_error(const Glib::ustring& text) override;
 
 private:
     pqxx::connection *db;
     pqxx::work *worker;
-    osmium::memory::Buffer& m_buffer;
+    apidb::QueryStats osmdb;
 
-    /// Copy attributes common to all OSM objects (nodes, ways, and relations).
-    template <typename T>
-    void copy_attributes(T& builder, const osmium::OSMObject& object) {
-        // The setter functions on the builder object all return the same
-        // builder object so they can be chained.
-        if (object.version() == 1) {
-            std::cout << "FIXME: " << object.version() << std::endl;
-        }
-        builder.set_id(object.id())
-            .set_version(object.version())
-            .set_changeset(object.changeset())
-            .set_timestamp(object.timestamp())
-            .set_uid(object.uid())
-            .set_user(object.user());
-    }
-
-    // Copy all tags with two changes:
-    // * Do not copy "created_by" tags
-    // * Change "landuse=forest" into "natural=wood"
-    static void copy_tags(osmium::builder::Builder& parent, const osmium::TagList& tags) {
-
-        // The TagListBuilder is used to create a list of tags. The parameter
-        // to create it is a reference to the builder of the object that
-        // should have those tags.
-        osmium::builder::TagListBuilder builder{parent};
-
-        // Iterate over all tags and build new tags using the new builder
-        // based on the old ones.
-        for (const auto& tag : tags) {
-            if (!std::strcmp(tag.key(), "created_by")) {
-                // ignore
-            } else if (!std::strcmp(tag.key(), "landuse") && !std::strcmp(tag.value(), "forest")) {
-                // add_tag() can be called with key and value C strings
-                builder.add_tag("natural", "wood");
-            } else {
-                // add_tag() can also be called with an osmium::Tag
-                builder.add_tag(tag);
-            }
-        }
-    }    
 };
 
+class StateFile
+{
+public:
+    StateFile(void) {
+        timestamp = boost::posix_time::second_clock::local_time();
+        sequence = 0;
+    };
+    /// Initialize with a state file from disk or memory
+    StateFile(const std::string &file, bool memory);
+
+private:
+    ptime timestamp;
+    long sequence;
+    
+};
+    
 }       // EOF changeset
 
 #endif  // EOF __CHANGESET_HH__

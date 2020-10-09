@@ -66,38 +66,37 @@ namespace changefile {
 
 // }
 
-bool
-ChangeFile::connect(std::string &database)
-{
+// bool
+// ChangeFile::connect(std::string &database)
+// {
 
-}
+// }
 bool
-ChangeFile::readFile(std::string &osc) const
+ChangeFile::readFile(const std::string &osc)
 {
     try {
         // Default is all entity types: nodes, ways, relations, and changesets
         osmium::osm_entity_bits::type read_types = osmium::osm_entity_bits::all;
         
         // Get entity types from command line if there is a 2nd argument.
-        if (argc == 3) {
-            read_types = osmium::osm_entity_bits::nothing;
-            std::string types = argv[2];
-            if (types.find('n') != std::string::npos) {
-                read_types |= osmium::osm_entity_bits::node;
-            }
-            if (types.find('w') != std::string::npos) {
-                read_types |= osmium::osm_entity_bits::way;
-            }
-            if (types.find('r') != std::string::npos) {
-                read_types |= osmium::osm_entity_bits::relation;
-            }
-            if (types.find('c') != std::string::npos) {
-                read_types |= osmium::osm_entity_bits::changeset;
-            }
+        read_types = osmium::osm_entity_bits::nothing;
+        std::string types = "fixme!!!!";
+        if (types.find('n') != std::string::npos) {
+            read_types |= osmium::osm_entity_bits::node;
         }
+        if (types.find('w') != std::string::npos) {
+            read_types |= osmium::osm_entity_bits::way;
+        }
+        if (types.find('r') != std::string::npos) {
+            read_types |= osmium::osm_entity_bits::relation;
+        }
+        if (types.find('c') != std::string::npos) {
+            read_types |= osmium::osm_entity_bits::changeset;
+        }
+
         // Initialize Reader with file name and the types of entities we want to
         // read.
-        osmium::io::Reader reader{argv[1], read_types};
+        osmium::io::Reader reader{"fixme!", read_types};
         
         // The file header can contain metadata such as the program that
         // generaed
