@@ -51,7 +51,7 @@ EXTRA_DIST = swig/hotosm.py swig/hotosm.java
 bin_PROGRAMS = replicator
 replicator_SOURCES = replicator.cc \
 	osmstats/replication.cc
-replicator_LIBS = -lhotosm
+replicator_LDADD = libhotosm.la
 
 SWIG_INTERFACE = $(libhotosm_la_SOURCES:.cc=.i)
 SWIG_OBJECTS = $(libhotosm_la_SOURCES:.cc=.o)
