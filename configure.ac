@@ -46,7 +46,6 @@ AC_PROG_INSTALL
 CPPFLAGS=$(pkg-config --cflags python)
 CPPFLAGS+=" $(pkg-config --cflags libpqxx)"
 CPPFLAGS+=" $(pkg-config --cflags glibmm-2.4)"
-CPPFLAGS+=" $(pkg-config --cflags libxml++-3.0)"
 CPPFLAGS+=" $(pkg-config --cflags gumbo)"
 CPPFLAGS+=" $(pkg-config --cflags webkit2gtk-4.0)"
 
@@ -84,9 +83,16 @@ LIBS+=" $(pkg-config --libs openssl)"
 LIBS+=" $(pkg-config --libs gumbo)"
 LIBS+=" $(pkg-config --libs zlib)"
 LIBS+=" $(pkg-config --libs glibmm-2.4)"
-LIBS+=" $(pkg-config --libs libxml++-3.0)"
+dnl Debian and Ubuntu ship 2.6, Fedora ships 3,.0
+xmlversion="$(pkg-config --list-all | grep -c libxml++-3.0)"
+if test ${xmlversion} != 1; then
+  CPPFLAGS+=" $(pkg-config --cflags libxml++-2.6)"
+  LIBS+=" $(pkg-config --libs libxml++-2.6)"
+else
+  CPPFLAGS+=" $(pkg-config --cflags libxml++-3.0)"
+  LIBS+=" $(pkg-config --libs libxml++-3.0)"
+fi
 LIBS+=" -lpthread -ldl"
-
 
 AX_BOOST_BASE(1.69)
 AX_BOOST_SYSTEM
