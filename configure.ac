@@ -83,7 +83,9 @@ LIBS+=" $(pkg-config --libs openssl)"
 LIBS+=" $(pkg-config --libs gumbo)"
 LIBS+=" $(pkg-config --libs zlib)"
 LIBS+=" $(pkg-config --libs glibmm-2.4)"
-dnl Debian and Ubuntu ship 2.6, Fedora ships 3,.0
+dnl Debian Buster and Ubuntu Focal ship 2.6, Fedora ships 3,.0
+dnl The version in Focal is broken, so either build libxml++-3.0
+dnl from source, or wait for 20.10 to be released.
 xmlversion="$(pkg-config --list-all | grep -c libxml++-3.0)"
 if test ${xmlversion} != 1; then
   CPPFLAGS+=" $(pkg-config --cflags libxml++-2.6)"
