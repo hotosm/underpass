@@ -34,6 +34,7 @@ AC_PREREQ(2.59c)
 AC_INIT(hotosm, 0.1-dev)
 LT_INIT
 AM_INIT_AUTOMAKE
+AC_CONFIG_MACRO_DIR([m4])
 
 dnl AC_CONFIG_HEADERS([hotconfig.h])
 
@@ -43,15 +44,17 @@ AC_EXEEXT
 AC_PROG_INSTALL
 
 CPPFLAGS=$(pkg-config --cflags python)
-CPPFLAGS+=$(pkg-config --cflags libpqxx)
-CPPFLAGS+=$(pkg-config --cflags webkit2gtk-4.0)
+CPPFLAGS+=" $(pkg-config --cflags libpqxx)"
+CPPFLAGS+=" $(pkg-config --cflags glibmm-2.4)"
+CPPFLAGS+=" $(pkg-config --cflags libxml++-3.0)"
+CPPFLAGS+=" $(pkg-config --cflags gumbo)"
+CPPFLAGS+=" $(pkg-config --cflags webkit2gtk-4.0)"
 
 dnl This is a C++ project only
 AC_LANG_PUSH(C++)
 
 dnl pqxx requires C++17
 CXXFLAGS="-std=c++17 -g -O2"
-dnl AC_CHECK_LIB(pqxx, [])
 
 dnl Osmium headers
 AC_CHECK_HEADERS([osmium/osm/node.hpp])
@@ -70,16 +73,29 @@ CPPFLAGS+=$(echo ${JNI_INCLUDE_DIRS} | sed -e 's/^/-I/' -e 's/ / -I/')
 # CPPFLAGS+=$(pkg-config -cflags webkit2gtk-4.0)
 # #include <boost/date_time.hpp>
 # /usr/lib64/libboost_date_time.so
+# pkg-config --libs python3-embed
 LIBS=$(pkg-config --libs python)
-LIBS+=$(pkg-config --libs expat)
-LIBS+=$(pkg-config --libs zlib)
-LIBS+=$(pkg-config --libs bzip2)
-LIBS+=$(pkg-config --libs libpqxx)
-LIBS+=$(pkg-config --libs webkit2gtk-4.0)
-LIBS+=$(pkg-config --libs openssl)
+LIBS+=" $(pkg-config --libs expat)"
+LIBS+=" $(pkg-config --libs zlib)"
+LIBS+=" $(pkg-config --libs bzip2)"
+LIBS+=" $(pkg-config --libs libpqxx)"
+LIBS+=" $(pkg-config --libs webkit2gtk-4.0)"
+LIBS+=" $(pkg-config --libs openssl)"
+LIBS+=" $(pkg-config --libs gumbo)"
+LIBS+=" $(pkg-config --libs zlib)"
+LIBS+=" $(pkg-config --libs glibmm-2.4)"
+LIBS+=" $(pkg-config --libs libxml++-3.0)"
 LIBS+=" -lpthread -ldl"
-LIBS+=" -lboost_program_options -lboost_date_time"
 
+
+AX_BOOST_BASE(1.69)
+AX_BOOST_SYSTEM
+AX_BOOST_LOG
+AX_BOOST_PROGRAM_OPTIONS
+AX_BOOST_DATE_TIME
+AX_BOOST_FILESYSTEM
+
+dnl LIBS += "${BOOST_DATE_TIME} ${BOOST_SYSTEM} ${BOOST_FILESYSTEM} ${BOOST_LOG_LIB}"
 AC_LANG_POP(C++)
 
 AC_PATH_PROG(DOXYGEN, doxygen)
