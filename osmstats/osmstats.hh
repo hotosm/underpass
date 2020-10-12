@@ -44,24 +44,68 @@
 #include <pqxx/pqxx>
 
 #include <boost/date_time.hpp>
-#include "boost/date_time/posix_time/posix_time.hpp"
+#include <boost/date_time/posix_time/posix_time.hpp>
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "hotosm.hh"
 
-namespace osmstatsdb {
+using namespace apidb;
+
+namespace osmstats {
 
 class OsmStats
 {
 public:
-    OsmStats(void);
+    OsmStats(const pqxx::result &res);
+    OsmStats(pqxx::const_result_iterator &res);
+    OsmStats(void) {};
+#ifdef DEBUG
+    void dump(void);
+#endif
+
+private:
+    // These are from the OSM Stats 'raw_changesets' table
+    long id;
+    long road_km_added;
+    long road_km_modified;
+    long waterway_km_added;
+    long waterway_km_modified;
+    long roads_added;
+    long roads_modified;
+    long waterways_added;
+    long waterways_modified;
+    long buildings_added;
+    long buildings_modified;
+    long pois_added;
+    long pois_modified;
+    std::string editor;
+    long user_id;
+    ptime created_at;
+    ptime closed_at;
+    bool verified;
+    std::vector<long> augmented_diffs;
+    ptime updated_at;
+};
+
+class QueryOSMStats : public apidb::QueryStats
+{
+  public:
+    QueryOSMStats(void);
+    /// Connect to the database
     bool connect(std::string &database);
+    /// Populate new totals from the OSM database, and write it
+    /// to the osmstats database. Note this operation is not fast!
     bool populate(void);
+
+    /// Read changset data from the osmstats database
+    bool getRawChangeSet(std::vector<long> &changeset_id);
+    void dump(void);
 private:
     pqxx::connection *db;
     pqxx::work *worker;
-    apidb::QueryStats osmdb;
+
+    std::vector<OsmStats> ostats;
 };
     
 }       // EOF osmstatsdb

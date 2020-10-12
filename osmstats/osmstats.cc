@@ -49,19 +49,18 @@ using namespace boost::gregorian;
 
 using namespace apidb;
 
-namespace osmstatsdb {
+namespace osmstats {
 
-OsmStats::OsmStats(void)
+QueryOSMStats::QueryOSMStats(void)
 {
     std::string database = "osmstats";
     connect(database);
-
     database = "tmsnap";
-    osmdb.connect(database);    
+    QueryDB::connect(database);
 }
 
 bool
-OsmStats::connect(std::string &database)
+QueryOSMStats::connect(std::string &database)
 {
     if (database.empty()) {
 	database = "osmstats";
@@ -82,24 +81,122 @@ OsmStats::connect(std::string &database)
    }    
 }
 
+
+// Populate new totals
 bool
-OsmStats::populate(void)
+QueryOSMStats::populate(void)
 {
     ptime start = time_from_string("2010-07-08 13:29:46");
     ptime end = second_clock::local_time();
-
-    long roadsAdded = osmdb.getCount(QueryStats::highway, 0,
-                                     QueryStats::totals, start, end);
-    long roadKMAdded = osmdb.getLength(QueryStats::highway, 0,
-                                       start, end);
-    long waterwaysAdded = osmdb.getCount(QueryStats::waterway, 0,
-                                         QueryStats::totals, start, end);
-    long waterwaysKMAdded = osmdb.getLength(QueryStats::waterway, 0,
-                                           start, end);
-    long buildingsAdded = osmdb.getCount(QueryStats::waterway, 0,
-                                         QueryStats::totals, start, end);
-    // std::string sql = "INSERT INTO changeset VALUES(";
+    // long roadsAdded = QueryStats::getCount(QueryStats::highway, 0,
+    //                                        QueryStats::totals, start, end);
+    // long roadKMAdded = QueryStats::getLength(QueryStats::highway, 0,
+    //                                          start, end);
+    // long waterwaysAdded = QueryStats::getCount(QueryStats::waterway, 0,
+    //                                            QueryStats::totals, start, end);
+    // long waterwaysKMAdded = QueryStats::getLength(QueryStats::waterway, 0,
+    //                                               start, end);
+    // long buildingsAdded = QueryStats::getCount(QueryStats::waterway, 0,
+    //                                            QueryStats::totals, start, end);
 }
-    
+
+bool
+QueryOSMStats::getRawChangeSet(std::vector<long> &changeset_id)
+{
+    std::string sql = "SELECT id,road_km_added,road_km_modified,waterway_km_added,waterway_km_modified,roads_added,roads_modified,waterways_added,waterways_modified,buildings_added,buildings_modified,pois_added,pois_modified,editor,user_id,created_at,closed_at,verified,augmented_diffs,updated_at FROM raw_changesets WHERE id=";
+    sql += std::to_string(changeset_id[0]);
+    std::cout << "QUERY: " << sql << std::endl;
+    pqxx::result result = worker->exec(sql);
+    std::cout << "SIZE: " << result.size() <<std::endl;
+    OsmStats stats(result);
+    // WHERE id=ANY(ARRAY[1,2]);
+
+    for (auto it = std::begin(result); it != std::end(result); ++it) {
+        OsmStats os(it);
+        ostats.push_back(os);
+    }
+}
+
+void
+QueryOSMStats::dump(void)
+{
+    for (auto it = std::begin(ostats); it != std::end(ostats); ++it) {
+        it->dump();
+    }
+}
+
+OsmStats::OsmStats(pqxx::const_result_iterator &res)
+{
+    id = std::stol(res[0].c_str());
+    road_km_added = std::stol(res[1].c_str());
+    road_km_modified = std::stol(res[2].c_str());
+    waterway_km_added = std::stol(res[3].c_str());
+    waterway_km_modified = std::stol(res[4].c_str());;
+    roads_added = std::stol(res[5].c_str());
+    roads_modified = std::stol(res[6].c_str());
+    waterways_added = std::stol(res[7].c_str());
+    waterways_modified = std::stol(res[8].c_str());
+    buildings_added = std::stol(res[9].c_str());
+    buildings_modified = std::stol(res[10].c_str());
+    pois_added = std::stol(res[11].c_str());
+    pois_modified = std::stol(res[12].c_str());
+    editor = pqxx::to_string(res[13]);
+    user_id = std::stol(res[14].c_str());
+    created_at = time_from_string(pqxx::to_string(res[15]));
+    closed_at = time_from_string(pqxx::to_string(res[16]));
+    // verified = res[17].bool();
+    // augmented_diffs = res[18].num();
+    updated_at = time_from_string(pqxx::to_string(res[19]));
+}
+
+OsmStats::OsmStats(const pqxx::result &res)
+{
+    id = res[0][0].num();
+    road_km_added = res[0][1].num();
+    road_km_modified = res[0][2].num();
+    waterway_km_added = res[0][3].num();
+    waterway_km_modified = res[0][4].num();
+    roads_added = res[0][5].num();
+    roads_modified = res[0][6].num();
+    waterways_added = res[0][7].num();
+    waterways_modified = res[0][8].num();
+    buildings_added = res[0][9].num();
+    buildings_modified = res[0][10].num();
+    pois_added = res[0][11].num();
+    pois_modified = res[0][12].num();
+    editor = pqxx::to_string(res[0][13]);
+    user_id = res[0][14].num();
+    created_at = time_from_string(pqxx::to_string(res[0][15]));
+    closed_at = time_from_string(pqxx::to_string(res[0][16]));
+    // verified = res[0][17].bool();
+    // augmented_diffs = res[0][18].num();
+    updated_at = time_from_string(pqxx::to_string(res[0][19]));
+}
+
+void
+OsmStats::dump(void)
+{
+    std::cout << "id: \t\t\t " << id << std::endl;
+    std::cout << "Roads Added (km): \t " << road_km_added << std::endl;
+    std::cout << "Roads Modified (km):\t " <<road_km_modified << std::endl;
+    std::cout << "Waterways Added (km): \t " << waterway_km_added << std::endl;
+    std::cout << "Waterways Modified (km): " << waterway_km_modified << std::endl;
+    std::cout << "Roads Added: \t\t " << roads_added << std::endl;
+    std::cout << "Roads Modified: \t " << roads_modified << std::endl;
+    std::cout << "Waterways Added: \t " <<waterways_added << std::endl;
+    std::cout << "Waterways Modified: \t " << waterways_modified << std::endl;
+    std::cout << "Buildings added: \t " << buildings_added << std::endl;
+    std::cout << "Buildings Modified: \t " << buildings_modified << std::endl;
+    std::cout << "POIs added: \t\t " << pois_added << std::endl;
+    std::cout << "POIs Modified: \t\t " << pois_modified << std::endl;
+    std::cout << "Editor: \t\t " << editor << std::endl;
+    std::cout << "User ID: \t\t "  << user_id << std::endl;
+    std::cout << "Created At: \t\t " << created_at << std::endl;
+    std::cout << "Closed At: \t\t " << closed_at << std::endl;
+    std::cout << "Verified: \t\t " << verified << std::endl;
+    // std::cout << augmented_diffs << std::endl;
+    std::cout << "Updated At: \t\t " << updated_at << std::endl;
+}
+
 }       // EOF osmstatsdb
 
