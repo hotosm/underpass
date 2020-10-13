@@ -98,18 +98,25 @@ QueryOSMStats::populate(void)
     //                                               start, end);
     // long buildingsAdded = QueryStats::getCount(QueryStats::waterway, 0,
     //                                            QueryStats::totals, start, end);
-}
+};
 
 bool
-QueryOSMStats::getRawChangeSet(std::vector<long> &changeset_id)
+QueryOSMStats::getRawChangeSet(std::vector<long> &changeset_ids)
 {
-    std::string sql = "SELECT id,road_km_added,road_km_modified,waterway_km_added,waterway_km_modified,roads_added,roads_modified,waterways_added,waterways_modified,buildings_added,buildings_modified,pois_added,pois_modified,editor,user_id,created_at,closed_at,verified,augmented_diffs,updated_at FROM raw_changesets WHERE id=";
-    sql += std::to_string(changeset_id[0]);
+    std::string sql = "SELECT id,road_km_added,road_km_modified,waterway_km_added,waterway_km_modified,roads_added,roads_modified,waterways_added,waterways_modified,buildings_added,buildings_modified,pois_added,pois_modified,editor,user_id,created_at,closed_at,verified,augmented_diffs,updated_at FROM raw_changesets WHERE id=ANY(ARRAY[";
+    // Build an array string of the IDs
+    for (auto it = std::begin(changeset_ids); it != std::end(changeset_ids); ++it) {
+        sql += std::to_string(*it);
+        if (*it != changeset_ids.back()) {
+            sql += ",";
+        }
+    }
+    sql += "]);";
+
     std::cout << "QUERY: " << sql << std::endl;
     pqxx::result result = worker->exec(sql);
     std::cout << "SIZE: " << result.size() <<std::endl;
     OsmStats stats(result);
-    // WHERE id=ANY(ARRAY[1,2]);
 
     for (auto it = std::begin(result); it != std::end(result); ++it) {
         OsmStats os(it);
@@ -117,6 +124,7 @@ QueryOSMStats::getRawChangeSet(std::vector<long> &changeset_id)
     }
 }
 
+// #ifdef DEBUG
 void
 QueryOSMStats::dump(void)
 {
@@ -124,6 +132,7 @@ QueryOSMStats::dump(void)
         it->dump();
     }
 }
+// #endif
 
 OsmStats::OsmStats(pqxx::const_result_iterator &res)
 {
@@ -176,14 +185,15 @@ OsmStats::OsmStats(const pqxx::result &res)
 void
 OsmStats::dump(void)
 {
-    std::cout << "id: \t\t\t " << id << std::endl;
+    std::cout << "-----------------------------------" << std::endl;
+    std::cout << "changeset id: \t\t " << id << std::endl;
     std::cout << "Roads Added (km): \t " << road_km_added << std::endl;
     std::cout << "Roads Modified (km):\t " <<road_km_modified << std::endl;
     std::cout << "Waterways Added (km): \t " << waterway_km_added << std::endl;
     std::cout << "Waterways Modified (km): " << waterway_km_modified << std::endl;
     std::cout << "Roads Added: \t\t " << roads_added << std::endl;
     std::cout << "Roads Modified: \t " << roads_modified << std::endl;
-    std::cout << "Waterways Added: \t " <<waterways_added << std::endl;
+    std::cout << "Waterways Added: \t " << waterways_added << std::endl;
     std::cout << "Waterways Modified: \t " << waterways_modified << std::endl;
     std::cout << "Buildings added: \t " << buildings_added << std::endl;
     std::cout << "Buildings Modified: \t " << buildings_modified << std::endl;

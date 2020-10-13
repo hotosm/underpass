@@ -59,10 +59,10 @@ class OsmStats
 public:
     OsmStats(const pqxx::result &res);
     OsmStats(pqxx::const_result_iterator &res);
-    OsmStats(void) {};
-#ifdef DEBUG
+    OsmStats(const std::string filespec);
+// #ifdef DEBUG
     void dump(void);
-#endif
+// #endif
 
 private:
     // These are from the OSM Stats 'raw_changesets' table
