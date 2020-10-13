@@ -29,14 +29,31 @@
 
 AUTOMAKE_OPTIONS = dejagnu
 
-AM_CPPFLAGS = -I$(top_srcdir)
-check_PROGRAMS =  hotosm-test tm-test
+AM_CPPFLAGS = -I$(top_srcdir) \
+	-I$(top_srcdir)/hottm \
+	-I$(top_srcdir)/osmstats
+
+check_PROGRAMS =  hotosm-test tm-test stats-test change-test
+
+# Test the OSM DB classes
 hotosm_test_SOURCES = hotosm-test.cc
 hotosm_test_LDFLAGS = -L../..
 hotosm_test_LDADD = -lpqxx -lhotosm -lboost_date_time
 
+# Test the TM DB classes
 tm_test_SOURCES = tm-test.cc
 tm_test_LDFLAGS = -L../..
 tm_test_LDADD = -lpqxx -lhotosm -lboost_date_time
+
+# Test the OSM Stats class
+stats_test_SOURCES = stats-test.cc
+stats_test_LDFLAGS = -L../..
+stats_test_LDADD = -lpqxx -lhotosm -lboost_date_time
+
+# Test the Changeset class
+change_test_SOURCES = change-test.cc
+change_test_CPPFLAGS = -DDATADIR="$(srcdir)" -I$(top_srcdir)
+change_test_LDFLAGS = -L../..
+change_test_LDADD = -lpqxx -lhotosm -lboost_date_time
 
 RUNTESTFLAGS = -xml
