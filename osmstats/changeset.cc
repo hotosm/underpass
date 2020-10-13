@@ -43,7 +43,9 @@
 #include <cstring>
 #include <exception>
 #include <utility>
-
+#include <fstream>
+#include <sstream>
+#include <filesystem>
 
 #include <osmium/io/any_input.hpp>
 #include <osmium/builder/osm_object_builder.hpp>
@@ -64,42 +66,101 @@ using namespace boost::gregorian;
 
 namespace changeset {
 
-/// parse a state file for a replication file
+/// parse the two state file for a replication file, from
+/// disk or memory.
+
+// There are two types of state files with of course different
+// formats for the same basic data. The simplest one is for
+// changesets, which looks like this:
+// ---
+// last_run: 2020-10-08 22:30:01.737719000 +00:00
+// sequence: 4139992
+//
+// The other format is used for minutely change files, and
+// has mnore fields. For now, only the timestamp and sequence
+// number is stored. It looks like this:
+// Fri Oct 09 10:03:04 UTC 2020
+// sequenceNumber=4230996
+// txnMaxQueried=3083073477
+// txnActiveList=
+// txnReadyList=
+// txnMax=3083073477
+// timestamp=2020-10-09T10\:03\:02Z
+//
+// State files are used to know where to start downloading files
 StateFile::StateFile(const std::string &file, bool memory)
 {
     std::string line;
     std::ifstream state;
+    std::stringstream ss;
 
+    // It's a disk file, so read it in.
     if (!memory) {
         try {
-            state.open(file);
+            state.open(file, std::ifstream::in);
         }
         catch(std::exception& e) {
             std::cout << "ERROR opening " << file << std::endl;
             std::cout << e.what() << std::endl;
             // return false;
         }
-        std::getline(state, line);
+        // For a disk file, none of changesets appears to be larger than
+        // a few kilobytes, so read the whole thing into memory without
+        // any buffering.
+        std::filesystem::path path = file;
+        int size = std::filesystem::file_size(path);
+        // std::vector<char> buffer(size);
+        char *buffer = new char[size];
+        // std::memset(buffer, 0, size);
+        state.read(buffer, size);
+        ss << buffer;
+        // We do it this way to save lots of extra buffering
+        //ss.rdbuf()->pubsetbuf(&buffer[0], size);
+        ss << buffer;
+    } else {
+        // It's in memory
+        ss << file;
     }
     
+    std::getline(ss, line, '\n');
+
     // This is a changeset state.txt file
     if (line == "---") {
         // Second line is the last_run timestamp
-        std::getline(state, line);
+        std::getline(ss, line, '\n');
         // The timestamp is the second field
         std::size_t pos = line.find(" ");
-       timestamp = time_from_string(line.substr(pos+1));
+        // 2020-10-08 22:30:01.737719000 +00:00
+        timestamp = time_from_string(line.substr(pos+1));
 
         // Third and last line is the sequence number
-        std::getline(state, line);
+        std::getline(ss, line, '\n');
         pos = line.find(" ");
         // The sequence is the second field
         sequence = std::stol(line.substr(pos+1));
+    } else {
+        std::getline(ss, line, '\n'); // sequenceNumber
+        std::size_t pos = line.find("=");
+        sequence= std::stol(line.substr(pos+1));
+        std::getline(ss, line, '\n'); // txnMaxQueried
+        std::getline(ss, line, '\n'); // txnActiveList
+        std::getline(ss, line, '\n'); // txnReadyList
+        std::getline(ss, line, '\n'); // txnMax
+        std::getline(ss, line, '\n');
+        pos = line.find("=");
+        // The time stamp is in ISO format, ie... 2020-10-09T10\:03\:02
+        // But we have to unescape the colon or boost chokes.
+        std::string tmp = line.substr(pos+1);
+        pos = tmp.find('\\', pos+1);
+        std::string tstamp = tmp.substr(0, pos); // get the date and the hour
+        tstamp += tmp.substr(pos+1, 3); // get minutes
+        pos = tmp.find('\\', pos+1);
+        tstamp += tmp.substr(pos+1, 3); // get seconds
+        timestamp = from_iso_extended_string(tstamp);
     }
-    
-    if (!memory) {
-        state.close();
-    }
+
+    std::cout << sequence << std::endl;
+    state.close();
 }
 
 }       // EOF changeset
