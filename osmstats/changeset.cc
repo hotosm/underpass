@@ -54,6 +54,7 @@
 #include <osmium/handler.hpp>
 #include <osmium/visitor.hpp>
 #include <osmium/io/any_output.hpp>
+#include <glibmm/convert.h> //For Glib::ConvertError
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -212,9 +213,122 @@ ChangeSetFile::readChanges(const std::string &file, bool memory)
     inflateEnd( &strm );
     //. Terminate the data for printing
     outbuffer[strm.total_out] = 0;
+    // FIXME: debug print so we know it's working
     std::cout << outbuffer << std::endl;
 
+    readXML((char *)outbuffer);
     change.close();
+}
+
+void ChangeSetFile::on_start_document()
+{
+  std::cout << "on_start_document()" << std::endl;
+}
+
+void
+ChangeSetFile::on_end_document()
+{
+    std::cout << "on_end_document()" << std::endl;
+}
+
+void
+ChangeSetFile::on_start_element(const Glib::ustring& name,
+                                   const AttributeList& attributes)
+{
+    std::cout << "node name=" << name << std::endl;
+
+    // Print attributes:
+    for(const auto& attr_pair : attributes) {
+        try {
+            std::cout << "  Attribute name=" <<  attr_pair.name << std::endl;
+        }
+        catch(const Glib::ConvertError& ex) {
+            std::cerr << "ChangeSetFile::on_start_element(): Exception caught while converting name for std::cout: " << ex.what() << std::endl;
+        }
+
+        try {
+            std::cout << "    , value= " <<  attr_pair.value << std::endl;
+        }
+        catch(const Glib::ConvertError& ex) {
+            std::cerr << "ChangeSetFile::on_start_element(): Exception caught while converting value for std::cout: " << ex.what() << std::endl;
+        }
+    }
+}
+
+void
+ChangeSetFile::on_end_element(const Glib::ustring& /* name */)
+{
+    std::cout << "on_end_element()" << std::endl;
+}
+
+void
+ChangeSetFile::on_characters(const Glib::ustring& text)
+{
+    try {
+        std::cout << "on_characters(): " << text << std::endl;
+    }
+    catch(const Glib::ConvertError& ex) {
+        std::cerr << "ChangeSetFile::on_characters(): Exception caught while converting text for std::cout: " << ex.what() << std::endl;
+    }
+}
+
+void
+ChangeSetFile::on_comment(const Glib::ustring& text)
+{
+    try {
+        std::cout << "on_comment(): " << text << std::endl;
+    }
+    catch(const Glib::ConvertError& ex) {
+        std::cerr << "ChangeSetFile::on_comment(): Exception caught while converting text for std::cout: " << ex.what() << std::endl;
+    }
+}
+
+void
+ChangeSetFile::on_warning(const Glib::ustring& text)
+{
+    try {
+        std::cout << "on_warning(): " << text << std::endl;
+    }
+    catch(const Glib::ConvertError& ex) {
+        std::cerr << "ChangeSetFile::on_warning(): Exception caught while converting text for std::cout: " << ex.what() << std::endl;
+    }
+}
+
+void
+ChangeSetFile::on_error(const Glib::ustring& text)
+{
+    try {
+        std::cout << "on_error(): " << text << std::endl;
+    }
+    catch(const Glib::ConvertError& ex) {
+        std::cerr << "ChangeSetFile::on_error(): Exception caught while converting text for std::cout: " << ex.what() << std::endl;
+    }
+}
+
+void
+ChangeSetFile::on_fatal_error(const Glib::ustring& text)
+{
+    try {
+        std::cout << "on_fatal_error(): " << text << std::endl;
+    }
+    catch(const Glib::ConvertError& ex) {
+        std::cerr << "ChangeSetFile::on_characters(): Exception caught while converting value for std::cout: " << ex.what() << std::endl;
+    }
+}
+
+bool
+ChangeSetFile::readXML(const std::string xml)
+{
+    // changes[] = ChangeSet();
+    try {
+        ChangeSetFile parser;
+        parser.set_substitute_entities(true);
+        parser.parse_memory(xml);
+    }
+    catch(const xmlpp::exception& ex) {
+        std::cerr << "libxml++ exception: " << ex.what() << std::endl;
+        int return_code = EXIT_FAILURE;
+    }
 }
 
 }       // EOF changeset

@@ -103,23 +103,27 @@ class ChangeSetFile  : public xmlpp::SaxParser
 {
 public:
     bool connect(std::string &database);
-
-    // Used by libxml++
-    // void on_start_document() override;
-    // void on_end_document() override;
-    // void on_start_element(const Glib::ustring& name,
-    //                       const AttributeList& properties) override;
-    // void on_end_element(const Glib::ustring& name) override;
-    // void on_characters(const Glib::ustring& characters) override;
-    // void on_comment(const Glib::ustring& text) override;
-    // void on_warning(const Glib::ustring& text) override;
-    // void on_error(const Glib::ustring& text) override;
-    // void on_fatal_error(const Glib::ustring& text) override;
-
+    ChangeSetFile(void) { };
+    
     // Read a changeset file from disk or memory
     bool readChanges(const std::string &file, bool memory);
+
+    // Parse the XML data
+    bool readXML(const std::string xml);
     
-private:
+    // Used by libxml++
+    void on_start_document() override;
+    void on_end_document() override;
+    void on_start_element(const Glib::ustring& name,
+                          const AttributeList& properties) override;
+    void on_end_element(const Glib::ustring& name) override;
+    void on_characters(const Glib::ustring& characters) override;
+    void on_comment(const Glib::ustring& text) override;
+    void on_warning(const Glib::ustring& text) override;
+    void on_error(const Glib::ustring& text) override;
+    void on_fatal_error(const Glib::ustring& text) override;
+
+protected:
     pqxx::connection *db;
     pqxx::work *worker;
     apidb::QueryStats osmdb;
