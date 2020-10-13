@@ -1,0 +1,7 @@
+#Fri Oct 09 10:03:04 UTC 2020
+sequenceNumber=4230996
+txnMaxQueried=3083073477
+txnActiveList=
+txnReadyList=
+txnMax=3083073477
+timestamp=2020-10-09T10\:03\:02Z
