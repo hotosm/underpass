@@ -81,6 +81,19 @@ private:
     pqxx::work *worker;
     apidb::QueryStats osmdb;
 
+    // These fields come from the changeset replication file
+    long id;
+    ptime created_at;
+    ptime closed_at;
+    bool open;
+    std::string user;
+    long uid;
+    double min_lat;
+    double min_lon;
+    double max_lat;
+    double max_lon;
+    int num_changes;
+    int comments_count;
 };
 
 class StateFile
