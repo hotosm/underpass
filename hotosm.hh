@@ -161,5 +161,6 @@ class BuildOSM : public QueryDB
     osmium::Node& getNode(int id);
 };
 
+
 } // EOF apidb namespace
 #endif  // EOF __HOTOSM_HH__

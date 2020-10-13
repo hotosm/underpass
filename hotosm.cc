@@ -92,6 +92,11 @@ pqxx::result
 QueryDB::query(std::string &select)
 {
     pqxx::result result = worker->exec(select);
+    if (db->is_open()) {
+	result = worker->exec(select);
+    } else {
+	std::cout << "ERROR: database not open!" << std::endl;
+    }
     return result;
 }
 
