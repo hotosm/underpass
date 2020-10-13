@@ -133,7 +133,7 @@ main(int argc, char* argv[])
     }
 
     TestStateFile mem(buf, true);
-    if (statefile.getSequence() == 4139993) {
+    if (mem.getSequence() == 4139993) {
         runtest.pass("Changeset state file from memory");
     } else {
         runtest.fail("Changeset state file from memory");
