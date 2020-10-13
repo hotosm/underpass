@@ -43,6 +43,7 @@
 #include <iostream>
 #include <pqxx/pqxx>
 #include <cstdlib>
+#include "changeset.hh"
 #include <gumbo.h>
 
 #include <osmium/io/any_input.hpp>
@@ -53,9 +54,11 @@
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
-
 using namespace boost::posix_time;
 using namespace boost::gregorian;
+#include <boost/asio/ssl/error.hpp>
+#include <boost/asio/ssl/stream.hpp>
+namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
 
 #include "hotosm.hh"
 
@@ -85,9 +88,6 @@ public:
     Replication(ptime last) { last_run = last; };
     Replication(long seq) { sequence = seq; };
 
-    /// parse a state file for a replication file
-    bool readState(const std::string &file);
-
     /// parse a replication file containing changesets
     bool readChanges(const std::string &file);
 
@@ -95,10 +95,10 @@ public:
     bool mergeToDB();
 
     /// Scan remote directory from planet
-    std::shared_ptr<std::vector<std::string>> scanDirectory(const std::string &dir);
+    // std::shared_ptr<std::vector<std::string>> scanDirectory(const std::string &dir);
     
     /// Download a file from planet
-    std::shared_ptr<std::vector<std::string>> downloadFiles(std::vector<std::string> file, bool html);
+    std::shared_ptr<std::vector<std::string>> downloadFiles(std::vector<std::string> file, bool text);
 
     /// Extract the links in an HTML document. This is used
     /// to find the directories on planet for replication files
@@ -112,6 +112,7 @@ private:
     ptime last_run;
     long sequence;
     int version;
+    std::vector<changeset::StateFile> states;
 };
 
 }       // EOF replication

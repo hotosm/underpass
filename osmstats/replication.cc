@@ -44,9 +44,10 @@
 #include <utility>
 #include <pqxx/pqxx>
 #include <fstream>
-#include <gumbo.h>
 #include <cctype>
+#include <sstream>
 #include <libxml++/libxml++.h>
+#include <gumbo.h>
 
 #include <osmium/io/any_input.hpp>
 #include <osmium/builder/osm_object_builder.hpp>
@@ -58,6 +59,7 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
 using namespace boost::gregorian;
+#include <boost/filesystem.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
@@ -75,42 +77,9 @@ using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 
 #include "hotosm.hh"
 #include "osmstats/replication.hh"
+#include "osmstats/changeset.hh"
 
 namespace replication {
-
-/// parse a state file for a replication file
-bool
-Replication::readState(const std::string &file)
-{
-    std::ifstream state;
-    try {
-        state.open(file);
-    }
-    catch(std::exception& e) {
-        std::cout << "ERROR opening " << file << std::endl;
-        std::cout << e.what() << std::endl;
-        return false;
-    }
-
-    std::string line;
-    // Ignore the first line
-    std::getline(state, line);
-    // Second line is the last_run timestamp
-    std::getline(state, line);
-    // The timestamp is the second field
-    std::size_t pos = line.find(" ");
-    last_run = time_from_string(line.substr(pos+1));
-
-    // Third and last line is the sequence number
-    std::getline(state, line);
-    pos = line.find(" ");
-    // The sequence is the second field
-    sequence = std::stol(line.substr(pos+1));
-
-    state.close();
-
-    return true;
-}
 
 /// parse a replication file containing changesets
 bool
@@ -131,16 +100,14 @@ std::shared_ptr<std::vector<std::string>> &
 Replication::getLinks(GumboNode* node, std::shared_ptr<std::vector<std::string>> &links)
 {
     if (node->type == GUMBO_NODE_ELEMENT) {
-        // auto links =  std::make_shared<std::vector<std::string>>();
-
         GumboAttribute* href;
         if (node->v.element.tag == GUMBO_TAG_A &&
             (href = gumbo_get_attribute(&node->v.element.attributes, "href"))) {
-            // All the directories are a 3 digit number
+            // All the directories are a 3 digit number, and all the files
+            // start with a 3 digit number
             if (std::isalnum(href->value[0]) && std::isalnum(href->value[1])) {
-                links->push_back(href->value);
-            } else {
                 std::cout << href->value << std::endl;
+                links->push_back(href->value);
             }
         }
         GumboVector* children = &node->v.element.children;
@@ -154,7 +121,7 @@ Replication::getLinks(GumboNode* node, std::shared_ptr<std::vector<std::string>>
 
 /// Download a file from planet
 std::shared_ptr<std::vector<std::string>>
-Replication::downloadFiles(std::vector<std::string> files, bool html)
+Replication::downloadFiles(std::vector<std::string> files, bool text)
 {
     // The io_context is required for all I/O
     boost::asio::io_context ioc;
@@ -177,22 +144,23 @@ Replication::downloadFiles(std::vector<std::string> files, bool html)
 
     // Perform the SSL handshake
     stream.handshake(ssl::stream_base::client);
- 
-    // Set up an HTTP GET request message
-    http::request<http::string_body> req{http::verb::get, path, version };
 
-    req.set(http::field::host, server);
-    req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-
-    // Send the HTTP request to the remote host
-    http::write(stream, req);
-
-    // This buffer is used for reading and must be persistant
-    boost::beast::flat_buffer buffer;
-
-    // Receive the HTTP response
     auto links =  std::make_shared<std::vector<std::string>>();
-    if (html) {
+    for (auto it = std::begin(files); it != std::end(files); ++it) {
+        std::cout << "Downloading https://" + server << path + *it << std::endl;
+        // Set up an HTTP GET request message
+        http::request<http::string_body> req{http::verb::get, path + *it, version };
+
+        req.set(http::field::host, server);
+        req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+
+        // Send the HTTP request to the remote host
+        http::write(stream, req);
+
+        // This buffer is used for reading and must be persistant
+        boost::beast::flat_buffer buffer;
+
+        // Receive the HTTP response
         boost::beast::error_code ec;
         http::response_parser<http::string_body> parser;
         read_header(stream, buffer, parser);
@@ -200,16 +168,28 @@ Replication::downloadFiles(std::vector<std::string> files, bool html)
         // Parse the HTML content to extract the hyperlinks to
         // the directories and files
         GumboOutput* output = gumbo_parse(parser.get().body().c_str());
-        getLinks(output->root, links);
+        if (text) {
+            std::cout << parser.get().body() << std::endl;
+            std::string suffix = boost::filesystem::extension(*it);
+            // if (suffix == ".txt") {
+            //     changeset::StateFile(parser.get().body());
+            // }
+        } else {
+            getLinks(output->root, links);
+        }
         gumbo_destroy_output(&kGumboDefaultOptions, output);
-    } else {
-        // Declare a container to hold the response
-        http::response<http::dynamic_body> res;
-        http::read(stream, buffer, res);
-        // Write the message to standard out
-        std::cout << res << std::endl;
+        // } else {
+        // // Declare a container to hold the response
+        // http::response<http::string_body> res;
+        // http::read(stream, buffer, res);
+        // // Write the message to standard out
+        // std::cout << res << std::endl;
+        // }
+        if (files.size() == 1) {
+            path += files[0];
+        }
     }
-    
+
     // Gracefully close the socket
     boost::system::error_code ec;
     stream.shutdown(ec);
