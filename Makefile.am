@@ -34,6 +34,8 @@ SUBDIRS = testsuite
 lib_LTLIBRARIES = libhotosm.la
 instdir = /tmp
 
+BOOST_LIBS = $(BOOST_DATE_TIME_LIB) $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_LOG_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_IOSTREAMS_LIB) $(BOOST_THREAD_LIB)
+
 # inst_HEADERS = hotosm.hh hottm.hh
 libhotosm_la_SOURCES = hotosm.cc hottm.cc \
 	hottm/tmusers.cc \
@@ -52,7 +54,7 @@ EXTRA_DIST = swig/hotosm.py swig/hotosm.java
 bin_PROGRAMS = replicator
 replicator_SOURCES = replicator.cc \
 	osmstats/replication.cc
-replicator_LDADD = libhotosm.la
+replicator_LDADD = libhotosm.la $(BOOST_LIBS)
 
 SWIG_INTERFACE = $(libhotosm_la_SOURCES:.cc=.i)
 SWIG_OBJECTS = $(libhotosm_la_SOURCES:.cc=.o)
