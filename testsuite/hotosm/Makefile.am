@@ -35,6 +35,8 @@ AM_CPPFLAGS = -I$(top_srcdir) \
 
 check_PROGRAMS =  hotosm-test tm-test stats-test change-test
 
+BOOST_LIBS = $(BOOST_DATE_TIME_LIB) $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_LOG_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_IOSTREAMS_LIB) $(BOOST_THREAD_LIB)
+
 # Test the OSM DB classes
 hotosm_test_SOURCES = hotosm-test.cc
 hotosm_test_LDFLAGS = -L../..
@@ -52,8 +54,8 @@ stats_test_LDADD = -lpqxx -lhotosm -lboost_date_time
 
 # Test the Changeset class
 change_test_SOURCES = change-test.cc
-change_test_CPPFLAGS = -DDATADIR="$(srcdir)" -I$(top_srcdir)
+change_test_CPPFLAGS = -DDATADIR=\"$(srcdir)\" -I$(top_srcdir)
 change_test_LDFLAGS = -L../..
-change_test_LDADD = -lpqxx -lhotosm -lboost_date_time
+change_test_LDADD = -lpqxx -lhotosm $(BOOST_LIBS)
 
 RUNTESTFLAGS = -xml
