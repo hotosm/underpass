@@ -48,10 +48,10 @@ using namespace boost::gregorian;
 
 TestState runtest;
 
-class TestCS : public changeset::ChangeSet
+class TestCS : public changeset::ChangeSetFile
 {
     bool testFile(const std::string &filespec) {
-        std::string foo="DATADIR";
+        // std::string basedir="DATADIR";
     };
     bool testMem(const std::string &data);
 };
@@ -121,11 +121,11 @@ public:
 int
 main(int argc, char* argv[])
 {
-    std::string foo=DATADIR;
+    std::string basedir=DATADIR;
 
     // Read the changeset state file
     std::string buf = "---\nlast_run: 2020-10-08 22:30:01.737719000 +00:00\nsequence: 4139993\n";
-    TestStateFile statefile(foo + "/993.state.txt", false);
+    TestStateFile statefile(basedir + "/993.state.txt", false);
     if (statefile.getSequence() == 4139992) {
         runtest.pass("Changeset state file from disk");
     } else {
@@ -140,13 +140,15 @@ main(int argc, char* argv[])
     }
 
     // Read a change file state file
-    TestStateFile minstate(foo + "/996.state.txt", false);
+    TestStateFile minstate(basedir + "/996.state.txt", false);
     if (minstate.getSequence() == 4230996) {
         runtest.pass("Change file state file from disk");
     } else {
         runtest.fail("Change file state file from disk");
     }
     
-    TestCS tests();
+    TestCS tests;
+    tests.readChanges(basedir + "/993.osm.gz", false);
+
 };
 
