@@ -46,6 +46,8 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+// #include <zlib.h>
+#include "gunzip.hh"
 
 #include <osmium/io/any_input.hpp>
 #include <osmium/builder/osm_object_builder.hpp>
@@ -79,7 +81,7 @@ namespace changeset {
 // The other format is used for minutely change files, and
 // has mnore fields. For now, only the timestamp and sequence
 // number is stored. It looks like this:
-// Fri Oct 09 10:03:04 UTC 2020
+// #Fri Oct 09 10:03:04 UTC 2020
 // sequenceNumber=4230996
 // txnMaxQueried=3083073477
 // txnActiveList=
@@ -104,24 +106,22 @@ StateFile::StateFile(const std::string &file, bool memory)
             std::cout << e.what() << std::endl;
             // return false;
         }
-        // For a disk file, none of changesets appears to be larger than
-        // a few kilobytes, so read the whole thing into memory without
-        // any buffering.
+        // For a disk file, none of the state files appears to be larger than
+        // 70 bytes, so read the whole thing into memory without
+        // any iostream buffering.
         std::filesystem::path path = file;
         int size = std::filesystem::file_size(path);
-        // std::vector<char> buffer(size);
         char *buffer = new char[size];
-        // std::memset(buffer, 0, size);
         state.read(buffer, size);
         ss << buffer;
-        // We do it this way to save lots of extra buffering
-        //ss.rdbuf()->pubsetbuf(&buffer[0], size);
-        ss << buffer;
+        // FIXME: We do it this way to save lots of extra buffering
+        // ss.rdbuf()->pubsetbuf(&buffer[0], size);
     } else {
         // It's in memory
         ss << file;
     }
-    
+
+    // Get the first line
     std::getline(ss, line, '\n');
 
     // This is a changeset state.txt file
@@ -138,6 +138,7 @@ StateFile::StateFile(const std::string &file, bool memory)
         pos = line.find(" ");
         // The sequence is the second field
         sequence = std::stol(line.substr(pos+1));
+        // This is a change file state.txt file
     } else {
         std::getline(ss, line, '\n'); // sequenceNumber
         std::size_t pos = line.find("=");
@@ -159,8 +160,61 @@ StateFile::StateFile(const std::string &file, bool memory)
         timestamp = from_iso_extended_string(tstamp);
     }
 
-    std::cout << sequence << std::endl;
     state.close();
+}
+
+// Read a changeset file from disk or memory
+bool
+ChangeSetFile::readChanges(const std::string &file, bool memory)
+{
+    std::ifstream change;
+    int size = 0;
+
+    // It's a disk file, so read it in.
+    unsigned char *buffer;
+    if (!memory) {
+        try {
+            change.open(file,  std::ifstream::in |  std::ifstream::binary);
+        }
+        catch(std::exception& e) {
+            std::cout << "ERROR opening " << file << std::endl;
+            std::cout << e.what() << std::endl;
+            // return false;
+        }
+        // For a disk file, none of the changeset files appears to be larger
+        // than a few kilobytes, so read the whole thing into memory without
+        // any iostream buffering.
+        std::filesystem::path path = file;
+        size = std::filesystem::file_size(path);
+        buffer = new unsigned char[size];
+        change.read((char *)buffer, size);
+    }
+
+    // It's a gzipped XML file, so decompress it for parsing.
+    unsigned char outbuffer[10000];
+    z_stream strm;
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    strm.opaque = Z_NULL;
+    strm.avail_in = 0;
+    strm.next_in = Z_NULL;
+
+    // This is needed for gzip
+    inflateInit2(&strm, 16+MAX_WBITS);
+    strm.avail_in = size;
+    strm.next_in = buffer;
+    // FIXME: This should be calculated, not hardcoded to 3M
+    strm.avail_out = 3000000;
+    strm.next_out = outbuffer;
+
+    int ret = inflate( &strm, Z_FINISH );
+
+    inflateEnd( &strm );
+    //. Terminate the data for printing
+    outbuffer[strm.total_out] = 0;
+    std::cout << outbuffer << std::endl;
+
+    change.close();
 }
 
 }       // EOF changeset

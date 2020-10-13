@@ -40,6 +40,7 @@
 #include <vector>
 #include <array>
 #include <memory>
+#include <map>
 #include <iostream>
 #include <pqxx/pqxx>
 #include <libxml++/libxml++.h>
@@ -60,27 +61,13 @@ using namespace boost::gregorian;
 namespace changeset {
 
 /// This class reads a change file
-class ChangeSet  : public xmlpp::SaxParser
+class ChangeSet
 {
 public:
-    bool connect(std::string &database);
+    ChangeSet(void);
     
-    void on_start_document() override;
-    void on_end_document() override;
-    void on_start_element(const Glib::ustring& name,
-                          const AttributeList& properties) override;
-    void on_end_element(const Glib::ustring& name) override;
-    void on_characters(const Glib::ustring& characters) override;
-    void on_comment(const Glib::ustring& text) override;
-    void on_warning(const Glib::ustring& text) override;
-    void on_error(const Glib::ustring& text) override;
-    void on_fatal_error(const Glib::ustring& text) override;
-
-private:
-    pqxx::connection *db;
-    pqxx::work *worker;
-    apidb::QueryStats osmdb;
-
+    // protected so testcases can access private data
+protected:
     // These fields come from the changeset replication file
     long id;
     ptime created_at;
@@ -106,12 +93,40 @@ public:
     /// Initialize with a state file from disk or memory
     StateFile(const std::string &file, bool memory);
 
-private:
+    // protected so testcases can access private data
+protected:
     ptime timestamp;
     long sequence;
-    
 };
+
+class ChangeSetFile  : public xmlpp::SaxParser
+{
+public:
+    bool connect(std::string &database);
+
+    // Used by libxml++
+    // void on_start_document() override;
+    // void on_end_document() override;
+    // void on_start_element(const Glib::ustring& name,
+    //                       const AttributeList& properties) override;
+    // void on_end_element(const Glib::ustring& name) override;
+    // void on_characters(const Glib::ustring& characters) override;
+    // void on_comment(const Glib::ustring& text) override;
+    // void on_warning(const Glib::ustring& text) override;
+    // void on_error(const Glib::ustring& text) override;
+    // void on_fatal_error(const Glib::ustring& text) override;
+
+    // Read a changeset file from disk or memory
+    bool readChanges(const std::string &file, bool memory);
     
+private:
+    pqxx::connection *db;
+    pqxx::work *worker;
+    apidb::QueryStats osmdb;
+
+    std::string filename;
+    std::map<long, ChangeSet> changes;
+};
 }       // EOF changeset
 
 #endif  // EOF __CHANGESET_HH__
