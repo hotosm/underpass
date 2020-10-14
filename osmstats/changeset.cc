@@ -166,7 +166,25 @@ StateFile::StateFile(const std::string &file, bool memory)
     state.close();
 }
 
-// Read a changeset file from disk or memory
+// Read a changeset file from disk, which may be a huge file
+// Since it is a huge file, process in pieces and don't store
+// anything except in the database
+bool
+ChangeSetFile::importChanges(const std::string &file)
+{
+    std::ifstream change;
+    int size = 0;
+    try {
+        set_substitute_entities(true);
+        parse_file(file);
+    }
+    catch(const xmlpp::exception& ex) {
+        std::cerr << "libxml++ exception: " << ex.what() << std::endl;
+        int return_code = EXIT_FAILURE;
+    }
+    change.close();
+}
+
 bool
 ChangeSetFile::readChanges(const std::string &file, bool memory)
 {
@@ -236,98 +254,138 @@ ChangeSet::dump(void)
     }
     std::cout << "User:        " << user<< std::endl;
     std::cout << "User ID:     " << uid << std::endl;
-
     std::cout << "Min Lat:     " << min_lat << std::endl;
     std::cout << "Min Lon:     " << min_lon << std::endl;
     std::cout << "Max Lat:     " << max_lat << std::endl;
     std::cout << "Max Lon:     " << max_lon << std::endl;
     std::cout << "Changes:     " << num_changes << std::endl;
     std::cout << "Comments:    " << comments_count << std::endl;
-
+    std::cout << "Hashtags:    " << std::endl;
+    std::cout << "Comments:    " << std::endl;
+    std::cout << "Editor:      " << editor << std::endl;
 }
 
 ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes)
 {
-    id = std::stol(attributes[0].value);   // id
-    // The timestamp looks like this, "2020-10-08T21:29:02Z", but we have
-    // to drop the trailing 'Z' as it make boost not parse it.
-    created_at = from_iso_extended_string(attributes[1].value.substr(0,18)); // created_at
+    std::cout << "ChangeSet::ChangeSet(" << attributes.size() << ")" << std::endl;
 
-    // If the changeset is still open, ie... not closed yet, there
-    // is no 'closed_at' field, so shift all indexes.
-    int shift = 0;
-    if (attributes[2].value == "true") {
-        closed_at = not_a_date_time;
-        shift = 1;
-    } else {
-        closed_at = from_iso_extended_string(attributes[2].value.substr(0,18)); // closed_at
+    for(const auto& attr_pair : attributes) {
+        // std::cout << attr_pair.name << ": FOO: " << attr_pair.value << std::endl;
+        try {
+            if (attr_pair.name == "id") {
+                id = std::stol(attr_pair.value);   // id
+                if (id == 232) {
+                    int a = 0;
+                }
+            } else if (attr_pair.name == "created_at") {
+                created_at = from_iso_extended_string(attr_pair.value.substr(0,18));
+            } else if (attr_pair.name == "closed_at") {
+                closed_at = from_iso_extended_string(attr_pair.value.substr(0,18));
+            } else if (attr_pair.name == "open") {
+                if (attr_pair.value == "true") {
+                    open = true;
+                } else {
+                    open = false;
+                }
+            } else if (attr_pair.name == "user") {
+                user = attr_pair.value;
+            } else if (attr_pair.name == "uid") {
+                uid = std::stol(attr_pair.value);
+            } else if (attr_pair.name == "min_lat") {
+                min_lat = std::stod(attr_pair.value);
+            } else if (attr_pair.name == "max_lat") {
+                max_lat = std::stod(attr_pair.value);
+            } else if (attr_pair.name == "min_lon") {
+                min_lon = std::stod(attr_pair.value);
+            } else if (attr_pair.name == "max_lon") {
+                max_lon = std::stod(attr_pair.value);
+            } else if (attr_pair.name == "num_changes") {
+                num_changes = std::stoi(attr_pair.value);
+            } else if (attr_pair.name == "comments_count") {
+            }
+        } catch(const Glib::ConvertError& ex) {
+            std::cerr << "ChangeSet::ChangeSet(): Exception caught while converting values for std::cout: " << ex.what() << std::endl;
+            }
     }
-    if (attributes[3 - shift].value == "true") {
-        open = true;                 // open
-    } else {
-        open = false;                 // open
-    }
-    num_changes = std::stol(attributes[4 - shift].value);        // user
-    user = attributes[5 - shift].value;               // user
-    uid = std::stol(attributes[6 - shift].value);                // uid
-    min_lat = std::stod(attributes[7 - shift].value);            // min_lat
-    max_lat = std::stod(attributes[8 - shift].value);            // max_lat
-    min_lon = std::stod(attributes[9 - shift].value);            // min_lon
-    max_lon = std::stod(attributes[10 - shift].value);           //  max_lon
-    //  num_changes = std::stoi(attributes[11].value);       // num_changes
-    // comments_count = std::stoi((attributes[11].value);    // comments_count
 }
 
 void
 ChangeSetFile::dump(void)
 {
-
+    std::cout << "There are " << changes.size() << " changes" << std::endl;
+    for (auto it = std::begin(changes); it != std::end(changes); ++it) {
+        it->dump();
+    }
 }
 
 void
 ChangeSetFile::on_start_element(const Glib::ustring& name,
                                 const AttributeList& attributes)
 {
-    if (name == "osm") {
-        return;
-    }
     if (name == "changeset") {
         changeset::ChangeSet change(attributes);
-        change.dump();
-    }
-    if (name == "tag") {
-    }
-    // // Print attributes:
-    // for(const auto& attr_pair : attributes) {
-    //     try {
-    //         std::cout << "  Attribute name =" <<  attr_pair.name;
-    //     }
-    //     catch(const Glib::ConvertError& ex) {
-    //         std::cerr << "ChangeSetFile::on_start_element(): Exception caught while converting name for std::cout: " << ex.what() << std::endl;
-    //     }
+        changes.push_back(change);
+        changes.back().dump();
+    } else if (name == "tag") {
+        // We ignore most of the tags, as they're not used for OSM stats.
+        // Processing a tag requires multiple passes through the loop. The
+        // tho tags to look for are 'k' (keyword) and 'v' (value). So when
+        // we see a key we want, we have to wait for the next iteration of
+        // the loop to get the value.
+        bool hashit = false;
+        bool comhit = false;
+        bool cbyhit = false;
+        for(const auto& attr_pair : attributes) {
+            if (attr_pair.name == "k" && attr_pair.value == "hashtags") {
+                hashit = true;
+            }
+            if (attr_pair.name == "k" && attr_pair.value == "comment") {
+                comhit = true;
+            }
+            if (attr_pair.name == "k" && attr_pair.value == "created_by") {
+                cbyhit = true;
+            }
 
-    //     try {
-    //         std::cout << "    , value = " <<  attr_pair.value << std::endl;
-    //     }
-    //     catch(const Glib::ConvertError& ex) {
-    //         std::cerr << "ChangeSetFile::on_start_element(): Exception caught while converting value for std::cout: " << ex.what() << std::endl;
-    //     }
-    // }
+            if (hashit && attr_pair.name == "v") {
+                hashit = false;
+                changes.back().addHashtags(attr_pair.value);
+            }
+            if (comhit && attr_pair.name == "v") {
+                comhit = false;
+                changes.back().addComment(attr_pair.value);
+            }
+            if (cbyhit && attr_pair.name == "v") {
+                cbyhit = false;
+                changes.back().addEditor(attr_pair.value );
+            }
+            // try {
+            //     std::cout << "  Attribute name =" <<  attr_pair.name;
+            // }
+            // catch(const Glib::ConvertError& ex) {
+            //     std::cerr << "ChangeSetFile::on_start_element(): Exception caught while converting name for std::cout: " << ex.what() << std::endl;
+            // }
+            // try {
+            //     std::cout << "    , value = " <<  attr_pair.value << std::endl;
+            // }
+            // catch(const Glib::ConvertError& ex) {
+            //     std::cerr << "ChangeSetFile::on_start_element(): Exception caught while converting value for std::cout: " << ex.what() << std::endl;
+            // }
+        }
+    }
 }
 
 bool
 ChangeSetFile::readXML(const std::string xml)
 {
-    // changes[] = ChangeSet();
     try {
-        ChangeSetFile parser;
-        parser.set_substitute_entities(true);
-        parser.parse_memory(xml);
+        set_substitute_entities(true);
+        parse_memory(xml);
     }
     catch(const xmlpp::exception& ex) {
         std::cerr << "libxml++ exception: " << ex.what() << std::endl;
         int return_code = EXIT_FAILURE;
     }
+    dump();
 }
 
 }       // EOF changeset

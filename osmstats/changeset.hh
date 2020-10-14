@@ -69,6 +69,10 @@ public:
     ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attrs);
 
     void dump(void);
+
+    void addHashtags(const std::string &text) { hashtags.push_back(text); };
+    void addComment(const std::string &text) { comments = text; };
+    void addEditor(const std::string &text) { editor = text; };
     
     // protected so testcases can access private data
 protected:
@@ -85,6 +89,9 @@ protected:
     double max_lon;
     int num_changes = 0;
     int comments_count = 0;
+    std::vector<std::string> hashtags;
+    std::string comments;
+    std::string editor;
 };
 
 class StateFile
@@ -111,6 +118,8 @@ public:
     // Read a changeset file from disk or memory
     bool readChanges(const std::string &file, bool memory);
 
+    bool importChanges(const std::string &file);
+
     // Parse the XML data
     bool readXML(const std::string xml);
     
@@ -126,7 +135,10 @@ protected:
     apidb::QueryStats osmdb;
 
     std::string filename;
-    std::map<long, ChangeSet> changes;
+    // Index by changeset ID
+    // std::map<long, ChangeSet> changes;
+    // No index
+    std::vector<ChangeSet> changes;
 };
 }       // EOF changeset
 
