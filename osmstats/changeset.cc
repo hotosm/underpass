@@ -46,15 +46,17 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
-// #include <zlib.h>
-#include "gunzip.hh"
+#include <deque>
+#include <list>
+#include <zlib.h>
+#include <libxml++/libxml++.h>
 
 #include <osmium/io/any_input.hpp>
 #include <osmium/builder/osm_object_builder.hpp>
 #include <osmium/handler.hpp>
 #include <osmium/visitor.hpp>
 #include <osmium/io/any_output.hpp>
-#include <glibmm/convert.h> //For Glib::ConvertError
+#include <glibmm/convert.h>
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -220,100 +222,97 @@ ChangeSetFile::readChanges(const std::string &file, bool memory)
     change.close();
 }
 
-void ChangeSetFile::on_start_document()
+void
+ChangeSet::dump(void)
 {
-  std::cout << "on_start_document()" << std::endl;
+    std::cout << "-------------------------" << std::endl;
+    std::cout << "Change ID: " << id << std::endl;
+    std::cout << "Created:     " << to_simple_string(created_at)  << std::endl;
+    std::cout << "Closed:      " << to_simple_string(closed_at) << std::endl;
+    if (open) {
+        std::cout << "Open change: true" << std::endl;
+    } else {
+        std::cout << "Open change: false" << std::endl;
+    }
+    std::cout << "User:        " << user<< std::endl;
+    std::cout << "User ID:     " << uid << std::endl;
+
+    std::cout << "Min Lat:     " << min_lat << std::endl;
+    std::cout << "Min Lon:     " << min_lon << std::endl;
+    std::cout << "Max Lat:     " << max_lat << std::endl;
+    std::cout << "Max Lon:     " << max_lon << std::endl;
+    std::cout << "Changes:     " << num_changes << std::endl;
+    std::cout << "Comments:    " << comments_count << std::endl;
+
+}
+
+ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes)
+{
+    id = std::stol(attributes[0].value);   // id
+    // The timestamp looks like this, "2020-10-08T21:29:02Z", but we have
+    // to drop the trailing 'Z' as it make boost not parse it.
+    created_at = from_iso_extended_string(attributes[1].value.substr(0,18)); // created_at
+
+    // If the changeset is still open, ie... not closed yet, there
+    // is no 'closed_at' field, so shift all indexes.
+    int shift = 0;
+    if (attributes[2].value == "true") {
+        closed_at = not_a_date_time;
+        shift = 1;
+    } else {
+        closed_at = from_iso_extended_string(attributes[2].value.substr(0,18)); // closed_at
+    }
+    if (attributes[3 - shift].value == "true") {
+        open = true;                 // open
+    } else {
+        open = false;                 // open
+    }
+    num_changes = std::stol(attributes[4 - shift].value);        // user
+    user = attributes[5 - shift].value;               // user
+    uid = std::stol(attributes[6 - shift].value);                // uid
+    min_lat = std::stod(attributes[7 - shift].value);            // min_lat
+    max_lat = std::stod(attributes[8 - shift].value);            // max_lat
+    min_lon = std::stod(attributes[9 - shift].value);            // min_lon
+    max_lon = std::stod(attributes[10 - shift].value);           //  max_lon
+    //  num_changes = std::stoi(attributes[11].value);       // num_changes
+    // comments_count = std::stoi((attributes[11].value);    // comments_count
 }
 
 void
-ChangeSetFile::on_end_document()
+ChangeSetFile::dump(void)
 {
-    std::cout << "on_end_document()" << std::endl;
+
 }
 
 void
 ChangeSetFile::on_start_element(const Glib::ustring& name,
-                                   const AttributeList& attributes)
+                                const AttributeList& attributes)
 {
-    std::cout << "node name=" << name << std::endl;
+    if (name == "osm") {
+        return;
+    }
+    if (name == "changeset") {
+        changeset::ChangeSet change(attributes);
+        change.dump();
+    }
+    if (name == "tag") {
+    }
+    // // Print attributes:
+    // for(const auto& attr_pair : attributes) {
+    //     try {
+    //         std::cout << "  Attribute name =" <<  attr_pair.name;
+    //     }
+    //     catch(const Glib::ConvertError& ex) {
+    //         std::cerr << "ChangeSetFile::on_start_element(): Exception caught while converting name for std::cout: " << ex.what() << std::endl;
+    //     }
 
-    // Print attributes:
-    for(const auto& attr_pair : attributes) {
-        try {
-            std::cout << "  Attribute name=" <<  attr_pair.name << std::endl;
-        }
-        catch(const Glib::ConvertError& ex) {
-            std::cerr << "ChangeSetFile::on_start_element(): Exception caught while converting name for std::cout: " << ex.what() << std::endl;
-        }
-
-        try {
-            std::cout << "    , value= " <<  attr_pair.value << std::endl;
-        }
-        catch(const Glib::ConvertError& ex) {
-            std::cerr << "ChangeSetFile::on_start_element(): Exception caught while converting value for std::cout: " << ex.what() << std::endl;
-        }
-    }
-}
-
-void
-ChangeSetFile::on_end_element(const Glib::ustring& /* name */)
-{
-    std::cout << "on_end_element()" << std::endl;
-}
-
-void
-ChangeSetFile::on_characters(const Glib::ustring& text)
-{
-    try {
-        std::cout << "on_characters(): " << text << std::endl;
-    }
-    catch(const Glib::ConvertError& ex) {
-        std::cerr << "ChangeSetFile::on_characters(): Exception caught while converting text for std::cout: " << ex.what() << std::endl;
-    }
-}
-
-void
-ChangeSetFile::on_comment(const Glib::ustring& text)
-{
-    try {
-        std::cout << "on_comment(): " << text << std::endl;
-    }
-    catch(const Glib::ConvertError& ex) {
-        std::cerr << "ChangeSetFile::on_comment(): Exception caught while converting text for std::cout: " << ex.what() << std::endl;
-    }
-}
-
-void
-ChangeSetFile::on_warning(const Glib::ustring& text)
-{
-    try {
-        std::cout << "on_warning(): " << text << std::endl;
-    }
-    catch(const Glib::ConvertError& ex) {
-        std::cerr << "ChangeSetFile::on_warning(): Exception caught while converting text for std::cout: " << ex.what() << std::endl;
-    }
-}
-
-void
-ChangeSetFile::on_error(const Glib::ustring& text)
-{
-    try {
-        std::cout << "on_error(): " << text << std::endl;
-    }
-    catch(const Glib::ConvertError& ex) {
-        std::cerr << "ChangeSetFile::on_error(): Exception caught while converting text for std::cout: " << ex.what() << std::endl;
-    }
-}
-
-void
-ChangeSetFile::on_fatal_error(const Glib::ustring& text)
-{
-    try {
-        std::cout << "on_fatal_error(): " << text << std::endl;
-    }
-    catch(const Glib::ConvertError& ex) {
-        std::cerr << "ChangeSetFile::on_characters(): Exception caught while converting value for std::cout: " << ex.what() << std::endl;
-    }
+    //     try {
+    //         std::cout << "    , value = " <<  attr_pair.value << std::endl;
+    //     }
+    //     catch(const Glib::ConvertError& ex) {
+    //         std::cerr << "ChangeSetFile::on_start_element(): Exception caught while converting value for std::cout: " << ex.what() << std::endl;
+    //     }
+    // }
 }
 
 bool

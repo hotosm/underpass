@@ -41,10 +41,11 @@
 #include <array>
 #include <memory>
 #include <map>
+#include <list>
 #include <iostream>
 #include <pqxx/pqxx>
 #include <libxml++/libxml++.h>
-
+#include <deque>
 #include <osmium/io/any_input.hpp>
 #include <osmium/builder/osm_object_builder.hpp>
 #include <osmium/handler.hpp>
@@ -65,22 +66,25 @@ class ChangeSet
 {
 public:
     ChangeSet(void);
+    ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attrs);
+
+    void dump(void);
     
     // protected so testcases can access private data
 protected:
     // These fields come from the changeset replication file
-    long id;
+    long id = 0;
     ptime created_at;
     ptime closed_at;
-    bool open;
+    bool open = false;
     std::string user;
-    long uid;
+    long uid = 0;
     double min_lat;
     double min_lon;
     double max_lat;
     double max_lon;
-    int num_changes;
-    int comments_count;
+    int num_changes = 0;
+    int comments_count = 0;
 };
 
 class StateFile
@@ -103,7 +107,6 @@ class ChangeSetFile  : public xmlpp::SaxParser
 {
 public:
     bool connect(std::string &database);
-    ChangeSetFile(void) { };
     
     // Read a changeset file from disk or memory
     bool readChanges(const std::string &file, bool memory);
@@ -112,16 +115,10 @@ public:
     bool readXML(const std::string xml);
     
     // Used by libxml++
-    void on_start_document() override;
-    void on_end_document() override;
     void on_start_element(const Glib::ustring& name,
                           const AttributeList& properties) override;
-    void on_end_element(const Glib::ustring& name) override;
-    void on_characters(const Glib::ustring& characters) override;
-    void on_comment(const Glib::ustring& text) override;
-    void on_warning(const Glib::ustring& text) override;
-    void on_error(const Glib::ustring& text) override;
-    void on_fatal_error(const Glib::ustring& text) override;
+
+    void dump(void);
 
 protected:
     pqxx::connection *db;
