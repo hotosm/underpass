@@ -82,12 +82,38 @@ QueryOSMStats::connect(std::string &database)
 }
 
 
-// Populate new totals
+// Populate internal storage of a few heavily used data, namely
+// the indexes for each user, country, or hashtag.
 bool
 QueryOSMStats::populate(void)
 {
-    ptime start = time_from_string("2010-07-08 13:29:46");
-    ptime end = second_clock::local_time();
+    // Get the country ID from the raw_countries table
+    std::string query = "SELECT id,name,code FROM raw_countries;";
+    pqxx::result result = worker->exec(query);
+    for (auto it = std::begin(result); it != std::end(result); ++it) {
+        RawCountry rc(it);
+        long id = std::stol(it[0].c_str());
+        countries[id] = rc;
+    };
+
+    query = "SELECT id,name FROM raw_users;";
+    result = worker->exec(query);
+    for (auto it = std::begin(result); it != std::end(result); ++it) {
+        RawUser ru(it);
+        long id = std::stol(it[0].c_str());
+        users[id] = ru;
+    };
+
+    query = "SELECT id,hashtag FROM raw_hashtags;";
+    result = worker->exec(query);
+    for (auto it = std::begin(result); it != std::end(result); ++it) {
+        RawHashtag rh(it);
+        long id = std::stol(it[0].c_str());
+        hashtags[id] = rh;
+    };
+
+    // ptime start = time_from_string("2010-07-08 13:29:46");
+    // ptime end = second_clock::local_time();
     // long roadsAdded = QueryStats::getCount(QueryStats::highway, 0,
     //                                        QueryStats::totals, start, end);
     // long roadKMAdded = QueryStats::getLength(QueryStats::highway, 0,
@@ -124,7 +150,6 @@ QueryOSMStats::getRawChangeSet(std::vector<long> &changeset_ids)
     }
 }
 
-// #ifdef DEBUG
 void
 QueryOSMStats::dump(void)
 {
@@ -132,7 +157,38 @@ QueryOSMStats::dump(void)
         it->dump();
     }
 }
-// #endif
+
+int
+QueryOSMStats::updatedRawHashtags(const std::string &hashtag)
+{
+}
+
+int
+QueryOSMStats::updateUsers(long id, std::string user)
+{
+    std::string sql = "INSERT INTO raw_users VALUES";
+    sql += id + "," + user;
+    sql += ") ON CONFLICT DO NOTHING";
+    pqxx::result result = worker->exec(sql);
+}
+
+int
+QueryOSMStats::updateHashtags(long id, const std::string &tag)
+{
+    std::string sql = "INSERT INTO raw_hashtags VALUES";
+    sql += std::to_string(id) + "," + tag;
+    sql += ") ON CONFLICT DO NOTHING";
+    pqxx::result result = worker->exec(sql);
+}
+
+int
+QueryOSMStats::updateCountries(int id, int country_id)
+{
+    std::string sql = "INSERT INTO raw_hashtags VALUES";
+    sql += std::to_string(id) + "," + std::to_string(country_id);
+    sql += ") ON CONFLICT DO NOTHING";
+    pqxx::result result = worker->exec(sql);
+}
 
 OsmStats::OsmStats(pqxx::const_result_iterator &res)
 {

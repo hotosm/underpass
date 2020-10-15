@@ -60,11 +60,8 @@ public:
     OsmStats(const pqxx::result &res);
     OsmStats(pqxx::const_result_iterator &res);
     OsmStats(const std::string filespec);
-// #ifdef DEBUG
     void dump(void);
-// #endif
-
-private:
+protected:
     // These are from the OSM Stats 'raw_changesets' table
     long id;
     long road_km_added;
@@ -88,25 +85,95 @@ private:
     ptime updated_at;
 };
 
+/// Stores the data from the raw countries table
+class RawCountry
+{
+  public:
+    RawCountry(void) { };
+    RawCountry(pqxx::const_result_iterator &res) {
+        id = res[0].as(int(0));
+        name = res[1].c_str();
+        abbrev = res[2].c_str();
+    }
+    int id;
+    std::string name;
+    std::string abbrev;
+};
+
+/// Stores the data from the raw user table
+class RawUser
+{
+  public:
+    RawUser(void) { };
+    RawUser(pqxx::const_result_iterator &res) {
+        id = res[0].as(int(0));
+        name = res[1].c_str();
+    }
+    int id;
+    std::string name;
+};
+
+/// Stores the data from the raw user table
+class RawHashtag
+{
+  public:
+    RawHashtag(void) { };
+    RawHashtag(pqxx::const_result_iterator &res) {
+        id = res[0].as(int(0));
+        name = res[1].c_str();
+    }
+    int id;
+    std::string name;
+};
+
 class QueryOSMStats : public apidb::QueryStats
 {
   public:
     QueryOSMStats(void);
     /// Connect to the database
     bool connect(std::string &database);
-    /// Populate new totals from the OSM database, and write it
-    /// to the osmstats database. Note this operation is not fast!
+
+    /// Populate internal storage of a few heavily used data, namely
+    /// the indexes for each user, country, or hashtag.
     bool populate(void);
 
-    /// Read changset data from the osmstats database
+    /// Read changeset data from the osmstats database
     bool getRawChangeSet(std::vector<long> &changeset_id);
+
+    int updatedRawHashtags(const std::string &filespec);
+
+    /// Add a user and their ID to the database
+    int updateUsers(long id, std::string user);
+
+    /// Add a hashtag to the database
+    int updateHashtags(long id, const std::string &tag);
+
+    /// Add a hashtag to the database
+    int updateHashtags(long id, std::string tag);
+
+    /// Add a changeset ID and the country it is in
+    int updateCountries(int id, int country_id);
+
+    // Accessor classes to extract country data from the database
+
+    /// Get the country ID. name, and ISO abbreviation from the
+    // raw_countries table.
+    RawCountry &getCountryData(long id) { return countries[id]; }
+    RawUser &getUserData(long id) { return users[id]; }
+    RawHashtag &getHashtagData(long id) { return hashtags[id]; }
+
+    /// Dump internal data, debugging usage only!
     void dump(void);
 private:
     pqxx::connection *db;
     pqxx::work *worker;
 
     std::vector<OsmStats> ostats;
+    std::map<long, RawCountry> countries;
+    std::map<long, RawUser> users;
+    std::map<long, RawHashtag> hashtags;
 };
+
     
 }       // EOF osmstatsdb
 
