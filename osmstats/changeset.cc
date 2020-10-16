@@ -174,6 +174,8 @@ ChangeSetFile::importChanges(const std::string &file)
 {
     std::ifstream change;
     int size = 0;
+    store = false;
+
     try {
         set_substitute_entities(true);
         parse_file(file);
@@ -190,8 +192,8 @@ ChangeSetFile::readChanges(const std::string &file, bool memory)
 {
     std::ifstream change;
     int size = 0;
+    store = false;
 
-    // It's a disk file, so read it in.
     unsigned char *buffer;
     if (!memory) {
         try {
@@ -224,6 +226,12 @@ ChangeSetFile::readChanges(const std::string &file, bool memory)
     inflateInit2(&strm, 16+MAX_WBITS);
     strm.avail_in = size;
     strm.next_in = buffer;
+    if (memory) {
+        strm.next_in = (unsigned char *)file.c_str();
+    } else {
+        strm.next_in = buffer;
+    }
+    
     // FIXME: This should be calculated, not hardcoded to 3M
     strm.avail_out = 3000000;
     strm.next_out = outbuffer;
@@ -259,18 +267,19 @@ ChangeSet::dump(void)
     std::cout << "Max Lat:     " << max_lat << std::endl;
     std::cout << "Max Lon:     " << max_lon << std::endl;
     std::cout << "Changes:     " << num_changes << std::endl;
-    std::cout << "Comments:    " << comments_count << std::endl;
-    std::cout << "Hashtags:    " << std::endl;
-    std::cout << "Comments:    " << std::endl;
+    // std::cout << "Comments:    " << comments_count << std::endl;
+    for (auto it = std::begin(hashtags); it != std::end(hashtags); ++it) {
+        std::cout << "Hashtags:    " << *it <<  std::endl;
+    }
+    if (!comment.empty()) {
+        std::cout << "Comments:    " << comment << std::endl;
+    }
     std::cout << "Editor:      " << editor << std::endl;
 }
 
 ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes)
 {
-    std::cout << "ChangeSet::ChangeSet(" << attributes.size() << ")" << std::endl;
-
     for(const auto& attr_pair : attributes) {
-        // std::cout << attr_pair.name << ": FOO: " << attr_pair.value << std::endl;
         try {
             if (attr_pair.name == "id") {
                 id = std::stol(attr_pair.value);   // id
@@ -325,7 +334,7 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
     if (name == "changeset") {
         changeset::ChangeSet change(attributes);
         changes.push_back(change);
-        changes.back().dump();
+        // changes.back().dump();
     } else if (name == "tag") {
         // We ignore most of the tags, as they're not used for OSM stats.
         // Processing a tag requires multiple passes through the loop. The
@@ -348,11 +357,35 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
 
             if (hashit && attr_pair.name == "v") {
                 hashit = false;
-                changes.back().addHashtags(attr_pair.value);
+                std::size_t pos = attr_pair.value.find('#', 0);
+                if (pos != std::string::npos) {
+                    char *token = std::strtok((char *)attr_pair.value.c_str(), "#;");
+                    while (token != NULL) {
+                        token = std::strtok(NULL, "#;");
+                        if (token) {
+                            changes.back().addHashtags(token);
+                        }
+                    }
+                } else {
+                    changes.back().addHashtags(attr_pair.value);
+                }
             }
+            // Hashtags start with an # of course. The hashtag tag wasn't
+            // added till later, so many older hashtags are in the comment
+            // field instead.
             if (comhit && attr_pair.name == "v") {
                 comhit = false;
                 changes.back().addComment(attr_pair.value);
+                std::size_t pos = attr_pair.value.find('#', 0);
+                if (pos != std::string::npos) {
+                    char *token = std::strtok((char *)attr_pair.value.c_str(), "#;");
+                    while (token != NULL) {
+                        token = std::strtok(NULL, "#;");
+                        if (token) {
+                            changes.back().addHashtags(token);
+                        }
+                    }
+                }
             }
             if (cbyhit && attr_pair.name == "v") {
                 cbyhit = false;

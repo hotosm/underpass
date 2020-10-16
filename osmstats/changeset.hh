@@ -70,12 +70,21 @@ public:
 
     void dump(void);
 
-    void addHashtags(const std::string &text) { hashtags.push_back(text); };
-    void addComment(const std::string &text) { comments = text; };
+    void addHashtags(const std::string &text) {
+        //std::size_t pos = text.rfind(';');
+        int drop = 0;
+        //if (pos != std::string::npos) {
+            drop = 1;
+            //}
+            // std::cout << "TOKE: " << text.substr(0, pos-drop) << std::endl;
+        std::cout << "TOKE: " << text << std::endl;
+        hashtags.push_back(text);
+    };
+    void addComment(const std::string &text) { comment = text; };
     void addEditor(const std::string &text) { editor = text; };
     
     // protected so testcases can access private data
-protected:
+// protected:
     // These fields come from the changeset replication file
     long id = 0;
     ptime created_at;
@@ -90,7 +99,7 @@ protected:
     int num_changes = 0;
     int comments_count = 0;
     std::vector<std::string> hashtags;
-    std::string comments;
+    std::string comment;
     std::string editor;
 };
 
@@ -127,6 +136,9 @@ public:
     void on_start_element(const Glib::ustring& name,
                           const AttributeList& properties) override;
 
+    /// Get one set of change data from the parsed XML data
+    ChangeSet &getChange(long id) { return changes[id]; };
+
     void dump(void);
 
 protected:
@@ -134,6 +146,7 @@ protected:
     pqxx::work *worker;
     apidb::QueryStats osmdb;
 
+    bool store;
     std::string filename;
     // Index by changeset ID
     // std::map<long, ChangeSet> changes;
