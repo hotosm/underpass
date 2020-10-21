@@ -39,6 +39,7 @@
 #include <memory>
 #include <iostream>
 #include <pqxx/pqxx>
+#include "pqxx/nontransaction"
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -46,6 +47,7 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "osmstats/osmstats.hh"
+#include "osmstats/changeset.hh"
 
 using namespace apidb;
 
@@ -60,17 +62,19 @@ QueryOSMStats::QueryOSMStats(void)
 }
 
 bool
-QueryOSMStats::connect(std::string &database)
+QueryOSMStats::connect(const std::string &dbname)
 {
-    if (database.empty()) {
-	database = "osmstats";
+    std::string args;
+    if (dbname.empty()) {
+	args = "dbname = osmstats";
+    } else {
+	args = "dbname = " + dbname;
     }
     
     try {
-	std::string args = "dbname = " + database;
 	db = new pqxx::connection(args);
 	if (db->is_open()) {
-	    worker = new pqxx::work(*db);
+            // worker = new pqxx::work(*db);
 	    return true;
 	} else {
 	    return false;
@@ -81,35 +85,48 @@ QueryOSMStats::connect(std::string &database)
    }    
 }
 
+bool
+QueryOSMStats::applyChange(changeset::ChangeSet &change)
+{
+    change.dump();
+    worker = new pqxx::work(*db);
+    addUser(change.uid, change.user);
+    std::string query;
+    for (auto it = std::begin(change.hashtags); it != std::end(change.hashtags); ++it) {
+        addHashtag(0, *it);
+    }
+    worker->commit();
+    dump();
+}
 
 // Populate internal storage of a few heavily used data, namely
 // the indexes for each user, country, or hashtag.
 bool
 QueryOSMStats::populate(void)
 {
+    worker = new pqxx::work(*db);
     // Get the country ID from the raw_countries table
     std::string query = "SELECT id,name,code FROM raw_countries;";
     pqxx::result result = worker->exec(query);
     for (auto it = std::begin(result); it != std::end(result); ++it) {
         RawCountry rc(it);
-        long id = std::stol(it[0].c_str());
-        countries[id] = rc;
+        // addCountry(rc);
+        // long id = std::stol(it[0].c_str());
+        countries.push_back(rc);
     };
 
     query = "SELECT id,name FROM raw_users;";
     result = worker->exec(query);
     for (auto it = std::begin(result); it != std::end(result); ++it) {
         RawUser ru(it);
-        long id = std::stol(it[0].c_str());
-        users[id] = ru;
+        users.push_back(ru);
     };
 
     query = "SELECT id,hashtag FROM raw_hashtags;";
     result = worker->exec(query);
     for (auto it = std::begin(result); it != std::end(result); ++it) {
         RawHashtag rh(it);
-        long id = std::stol(it[0].c_str());
-        hashtags[id] = rh;
+        hashtags[rh.name] = rh;
     };
 
     // ptime start = time_from_string("2010-07-08 13:29:46");
@@ -124,11 +141,14 @@ QueryOSMStats::populate(void)
     //                                               start, end);
     // long buildingsAdded = QueryStats::getCount(QueryStats::waterway, 0,
     //                                            QueryStats::totals, start, end);
+
+    worker->commit();
 };
 
 bool
 QueryOSMStats::getRawChangeSet(std::vector<long> &changeset_ids)
 {
+    worker = new pqxx::work(*db);
     std::string sql = "SELECT id,road_km_added,road_km_modified,waterway_km_added,waterway_km_modified,roads_added,roads_modified,waterways_added,waterways_modified,buildings_added,buildings_modified,pois_added,pois_modified,editor,user_id,created_at,closed_at,verified,augmented_diffs,updated_at FROM raw_changesets WHERE id=ANY(ARRAY[";
     // Build an array string of the IDs
     for (auto it = std::begin(changeset_ids); it != std::end(changeset_ids); ++it) {
@@ -143,6 +163,7 @@ QueryOSMStats::getRawChangeSet(std::vector<long> &changeset_ids)
     pqxx::result result = worker->exec(sql);
     std::cout << "SIZE: " << result.size() <<std::endl;
     OsmStats stats(result);
+    worker->commit();
 
     for (auto it = std::begin(result); it != std::end(result); ++it) {
         OsmStats os(it);
@@ -159,35 +180,51 @@ QueryOSMStats::dump(void)
 }
 
 int
-QueryOSMStats::updatedRawHashtags(const std::string &hashtag)
+QueryOSMStats::updatedRawUsers(void)
 {
+    // // Avoid the occasional bogus record
+    // if (uid == 0 || user.empty()) {
+    //     return 0;
+    // }
+    // // FIXME: write the list
+    // std::string query = "INSERT INTO raw_users VALUES(";
+    // query += std::to_string(uid) + ",\'" + user;
+    // query += "\') ON CONFLICT DO NOTHING;";
+    // pqxx::result result = worker->exec(query);
+    // // std::cout << query << std::endl;
+    // return result.size();
 }
 
-int
-QueryOSMStats::updateUsers(long id, std::string user)
+/// Add a hashtag so we can look for duplicates
+int addHashtag(int id, const std::string &tag)
 {
-    std::string sql = "INSERT INTO raw_users VALUES";
-    sql += id + "," + user;
-    sql += ") ON CONFLICT DO NOTHING";
-    pqxx::result result = worker->exec(sql);
+
 }
 
+/// Write the list of hashtags to the database
 int
-QueryOSMStats::updateHashtags(long id, const std::string &tag)
+QueryOSMStats::updateRawHashtags(void)
 {
-    std::string sql = "INSERT INTO raw_hashtags VALUES";
-    sql += std::to_string(id) + "," + tag;
-    sql += ") ON CONFLICT DO NOTHING";
-    pqxx::result result = worker->exec(sql);
+//    INSERT INTO keys(name, value) SELECT 'blah', 'true' WHERE NOT EXISTS (SELECT 1 FROM keys WHERE name='blah');
+
+    std::string query = "INSERT INTO raw_hashtags(hashtag) VALUES(";
+    // query += "nextval('raw_hashtags_id_seq'), \'" + tag;
+    // query += "\'" + tag;
+    query += "\') ON CONFLICT DO NOTHING";
+    std::cout << "QUERY: " << query << std::endl;
+    pqxx::result result = worker->exec(query);
+
+    return result.size();
 }
 
 int
 QueryOSMStats::updateCountries(int id, int country_id)
 {
-    std::string sql = "INSERT INTO raw_hashtags VALUES";
-    sql += std::to_string(id) + "," + std::to_string(country_id);
-    sql += ") ON CONFLICT DO NOTHING";
-    pqxx::result result = worker->exec(sql);
+    std::string query = "INSERT INTO raw_countries VALUES";
+    query += std::to_string(id) + "," + std::to_string(country_id);
+    query += ") ON CONFLICT DO NOTHING";
+    pqxx::result result = worker->exec(query);
+    return result.size();
 }
 
 OsmStats::OsmStats(pqxx::const_result_iterator &res)

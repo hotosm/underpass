@@ -41,6 +41,7 @@
 #include <array>
 #include <memory>
 #include <iostream>
+#include <algorithm>
 #include <pqxx/pqxx>
 
 #include <boost/date_time.hpp>
@@ -49,6 +50,7 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "hotosm.hh"
+#include "osmstats/changeset.hh"
 
 using namespace apidb;
 
@@ -61,7 +63,7 @@ public:
     OsmStats(pqxx::const_result_iterator &res);
     OsmStats(const std::string filespec);
     void dump(void);
-protected:
+// protected:
     // These are from the OSM Stats 'raw_changesets' table
     long id;
     long road_km_added;
@@ -95,6 +97,11 @@ class RawCountry
         name = res[1].c_str();
         abbrev = res[2].c_str();
     }
+    RawCountry(int cid, const std::string &country, const std::string &code) {
+        id = cid;
+        name = country;
+        abbrev = code;
+    }
     int id;
     std::string name;
     std::string abbrev;
@@ -109,6 +116,10 @@ class RawUser
         id = res[0].as(int(0));
         name = res[1].c_str();
     }
+    RawUser(long uid, const std::string &tag) {
+        id = uid;
+        name = tag;
+    }
     int id;
     std::string name;
 };
@@ -122,6 +133,10 @@ class RawHashtag
         id = res[0].as(int(0));
         name = res[1].c_str();
     }
+    RawHashtag(int hid, const std::string &tag) {
+        id = hid;
+        name = tag;
+    }
     int id;
     std::string name;
 };
@@ -131,7 +146,7 @@ class QueryOSMStats : public apidb::QueryStats
   public:
     QueryOSMStats(void);
     /// Connect to the database
-    bool connect(std::string &database);
+    bool connect(const std::string &database);
 
     /// Populate internal storage of a few heavily used data, namely
     /// the indexes for each user, country, or hashtag.
@@ -140,16 +155,30 @@ class QueryOSMStats : public apidb::QueryStats
     /// Read changeset data from the osmstats database
     bool getRawChangeSet(std::vector<long> &changeset_id);
 
-    int updatedRawHashtags(const std::string &filespec);
+    /// Add a user to the internal data store
+    int addUser(long id, const std::string &user) {
+        RawUser ru(id, user);
+        users.push_back(ru);
+    };
+    /// Add a country to the internal data store
+    int addCountry(long id, const std::string &name, const std::string &code) {
+        RawCountry rc(id, name, code);
+        countries.push_back(rc);
+    };
+    /// Add a hashtag to the internal data store
+    int addHashtag(int id, const std::string &tag) {
+        RawHashtag rh(id, tag);
+        hashtags[tag] = rh;
+    };
 
-    /// Add a user and their ID to the database
-    int updateUsers(long id, std::string user);
+    /// Add a comment and their ID to the database
+    int addComment(long id, const std::string &user);
 
-    /// Add a hashtag to the database
-    int updateHashtags(long id, const std::string &tag);
+    /// Write the list of hashtags to the database
+    int updatedRawUsers(void);
 
-    /// Add a hashtag to the database
-    int updateHashtags(long id, std::string tag);
+    /// Write the list of hashtags to the database
+    int updateRawHashtags(void);
 
     /// Add a changeset ID and the country it is in
     int updateCountries(int id, int country_id);
@@ -160,7 +189,13 @@ class QueryOSMStats : public apidb::QueryStats
     // raw_countries table.
     RawCountry &getCountryData(long id) { return countries[id]; }
     RawUser &getUserData(long id) { return users[id]; }
-    RawHashtag &getHashtagData(long id) { return hashtags[id]; }
+    // RawHashtag &getHashtag(long id) { return hashtags.find(id); }
+    long getHashtagID(const std::string name) { return hashtags[name].id; }
+
+    /// Apply a change to the database
+    bool applyChange(changeset::ChangeSet &change);
+
+    // void commit(void) { worker->commit(); };
 
     /// Dump internal data, debugging usage only!
     void dump(void);
@@ -169,9 +204,14 @@ private:
     pqxx::work *worker;
 
     std::vector<OsmStats> ostats;
-    std::map<long, RawCountry> countries;
-    std::map<long, RawUser> users;
-    std::map<long, RawHashtag> hashtags;
+    std::vector<RawCountry> countries;
+    std::vector<RawUser> users;
+    std::map<std::string, RawHashtag> hashtags;
+
+    // These are only used to get performance statistics used for
+    // debugging.
+    ptime start;                // Starting timestamop for operation
+    ptime end;                  // Ending timestamop for operation
 };
 
     
