@@ -35,6 +35,7 @@
 #include <libxml++/libxml++.h>
 
 #include "hottm.hh"
+#include "osmstats/osmstats.hh"
 #include "osmstats/changeset.hh"
 #include "osmstats/changefile.hh"
 
@@ -146,9 +147,30 @@ main(int argc, char* argv[])
     } else {
         runtest.fail("Change file state file from disk");
     }
-    
-    TestCS tests;
-    tests.readChanges(basedir + "/993.osm.gz", false);
 
+    osmstats::QueryOSMStats os;
+    TestCS tests;
+
+    os.startTimer();
+    tests.importChanges(basedir + "/foo.osm");
+    std::cout << "Operation took " << os.endTimer() << " milliseconds" << std::endl;
+
+    os.startTimer();
+    tests.readChanges(basedir + "/993.osm.gz", false);
+    std::cout << "Operation took " << os.endTimer() << " milliseconds" << std::endl;
+
+    if (os.connect("mystats")) {
+        runtest.pass("QueryOsmStats::connect()");
+    } else {
+        runtest.fail("QueryOsmStats::connect()");
+    }
+
+    // ChangeSet foo = tests.getChange(10);
+    // os.applyChange(foo);
+    // foo = tests.getChange(15);
+    // os.applyChange(foo);
+    // foo = tests.getChange(20);
+    // os.applyChange(foo);
+    // tests.importChanges("/home/rob/projects/HOT/changesets-reduced.osm");
 };
 

@@ -64,7 +64,7 @@ main(int argc, char *argv[])
         runtest.fail("taskingManager::connect()");
     }
 
-    testos.populate();
+    //testos.populate();
     std::vector<long> cids;
     cids.push_back(57293600);
     cids.push_back(77274475);
@@ -72,22 +72,26 @@ main(int argc, char *argv[])
     cids.push_back(69365434);
     cids.push_back(69365911);
 
+    testos.startTimer();
     testos.getRawChangeSet(cids);
-    // testos.dump();
+    std::cout << "Operation took " << testos.endTimer() << " milliseconds" << std::endl;
+    testos.dump();
     
-    // testos.updateRawHashtags("/work/Mapping/HOT/changesets-latest.osm");
-    // testos.updateRawUsers("/work/Mapping/HOT/changesets-latest.osm");
+    // testos.updateRawHashtags("/work/Mapping/HOT/changesets-reduced.osm");
+    // testos.updateRawUsers("/work/Mapping/HOT/changesets-redu ced.osm");
 
     // extract some data from the database to store in memory for
     // better performance
+    testos.startTimer();
     testos.populate();
-    
-    std::shared_ptr<std::vector<long>> retl;
+    std::cout << "Operation took " << testos.endTimer() << " milliseconds" << std::endl;
+
+    // Test if the Country data works
     RawCountry rc = testos.getCountryData(73);
     if (rc.id == 73) {
         runtest.pass("Country ID");
     } else {
-        runtest.fail("ountry ID");        
+        runtest.fail("Country ID");        
     }
     
     if (rc.name == "Belize") {
@@ -102,6 +106,7 @@ main(int argc, char *argv[])
         runtest.fail("Country Code");
     }
 
+    // Test if the User data works
     RawUser ru = testos.getUserData(154981);
     if (ru.id == 154981) {
         runtest.pass("User ID");
@@ -114,16 +119,10 @@ main(int argc, char *argv[])
         runtest.fail("User Name");
     }
 
-    RawHashtag rh = testos.getHashtagData(73);
-    if (rh.id == 73) {
+    long id = testos.getHashtagID("logging-roads-6");
+    if (id == 73) {
         runtest.pass("Hashtag ID");
     } else {
         runtest.fail("Hashtag ID");
-    }
-    
-    if (rh.name == "logging-roads-6") {
-        runtest.pass("Hashtag Name");
-    } else {
-        runtest.fail("Hashtag Name");
     }
 }
