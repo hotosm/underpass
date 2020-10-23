@@ -39,6 +39,7 @@
 #include <memory>
 #include <iostream>
 #include <pqxx/pqxx>
+#include <libxml++/libxml++.h>
 
 // The Dump handler
 #include <osmium/handler/dump.hpp>

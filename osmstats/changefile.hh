@@ -156,8 +156,8 @@ private:
             }
         }
     }    
-    pqxx::connection *db;
-    pqxx::work *worker;
+    // pqxx::connection *db;
+    // pqxx::work *worker;
     apidb::QueryStats osmdb;
     osmium::memory::Buffer& m_buffer;    
 };
