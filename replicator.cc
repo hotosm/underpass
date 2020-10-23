@@ -43,6 +43,8 @@
 #include <sstream>
 #include <vector>
 #include <cassert>
+#include <deque>
+#include <list>
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -52,6 +54,9 @@ using namespace boost::gregorian;
 
 using namespace boost;
 namespace opts = boost::program_options;
+
+#include "osmstats/changeset.hh"
+#include "osmstats/replication.hh"
 
 // A helper function to simplify the main part.
 template<class T>
@@ -64,10 +69,16 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 int
 main(int argc, char *argv[])
 {
+    long sequence = 0;
+    std::string server;
+    bool encrypted = false;
+    ptime timestamp(not_a_date_time);
+
     try {
         opts::options_description desc("Allowed options");
         desc.add_options()
             ("help,h", "display help")
+            ("encrypted,e", "enable HTTPS")
             ("verbose,v", opts::value<int>()->implicit_value(1),"enable verbosity")
             ("sequence,s", opts::value<int>(), "Sequence number")
             ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp")
@@ -86,30 +97,50 @@ main(int argc, char *argv[])
             return 0;
         }
 
+        if (vm.count("encrypted")) {
+            encrypted = true;
+        }
+
         if (vm.count("sequence")) {
             std::cout << "Sequence is " << vm["sequence"].as<int>() << std::endl;
         }
 
         if (vm.count("url")) {
-            std::cout << "Include paths are: "
-                      << vm["url"].as<std::vector<std::string> >() << "\n";
+            // std::cout << "URL is: " << vm["url"].as<std::vector<std::string> >() << "\n";
         }
 
         if (vm.count("timestamp")) {
-            std::cout << "Timestamp is: "
-                      << vm["timestamp"].as<std::vector<std::string> >() << "\n";
+            // std::cout << "Timestamp is: " << vm["timestamp"].as<std::vector<std::string> >() << "\n";
+            timestamp = time_from_string(vm["timestamp"].as<std::vector<std::string> >()[0]);
         }
-        
+
+        // FIXME: add logging
         if (vm.count("verbose")) {
             std::cout << "Verbosity enabled.  Level is " << vm["verbose"].as<int>() << std::endl;
         }
-
     }
     catch(std::exception& e)
     {
         std::cout << e.what() << "\n";
         return 1;
     }
+
+    if (sequence > 0 and !timestamp.is_not_a_date_time()) {
+        std::cout << "ERROR: Can only specify a timestamp or a sequence" << std::endl;
+        exit(1);
+    }
+
+    replication::Replication rep(server, timestamp, sequence);
+
+    std::vector<std::string> files;
+    files.push_back("004/139/998.state.txt");
+    std::shared_ptr<std::vector<std::string>> links = rep.downloadFiles(files, true);
+    std::cout << "Got "<< links->size() << " directories" << std::endl;
+    // links = rep.downloadFiles(*links, true);
+    // std::cout << "Got "<< links->size() << " directories" << std::endl;
+
+    changeset::StateFile foo("/tmp/foo1.txt", false);
+    changeset::StateFile bar("/tmp/foo2.txt", false);
     return 0;
 }
 
