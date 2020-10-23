@@ -56,6 +56,7 @@ using namespace apidb;
 
 namespace osmstats {
 
+
 class OsmStats
 {
 public:
@@ -159,16 +160,19 @@ class QueryOSMStats : public apidb::QueryStats
     int addUser(long id, const std::string &user) {
         RawUser ru(id, user);
         users.push_back(ru);
+        return users.size();
     };
     /// Add a country to the internal data store
     int addCountry(long id, const std::string &name, const std::string &code) {
         RawCountry rc(id, name, code);
         countries.push_back(rc);
+        return countries.size();
     };
     /// Add a hashtag to the internal data store
     int addHashtag(int id, const std::string &tag) {
         RawHashtag rh(id, tag);
         hashtags[tag] = rh;
+        return hashtags.size();
     };
 
     /// Add a comment and their ID to the database

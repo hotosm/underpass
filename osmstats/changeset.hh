@@ -58,11 +58,11 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "hotosm.hh"
-#include "osmstats/osmstats.hh"
+//#include "osmstats/osmstats.hh"
 
 namespace changeset {
 
-enum objtype {building, waterway, highway, poi);
+// enum objtype {building, waterway, highway, poi);
 
 /// This class reads a change file
 class ChangeSet
@@ -97,7 +97,7 @@ public:
     std::vector<std::string> hashtags;
     std::string comment;
     std::string editor;
-    objtype type;
+//    objtype type;
 };
 
 class StateFile

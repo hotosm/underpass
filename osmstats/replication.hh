@@ -61,6 +61,8 @@ using namespace boost::gregorian;
 namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
 
 #include "hotosm.hh"
+#include "osmstats/changeset.hh"
+// #include "osmstats/osmstats.hh"
 
 namespace replication {
 
