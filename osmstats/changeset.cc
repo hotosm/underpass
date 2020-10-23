@@ -67,6 +67,7 @@ using namespace boost::gregorian;
 #include <boost/iostreams/filter/gzip.hpp>
 
 #include "hotosm.hh"
+#include "osmstats/osmstats.hh"
 #include "osmstats/changeset.hh"
 
 namespace changeset {
@@ -176,6 +177,8 @@ ChangeSetFile::importChanges(const std::string &file)
     int size = 0;
     store = false;
 
+    // FIXME: this should really use CHUNKS, since the files can
+    // many gigs.
     try {
         set_substitute_entities(true);
         parse_file(file);
@@ -184,6 +187,13 @@ ChangeSetFile::importChanges(const std::string &file)
         std::cerr << "libxml++ exception: " << ex.what() << std::endl;
         int return_code = EXIT_FAILURE;
     }
+
+    osmstats::QueryOSMStats ostats;
+    ostats.connect("mystats");  // FIXME: debugging hack!
+    for (auto it = std::begin(changes); it != std::end(changes); ++it) {
+        ostats.applyChange(*it);
+    }
+    
     change.close();
 }
 
@@ -334,7 +344,8 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
     if (name == "changeset") {
         changeset::ChangeSet change(attributes);
         changes.push_back(change);
-        // changes.back().dump();
+        std::cout << "FIXME: " << changes.size() << std::endl;
+        changes.back().dump();
     } else if (name == "tag") {
         // We ignore most of the tags, as they're not used for OSM stats.
         // Processing a tag requires multiple passes through the loop. The
@@ -418,7 +429,7 @@ ChangeSetFile::readXML(const std::string xml)
         std::cerr << "libxml++ exception: " << ex.what() << std::endl;
         int return_code = EXIT_FAILURE;
     }
-    dump();
+    // dump();
 }
 
 }       // EOF changeset

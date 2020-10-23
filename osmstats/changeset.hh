@@ -58,8 +58,11 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "hotosm.hh"
+#include "osmstats/osmstats.hh"
 
 namespace changeset {
+
+enum objtype {building, waterway, highway, poi);
 
 /// This class reads a change file
 class ChangeSet
@@ -71,13 +74,6 @@ public:
     void dump(void);
 
     void addHashtags(const std::string &text) {
-        //std::size_t pos = text.rfind(';');
-        int drop = 0;
-        //if (pos != std::string::npos) {
-            drop = 1;
-            //}
-            // std::cout << "TOKE: " << text.substr(0, pos-drop) << std::endl;
-        std::cout << "TOKE: " << text << std::endl;
         hashtags.push_back(text);
     };
     void addComment(const std::string &text) { comment = text; };
@@ -101,6 +97,7 @@ public:
     std::vector<std::string> hashtags;
     std::string comment;
     std::string editor;
+    objtype type;
 };
 
 class StateFile
@@ -122,11 +119,10 @@ protected:
 class ChangeSetFile  : public xmlpp::SaxParser
 {
 public:
-    bool connect(std::string &database);
-    
-    // Read a changeset file from disk or memory
+    /// Read a changeset file from disk or memory into internal storage
     bool readChanges(const std::string &file, bool memory);
 
+    /// Import a changeset file from disk and initialize the database
     bool importChanges(const std::string &file);
 
     // Parse the XML data
@@ -142,8 +138,6 @@ public:
     void dump(void);
 
 protected:
-    pqxx::connection *db;
-    pqxx::work *worker;
     apidb::QueryStats osmdb;
 
     bool store;
