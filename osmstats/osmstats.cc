@@ -88,15 +88,41 @@ QueryOSMStats::connect(const std::string &dbname)
 bool
 QueryOSMStats::applyChange(changeset::ChangeSet &change)
 {
-    change.dump();
+    // change.dump();
     worker = new pqxx::work(*db);
+    // Add user data
     addUser(change.uid, change.user);
-    std::string query;
+    std::string query = "INSERT INTO raw_users VALUES(";
+    query += std::to_string(change.uid) + ",\'" + change.user;
+    query += "\') ON CONFLICT DO NOTHING;";
+    pqxx::result result = worker->exec(query);
+
+    // Add hashtags. The id is added by the database
     for (auto it = std::begin(change.hashtags); it != std::end(change.hashtags); ++it) {
-        addHashtag(0, *it);
+        bool key_exists = hashtags.find(*it) != hashtags.end();
+        if (!key_exists) { 
+            std::cout << *it << " doesn't exist " << std::endl;
+            addHashtag(0, *it);
+            query = "INSERT INTO raw_hashtags (id, hashtag) VALUES(nextval(\'raw_hashtags_id_seq\'),\'";
+            query += *it + "\') ON CONFLICT DO NOTHING;";
+            pqxx::result result = worker->exec(query);
+            addHashtag(0, *it);
+        } else {
+            std::cout << *it << " does exist " << std::endl;
+        }
     }
+
+    // Add changeset data
+    // road_km_added | road_km_modified | waterway_km_added | waterway_km_modified | roads_added | roads_modified | waterways_added | waterways_modified | buildings_added | buildings_modified | pois_added | pois_modified | verified | ugmented_diffs | updated_at
+    query = "INSERT INTO raw_changesets (id, editor, user_id, created_at, closed_at) VALUES(";
+    query += std::to_string(change.id) + ",\'" + change.editor + "\',\'" + std::to_string(change.uid) + "\',\'";
+    query += to_simple_string(change.created_at) + "\',\'" + to_simple_string(change.closed_at) + "\')";
+    query += " ON CONFLICT DO NOTHING;";
+    std::cout << "QUERY: " << query << std::endl;
+    result = worker->exec(query);
+
+    // Commit the results to the database
     worker->commit();
-    dump();
 }
 
 // Populate internal storage of a few heavily used data, namely
@@ -177,28 +203,6 @@ QueryOSMStats::dump(void)
     for (auto it = std::begin(ostats); it != std::end(ostats); ++it) {
         it->dump();
     }
-}
-
-int
-QueryOSMStats::updatedRawUsers(void)
-{
-    // // Avoid the occasional bogus record
-    // if (uid == 0 || user.empty()) {
-    //     return 0;
-    // }
-    // // FIXME: write the list
-    // std::string query = "INSERT INTO raw_users VALUES(";
-    // query += std::to_string(uid) + ",\'" + user;
-    // query += "\') ON CONFLICT DO NOTHING;";
-    // pqxx::result result = worker->exec(query);
-    // // std::cout << query << std::endl;
-    // return result.size();
-}
-
-/// Add a hashtag so we can look for duplicates
-int addHashtag(int id, const std::string &tag)
-{
-
 }
 
 /// Write the list of hashtags to the database

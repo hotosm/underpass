@@ -137,7 +137,7 @@ class RawHashtag
         id = hid;
         name = tag;
     }
-    int id;
+    int id = 0;
     std::string name;
 };
 
@@ -175,9 +175,6 @@ class QueryOSMStats : public apidb::QueryStats
     int addComment(long id, const std::string &user);
 
     /// Write the list of hashtags to the database
-    int updatedRawUsers(void);
-
-    /// Write the list of hashtags to the database
     int updateRawHashtags(void);
 
     /// Add a changeset ID and the country it is in
@@ -196,6 +193,15 @@ class QueryOSMStats : public apidb::QueryStats
     bool applyChange(changeset::ChangeSet &change);
 
     // void commit(void) { worker->commit(); };
+
+    void startTimer(void) {
+        start = boost::posix_time::microsec_clock::local_time();
+    };
+    long endTimer(void) {
+        end = boost::posix_time::microsec_clock::local_time();
+        boost::posix_time::time_duration delta = end - start;
+        return delta.total_milliseconds();
+    };
 
     /// Dump internal data, debugging usage only!
     void dump(void);
