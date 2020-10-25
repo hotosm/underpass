@@ -116,19 +116,30 @@ GeoUtil::readFile(const std::string &filespec, bool multi)
                 const OGRGeometry* geom = feature->GetGeometryRef();
                 if(NULL != geom) {
                     int eType = wkbFlatten(layer->GetGeomType());
-                    std::cout << "POLY" << std::endl;
-                    char* wkt1 = NULL;
-                    const OGRMultiPolygon *mp = geom->toMultiPolygon();
-                    for (auto it = mp->begin(); it != mp->end(); ++it) {
-                        const OGRPolygon *bar = *it;
-                        bar->exportToWkt(&wkt1);
-                        std::cout << wkt1 << std::endl;
-                        boost::geometry::read_wkt(wkt1, boundary);
-                        CPLFree(wkt1);
-                        if (!multi) {
-                            break;
+                    // std::cout << "POLY: " << field.GetName() << " : " << field.GetAsString() << std::endl;
+                    std::string value = field.GetAsString();
+                    if (strcmp(field.GetName(), "other_tags") == 0) {
+                        std::size_t pos = value.find(',', 0);
+                        if (pos != std::string::npos) {
+                            char *token = std::strtok((char *)value.c_str(), ",");
+                            while (token != NULL) {
+                                token = std::strtok(NULL, ",");
+                                if (token) {
+                                    std::cout << "FIXME: " << token << std::endl;
+                                }
+                            }
                         }
                     }
+                    char* wkt1 = NULL;
+                    const OGRMultiPolygon *mp = geom->toMultiPolygon();
+                    if (!multi) {
+                        mp->exportToWkt(&wkt1);
+                        // boost::geometry::read_wkt(wkt1, boundary);
+                    } else {
+                        mp->exportToWkt(&wkt1);
+                        boost::geometry::read_wkt(wkt1, countries);
+=                    }
+                    CPLFree(wkt1);
                 }
             }
         }
@@ -153,6 +164,9 @@ GeoUtil::dump(void)
 {
     std::cout << "Boundary: " << boost::geometry::wkt(boundary) << std::endl;
     std::cout << "Countries: " << boost::geometry::wkt(countries) << std::endl;
+    // for (auto it = std::begin(countries); it != std::end(countries); ++it) {
+    //     std::cout << "Countries: " << boost::geometry::wkt(countries) << std::endl;
+    // }
 }
 
 }       // EOF geoutil

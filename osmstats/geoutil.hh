@@ -57,8 +57,34 @@ using namespace boost::gregorian;
 #include "osmstats/osmstats.hh"
 #include "ogrsf_frmts.h"
 
-
 namespace geoutil {
+
+typedef boost::geometry::model::d2::point_xy<double> point_t;
+typedef boost::geometry::model::polygon<point_t> polygon_t;
+
+class GeoCountry
+{
+public:
+    GeoCountry(void);
+    GeoCountry(std::string name, std::string iso_a2, std::string iso_a3,
+               std::string region, std::string subregion,
+               boost::geometry::model::polygon<point_t>);
+    void addTag(const std::string name);
+    void addBoundary(boost::geometry::model::polygon<point_t> boundary);
+private:
+    // Default name
+    std::string name;
+    // International names
+    std::vector<std::string> names;
+    // 2 letter ISO abbreviation
+    std::string iso_a2;
+    // 3 letter ISO abbreviation
+    std::string iso_a3;
+    std::string region;
+    std::string subregion;
+    // The boundary
+    boost::geometry::model::polygon<point_t> boundary;
+};
 
 class GeoUtil
 {
@@ -66,9 +92,6 @@ public:
     GeoUtil(void) {
         GDALAllRegister();
     };
-    typedef boost::geometry::model::d2::point_xy<double> point_t;
-    typedef boost::geometry::model::polygon<point_t> polygon_t;
-
     /// Read a file into internal storage so boost::geometry functions
     /// can be used to process simple geospatial calculations instead
     /// of using postgres. This data is is used to determine which
