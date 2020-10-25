@@ -43,7 +43,8 @@ libhotosm_la_SOURCES = hotosm.cc hottm.cc \
 	hottm/tmprojects.cc \
 	osmstats/osmstats.cc \
 	osmstats/changeset.cc \
-	osmstats/changefile.cc
+	osmstats/changefile.cc \
+	osmstats/geoutil.cc
 libhotosm_la_LDFLAGS = -avoid-version
 SWIGdir = swig
 
