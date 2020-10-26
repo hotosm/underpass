@@ -69,14 +69,23 @@ main(int argc, char* argv[])
     tgu.readFile(basedir + "/geoboundaries.osm", true);
 
     // See if it worked, which it needs to if any other tests will work
-    tgu.dump();
-    
-    // TestStateFile statefile(basedir + "/993.state.txt", false);
-    // if (statefile.getSequence() == 4139992) {
-    //     runtest.pass("Changeset state file from disk");
-    // } else {
-    //     runtest.fail("Changeset state file from disk");
-    // }
+    // tgu.dump();
 
+    // Changesets have a bounding box, so we want to find the
+    // country the changes were made in.
+    double min_lat = -2.8042325;
+    double min_lon = 29.5842812;
+    double max_lat = -2.7699398;
+    double max_lon = 29.6012844;
+
+    tgu.startTimer();
+    GeoCountry &country = tgu.inCountry(max_lat, max_lon, min_lat, min_lon);
+    tgu.endTimer();
+    if (country.getName() == "Rwanda" || country.getAbbreviation(2) == "RW") {
+        runtest.pass("GeoUtil::inCountry()");
+    } else {
+        runtest.fail("GeoUtil::inCountry()");
+    }
+    country.dump();
 };
 

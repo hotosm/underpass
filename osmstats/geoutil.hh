@@ -65,17 +65,38 @@ typedef boost::geometry::model::polygon<point_t> polygon_t;
 class GeoCountry
 {
 public:
-    GeoCountry(void);
+    GeoCountry(void) {};
     GeoCountry(std::string name, std::string iso_a2, std::string iso_a3,
                std::string region, std::string subregion,
                boost::geometry::model::polygon<point_t>);
-    void addTag(const std::string name);
-    void addBoundary(boost::geometry::model::polygon<point_t> boundary);
+
+    /// Set the name field
+    void setName(const std::string &field) { name = field; };
+
+    /// extract the tags from the string for all the other metadata
+    int extractTags(const std::string &other);
+
+    /// Add the boundary coordinates from a WKT string
+    void addBoundary(const std::string &border) {
+        boost::geometry::read_wkt(border, boundary);
+    };
+
+    const std::string &getName(void) { return name; };
+    const std::string &getAbbreviation(int width) {
+        if (width == 2) {
+            return iso_a2;
+        } else {
+            return iso_a3;
+        }
+    };
+    bool inCountry(double max_lat, double max_lon, double min_lat, double min_lon);
+
+    void dump(void);
 private:
     // Default name
     std::string name;
     // International names
-    std::vector<std::string> names;
+    std::map<std::string, std::string> names;
     // 2 letter ISO abbreviation
     std::string iso_a2;
     // 3 letter ISO abbreviation
@@ -83,7 +104,8 @@ private:
     std::string region;
     std::string subregion;
     // The boundary
-    boost::geometry::model::polygon<point_t> boundary;
+    // boost::geometry::model::polygon<point_t> boundary;
+    polygon_t boundary;
 };
 
 class GeoUtil
@@ -111,9 +133,28 @@ public:
     /// for calulations. This boundary can always be modified to be larger.
     bool focusArea(double lat, double lon);
 
+    /// See if the given location can be identified
+    GeoCountry &inCountry(double max_lat, double max_lon, double min_lat, double min_lon);
+
+    void startTimer(void) {
+        start = boost::posix_time::microsec_clock::local_time();
+    };
+    long endTimer(void) {
+        end = boost::posix_time::microsec_clock::local_time();
+        boost::posix_time::time_duration delta = end - start;
+        std::cout << "Operation took " << delta.total_milliseconds() << " milliseconds" << std::endl;
+
+        return delta.total_milliseconds();
+    };
+
     /// Dump internal data storage for debugging purposes
     void dump(void);
 private:
+    // These are just for performance testing
+    ptime start;                // Starting timestamop for operation
+    ptime end;                  // Ending timestamop for operation
+
+    //int extractTags(const std::string &other);
     std::string dbserver;
     std::string database;
     pqxx::connection *db;
@@ -121,7 +162,8 @@ private:
     /// This is a polygon boundary to use to only apply changesets
     /// within it.
     boost::geometry::model::polygon<point_t> boundary;
-    boost::geometry::model::multi_polygon<polygon_t> countries;
+    // boost::geometry::model::multi_polygon<polygon_t> boundaries;
+    std::vector<GeoCountry> countries;
 };
     
 }       // EOF geoutil
