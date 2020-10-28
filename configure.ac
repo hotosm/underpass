@@ -47,6 +47,7 @@ CPPFLAGS=$(pkg-config --cflags python)
 CPPFLAGS+=" $(pkg-config --cflags libpqxx)"
 CPPFLAGS+=" $(pkg-config --cflags glibmm-2.4)"
 CPPFLAGS+=" $(pkg-config --cflags gumbo)"
+CPPFLAGS+=" $(pkg-config --cflags gdal)"
 CPPFLAGS+=" $(pkg-config --cflags webkit2gtk-4.0)"
 
 dnl This is a C++ project only
@@ -78,6 +79,7 @@ LIBS+=" $(pkg-config --libs webkit2gtk-4.0)"
 LIBS+=" $(pkg-config --libs openssl)"
 LIBS+=" $(pkg-config --libs gumbo)"
 LIBS+=" $(pkg-config --libs zlib)"
+LIBS+=" $(pkg-config --libs gdal)"
 LIBS+=" $(pkg-config --libs glibmm-2.4)"
 dnl Debian Buster and Ubuntu Focal ship 2.6, Fedora ships 3,.0
 dnl The version in Focal is broken, so either build libxml++-3.0
