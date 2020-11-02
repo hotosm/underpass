@@ -145,19 +145,8 @@ OSMHandler::way(const osmium::Way& way)
     }
     refs = refs.substr(0, refs.size()-2);
         
-    // Setup the nodes
-    std::string refs;
-    for (const osmium::NodeRef& nref : way.nodes()) {
-        refs += std::to_string(nref.ref()) + ", ";
-    }
-    refs = refs.substr(0, refs.size()-2);
-        
     // pgsnapshot.ways
     // id | version | user_id | tstamp | changeset_id | tags | nodes | bbox | linestring
-    //
-    // pgsnapshot.way_nodes
-    // way_id | node_id | sequence_id
-    // std::string query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes,bbox,linestring) VALUES(";
     std::string query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes) VALUES(";
     query += std::to_string(way.id()) + ",";
     query += std::to_string(way.version());
@@ -188,10 +177,23 @@ OSMHandler::way(const osmium::Way& way)
 
     worker = new pqxx::work(*db);
     pqxx::result result = worker->exec(query);
-    int i = 0;
     for (const osmium::NodeRef& nref : way.nodes()) {
         std::cout << "ref:  " << nref.ref() << std::endl;
     }
+
+    // pgsnapshot.way_nodes
+    // way_id | node_id | sequence_id
+    // std::string query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes,bbox,linestring) VALUES(";
+    int i = 0;
+    for (const osmium::NodeRef& nref : way.nodes()) {
+        query = "INSERT INTO way_nodes(way_id, node_id, sequence_id) VALUES(";
+        query += std::to_string(way.id());
+        query += ", " + std::to_string(nref.ref());
+        query += ", " + std::to_string(i++) + ");";
+        std::cout << "Query: " << query << std::endl;
+        pqxx::result result = worker->exec(query);
+    }
+
     worker->commit();
 
     addUser(way.uid(), way.user());
