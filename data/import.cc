@@ -159,23 +159,19 @@ OSMHandler::way(const osmium::Way& way)
     linestring_t lines;
     for (const osmium::NodeRef& nref : way.nodes()) {
         std::cout << "ref:  " << nref.ref() << std::endl;
-
         // If the location data is bad, drop it
         if (cache[nref.ref()]) {
             boost::geometry::append(lines, point_t(cache[nref.ref()].lat(), cache[nref.ref()].lon()));
+        } else {
+            std::cout << "ERROR: bad location data in " << nref.ref() <<  std::endl;
         }
     }
-    // FIXME: this whole methnod should probably use ostringstream
-    boost::geometry::model::box<point_t> box;
-    boost::geometry::envelope(lines, box);
-    std::ostringstream bbox;
-    bbox << boost::geometry::wkt(box);
-    std::cout << "Box: " << boost::geometry::wkt(box) << std::endl;
 
     // pgsnapshot.ways
     // id | version | user_id | tstamp | changeset_id | tags | nodes | bbox | linestring
     // std::string query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes,bbox,linestring) VALUES(";
-    std::string query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes,bbox,linestring) VALUES(";
+    std::string query;
+    query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes,bbox,linestring) VALUES(";
     query += std::to_string(way.id()) + ",";
     query += std::to_string(way.version());
     query += "," + std::to_string(way.uid());
@@ -183,10 +179,22 @@ OSMHandler::way(const osmium::Way& way)
     query += "," + std::to_string(way.changeset());
     query += ",\'" + tags + "\', ";
     query += "ARRAY[" + refs += "], ";
-    query += "ST_GeomFromText(\'" + bbox.str() + "\', 4326), ";
-    std::ostringstream linestrings;
-    linestrings << boost::geometry::wkt(lines);
-    query += "ST_GeomFromText(\'" + linestrings.str() + "\', 4326";
+    // FIXME: this whole methnod should probably use ostringstream
+    boost::geometry::model::box<point_t> box;
+    boost::geometry::envelope(lines, box);
+    std::ostringstream bbox;
+    bbox << boost::geometry::wkt(box);
+    query += "ST_GeomFromText(\'" + bbox.str() + "\', 4326)";
+    // Sometimes short linestrings have bad location data. In that
+    // case, substitute the bound box. This is wrong of course.
+    // FIXME:see if bad location data can be handled better
+    if (boost::geometry::length(lines) > 0) {
+        std::ostringstream linestrings;
+        linestrings << boost::geometry::wkt(lines);
+        query += ", ST_GeomFromText(\'" + linestrings.str() + "\', 4326";
+    } else {
+        query += ", ST_GeomFromText(\'" + bbox.str() + "\', 4326";
+    }
     query += ")) ON CONFLICT DO NOTHING;";
     std::cout << "Query: " << query << std::endl;
 
