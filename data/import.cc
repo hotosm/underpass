@@ -49,12 +49,21 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
 using namespace boost::gregorian;
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/linestring.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+#include <boost/geometry/geometries/geometries.hpp>
 
 #include "hotosm.hh"
 #include "data/pgsnapshot.hh"
 #include "data/import.hh"
 
 namespace import {
+
+typedef boost::geometry::model::d2::point_xy<double> point_t;
+typedef boost::geometry::model::polygon<point_t> polygon_t;
+typedef boost::geometry::model::linestring<point_t> linestring_t;
 
 // These tables are empty by default, and only used when applying a changeset
 // pgsnapshot.state
@@ -114,12 +123,12 @@ OSMHandler::addUser(long uid, const std::string &user)
 void
 OSMHandler::way(const osmium::Way& way)
 {
-    // std::cout << "way " << way.id()
-    //           << ", Changeset: " << way.changeset()
-    //           << ", Version: " << way.version()
-    //           << ", UID: " << way.uid()
-    //           << ", User: " << way.user()
-    //           << ", Timestamp: " << way.timestamp() << std::endl;
+    std::cout << "way " << way.id()
+              << ", Changeset: " << way.changeset()
+              << ", Version: " << way.version()
+              << ", UID: " << way.uid()
+              << ", User: " << way.user()
+              << ", Timestamp: " << way.timestamp() << std::endl;
     // Setup the tags
     std::string tags;
     for (const osmium::Tag& t : way.tags()) {
@@ -142,61 +151,83 @@ OSMHandler::way(const osmium::Way& way)
     std::string refs;
     for (const osmium::NodeRef& nref : way.nodes()) {
         refs += std::to_string(nref.ref()) + ", ";
+        // const osmium::Location loc = nref.location();
     }
     refs = refs.substr(0, refs.size()-2);
-        
+
+    // Get the bounding box of the way
+    linestring_t lines;
+    for (const osmium::NodeRef& nref : way.nodes()) {
+        std::cout << "ref:  " << nref.ref() << std::endl;
+
+        // If the location data is bad, drop it
+        if (cache[nref.ref()]) {
+            boost::geometry::append(lines, point_t(cache[nref.ref()].lat(), cache[nref.ref()].lon()));
+        }
+    }
+    boost::geometry::model::box<point_t> box;
+    boost::geometry::envelope(lines, box);
+    std::ostringstream bbox;
+    bbox << boost::geometry::wkt(box);
+    std::cout << "Box: " << boost::geometry::wkt(box) << std::endl;
+
     // pgsnapshot.ways
     // id | version | user_id | tstamp | changeset_id | tags | nodes | bbox | linestring
-    std::string query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes) VALUES(";
+    // std::string query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes,bbox,linestring) VALUES(";
+    std::string query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes,bbox) VALUES(";
     query += std::to_string(way.id()) + ",";
     query += std::to_string(way.version());
     query += "," + std::to_string(way.uid());
     query += ",\'" + way.timestamp().to_iso() + "\'";
     query += "," + std::to_string(way.changeset());
     query += ",\'" + tags + "\', ";
-    query += "ARRAY[" + refs += "])";
-    osmium::Box bbox = way.envelope();
-    if (bbox.valid()) {
-        std::cout << "VALID" << std::endl;
-        osmium::Location bl = bbox.bottom_left();
-        osmium::Location tr = bbox.top_right();
-    // It's a Polygon if the way is closed
-    // query += "ST_GeomFromText('Polygon(";
-    // std::cout << "FIXME: " << bl.x() << " : " << osmium::Location::fix_to_double(bl.x()) << std::endl;
-    // query += std::to_string(bl.lat()) + "" + std::to_string(bl.lon());
-    // query += "ST_GeomFromText('Polygon(" + std::to_string(bl.lon()) + ", " + std::to_string(bl.lat());
-    // query += ", " + std::to_string(bl.lon()) + ", " + std::to_string(bl.lat());
-    // query += ", " + std::to_string(bl.lon()) + ", " + std::to_string(tr.lat());
-    // query += ", " + std::to_string(tr.lon()) + ", " + std::to_string(tr.lat());
-    // query += ", " + std::to_string(tr.lon()) + ", " + std::to_string(bl.lat());
-    // query += ", " + std::to_string(bl.lon()) + ", " + std::to_string(bl.lat());
-    // query += ", 4326)) )\'";
-    }
-    query += " ON CONFLICT DO NOTHING;";
+    query += "ARRAY[" + refs += "], ";
+    query += "ST_GeomFromText(\'" + bbox.str() + "\', 4326";
+    query += ")) ON CONFLICT DO NOTHING;";
     std::cout << "Query: " << query << std::endl;
 
     worker = new pqxx::work(*db);
     pqxx::result result = worker->exec(query);
-    for (const osmium::NodeRef& nref : way.nodes()) {
-        std::cout << "ref:  " << nref.ref() << std::endl;
-    }
-
     // pgsnapshot.way_nodes
     // way_id | node_id | sequence_id
-    // std::string query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes,bbox,linestring) VALUES(";
     int i = 0;
     for (const osmium::NodeRef& nref : way.nodes()) {
         query = "INSERT INTO way_nodes(way_id, node_id, sequence_id) VALUES(";
         query += std::to_string(way.id());
         query += ", " + std::to_string(nref.ref());
-        query += ", " + std::to_string(i++) + ");";
-        std::cout << "Query: " << query << std::endl;
+        query += ", " + std::to_string(i++) + ")  ON CONFLICT DO NOTHING;";
+        // std::cout << "Query: " << query << std::endl;
         pqxx::result result = worker->exec(query);
     }
 
+    // FIXME: the ways table at this point is missing the bbox and
+    // linestring columns data
+    // osmium::Box bbox = way.envelope();
+    // if (bbox.valid()) {
+    //     std::cout << "VALID" << std::endl;
+    //     osmium::Location bl = bbox.bottom_left();
+    //     osmium::Location tr = bbox.top_right();
+    // // It's a Polygon if the way is closed
+    // // query += "ST_GeomFromText('Polygon(";
+    // // std::cout << "FIXME: " << bl.x() << " : " << osmium::Location::fix_to_double(bl.x()) << std::endl;
+    // // query += std::to_string(bl.lat()) + "" + std::to_string(bl.lon());
+    // // query += "ST_GeomFromText('Polygon(" + std::to_string(bl.lon()) + ", " + std::to_string(bl.lat());
+    // // query += ", " + std::to_string(bl.lon()) + ", " + std::to_string(bl.lat());
+    // // query += ", " + std::to_string(bl.lon()) + ", " + std::to_string(tr.lat());
+    // // query += ", " + std::to_string(tr.lon()) + ", " + std::to_string(tr.lat());
+    // // query += ", " + std::to_string(tr.lon()) + ", " + std::to_string(bl.lat());
+    // // query += ", " + std::to_string(bl.lon()) + ", " + std::to_string(bl.lat());
+    // // query += ", 4326)) )\'";
+    // }
     worker->commit();
 
     addUser(way.uid(), way.user());
+
+    // Empty the node cache so it doesn't grow out of control
+    if (cache.size() > 1000) {
+        //cache.clear();
+        //cache.erase(0, 20);
+    }
 }
 
 void
@@ -208,6 +239,8 @@ OSMHandler::node(const osmium::Node& node) {
     //           << ", User: " << node.user()
     //           << ", Timestamp: " << node.timestamp() << std::endl;
 
+    cache[node.id()] = node.location();
+    
     std::string tags;
     for (const osmium::Tag& t : node.tags()) {
         std::cout << "\t" << t.key() << "=" << t.value() << std::endl;

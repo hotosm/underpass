@@ -55,40 +55,31 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
+#include "data/pgsnapshot.hh"
 
 namespace import {
 
 class OSMHandler : public osmium::handler::Handler {
 public:
-    void way(const osmium::Way& way) {
-        std::cout << "way " << way.id()
-                  << ", Changeset: " << way.changeset()
-                  << ", Version: " << way.version()
-                  << ", UID: " << way.uid()
-                  << ", User: " << way.user()
-                  << ", Timestamp: " << way.timestamp() << std::endl;
-        for (const osmium::Tag& t : way.tags()) {
-            std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
-        }
-    }
+    /// Process a way
+    void way(const osmium::Way& way);
 
-    void node(const osmium::Node& node) {
-        std::cout << "node " << node.id()
-                  << ", Changeset: " << node.changeset()
-                  << ", Version: " << node.version()
-                  << ", UID: " << node.uid()
-                  << ", User: " << node.user()
-                  << ", Timestamp: " << node.timestamp() << std::endl;
-        for (const osmium::Tag& t : node.tags()) {
-            std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
-        }
-    }
-    void relation(const osmium::Relation& rel) {
-        std::cout << "rel " << rel.id() << std::endl;
-        for (const osmium::Tag& t : rel.tags()) {
-            std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
-        }
-    }
+    /// Process a standalone node
+    void node(const osmium::Node& node);
+
+    /// Process a relation
+    void relation(const osmium::Relation& rel);
+
+    bool addUser(long uid, const std::string &user);
+    
+    /// Connect to the database
+    bool connect(const std::string &dbname, const std::string &server);
+
+private:
+    pqxx::connection *db;
+    pqxx::work *worker;
+    // cache the nodes in between ways
+    std::map<long, osmium::Location> cache;
 };
 
 class ImportOSM
@@ -98,13 +89,14 @@ public:
     ImportOSM(const std::string &file, const std::string &db) {
         osmium::io::Reader reader{file};
         database = db;
+        handler.connect(db, "localhost");
         osmium::apply(reader, handler);
     };
 
     // ~ImportOSM(void) { reader.close(); };
-
 private:
     std::string database;
+    std::string server;
     OSMHandler handler;
 };
 
