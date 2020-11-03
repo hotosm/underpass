@@ -165,6 +165,7 @@ OSMHandler::way(const osmium::Way& way)
             boost::geometry::append(lines, point_t(cache[nref.ref()].lat(), cache[nref.ref()].lon()));
         }
     }
+    // FIXME: this whole methnod should probably use ostringstream
     boost::geometry::model::box<point_t> box;
     boost::geometry::envelope(lines, box);
     std::ostringstream bbox;
@@ -174,7 +175,7 @@ OSMHandler::way(const osmium::Way& way)
     // pgsnapshot.ways
     // id | version | user_id | tstamp | changeset_id | tags | nodes | bbox | linestring
     // std::string query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes,bbox,linestring) VALUES(";
-    std::string query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes,bbox) VALUES(";
+    std::string query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes,bbox,linestring) VALUES(";
     query += std::to_string(way.id()) + ",";
     query += std::to_string(way.version());
     query += "," + std::to_string(way.uid());
@@ -182,7 +183,10 @@ OSMHandler::way(const osmium::Way& way)
     query += "," + std::to_string(way.changeset());
     query += ",\'" + tags + "\', ";
     query += "ARRAY[" + refs += "], ";
-    query += "ST_GeomFromText(\'" + bbox.str() + "\', 4326";
+    query += "ST_GeomFromText(\'" + bbox.str() + "\', 4326), ";
+    std::ostringstream linestrings;
+    linestrings << boost::geometry::wkt(lines);
+    query += "ST_GeomFromText(\'" + linestrings.str() + "\', 4326";
     query += ")) ON CONFLICT DO NOTHING;";
     std::cout << "Query: " << query << std::endl;
 
