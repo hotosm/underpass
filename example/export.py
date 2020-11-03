@@ -38,7 +38,8 @@ from shapely import wkt, wkb
 import shapely.geometry
 from shapely.geometry import Point
 import shapely.wkb as wkblib
-
+# from progress.bar import Bar, PixelBar
+from progress.spinner import PixelSpinner
 
 
 class OsmFile(object):
@@ -113,29 +114,34 @@ dbcursor = dbshell.cursor()
 
 osm = OsmFile("example.osm")
 
+bar = PixelSpinner('Processing... ' + options["database"])
+
 # Get all the highways
 # query = """SELECT tags->'name',nodes,tags,ST_AsEWKT(linestring) FROM ways WHERE tags->'highway' is not NULL AND tags->'highway'!='path' LIMIT 5;"""
-query = """SELECT id,tags->'name',nodes,tags FROM ways WHERE tags->'highway' is not NULL AND tags->'highway'!='path' LIMIT 15;"""
+query = """SELECT id,tags->'name',nodes,tags FROM ways WHERE tags->'highway' is not NULL AND tags->'highway'!='path';"""
 dbcursor.execute(query)
 all = dbcursor.fetchall()
 for line in all:
+    bar.next()
     result = dict()
     result['id'] = line[0]
     result['name'] = line[1]
     result['nodes'] = line[2]
     result['tags'] = line[3]
-    print("WAY: %s" % result['tags'])
+    # print("WAY: %s" % result['tags'])
 
     # Get the data for each node in the array
     if type(result['nodes']) != int:
         for data in result['nodes']:
-            print(data)
+            # print(data)
             #            if data:
             query = """SELECT id,version,user_id,tstamp,changeset_id,tags,geom FROM nodes WHERE id=%d""" % data
-            print(query)
+            # print(query)
             dbcursor.execute(query)
             entry = dbcursor.fetchone()
             node = dict()
+            if not entry:
+                continue
             node['id'] = entry[0]
             node['geom'] =  wkb.loads(entry[6], hex=True)
             # print("NODE: %s" % line[6])
