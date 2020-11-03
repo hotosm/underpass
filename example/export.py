@@ -65,6 +65,8 @@ class OsmFile(object):
 
     def writeWay(self, way):
         self.file.write("<way id='%s' action='modify' version='2' >" % (way['id']))
+        for node in way['nodes']:
+            self.file.write("\n  <nd ref='%s'/>" % node)
         # for key,value in way.items():
         #     if key == 'id':
         #         continue
@@ -123,7 +125,6 @@ for line in all:
     result['nodes'] = line[2]
     result['tags'] = line[3]
     print("WAY: %s" % result['tags'])
-    osm.writeWay(result)
 
     # Get the data for each node in the array
     if type(result['nodes']) != int:
@@ -140,6 +141,6 @@ for line in all:
             # print("NODE: %s" % line[6])
             osm.writeNode(node)
     line = dbcursor.fetchone()
-
+    osm.writeWay(result)
 
 osm.footer()
