@@ -49,13 +49,21 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
-#include "hotosm.hh"
+// #include "hotosm.hh"
 #include "osmstats/changeset.hh"
+#include "osmstats/geoutil.hh"
 
 using namespace apidb;
 
-namespace osmstats {
+// Forward declarations
+namespace changeset {
+  class ChangeSet;
+};
+namespace geoutil {
+  class GeoUtil;
+};
 
+namespace osmstats {
 
 class OsmStats
 {
@@ -66,19 +74,20 @@ public:
     void dump(void);
 // protected:
     // These are from the OSM Stats 'raw_changesets' table
+    std::map<std::string, long> counters;
     long id;
-    long road_km_added;
-    long road_km_modified;
-    long waterway_km_added;
-    long waterway_km_modified;
-    long roads_added;
-    long roads_modified;
-    long waterways_added;
-    long waterways_modified;
-    long buildings_added;
-    long buildings_modified;
-    long pois_added;
-    long pois_modified;
+    // long road_km_added;
+    // long road_km_modified;
+    // long waterway_km_added;
+    // long waterway_km_modified;
+    // long roads_added;
+    // long roads_modified;
+    // long waterways_added;
+    // long waterways_modified;
+    // long buildings_added;
+    // long buildings_modified;
+    // long pois_added;
+    // long pois_modified;
     std::string editor;
     long user_id;
     ptime created_at;
@@ -92,7 +101,7 @@ public:
 class RawCountry
 {
   public:
-    RawCountry(void) { };
+    RawCountry(void);
     RawCountry(pqxx::const_result_iterator &res) {
         id = res[0].as(int(0));
         name = res[1].c_str();
@@ -103,6 +112,7 @@ class RawCountry
         name = country;
         abbrev = code;
     }
+
     int id;
     std::string name;
     std::string abbrev;
@@ -146,6 +156,12 @@ class QueryOSMStats : public apidb::QueryStats
 {
   public:
     QueryOSMStats(void);
+    bool readGeoBoundaries(const std::string &rawfile) {
+        //geou.readFile(rawfile, true);
+        //countries = geou.exportCountries();
+        return false;
+    };
+
     /// Connect to the database
     bool connect(const std::string &database);
 
@@ -154,7 +170,7 @@ class QueryOSMStats : public apidb::QueryStats
     bool populate(void);
 
     /// Read changeset data from the osmstats database
-    bool getRawChangeSet(std::vector<long> &changeset_id);
+    bool getRawChangeSets(std::vector<long> &changeset_id);
 
     /// Add a user to the internal data store
     int addUser(long id, const std::string &user) {
@@ -181,8 +197,9 @@ class QueryOSMStats : public apidb::QueryStats
     /// Write the list of hashtags to the database
     int updateRawHashtags(void);
 
-    /// Add a changeset ID and the country it is in
-    int updateCountries(int id, int country_id);
+    /// Populate the raw_country database from the data file of
+    /// of boundaries
+    int updateCountries(std::vector<RawCountry> &countries);
 
     // Accessor classes to extract country data from the database
 
@@ -196,20 +213,60 @@ class QueryOSMStats : public apidb::QueryStats
     /// Apply a change to the database
     bool applyChange(changeset::ChangeSet &change);
 
-    // void commit(void) { worker->commit(); };
+    int lookupHashtag(const std::string &hashtag);
 
+    /// Start a timer for collecting performance statistics of queries
     void startTimer(void) {
         start = boost::posix_time::microsec_clock::local_time();
     };
+    /// End the current performance timer
     long endTimer(void) {
         end = boost::posix_time::microsec_clock::local_time();
         boost::posix_time::time_duration delta = end - start;
         return delta.total_milliseconds();
+        std::cout << "Operation took " << delta.total_milliseconds() << " milliseconds" << std::endl;
     };
 
     /// Dump internal data, debugging usage only!
     void dump(void);
 private:
+    // Get the timestamp of the last update in the database
+    ptime getLastUpdate(void);
+
+    bool updateCounters(long cid, std::map<std::string, long> data);
+    bool updateChangeset(const OsmStats &stats);
+
+    // Subqueries take too much time, it's faster to query the data field we
+    // need and update it.
+    long getRoadsAdded(long uid) { return queryData(uid, "roads_added"); };
+    long getRoadsModified(long uid) { return queryData(uid, "roads_modified"); };
+    long getRoadsKMAdded(long uid) { return queryData(uid, "roads_km_added"); };
+    long getRoadsKMModified(long uid) { return queryData(uid, "roads_km_modified"); };
+
+    long getWaterwaysAdded(long uid) { return queryData(uid, "waterways_added"); };
+    long getWaterwaysModified(long uid) { return queryData(uid, "waterways_modified"); };
+    long getWaterwaysKMAdded(long uid) { return queryData(uid, "waterways_km_added"); };
+    long getWaterwaysKMModified(long uid) { return queryData(uid, "waterewsys_km_modified"); };
+
+    long getBuildingsAdded(long uid) { return queryData(uid, "buildings_added"); };
+    long getBuildingsModified(long uid)  { return queryData(uid, "buildings_modifed"); };
+    long getPOIsAdded(long uid);
+    long getPOIsModified(long uid);
+
+    long queryData(long cid, const std::string &column) {
+        std::string query = "SELECT " + column + " FROM raw_changesets";
+        query += " WHERE id=" + std::to_string(cid);
+        std::cout << "QUERY: " << query << std::endl;
+        pqxx::result result = worker->exec(query);
+    }
+
+    long updateData(long uid, const std::string &column, long value) {
+        std::string query = "UPDATE raw_changesets SET " + column + "=";
+        query += std::to_string(value) + " WHERE id=" + std::to_string(uid);
+        std::cout << "QUERY: " << query << std::endl;
+        pqxx::result result = worker->exec(query);
+    }
+
     pqxx::connection *db;
     pqxx::work *worker;
 
@@ -217,7 +274,6 @@ private:
     std::vector<RawCountry> countries;
     std::vector<RawUser> users;
     std::map<std::string, RawHashtag> hashtags;
-
     // These are only used to get performance statistics used for
     // debugging.
     ptime start;                // Starting timestamop for operation

@@ -48,6 +48,7 @@ using namespace boost::gregorian;
 
 #include "osmstats/osmstats.hh"
 #include "osmstats/changeset.hh"
+#include "osmstats/geoutil.hh"
 
 using namespace apidb;
 
@@ -85,6 +86,19 @@ QueryOSMStats::connect(const std::string &dbname)
    }    
 }
 
+int
+QueryOSMStats::lookupHashtag(const std::string &hashtag)
+{
+    worker = new pqxx::work(*db);
+    std::string query = "SELECT id FROM taw_hashtags WHERE hashtag=\'";
+    query += hashtag + "\';";
+    pqxx::result result = worker->exec(query);
+    worker->commit();
+
+    // There is only one value returned
+    return result[0][0].as(int(0));
+}
+
 bool
 QueryOSMStats::applyChange(changeset::ChangeSet &change)
 {
@@ -97,7 +111,6 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     query += "\') ON CONFLICT DO NOTHING;";
     pqxx::result result = worker->exec(query);
 
-    // Add hashtags. The id is added by the database
     for (auto it = std::begin(change.hashtags); it != std::end(change.hashtags); ++it) {
         bool key_exists = hashtags.find(*it) != hashtags.end();
         if (!key_exists) { 
@@ -123,6 +136,8 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
 
     // Commit the results to the database
     worker->commit();
+
+    return true;
 }
 
 // Populate internal storage of a few heavily used data, namely
@@ -169,10 +184,12 @@ QueryOSMStats::populate(void)
     //                                            QueryStats::totals, start, end);
 
     worker->commit();
+
+    return true;
 };
 
 bool
-QueryOSMStats::getRawChangeSet(std::vector<long> &changeset_ids)
+QueryOSMStats::getRawChangeSets(std::vector<long> &changeset_ids)
 {
     worker = new pqxx::work(*db);
     std::string sql = "SELECT id,road_km_added,road_km_modified,waterway_km_added,waterway_km_modified,roads_added,roads_modified,waterways_added,waterways_modified,buildings_added,buildings_modified,pois_added,pois_modified,editor,user_id,created_at,closed_at,verified,augmented_diffs,updated_at FROM raw_changesets WHERE id=ANY(ARRAY[";
@@ -188,13 +205,37 @@ QueryOSMStats::getRawChangeSet(std::vector<long> &changeset_ids)
     std::cout << "QUERY: " << sql << std::endl;
     pqxx::result result = worker->exec(sql);
     std::cout << "SIZE: " << result.size() <<std::endl;
-    OsmStats stats(result);
+    //OsmStats stats(result);
     worker->commit();
 
     for (auto it = std::begin(result); it != std::end(result); ++it) {
         OsmStats os(it);
         ostats.push_back(os);
     }
+
+    return true;
+}
+
+// Get the timestamp of the last update in the database
+ptime
+QueryOSMStats::getLastUpdate(void)
+{
+    std::string query = "SELECT MAX(updated_at) FROM raw_changesets;";
+    std::cout << "QUERY: " << query << std::endl;
+    pqxx::result result = worker->exec(query);
+
+    // return time_from_string(result[0][0]);
+}
+
+bool
+QueryOSMStats::updateCounters(long cid, std::map<std::string, long> data)
+{
+    std::string query = "UPDATE raw_changeset SET ";
+    for (auto it = std::begin(data); it != std::end(data); ++it) {
+        query += "," + it->first + "=" + std::to_string(it->second);
+    }
+    query += " WHERE id=" + std::to_string(cid);
+    std::cout << "QUERY: " << query << std::endl;
 }
 
 void
@@ -222,30 +263,31 @@ QueryOSMStats::updateRawHashtags(void)
 }
 
 int
-QueryOSMStats::updateCountries(int id, int country_id)
+QueryOSMStats::updateCountries(std::vector<RawCountry> &countries)
 {
-    std::string query = "INSERT INTO raw_countries VALUES";
-    query += std::to_string(id) + "," + std::to_string(country_id);
-    query += ") ON CONFLICT DO NOTHING";
-    pqxx::result result = worker->exec(query);
-    return result.size();
+    for (auto it = std::begin(countries); it != std::end(countries); ++it) {
+        std::string query = "INSERT INTO raw_countries VALUES";
+        query += std::to_string(it->id) + ",\'" + it->name + "',\'" + it->abbrev + "\');";
+        query += ") ON CONFLICT DO NOTHING";
+        pqxx::result result = worker->exec(query);
+    }
+    return countries.size();
 }
 
 OsmStats::OsmStats(pqxx::const_result_iterator &res)
 {
     id = std::stol(res[0].c_str());
-    road_km_added = std::stol(res[1].c_str());
-    road_km_modified = std::stol(res[2].c_str());
-    waterway_km_added = std::stol(res[3].c_str());
-    waterway_km_modified = std::stol(res[4].c_str());;
-    roads_added = std::stol(res[5].c_str());
-    roads_modified = std::stol(res[6].c_str());
-    waterways_added = std::stol(res[7].c_str());
-    waterways_modified = std::stol(res[8].c_str());
-    buildings_added = std::stol(res[9].c_str());
-    buildings_modified = std::stol(res[10].c_str());
-    pois_added = std::stol(res[11].c_str());
-    pois_modified = std::stol(res[12].c_str());
+    for (auto it = std::begin(res); it != std::end(res); ++it) {
+        if (it->type() == 20 || it->type() == 23) {
+            if (it->name() != "id" && it->name() != "user_id") {
+                counters[it->name()] = it->as(long(0));
+            }
+            // FIXME: why are their doubles in the schema at all ? It's
+            // a counter, so should always be an integer or long
+        } else if (it->type() == 701) { // double
+            counters[it->name()] = it->as(double(0));
+        }
+    }
     editor = pqxx::to_string(res[13]);
     user_id = std::stol(res[14].c_str());
     created_at = time_from_string(pqxx::to_string(res[15]));
@@ -258,19 +300,18 @@ OsmStats::OsmStats(pqxx::const_result_iterator &res)
 OsmStats::OsmStats(const pqxx::result &res)
 {
     id = res[0][0].num();
-    road_km_added = res[0][1].num();
-    road_km_modified = res[0][2].num();
-    waterway_km_added = res[0][3].num();
-    waterway_km_modified = res[0][4].num();
-    roads_added = res[0][5].num();
-    roads_modified = res[0][6].num();
-    waterways_added = res[0][7].num();
-    waterways_modified = res[0][8].num();
-    buildings_added = res[0][9].num();
-    buildings_modified = res[0][10].num();
-    pois_added = res[0][11].num();
-    pois_modified = res[0][12].num();
-    editor = pqxx::to_string(res[0][13]);
+    // Put the counters into a data structure, and ignore the IDs
+    // which are stored separately.
+    for (auto it = std::begin(res[0]); it != std::end(res[0]); ++it) {
+        if (it->type() == 20 || it->type() == 23) { // int or long
+            if (it->name() != "id" && it->name() != "user_id") {
+                counters[it->name()] = it->as(long(0));
+            }
+        } else if (it->type() == 701) { // double
+            counters[it->name()] = (long)it->num();
+        }
+    }
+    editor = res[0][13].c_str();
     user_id = res[0][14].num();
     created_at = time_from_string(pqxx::to_string(res[0][15]));
     closed_at = time_from_string(pqxx::to_string(res[0][16]));
@@ -284,18 +325,18 @@ OsmStats::dump(void)
 {
     std::cout << "-----------------------------------" << std::endl;
     std::cout << "changeset id: \t\t " << id << std::endl;
-    std::cout << "Roads Added (km): \t " << road_km_added << std::endl;
-    std::cout << "Roads Modified (km):\t " <<road_km_modified << std::endl;
-    std::cout << "Waterways Added (km): \t " << waterway_km_added << std::endl;
-    std::cout << "Waterways Modified (km): " << waterway_km_modified << std::endl;
-    std::cout << "Roads Added: \t\t " << roads_added << std::endl;
-    std::cout << "Roads Modified: \t " << roads_modified << std::endl;
-    std::cout << "Waterways Added: \t " << waterways_added << std::endl;
-    std::cout << "Waterways Modified: \t " << waterways_modified << std::endl;
-    std::cout << "Buildings added: \t " << buildings_added << std::endl;
-    std::cout << "Buildings Modified: \t " << buildings_modified << std::endl;
-    std::cout << "POIs added: \t\t " << pois_added << std::endl;
-    std::cout << "POIs Modified: \t\t " << pois_modified << std::endl;
+    std::cout << "Roads Added (km): \t " << counters["road_km_added"] << std::endl;
+    std::cout << "Roads Modified (km):\t " << counters["road_km_modified"] << std::endl;
+    std::cout << "Waterways Added (km): \t " << counters["waterway_km_added"] << std::endl;
+    std::cout << "Waterways Modified (km): " << counters["waterway_km_modified"] << std::endl;
+    std::cout << "Roads Added: \t\t " << counters["roads_added"] << std::endl;
+    std::cout << "Roads Modified: \t " << counters["roads_modified"] << std::endl;
+    std::cout << "Waterways Added: \t " << counters["waterways_added"] << std::endl;
+    std::cout << "Waterways Modified: \t " << counters["waterways_modified"] << std::endl;
+    std::cout << "Buildings added: \t " << counters["buildings_added"] << std::endl;
+    std::cout << "Buildings Modified: \t " << counters["buildings_modified"] << std::endl;
+    std::cout << "POIs added: \t\t " << counters["pois_added"] << std::endl;
+    std::cout << "POIs Modified: \t\t " << counters["pois_modified"] << std::endl;
     std::cout << "Editor: \t\t " << editor << std::endl;
     std::cout << "User ID: \t\t "  << user_id << std::endl;
     std::cout << "Created At: \t\t " << created_at << std::endl;
