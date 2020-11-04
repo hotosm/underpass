@@ -68,7 +68,6 @@ namespace osmstats {
 class OsmStats
 {
 public:
-    OsmStats(const pqxx::result &res);
     OsmStats(pqxx::const_result_iterator &res);
     OsmStats(const std::string filespec);
     void dump(void);
@@ -76,18 +75,6 @@ public:
     // These are from the OSM Stats 'raw_changesets' table
     std::map<std::string, long> counters;
     long id;
-    // long road_km_added;
-    // long road_km_modified;
-    // long waterway_km_added;
-    // long waterway_km_modified;
-    // long roads_added;
-    // long roads_modified;
-    // long waterways_added;
-    // long waterways_modified;
-    // long buildings_added;
-    // long buildings_modified;
-    // long pois_added;
-    // long pois_modified;
     std::string editor;
     long user_id;
     ptime created_at;
@@ -95,6 +82,8 @@ public:
     bool verified;
     std::vector<long> augmented_diffs;
     ptime updated_at;
+    long updateCounter(const std::string &key, long value) { counters[key] = value; };
+    long operator[](const std::string &key) { return counters[key]; };
 };
 
 /// Stores the data from the raw countries table
@@ -226,6 +215,8 @@ class QueryOSMStats : public apidb::QueryStats
         return delta.total_milliseconds();
         std::cout << "Operation took " << delta.total_milliseconds() << " milliseconds" << std::endl;
     };
+
+    OsmStats &operator[](int index){ return ostats[index]; }
 
     /// Dump internal data, debugging usage only!
     void dump(void);

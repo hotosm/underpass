@@ -73,12 +73,22 @@ main(int argc, char *argv[])
     cids.push_back(69365911);
 
     testos.startTimer();
-    testos.getRawChangeSet(cids);
+    testos.getRawChangeSets(cids);
     std::cout << "Operation took " << testos.endTimer() << " milliseconds" << std::endl;
-    testos.dump();
+
+    // modify a counter
+    OsmStats os = testos[2];
+    os.updateCounter("roads_added", 12345);
+    if (os["roads_added"] == 12345) {
+        runtest.pass("OsmStats::updateCounter()");
+    } else {
+        runtest.fail("OsmStats::updateCounter()");        
+    }
+    
+    //testos.dump();
     
     // testos.updateRawHashtags("/work/Mapping/HOT/changesets-reduced.osm");
-    // testos.updateRawUsers("/work/Mapping/HOT/changesets-redu ced.osm");
+    // testos.updateRawUsers("/work/Mapping/HOT/changesets-reduced.osm");
 
     // extract some data from the database to store in memory for
     // better performance

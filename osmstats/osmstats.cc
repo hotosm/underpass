@@ -282,7 +282,7 @@ OsmStats::OsmStats(pqxx::const_result_iterator &res)
             if (it->name() != "id" && it->name() != "user_id") {
                 counters[it->name()] = it->as(long(0));
             }
-            // FIXME: why are their doubles in the schema at all ? It's
+            // FIXME: why are there doubles in the schema at all ? It's
             // a counter, so should always be an integer or long
         } else if (it->type() == 701) { // double
             counters[it->name()] = it->as(double(0));
@@ -295,29 +295,6 @@ OsmStats::OsmStats(pqxx::const_result_iterator &res)
     // verified = res[17].bool();
     // augmented_diffs = res[18].num();
     updated_at = time_from_string(pqxx::to_string(res[19]));
-}
-
-OsmStats::OsmStats(const pqxx::result &res)
-{
-    id = res[0][0].num();
-    // Put the counters into a data structure, and ignore the IDs
-    // which are stored separately.
-    for (auto it = std::begin(res[0]); it != std::end(res[0]); ++it) {
-        if (it->type() == 20 || it->type() == 23) { // int or long
-            if (it->name() != "id" && it->name() != "user_id") {
-                counters[it->name()] = it->as(long(0));
-            }
-        } else if (it->type() == 701) { // double
-            counters[it->name()] = (long)it->num();
-        }
-    }
-    editor = res[0][13].c_str();
-    user_id = res[0][14].num();
-    created_at = time_from_string(pqxx::to_string(res[0][15]));
-    closed_at = time_from_string(pqxx::to_string(res[0][16]));
-    // verified = res[0][17].bool();
-    // augmented_diffs = res[0][18].num();
-    updated_at = time_from_string(pqxx::to_string(res[0][19]));
 }
 
 void
