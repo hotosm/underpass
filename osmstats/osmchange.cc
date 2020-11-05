@@ -53,27 +53,12 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "hotosm.hh"
-#include "osmstats/changefile.hh"
+#include "osmstats/osmchange.hh"
 
-namespace changefile {
+namespace osmchange {
 
-// ChangeFile::ChangeFile(void)
-// {
-//     std::ios_base::sync_with_stdio(false);
-// }
-
-// ChangeFile::~ChangeFile(void)
-// {
-
-// }
-
-// bool
-// ChangeFile::connect(std::string &database)
-// {
-
-// }
 bool
-ChangeFile::readFile(const std::string &osc)
+OsmChange::readChanges(const std::string &osc, bool memory)
 {
     try {
         // Default is all entity types: nodes, ways, relations, and changesets
@@ -100,8 +85,7 @@ ChangeFile::readFile(const std::string &osc)
         osmium::io::Reader reader{"fixme!", read_types};
         
         // The file header can contain metadata such as the program that
-        // generaed
-            // the file and the bounding box of the data.
+        // generated the file and the bounding box of the data.
             osmium::io::Header header = reader.header();
         std::cout << "HEADER:\n  generator=" << header.get("generator") << "\n";
         
@@ -125,5 +109,5 @@ ChangeFile::readFile(const std::string &osc)
     }
 }
 
-}       // EOF changeset
+}       // EOF osmchange
 

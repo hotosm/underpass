@@ -163,8 +163,9 @@ Replication::downloadFiles(std::vector<std::string> files, bool text)
         // Receive the HTTP response
         boost::beast::error_code ec;
         http::response_parser<http::string_body> parser;
-        read_header(stream, buffer, parser);
-        read(stream, buffer, parser.base());
+        // read_header(stream, buffer, parser);
+        read(stream, buffer, parser);
+        // read(stream, buffer, parser.base());
         // Parse the HTML content to extract the hyperlinks to
         // the directories and files
         GumboOutput* output = gumbo_parse(parser.get().body().c_str());

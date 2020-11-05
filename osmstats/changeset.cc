@@ -193,10 +193,13 @@ ChangeSetFile::importChanges(const std::string &file)
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         ostats.applyChange(*it);
     }
-    
+
     change.close();
+    // FIXME: return real value
+    return false;
 }
 
+// Read a changeset file from disk or memory into internal storage
 bool
 ChangeSetFile::readChanges(const std::string &file, bool memory)
 {
@@ -208,8 +211,24 @@ ChangeSetFile::readChanges(const std::string &file, bool memory)
     if (!memory) {
         try {
             change.open(file,  std::ifstream::in |  std::ifstream::binary);
-        }
-        catch(std::exception& e) {
+            std::ifstream ifile(file, std::ios_base::in | std::ios_base::binary);
+            boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
+            inbuf.push(boost::iostreams::gzip_decompressor());
+            inbuf.push(ifile);
+            // Convert streambuf to istream
+            std::istream instream(&inbuf);
+            ///std::ostringstream iss = instream.rdbuf();
+            // Copy everything from instream to
+            std::cout << instream.rdbuf();
+            try {
+                set_substitute_entities(true);
+                parse_stream(instream);
+            }
+            catch(const xmlpp::exception& ex) {
+                std::cerr << "libxml++ exception in : " << file << " " << ex.what() << std::endl;
+                int return_code = EXIT_FAILURE;
+            }
+        } catch(std::exception& e) {
             std::cout << "ERROR opening " << file << std::endl;
             std::cout << e.what() << std::endl;
             // return false;
@@ -223,38 +242,47 @@ ChangeSetFile::readChanges(const std::string &file, bool memory)
         change.read((char *)buffer, size);
     }
 
-    // It's a gzipped XML file, so decompress it for parsing.
-    unsigned char outbuffer[10000];
-    z_stream strm;
-    strm.zalloc = Z_NULL;
-    strm.zfree = Z_NULL;
-    strm.opaque = Z_NULL;
-    strm.avail_in = 0;
-    strm.next_in = Z_NULL;
-
-    // This is needed for gzip
-    inflateInit2(&strm, 16+MAX_WBITS);
-    strm.avail_in = size;
-    strm.next_in = buffer;
-    if (memory) {
-        strm.next_in = (unsigned char *)file.c_str();
-    } else {
-        strm.next_in = buffer;
+    try {
+        set_substitute_entities(true);
+        parse_memory((char *)buffer);
     }
+    catch(const xmlpp::exception& ex) {
+        std::cerr << "libxml++ exception: " << ex.what() << std::endl;
+        int return_code = EXIT_FAILURE;
+    }
+
+    // // It's a gzipped XML file, so decompress it for parsing.
+    // unsigned char outbuffer[10000];
+    // z_stream strm;
+    // strm.zalloc = Z_NULL;
+    // strm.zfree = Z_NULL;
+    // strm.opaque = Z_NULL;
+    // strm.avail_in = 0;
+    // strm.next_in = Z_NULL;
+
+    // // This is needed for gzip
+    // inflateInit2(&strm, 16+MAX_WBITS);
+    // strm.avail_in = size;
+    // strm.next_in = buffer;
+    // if (memory) {
+    //     strm.next_in = (unsigned char *)file.c_str();
+    // } else {
+    //     strm.next_in = buffer;
+    // }
     
-    // FIXME: This should be calculated, not hardcoded to 3M
-    strm.avail_out = 3000000;
-    strm.next_out = outbuffer;
+    // // FIXME: This should be calculated, not hardcoded to 3M
+    // strm.avail_out = 3000000;
+    // strm.next_out = outbuffer;
 
-    int ret = inflate( &strm, Z_FINISH );
+    // int ret = inflate( &strm, Z_FINISH );
 
-    inflateEnd( &strm );
-    //. Terminate the data for printing
-    outbuffer[strm.total_out] = 0;
-    // FIXME: debug print so we know it's working
-    std::cout << outbuffer << std::endl;
+    // inflateEnd( &strm );
+    // //. Terminate the data for printing
+    // outbuffer[strm.total_out] = 0;
+    // // FIXME: debug print so we know it's working
+    // std::cout << outbuffer << std::endl;
 
-    readXML((char *)outbuffer);
+    // readXML((char *)outbuffer);
     change.close();
 }
 
@@ -344,7 +372,6 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
     if (name == "changeset") {
         changeset::ChangeSet change(attributes);
         changes.push_back(change);
-        std::cout << "FIXME: " << changes.size() << std::endl;
         changes.back().dump();
     } else if (name == "tag") {
         // We ignore most of the tags, as they're not used for OSM stats.
@@ -355,7 +382,29 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
         bool hashit = false;
         bool comhit = false;
         bool cbyhit = false;
-        for(const auto& attr_pair : attributes) {
+        bool min_lathit = false;
+        bool min_lonhit = false;
+        bool max_lathit = false;
+        bool max_lonhit = false;
+        double min_lat = 0.0;
+        double min_lon = 0.0;
+        double max_lat = 0.0;
+        double max_lon = 0.0;
+
+        for (const auto& attr_pair : attributes) {
+            if (attr_pair.name == "k" && attr_pair.value == "max_lat") {
+                max_lat = std::stod(attr_pair.value);
+                max_lathit = true;
+            }
+            if (attr_pair.name == "k" && attr_pair.value == "min_lat") {
+                min_lathit = true;
+            }
+            if (attr_pair.name == "k" && attr_pair.value == "max_lon") {
+                max_lonhit = true;
+            }
+            if (attr_pair.name == "k" && attr_pair.value == "min_lon") {
+                min_lonhit = true;
+            }
             if (attr_pair.name == "k" && attr_pair.value == "hashtags") {
                 hashit = true;
             }
@@ -402,6 +451,10 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
                 cbyhit = false;
                 changes.back().addEditor(attr_pair.value );
             }
+
+            // Get the country the change was made in
+            geoutil::GeoCountry geo = boundaries->inCountry(max_lat, max_lon, min_lat, min_lon);
+            changes.back().countryid = geo.getID();
             // try {
             //     std::cout << "  Attribute name =" <<  attr_pair.name;
             // }
@@ -418,19 +471,22 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
     }
 }
 
-bool
-ChangeSetFile::readXML(const std::string xml)
-{
-    try {
-        set_substitute_entities(true);
-        parse_memory(xml);
-    }
-    catch(const xmlpp::exception& ex) {
-        std::cerr << "libxml++ exception: " << ex.what() << std::endl;
-        int return_code = EXIT_FAILURE;
-    }
-    // dump();
-}
+// bool
+// ChangeSetFile::readXML(const std::string xml)
+// {
+//     try {
+//         set_substitute_entities(true);
+//         parse_memory(xml);
+//     }
+//     catch(const xmlpp::exception& ex) {
+//         std::cerr << "libxml++ exception: " << ex.what() << std::endl;
+//         int return_code = EXIT_FAILURE;
+//     }
+//     // dump();
+
+//     // FIXME: return real value
+//     return false;
+// }
 
 }       // EOF changeset
 

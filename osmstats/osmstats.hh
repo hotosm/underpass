@@ -83,6 +83,7 @@ public:
     std::vector<long> augmented_diffs;
     ptime updated_at;
     long updateCounter(const std::string &key, long value) { counters[key] = value; };
+    long updateCounters(std::map<const std::string &, long> data);
     long operator[](const std::string &key) { return counters[key]; };
 };
 

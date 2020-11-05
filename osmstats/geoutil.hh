@@ -52,15 +52,20 @@ using namespace boost::gregorian;
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
 #include <boost/geometry/geometries/geometries.hpp>
+#include <ogrsf_frmts.h>
 
 #include "hotosm.hh"
 #include "osmstats/osmstats.hh"
-#include "ogrsf_frmts.h"
+
+namespace osmstats {
+class RawCountry;
+};
 
 namespace geoutil {
 
 typedef boost::geometry::model::d2::point_xy<double> point_t;
 typedef boost::geometry::model::polygon<point_t> polygon_t;
+typedef boost::geometry::model::linestring<point_t> linestring_t;
 
 class GeoCountry
 {
@@ -73,6 +78,9 @@ public:
     /// Set the name field
     void setName(const std::string &field) { name = field; };
 
+    /// Set the alternate name field
+    void setAltName(const std::string &field) { alt_name = field; };
+
     /// extract the tags from the string for all the other metadata
     int extractTags(const std::string &other);
 
@@ -82,6 +90,8 @@ public:
     };
 
     const std::string &getName(void) { return name; };
+    const std::string &getAltName(void) { return alt_name; };
+    long getID(void) { return id; };
     const std::string &getAbbreviation(int width) {
         if (width == 2) {
             return iso_a2;
@@ -93,9 +103,11 @@ public:
 
     void dump(void);
 private:
+    long id;
     // Default name
     std::string name;
-    // International names
+    std::string alt_name;
+    // International names, if any
     std::map<std::string, std::string> names;
     // 2 letter ISO abbreviation
     std::string iso_a2;
@@ -126,7 +138,7 @@ public:
     bool connect(const std::string &dbserver, const std::string &database);
 
     /// Find the country the changeset was made in
-    osmstats::RawCountry findCountry(double lat, double lon); 
+    // osmstats::RawCountry findCountry(double lat, double lon);
 
     /// See if this changeset is in a focus area. We ignore changsets in
     /// areas like North America to reduce the amount of data needed
@@ -147,9 +159,20 @@ public:
         return delta.total_milliseconds();
     };
 
+    // Export all the countries in the format used by OSM Stats, which
+    // doesn't use the geospatial data. This table needs to be regenerated
+    // using the same data file as used to geolocate which country a
+    // changeset is made it.
+    std::vector<osmstats::RawCountry> exportCountries(void);
+
+    GeoCountry &getCountry(const std::string country) {
+        // return countries[country];
+    }
     /// Dump internal data storage for debugging purposes
     void dump(void);
+
 private:
+    std::vector<GeoCountry> countries;
     // These are just for performance testing
     ptime start;                // Starting timestamop for operation
     ptime end;                  // Ending timestamop for operation
@@ -163,7 +186,7 @@ private:
     /// within it.
     boost::geometry::model::polygon<point_t> boundary;
     // boost::geometry::model::multi_polygon<polygon_t> boundaries;
-    std::vector<GeoCountry> countries;
+    // std::vector<GeoCountry> countries;
 };
     
 }       // EOF geoutil

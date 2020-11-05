@@ -28,6 +28,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+
+/// \brief      This file is for supporting the changetset file format, not
+/// to be confused with the OSM Change format. This format is the one used
+/// for files from planet, and also supports replication updates. There appear
+/// to be no parsers for this format, so this was created to fill that gap.
+/// The files are compressed in gzip format, so uncompressing has to be done
+/// internally before parsing the XML
+///
+
 #ifndef __CHANGESET_HH__
 #define __CHANGESET_HH__
 
@@ -58,48 +67,65 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "hotosm.hh"
-//#include "osmstats/osmstats.hh"
+#include "osmstats/osmstats.hh"
+#include "osmstats/geoutil.hh"
+
+// Forward declaration
+namespace osmstats {
+class RawCountry;
+};
 
 namespace changeset {
 
 // enum objtype {building, waterway, highway, poi);
 
-/// This class reads a change file
+/// This class reads a changeset file, as obtained from the OSM
+/// planet server. This format is not supported by other tools,
+/// so we add it there.
 class ChangeSet
 {
 public:
     ChangeSet(void);
     ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attrs);
 
+    /// Dump internal data to the terminal, used only for debugging
     void dump(void);
 
+    /// Add a hashtag to internal storage
     void addHashtags(const std::string &text) {
         hashtags.push_back(text);
     };
+
+    /// Add the comment field, which is often used for hashtags
     void addComment(const std::string &text) { comment = text; };
+
+    /// Add the editor field
     void addEditor(const std::string &text) { editor = text; };
     
+    //osmstats::RawCountry country;
+    int countryid;
     // protected so testcases can access private data
 // protected:
     // These fields come from the changeset replication file
-    long id = 0;
-    ptime created_at;
-    ptime closed_at;
-    bool open = false;
-    std::string user;
-    long uid = 0;
-    double min_lat;
-    double min_lon;
-    double max_lat;
-    double max_lon;
-    int num_changes = 0;
-    int comments_count = 0;
-    std::vector<std::string> hashtags;
-    std::string comment;
-    std::string editor;
-//    objtype type;
+    long id = 0;                ///< The changeset id
+    ptime created_at;           ///< Creation starting timestamp for this changeset
+    ptime closed_at;            ///< Creation ending timestamp for this changeset
+    bool open = false;          ///< Whether this changeset is still in progress
+    std::string user;           ///< The OSM user name making this change
+    long uid = 0;               ///< The OSM user ID making this change
+    double min_lat;             ///< The minimum latitude for the bounding box of this change
+    double min_lon;             ///< The minimum longitude for the bounding box of this change
+    double max_lat;             ///< The maximum latitude for the bounding box of this change
+    double max_lon;             ///< The maximum longitude for the bounding box of this change
+    int num_changes = 0;        ///< The number of changes in this changeset, which apears to be unused
+    int comments_count = 0;     ///< The number of comments in this changeset, which apears to be unused
+    std::vector<std::string> hashtags; ///< Internal aray of hashtags in this changeset
+    std::string comment;               ///< The comment for this changeset
+    std::string editor;                ///< The OSM editor the end user used
 };
 
+/// This contains the data in a state.txt file, used to identify the timestamp
+/// of the changeset replication file.
 class StateFile
 {
 public:
@@ -112,13 +138,17 @@ public:
 
     // protected so testcases can access private data
 protected:
-    ptime timestamp;
-    long sequence;
+    ptime timestamp;            ///< The timestamp of the associated changeset file
+    long sequence;              ///< The sequence number of the associated changeset file
 };
 
+/// A changeset file contains multiple changes, this then contains data
+/// for the entire file.
 class ChangeSetFile  : public xmlpp::SaxParser
 {
 public:
+    ChangeSetFile(void) { };
+
     /// Read a changeset file from disk or memory into internal storage
     bool readChanges(const std::string &file, bool memory);
 
@@ -126,26 +156,28 @@ public:
     bool importChanges(const std::string &file);
 
     // Parse the XML data
-    bool readXML(const std::string xml);
+    // bool readXML(const std::string xml);
     
-    // Used by libxml++
+    /// Called by libxml++ for each element of the XML file
     void on_start_element(const Glib::ustring& name,
                           const AttributeList& properties) override;
 
     /// Get one set of change data from the parsed XML data
     ChangeSet &getChange(long id) { return changes[id]; };
 
+    /// Setup the boundary data used to determine the country
+    bool setupBoundaries(std::shared_ptr<geoutil::GeoUtil> &geou) {
+        boundaries = geou;
+    };
+
+    /// Dump the data of this class to the terminal. This should only
+    /// be used for debugging.
     void dump(void);
-
 protected:
-    apidb::QueryStats osmdb;
-
     bool store;
-    std::string filename;
-    // Index by changeset ID
-    // std::map<long, ChangeSet> changes;
-    // No index
-    std::vector<ChangeSet> changes;
+    std::string filename;       ///< The filename of this changeset for disk files
+    std::vector<ChangeSet> changes; ///< Storage of all the changes in this data
+    std::shared_ptr<geoutil::GeoUtil> boundaries; ///< A pointer to the geoboundary data
 };
 }       // EOF changeset
 

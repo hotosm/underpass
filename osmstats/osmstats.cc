@@ -86,6 +86,13 @@ QueryOSMStats::connect(const std::string &dbname)
    }    
 }
 
+// long
+// QueryOSMStats::updateCounters(std::map<const std::string &, long> data)
+// {
+//     for (auto it = std::begin(data); it != std::end(data); ++it) {
+//     }
+// }
+
 int
 QueryOSMStats::lookupHashtag(const std::string &hashtag)
 {

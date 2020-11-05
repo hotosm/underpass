@@ -89,6 +89,9 @@ GeoCountry::extractTags(const std::string &other)
                     iso_a3 = value;
                 }
             }
+            if (key == "cid") {
+                id = std::stol(value);
+            }
         }
     }
 
@@ -146,12 +149,15 @@ GeoUtil::readFile(const std::string &filespec, bool multi)
         for (auto& feature: layer) {
             GeoCountry country;
             const OGRGeometry* geom = feature->GetGeometryRef();
-            for( auto&& field: *feature ) {
+            for (auto&& field: *feature) {
                 if(NULL != geom) {
                     int eType = wkbFlatten(layer->GetGeomType());
                     std::string value = field.GetAsString();
                     if (strcmp(field.GetName(), "name") == 0) {
                         country.setName(value);
+                    }
+                    if (strcmp(field.GetName(), "alt_name") == 0) {
+                        country.setAltName(value);
                     }
                     if (strcmp(field.GetName(), "other_tags") == 0) {
                         country.extractTags(value);
@@ -176,6 +182,9 @@ GeoUtil::readFile(const std::string &filespec, bool multi)
             CPLFree(wkt1);
         }
     }
+
+    // FIXME: return something real
+    return false;
 }
 
 bool
@@ -185,11 +194,11 @@ GeoUtil::focusArea(double lat, double lon)
     return false;
 }
 
-osmstats::RawCountry
-GeoUtil::findCountry(double lat, double lon)
-{
+// osmstats::RawCountry
+// GeoUtil::findCountry(double lat, double lon)
+// {
 
-}
+// }
 
 void
 GeoUtil::dump(void)
@@ -204,7 +213,6 @@ GeoCountry &
 GeoUtil::inCountry(double max_lat, double max_lon, double min_lat, double min_lon)
 {
     for (auto it = std::begin(countries); it != std::end(countries); ++it) {
-        // it->dump();
         bool in = it->inCountry(max_lat, max_lon, min_lat, min_lon);
         if (in) {
             return *it;
@@ -212,16 +220,32 @@ GeoUtil::inCountry(double max_lat, double max_lon, double min_lat, double min_lo
     }
 }
 
+std::vector<osmstats::RawCountry>
+GeoUtil::exportCountries(void)
+{
+    std::vector<osmstats::RawCountry> countries;
+    for (auto it = std::begin(countries); it != std::end(countries); ++it) {
+        osmstats::RawCountry country(it->id, it->name, "iso");
+        countries.push_back(country);
+    }
+    return countries;
+}
+
 void
 GeoCountry::dump(void)
 {
     std::cout << "Country Name: " << name << std::endl;
+    if (!alt_name.empty()) {
+        std::cout << "Alternate Name: " << name << std::endl;
+    }
     if (!iso_a2.empty()) {
         std::cout << "ISO A2: " << iso_a2 << std::endl;
     }
     if (!iso_a3.empty()) {
         std::cout << "ISO A3: " << iso_a3 << std::endl;
     }
+    std::cout << "Country ID: " << id << std::endl;
+
     std::cout << "Boundary: " << boost::geometry::wkt(boundary) << std::endl;
     for (auto it = std::begin(names); it != std::end(names); ++it) {
         //std::cout << *it.first() << std::endl;
