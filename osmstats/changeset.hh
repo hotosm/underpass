@@ -162,14 +162,14 @@ public:
     void on_start_element(const Glib::ustring& name,
                           const AttributeList& properties) override;
 
-    /// Get one set of change data from the parsed XML data
-    ChangeSet &getChange(long id) { return changes[id]; };
-
     /// Setup the boundary data used to determine the country
     bool setupBoundaries(std::shared_ptr<geoutil::GeoUtil> &geou) {
         boundaries = geou;
     };
 
+    /// Get one set of change data from the parsed XML data
+    ChangeSet& operator[](int index) { return changes[index]; };
+    
     /// Dump the data of this class to the terminal. This should only
     /// be used for debugging.
     void dump(void);

@@ -64,6 +64,7 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
 #include "hotosm.hh"
@@ -206,49 +207,47 @@ ChangeSetFile::readChanges(const std::string &file, bool memory)
     std::ifstream change;
     int size = 0;
     store = false;
-
+    
     unsigned char *buffer;
     if (!memory) {
-        try {
+        std::cout << "Reading changeset file " << file << std::endl;
+        std::string suffix = boost::filesystem::extension(file);
+        // It's a gzipped file, common for files downloaded from planet
+        std::ifstream ifile(file, std::ios_base::in | std::ios_base::binary);
+        if (suffix == ".gz") {  // it's a compressed file
             change.open(file,  std::ifstream::in |  std::ifstream::binary);
-            std::ifstream ifile(file, std::ios_base::in | std::ios_base::binary);
-            boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
-            inbuf.push(boost::iostreams::gzip_decompressor());
-            inbuf.push(ifile);
-            // Convert streambuf to istream
-            std::istream instream(&inbuf);
-            ///std::ostringstream iss = instream.rdbuf();
-            // Copy everything from instream to
-            std::cout << instream.rdbuf();
+            try {
+                boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
+                inbuf.push(boost::iostreams::gzip_decompressor());
+                inbuf.push(ifile);
+                // Convert streambuf to istream
+                std::istream instream(&inbuf);
+                // Copy everything from instream to
+                // std::cout << instream.rdbuf();
+                try {
+                    set_substitute_entities(true);
+                    parse_stream(instream);
+                }
+                catch(const xmlpp::exception& ex) {
+                    std::cerr << "libxml++ exception in : " << file << " " << ex.what() << std::endl;
+                    int return_code = EXIT_FAILURE;
+                }
+            } catch(std::exception& e) {
+                std::cout << "ERROR opening " << file << std::endl;
+                std::cout << e.what() << std::endl;
+                // return false;
+            }
+        } else {                // it's a text file
+            change.open(file,  std::ifstream::in);
             try {
                 set_substitute_entities(true);
+                std::istream& instream = change;
                 parse_stream(instream);
-            }
-            catch(const xmlpp::exception& ex) {
+            } catch(const xmlpp::exception& ex) {
                 std::cerr << "libxml++ exception in : " << file << " " << ex.what() << std::endl;
                 int return_code = EXIT_FAILURE;
             }
-        } catch(std::exception& e) {
-            std::cout << "ERROR opening " << file << std::endl;
-            std::cout << e.what() << std::endl;
-            // return false;
         }
-        // For a disk file, none of the changeset files appears to be larger
-        // than a few kilobytes, so read the whole thing into memory without
-        // any iostream buffering.
-        std::filesystem::path path = file;
-        size = std::filesystem::file_size(path);
-        buffer = new unsigned char[size];
-        change.read((char *)buffer, size);
-    }
-
-    try {
-        set_substitute_entities(true);
-        parse_memory((char *)buffer);
-    }
-    catch(const xmlpp::exception& ex) {
-        std::cerr << "libxml++ exception: " << ex.what() << std::endl;
-        int return_code = EXIT_FAILURE;
     }
 
     // // It's a gzipped XML file, so decompress it for parsing.
@@ -372,7 +371,7 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
     if (name == "changeset") {
         changeset::ChangeSet change(attributes);
         changes.push_back(change);
-        changes.back().dump();
+        // changes.back().dump();
     } else if (name == "tag") {
         // We ignore most of the tags, as they're not used for OSM stats.
         // Processing a tag requires multiple passes through the loop. The
@@ -395,29 +394,24 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
             if (attr_pair.name == "k" && attr_pair.value == "max_lat") {
                 max_lat = std::stod(attr_pair.value);
                 max_lathit = true;
-            }
-            if (attr_pair.name == "k" && attr_pair.value == "min_lat") {
+            } else if (attr_pair.name == "k" && attr_pair.value == "min_lat") {
                 min_lathit = true;
-            }
-            if (attr_pair.name == "k" && attr_pair.value == "max_lon") {
+            } else if (attr_pair.name == "k" && attr_pair.value == "max_lon") {
                 max_lonhit = true;
-            }
-            if (attr_pair.name == "k" && attr_pair.value == "min_lon") {
+            } else if (attr_pair.name == "k" && attr_pair.value == "min_lon") {
                 min_lonhit = true;
-            }
-            if (attr_pair.name == "k" && attr_pair.value == "hashtags") {
+            } else if (attr_pair.name == "k" && attr_pair.value == "hashtags") {
                 hashit = true;
-            }
-            if (attr_pair.name == "k" && attr_pair.value == "comment") {
+            } else if (attr_pair.name == "k" && attr_pair.value == "comment") {
                 comhit = true;
-            }
-            if (attr_pair.name == "k" && attr_pair.value == "created_by") {
+            } else if (attr_pair.name == "k" && attr_pair.value == "created_by") {
                 cbyhit = true;
+            } else {
+                continue;                
             }
 
             if (hashit && attr_pair.name == "v") {
-                hashit = false;
-                std::size_t pos = attr_pair.value.find('#', 0);
+                hashit = false;                std::size_t pos = attr_pair.value.find('#', 0);
                 if (pos != std::string::npos) {
                     char *token = std::strtok((char *)attr_pair.value.c_str(), "#;");
                     while (token != NULL) {
@@ -453,9 +447,10 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
             }
 
             // Get the country the change was made in
-            geoutil::GeoCountry geo = boundaries->inCountry(max_lat, max_lon, min_lat, min_lon);
-            changes.back().countryid = geo.getID();
-            // try {
+            // geoutil::GeoCountry geo = boundaries->inCountry(max_lat, max_lon, min_lat, min_lon);
+            // changes.back().countryid = geo.getID();
+
+            // // try {
             //     std::cout << "  Attribute name =" <<  attr_pair.name;
             // }
             // catch(const Glib::ConvertError& ex) {
