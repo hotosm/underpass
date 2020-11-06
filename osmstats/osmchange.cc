@@ -51,9 +51,20 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
 using namespace boost::gregorian;
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/linestring.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+#include <boost/geometry/geometries/geometries.hpp>
+#include <ogrsf_frmts.h>
 
 #include "hotosm.hh"
 #include "osmstats/osmchange.hh"
+// #include "osmstats/geoutil.hh"
+
+typedef boost::geometry::model::d2::point_xy<double> point_t;
+typedef boost::geometry::model::polygon<point_t> polygon_t;
+typedef boost::geometry::model::linestring<point_t> linestring_t;
 
 namespace osmchange {
 
@@ -106,6 +117,99 @@ OsmChange::readChanges(const std::string &osc, bool memory)
         // All exceptions used by the Osmium library derive from std::exception.
         std::cerr << e.what() << '\n';
         std::exit(1);
+    }
+}
+
+/// Read a changeset file from disk or memory into internal storage
+bool
+readChanges(const std::string &osc, bool memory)
+{
+}
+
+/// The node handler is called for each node in the input data.
+void
+node(const osmium::Node& node)
+{
+    // std::cout << "node " << node.id()
+    //           << ", Changeset: " << node.changeset()
+    //           << ", Version: " << node.version()
+    //           << ", UID: " << node.uid()
+    //           << ", User: " << node.user()
+    //           << ", Timestamp: " << node.timestamp() << std::endl;
+
+    // cache[node.id()] = node.location();
+    
+    std::string tags;
+    for (const osmium::Tag& t : node.tags()) {
+        std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
+        tags += "\"";
+        tags += t.key();
+        tags += "\"=>\"";
+        // Replace single quotes, as they screw up the query
+        std::string tmp = t.value();
+        boost::algorithm::replace_all(tmp, "\'", "&quot;");
+        tags += tmp;
+        tags += "\", ";
+    }
+    tags = tags.substr(0, tags.size()-2);
+}
+
+/// The way handler is called for each way in the input data.
+void
+way(const osmium::Way& way)
+{
+    std::cout << "way " << way.id()
+              << ", Changeset: " << way.changeset()
+              << ", Version: " << way.version()
+              << ", UID: " << way.uid()
+              << ", User: " << way.user()
+              << ", Timestamp: " << way.timestamp() << std::endl;
+    // Setup the tags
+    std::string tags;
+    for (const osmium::Tag& t : way.tags()) {
+        std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
+        tags += "\"";
+        tags += t.key();
+        tags += "\"=>\"";
+        // Replace single quotes, as they screw up the query
+        std::string tmp = t.value();
+        boost::algorithm::replace_all(tmp, "\'", "&quot;");
+        // Some values have a double quote, which is unnecesary, and
+        // screws up XML parsing.
+        boost::algorithm::replace_all(tmp, "\"", "");
+        tags += tmp;
+        tags += "\", ";
+    }
+    tags = tags.substr(0, tags.size()-2);
+
+    // Setup the node refs
+    std::string refs;
+    for (const osmium::NodeRef& nref : way.nodes()) {
+        refs += std::to_string(nref.ref()) + ", ";
+        // const osmium::Location loc = nref.location();
+    }
+    refs = refs.substr(0, refs.size()-2);
+
+    // Get the bounding box of the way
+    linestring_t lines;
+    for (const osmium::NodeRef& nref : way.nodes()) {
+        std::cout << "ref:  " << nref.ref() << std::endl;
+        // If the location data is bad, drop it
+        // if (cache[nref.ref()]) {
+        //     boost::geometry::append(lines, point_t(cache[nref.ref()].lat(), cache[nref.ref()].lon()));
+        // } else {
+        //     std::cout << "ERROR: bad location data in " << nref.ref() <<  std::endl;
+        // }
+    }
+}
+
+/// The relation handler is called for each relation in the input data.
+void
+relation(const osmium::Relation& relation)
+{
+    std::cout << "rel " << relation.id() << std::endl;
+    for (const osmium::Tag& t : relation.tags()) {
+        std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
     }
 }
 
