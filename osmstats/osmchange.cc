@@ -39,7 +39,9 @@
 #include <memory>
 #include <iostream>
 #include <pqxx/pqxx>
-#include <libxml++/libxml++.h>
+#ifdef LIBXML
+#  include <libxml++/libxml++.h>
+#endif
 
 // The Dump handler
 #include <osmium/handler/dump.hpp>
@@ -65,6 +67,8 @@ using namespace boost::gregorian;
 typedef boost::geometry::model::d2::point_xy<double> point_t;
 typedef boost::geometry::model::polygon<point_t> polygon_t;
 typedef boost::geometry::model::linestring<point_t> linestring_t;
+
+#define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
 namespace osmchange {
 

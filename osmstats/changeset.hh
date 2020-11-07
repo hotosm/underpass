@@ -53,7 +53,9 @@
 #include <list>
 #include <iostream>
 #include <pqxx/pqxx>
-#include <libxml++/libxml++.h>
+#ifdef LIBXML
+#  include <libxml++/libxml++.h>
+#endif
 #include <deque>
 #include <osmium/io/any_input.hpp>
 #include <osmium/builder/osm_object_builder.hpp>
@@ -86,7 +88,9 @@ class ChangeSet
 {
 public:
     ChangeSet(void);
+#ifdef LIBXML
     ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attrs);
+#endif
 
     /// Dump internal data to the terminal, used only for debugging
     void dump(void);
@@ -144,24 +148,32 @@ protected:
 
 /// A changeset file contains multiple changes, this then contains data
 /// for the entire file.
+#ifdef LIBXML
 class ChangeSetFile  : public xmlpp::SaxParser
+#else
+class ChangeSetFile
+#endif
 {
 public:
     ChangeSetFile(void) { };
 
     /// Read a changeset file from disk or memory into internal storage
-    bool readChanges(const std::string &file, bool memory);
+    bool readChanges(const std::string &file);
 
+    /// Read a changeset file from disk or memory into internal storage
+    bool readChanges(const std::vector<unsigned char> &buffer);
+    
     /// Import a changeset file from disk and initialize the database
     bool importChanges(const std::string &file);
 
     // Parse the XML data
     // bool readXML(const std::string xml);
-    
+
+#ifdef LIBXML
     /// Called by libxml++ for each element of the XML file
     void on_start_element(const Glib::ustring& name,
                           const AttributeList& properties) override;
-
+#endif
     /// Setup the boundary data used to determine the country
     bool setupBoundaries(std::shared_ptr<geoutil::GeoUtil> &geou) {
         boundaries = geou;

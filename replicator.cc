@@ -51,12 +51,31 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 #include <boost/program_options.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/device/array.hpp>
+#include <boost/iostreams/device/back_inserter.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 
 using namespace boost;
 namespace opts = boost::program_options;
 
+// #include "hotosm.hh"
 #include "osmstats/changeset.hh"
+// #include "osmstats/osmstats.hh"
+#include "osmstats/geoutil.hh"
 #include "osmstats/replication.hh"
+#include "data/import.hh"
+
+#define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
+
+// Forward declarations
+namespace changeset {
+  class ChangeSet;
+};
 
 // A helper function to simplify the main part.
 template<class T>
@@ -65,6 +84,57 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
     copy(v.begin(), v.end(), std::ostream_iterator<T>(os, " "));
     return os;
 }
+
+// This class does all the actual work
+class Replicator
+{
+public:
+    /// Create a new instance, and read in the geoboundaries file.
+    bool initializeData(void) {
+        auto hashes = std::make_shared<std::map<std::string, int>>();
+        auto geou = std::make_shared<geoutil::GeoUtil>();
+        geou->startTimer();
+        // FIXME: this shouldn't be hardcoded
+        geou->readFile("../underpass.git/data/geoboundaries.osm", true);
+        geou->endTimer();
+        changes.setupBoundaries(geou);
+
+        // FIXME: should return a real value
+        return false;
+    };
+    
+    /// Initialize the raw_user, raw_hashtags, and raw_changeset tables
+    /// in the OSM stats database from a changeset file
+    bool initializeRaw(std::vector<std::string> &rawfile, const std::string &database) {
+        for (auto it = std::begin(rawfile); it != std::end(rawfile); ++it) {
+            changes.importChanges(*it);
+        }
+    };
+
+    int lookupHashID(const std::string &hash) {
+        auto found = hashes->find(hash);
+        if (found != hashes->end()) {
+            return (*hashes)[hash];
+        } else {
+            int id = ostats.lookupHashtag(hash);
+            return id;
+        }
+    };
+    /// Get the numeric ID of the country by name
+    long lookupCountryID(const std::string &country) {
+        return geou->getCountry(country).getID();
+    };
+
+    // osmstats::RawCountry & findCountry() {
+    //     geou.inCountry();
+    // };
+
+private:
+    osmstats::QueryOSMStats ostats;
+    changeset::ChangeSetFile changes;
+    std::shared_ptr<geoutil::GeoUtil> geou;
+    std::shared_ptr<std::map<std::string, int>> hashes;
+};
 
 int
 main(int argc, char *argv[])
@@ -78,11 +148,17 @@ main(int argc, char *argv[])
         opts::options_description desc("Allowed options");
         desc.add_options()
             ("help,h", "display help")
-            ("encrypted,e", "enable HTTPS")
-            ("verbose,v", opts::value<int>()->implicit_value(1),"enable verbosity")
+            ("encrypted,e", "enable HTTPS (the default)")
+            ("server,s", "database server (defaults to localhost)")
+            ("format,f", "database format (defaults to pgsnapshot)")
+            ("statistics,s", "OSM Stats database name (defaults to osmstats)")
+            ("osm,o", "OSM database name (defaults to pgsnapshot)")
+            ("verbose,v", "enable verbosity")
             ("sequence,s", opts::value<int>(), "Sequence number")
-            ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp")
-            ("url,u", opts::value<std::vector<std::string>>(), "Replication URL")
+            ("timestamp,t", opts::value<std::string>(), "Starting timestamp")
+            ("url,u", opts::value<std::string>(), "Replication File URL")
+            ("initialize,r", opts::value<std::vector<std::string>>(), "Initialize OSM Stats Raw data from OSM files")
+            ("import,i", opts::value<std::string>(), "Initialize OSM database with datafile")
             ;
         
         opts::positional_options_description p;
@@ -90,6 +166,11 @@ main(int argc, char *argv[])
         opts::store(opts::command_line_parser(argc, argv).
                   options(desc).positional(p).run(), vm);
         opts::notify(vm);
+
+        Replicator replicator;
+        replicator.initializeData();
+        
+        std::vector<std::string> rawfile;
         
         if (vm.count("help")) {
             std::cout << "Usage: options_description [options]\n";
@@ -114,6 +195,22 @@ main(int argc, char *argv[])
             timestamp = time_from_string(vm["timestamp"].as<std::vector<std::string> >()[0]);
         }
 
+        std::string statistics;
+        if (vm.count("initialize")) {
+            rawfile = vm["initialize"].as<std::vector<std::string>>();
+            replicator.initializeRaw(rawfile, statistics);
+        }
+
+        std::string osmdb;
+        if (vm.count("osm")) {
+            osmdb = vm["osm"].as<std::vector<std::string>>()[0];
+        }
+        
+        if (vm.count("import")) {
+            std::string file = vm["import"].as<std::string>();
+            import::ImportOSM osm(file, osmdb);
+        }
+
         // FIXME: add logging
         if (vm.count("verbose")) {
             std::cout << "Verbosity enabled.  Level is " << vm["verbose"].as<int>() << std::endl;
@@ -132,15 +229,17 @@ main(int argc, char *argv[])
 
     replication::Replication rep(server, timestamp, sequence);
 
-    std::vector<std::string> files;
-    files.push_back("004/139/998.state.txt");
-    std::shared_ptr<std::vector<std::string>> links = rep.downloadFiles(files, true);
-    std::cout << "Got "<< links->size() << " directories" << std::endl;
-    // links = rep.downloadFiles(*links, true);
-    // std::cout << "Got "<< links->size() << " directories" << std::endl;
 
-    changeset::StateFile foo("/tmp/foo1.txt", false);
-    changeset::StateFile bar("/tmp/foo2.txt", false);
-    return 0;
+    
+    // std::vector<std::string> files;
+    // files.push_back("004/139/998.state.txt");
+    // std::shared_ptr<std::vector<std::string>> links = rep.downloadFiles(files, true);
+    // std::cout << "Got "<< links->size() << " directories" << std::endl;
+    // // links = rep.downloadFiles(*links, true);
+    // // std::cout << "Got "<< links->size() << " directories" << std::endl;
+
+    // changeset::StateFile foo("/tmp/foo1.txt", false);
+    // changeset::StateFile bar("/tmp/foo2.txt", false);
+    // return 0;
 }
 

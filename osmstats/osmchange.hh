@@ -42,8 +42,9 @@
 #include <memory>
 #include <iostream>
 #include <pqxx/pqxx>
-#include <libxml++/libxml++.h>
-
+#ifdef LIBXML
+#  include <libxml++/libxml++.h>
+#endif
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
@@ -79,6 +80,16 @@ public:
     /// The relation handler is called for each relation in the input data.
     void relation(const osmium::Relation& relation);
 
+#ifdef LIBXML
+    /// Called by libxml++ for each element of the XML file
+    void on_start_element(const Glib::ustring& name,
+                          const AttributeList& properties) override;
+
+    void on_end_element (const Glib::ustring& name) {
+        std::cout << " on_end_element()" << name << std::endl;
+    };
+#endif
+    
 private:
 };
     

@@ -39,7 +39,7 @@
 #include <memory>
 #include <iostream>
 #include <pqxx/pqxx>
-#include <libxml++/libxml++.h>
+// #include <libxml++/libxml++.h>
 
 // The Dump handler
 #include <osmium/handler/dump.hpp>
@@ -169,7 +169,6 @@ OSMHandler::way(const osmium::Way& way)
 
     // pgsnapshot.ways
     // id | version | user_id | tstamp | changeset_id | tags | nodes | bbox | linestring
-    // std::string query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes,bbox,linestring) VALUES(";
     std::string query;
     query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes,bbox,linestring) VALUES(";
     query += std::to_string(way.id()) + ",";
@@ -186,8 +185,9 @@ OSMHandler::way(const osmium::Way& way)
     bbox << boost::geometry::wkt(box);
     query += "ST_GeomFromText(\'" + bbox.str() + "\', 4326)";
     // Sometimes short linestrings have bad location data. In that
-    // case, substitute the bound box. This is wrong of course.
-    // FIXME:see if bad location data can be handled better
+    // case, substitute the bounding box. This is wrong of course.
+    // FIXME: see if bad location data can be handled better, or
+    // maybe it's a bug
     if (boost::geometry::length(lines) > 0) {
         std::ostringstream linestrings;
         linestrings << boost::geometry::wkt(lines);
@@ -212,25 +212,6 @@ OSMHandler::way(const osmium::Way& way)
         pqxx::result result = worker->exec(query);
     }
 
-    // FIXME: the ways table at this point is missing the bbox and
-    // linestring columns data
-    // osmium::Box bbox = way.envelope();
-    // if (bbox.valid()) {
-    //     std::cout << "VALID" << std::endl;
-    //     osmium::Location bl = bbox.bottom_left();
-    //     osmium::Location tr = bbox.top_right();
-    // // It's a Polygon if the way is closed
-    // // query += "ST_GeomFromText('Polygon(";
-    // // std::cout << "FIXME: " << bl.x() << " : " << osmium::Location::fix_to_double(bl.x()) << std::endl;
-    // // query += std::to_string(bl.lat()) + "" + std::to_string(bl.lon());
-    // // query += "ST_GeomFromText('Polygon(" + std::to_string(bl.lon()) + ", " + std::to_string(bl.lat());
-    // // query += ", " + std::to_string(bl.lon()) + ", " + std::to_string(bl.lat());
-    // // query += ", " + std::to_string(bl.lon()) + ", " + std::to_string(tr.lat());
-    // // query += ", " + std::to_string(tr.lon()) + ", " + std::to_string(tr.lat());
-    // // query += ", " + std::to_string(tr.lon()) + ", " + std::to_string(bl.lat());
-    // // query += ", " + std::to_string(bl.lon()) + ", " + std::to_string(bl.lat());
-    // // query += ", 4326)) )\'";
-    // }
     worker->commit();
 
     addUser(way.uid(), way.user());
@@ -238,7 +219,7 @@ OSMHandler::way(const osmium::Way& way)
     // Empty the node cache so it doesn't grow out of control
     if (cache.size() > 1000) {
         //cache.clear();
-        //cache.erase(0, 20);
+        // cache.erase(0, 20);
     }
 }
 

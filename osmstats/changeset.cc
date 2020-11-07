@@ -49,7 +49,9 @@
 #include <deque>
 #include <list>
 #include <zlib.h>
-#include <libxml++/libxml++.h>
+#ifdef LIBXML
+#  include <libxml++/libxml++.h>
+#endif 
 
 #include <osmium/io/any_input.hpp>
 #include <osmium/builder/osm_object_builder.hpp>
@@ -66,10 +68,15 @@ using namespace boost::gregorian;
 #include <boost/iostreams/copy.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/device/array.hpp>
+#include <boost/iostreams/device/back_inserter.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 
 #include "hotosm.hh"
 #include "osmstats/osmstats.hh"
 #include "osmstats/changeset.hh"
+
+#define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
 namespace changeset {
 
@@ -178,6 +185,7 @@ ChangeSetFile::importChanges(const std::string &file)
     int size = 0;
     store = false;
 
+#ifdef LIBXML
     // FIXME: this should really use CHUNKS, since the files can
     // many gigs.
     try {
@@ -188,6 +196,7 @@ ChangeSetFile::importChanges(const std::string &file)
         std::cerr << "libxml++ exception: " << ex.what() << std::endl;
         int return_code = EXIT_FAILURE;
     }
+#endif
 
     osmstats::QueryOSMStats ostats;
     ostats.connect("mystats");  // FIXME: debugging hack!
@@ -200,88 +209,69 @@ ChangeSetFile::importChanges(const std::string &file)
     return false;
 }
 
+bool
+ChangeSetFile::readChanges(const std::vector<unsigned char> &buffer)
+{
+    
+    //parse_memory((const Glib::ustring &)buffer);
+}
+
 // Read a changeset file from disk or memory into internal storage
 bool
-ChangeSetFile::readChanges(const std::string &file, bool memory)
+ChangeSetFile::readChanges(const std::string &file)
 {
     std::ifstream change;
     int size = 0;
     store = false;
     
     unsigned char *buffer;
-    if (!memory) {
-        std::cout << "Reading changeset file " << file << std::endl;
-        std::string suffix = boost::filesystem::extension(file);
-        // It's a gzipped file, common for files downloaded from planet
-        std::ifstream ifile(file, std::ios_base::in | std::ios_base::binary);
-        if (suffix == ".gz") {  // it's a compressed file
-            change.open(file,  std::ifstream::in |  std::ifstream::binary);
-            try {
-                boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
-                inbuf.push(boost::iostreams::gzip_decompressor());
-                inbuf.push(ifile);
-                // Convert streambuf to istream
-                std::istream instream(&inbuf);
-                // Copy everything from instream to
-                // std::cout << instream.rdbuf();
-                try {
-                    set_substitute_entities(true);
-                    parse_stream(instream);
-                }
-                catch(const xmlpp::exception& ex) {
-                    std::cerr << "libxml++ exception in : " << file << " " << ex.what() << std::endl;
-                    int return_code = EXIT_FAILURE;
-                }
-            } catch(std::exception& e) {
-                std::cout << "ERROR opening " << file << std::endl;
-                std::cout << e.what() << std::endl;
-                // return false;
-            }
-        } else {                // it's a text file
-            change.open(file,  std::ifstream::in);
+    std::cout << "Reading changeset file " << file << std::endl;
+    std::string suffix = boost::filesystem::extension(file);
+    // It's a gzipped file, common for files downloaded from planet
+    std::ifstream ifile(file, std::ios_base::in | std::ios_base::binary);
+    if (suffix == ".gz") {  // it's a compressed file
+        change.open(file,  std::ifstream::in |  std::ifstream::binary);
+        try {
+            boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
+            inbuf.push(boost::iostreams::gzip_decompressor());
+            inbuf.push(ifile);
+            std::istream instream(&inbuf);
+            // std::cout << instream.rdbuf();
+#ifdef LIBXML
             try {
                 set_substitute_entities(true);
-                std::istream& instream = change;
                 parse_stream(instream);
-            } catch(const xmlpp::exception& ex) {
+            }
+            catch(const xmlpp::exception& ex) {
                 std::cerr << "libxml++ exception in : " << file << " " << ex.what() << std::endl;
                 int return_code = EXIT_FAILURE;
             }
+#endif
+        } catch(std::exception& e) {
+            std::cout << "ERROR opening " << file << std::endl;
+            std::cout << e.what() << std::endl;
+            // return false;
         }
+    } else {                // it's a text file
+        change.open(file,  std::ifstream::in);
+#ifdef LIBXML
+        try {
+            set_substitute_entities(true);
+            std::istream& instream = change;
+            parse_stream(instream);
+        } catch(const xmlpp::exception& ex) {
+            std::cerr << "libxml++ exception in : " << file << " " << ex.what() << std::endl;
+            int return_code = EXIT_FAILURE;
+        }
+#endif
     }
 
-    // // It's a gzipped XML file, so decompress it for parsing.
-    // unsigned char outbuffer[10000];
-    // z_stream strm;
-    // strm.zalloc = Z_NULL;
-    // strm.zfree = Z_NULL;
-    // strm.opaque = Z_NULL;
-    // strm.avail_in = 0;
-    // strm.next_in = Z_NULL;
-
-    // // This is needed for gzip
-    // inflateInit2(&strm, 16+MAX_WBITS);
-    // strm.avail_in = size;
-    // strm.next_in = buffer;
-    // if (memory) {
-    //     strm.next_in = (unsigned char *)file.c_str();
-    // } else {
-    //     strm.next_in = buffer;
-    // }
+    // magic number: 0x8b1f or 0x1f8b for gzipped
+    // <?xml for text
+    std::string foo = "Hello World";
+    boost::iostreams::array_source(foo.c_str(), foo.size());
+    // boost::iostreams::filtering_streambuf<boost::iostreams::input> fooby(foo, 10);
     
-    // // FIXME: This should be calculated, not hardcoded to 3M
-    // strm.avail_out = 3000000;
-    // strm.next_out = outbuffer;
-
-    // int ret = inflate( &strm, Z_FINISH );
-
-    // inflateEnd( &strm );
-    // //. Terminate the data for printing
-    // outbuffer[strm.total_out] = 0;
-    // // FIXME: debug print so we know it's working
-    // std::cout << outbuffer << std::endl;
-
-    // readXML((char *)outbuffer);
     change.close();
 }
 
@@ -314,6 +304,7 @@ ChangeSet::dump(void)
     std::cout << "Editor:      " << editor << std::endl;
 }
 
+#ifdef LIBXML
 ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes)
 {
     for(const auto& attr_pair : attributes) {
@@ -354,6 +345,7 @@ ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes)
             }
     }
 }
+#endif  // EOF LIBXML
 
 void
 ChangeSetFile::dump(void)
@@ -364,6 +356,7 @@ ChangeSetFile::dump(void)
     }
 }
 
+#ifdef LIBXML
 void
 ChangeSetFile::on_start_element(const Glib::ustring& name,
                                 const AttributeList& attributes)
@@ -465,23 +458,7 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
         }
     }
 }
-
-// bool
-// ChangeSetFile::readXML(const std::string xml)
-// {
-//     try {
-//         set_substitute_entities(true);
-//         parse_memory(xml);
-//     }
-//     catch(const xmlpp::exception& ex) {
-//         std::cerr << "libxml++ exception: " << ex.what() << std::endl;
-//         int return_code = EXIT_FAILURE;
-//     }
-//     // dump();
-
-//     // FIXME: return real value
-//     return false;
-// }
+#endif  // EOF LIBXML
 
 }       // EOF changeset
 

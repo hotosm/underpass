@@ -154,6 +154,11 @@ testsuite/hotosm/Makefile
 
 AC_OUTPUT
 
+if test x"${build_libxml}" = x"yes"; then
+   echo "Using libxml for XML parsing"
+else
+   echo "Using RaqpidXML for XML parsing, which is used by boost::parse_tree"
+fi
 # Local Variables:
 # c-basic-offset: 2
 # tab-width: 2

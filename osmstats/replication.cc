@@ -46,7 +46,9 @@
 #include <fstream>
 #include <cctype>
 #include <sstream>
-#include <libxml++/libxml++.h>
+#ifdef LIBXML
+#  include <libxml++/libxml++.h>
+#endif
 #include <gumbo.h>
 
 #include <osmium/io/any_input.hpp>
