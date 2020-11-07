@@ -28,20 +28,46 @@ dnl OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE US
 dnl OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-AC_CONFIG_HEADERS([hotconfig.h])
-
 AC_PREREQ(2.59c)
 AC_INIT(hotosm, 0.1-dev)
 LT_INIT
 AM_INIT_AUTOMAKE
 AC_CONFIG_MACRO_DIR([m4])
-
-dnl AC_CONFIG_HEADERS([hotconfig.h])
+AC_CONFIG_HEADERS([hotconfig.h])
 
 AC_PROG_CC
 AC_PROG_CXX
 AC_EXEEXT
 AC_PROG_INSTALL
+AC_PROG_RANLIB
+AC_CHECK_HEADER_STDBOOL
+
+dnl RapidXML is the default, as it's used by boost
+build_rapidxml=yes
+build_libxml=no
+AC_ARG_ENABLE(parser,
+  AS_HELP_STRING([--enable-parser], [Enable support for the specified XML parser (default=rapidxml)]),
+  [if test -n ${enableval}; then
+    enableval=`echo ${enableval} | tr '\054' ' ' `
+  fi
+  while test -n "${enableval}" ; do
+    val=`echo ${enableval} | cut -d ' ' -f 1`
+    case "${val}" in
+      rapidxml|rapid|r)
+        build_rapidxml=yes
+        ;;
+      libxml++|lib|l)
+        build_libxml=yes
+        ;;
+     *) AC_MSG_ERROR([invalid XML parser ${enableval} given (accept: rapidxml, libxml++)])
+         ;;
+      esac
+    enableval=`echo ${enableval} | cut -d ' ' -f 2-6`
+    if test "x$val" = "x$enableval"; then
+      break;
+    fi
+  done]
+])
 
 CPPFLAGS=$(pkg-config --cflags python)
 CPPFLAGS+=" $(pkg-config --cflags libpqxx)"
@@ -81,19 +107,28 @@ LIBS+=" $(pkg-config --libs gumbo)"
 LIBS+=" $(pkg-config --libs zlib)"
 LIBS+=" $(pkg-config --libs gdal)"
 LIBS+=" $(pkg-config --libs glibmm-2.4)"
+if test x"${build_libxml}" = x"yes"; then
 dnl Debian Buster and Ubuntu Focal ship 2.6, Fedora ships 3,.0
 dnl The version in Focal is broken, so either build libxml++-3.0
 dnl from source, or wait for 20.10 to be released.
-$(pkg-config --exists libxml++-3.0)
-if test $? -gt 0 ; then
-  CPPFLAGS+=" $(pkg-config --cflags libxml++-2.6)"
-  LIBS+=" $(pkg-config --libs libxml++-2.6)"
+    $(pkg-config --exists libxml++-3.0)
+    if test $? -gt 0 ; then
+       CPPFLAGS+=" $(pkg-config --cflags libxml++-2.6)"
+       LIBS+=" $(pkg-config --libs libxml++-2.6)"
+    else
+      CPPFLAGS+=" $(pkg-config --cflags libxml++-3.0)"
+      LIBS+=" $(pkg-config --libs libxml++-3.0)"
+    fi
+    AC_DEFINE([LIBXML], [1], [Use libxml++ library])
 else
-  CPPFLAGS+=" $(pkg-config --cflags libxml++-3.0)"
-  LIBS+=" $(pkg-config --libs libxml++-3.0)"
+    dnl RapidXML is header only, and we access it through boost, so this
+    dnl is unnecessary
+    AC_DEFINE([RAPIDXML], [1], [Use rapidxml library in boost])
 fi
+dnl AM_CONDITIONAL(BUILD_RAPIDXML, [ test x$build_rapidxml = xyes ])
 LIBS+=" -lpthread -ldl"
 
+dnl 1.69 or newer
 AX_BOOST_BASE(1.69)
 AX_BOOST_SYSTEM
 AX_BOOST_LOG
@@ -109,13 +144,15 @@ AC_LANG_POP(C++)
 AC_PATH_PROG(DOXYGEN, doxygen)
 AM_CONDITIONAL(ENABLE_DOXYGEN, [ test x"$DOXYGEN" != x ])
 
-AC_OUTPUT([
+AC_CONFIG_FILES([
 Makefile
 doc/Makefile
 doc/Doxyfile
 testsuite/Makefile
 testsuite/hotosm/Makefile
 ])
+
+AC_OUTPUT
 
 # Local Variables:
 # c-basic-offset: 2
