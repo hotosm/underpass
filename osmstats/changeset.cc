@@ -60,6 +60,7 @@
 #include <osmium/io/any_output.hpp>
 #include <glibmm/convert.h>
 
+#include <boost/foreach.hpp>
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
@@ -71,6 +72,8 @@ using namespace boost::gregorian;
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/device/back_inserter.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 #include "hotosm.hh"
 #include "osmstats/osmstats.hh"
@@ -237,33 +240,15 @@ ChangeSetFile::readChanges(const std::string &file)
             inbuf.push(ifile);
             std::istream instream(&inbuf);
             // std::cout << instream.rdbuf();
-#ifdef LIBXML
-            try {
-                set_substitute_entities(true);
-                parse_stream(instream);
-            }
-            catch(const xmlpp::exception& ex) {
-                std::cerr << "libxml++ exception in : " << file << " " << ex.what() << std::endl;
-                int return_code = EXIT_FAILURE;
-            }
-#endif
+            readXML(instream);
         } catch(std::exception& e) {
             std::cout << "ERROR opening " << file << std::endl;
             std::cout << e.what() << std::endl;
             // return false;
         }
     } else {                // it's a text file
-        change.open(file,  std::ifstream::in);
-#ifdef LIBXML
-        try {
-            set_substitute_entities(true);
-            std::istream& instream = change;
-            parse_stream(instream);
-        } catch(const xmlpp::exception& ex) {
-            std::cerr << "libxml++ exception in : " << file << " " << ex.what() << std::endl;
-            int return_code = EXIT_FAILURE;
-        }
-#endif
+        change.open(file, std::ifstream::in);
+        readXML(change);
     }
 
     // magic number: 0x8b1f or 0x1f8b for gzipped
@@ -354,6 +339,63 @@ ChangeSetFile::dump(void)
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         it->dump();
     }
+}
+
+// Read an istream of the data and parse the XML
+//
+bool
+ChangeSetFile::readXML(std::istream &xml)
+{
+    // std::cout << xml.rdbuf();
+#ifdef LIBXML
+    // libxml calls on_element_start for each node, using a SAX parser,
+    // and works well for large files.
+    try {
+        set_substitute_entities(true);
+        parse_stream(xml);
+    }
+    catch(const xmlpp::exception& ex) {
+        std::cerr << "libxml++ exception: " << ex.what() << std::endl;
+        int return_code = EXIT_FAILURE;
+    }
+#else
+    // Boost::parser_tree with RapidXML is faster, but builds a DOM tree
+    // so loads the entire file into memory. Most replication files for
+    // hourly or minutely changes are small, so this is better for that
+    // case.
+    boost::property_tree::ptree pt;
+    boost::property_tree::read_xml(xml, pt);
+
+    if (pt.empty()) {
+        std::cerr << "ERROR: XML data is empty!" << std::endl;
+        return false;
+    }
+
+    for (auto value: pt.get_child("osm")) {
+        if (value.first == "changeset") {
+            // Process the tags. These don't exist for every element
+            std:: cout << value.second.get_optional<std::string>("source") << std::endl;
+            std:: cout << value.second.get_optional<std::string>("comment") << std::endl;
+            std:: cout << value.second.get_optional<std::string>("created_by") << std::endl;
+            std:: cout << value.second.get_optional<std::string>("build") << std::endl;
+            std:: cout << value.second.get_optional<std::string>("version") << std::endl;
+            std:: cout << value.second.get_optional<std::string>("imagery_used") << std::endl;
+            // Process the attributes, which do exist in every element
+            std:: cout << value.second.get("<xmlattr>.id", "") << std::endl;
+            std:: cout << value.second.get("<xmlattr>.created_at", "") << std::endl;
+            std:: cout << value.second.get("<xmlattr>.closed_at", "") << std::endl;
+            std:: cout << value.second.get("<xmlattr>.open", "") << std::endl;
+            std:: cout << value.second.get("<xmlattr>.user", "") << std::endl;
+            std:: cout << value.second.get("<xmlattr>.uid", "") << std::endl;
+            std:: cout << value.second.get("<xmlattr>.min_lat", "") << std::endl;
+            std:: cout << value.second.get("<xmlattr>.min_lon", "") << std::endl;
+            std:: cout << value.second.get("<xmlattr>.max_lat", "") << std::endl;
+            std:: cout << value.second.get("<xmlattr>.max_lon", "") << std::endl;
+            std:: cout << value.second.get("<xmlattr>.num_changes", "") << std::endl;
+            std:: cout << value.second.get("<xmlattr>.comments_count", "") << std::endl;
+        }
+    }
+#endif
 }
 
 #ifdef LIBXML

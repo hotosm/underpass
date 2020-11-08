@@ -40,7 +40,7 @@
 #include <iostream>
 #include <pqxx/pqxx>
 #ifdef LIBXML
-#  include <libxml++/libxml++.h>
+# include <libxml++/libxml++.h>
 #endif
 
 // The Dump handler
@@ -72,149 +72,23 @@ typedef boost::geometry::model::linestring<point_t> linestring_t;
 
 namespace osmchange {
 
-bool
-OsmChange::readChanges(const std::string &osc, bool memory)
+
+#ifdef LIBXMLXX
+/// Called by libxml++ for each element of the XML file
+void
+OsmChange::on_start_element(const Glib::ustring& name,
+                            const AttributeList& properties)
 {
-    try {
-        // Default is all entity types: nodes, ways, relations, and changesets
-        osmium::osm_entity_bits::type read_types = osmium::osm_entity_bits::all;
-        
-        // Get entity types from command line if there is a 2nd argument.
-        read_types = osmium::osm_entity_bits::nothing;
-        std::string types = "fixme!!!!";
-        if (types.find('n') != std::string::npos) {
-            read_types |= osmium::osm_entity_bits::node;
-        }
-        if (types.find('w') != std::string::npos) {
-            read_types |= osmium::osm_entity_bits::way;
-        }
-        if (types.find('r') != std::string::npos) {
-            read_types |= osmium::osm_entity_bits::relation;
-        }
-        if (types.find('c') != std::string::npos) {
-            read_types |= osmium::osm_entity_bits::changeset;
-        }
 
-        // Initialize Reader with file name and the types of entities we want to
-        // read.
-        osmium::io::Reader reader{"fixme!", read_types};
-        
-        // The file header can contain metadata such as the program that
-        // generated the file and the bounding box of the data.
-            osmium::io::Header header = reader.header();
-        std::cout << "HEADER:\n  generator=" << header.get("generator") << "\n";
-        
-        for (const auto& bbox : header.boxes()) {
-            std::cout << "  bbox=" << bbox << "\n";
-        }
-
-        // Initialize Dump handler.
-        osmium::handler::Dump dump{std::cout};
-
-        // Read from input and send everything to Dump handler.
-       osmium::apply(reader, dump);
-
-        // You do not have to close the Reader explicitly, but because the
-        // destructor can't throw, you will not see any errors otherwise.
-        reader.close();
-    } catch (const std::exception& e) {
-        // All exceptions used by the Osmium library derive from std::exception.
-        std::cerr << e.what() << '\n';
-        std::exit(1);
-    }
 }
+
+#endif
 
 /// Read a changeset file from disk or memory into internal storage
 bool
 readChanges(const std::string &osc, bool memory)
 {
-}
-
-/// The node handler is called for each node in the input data.
-void
-node(const osmium::Node& node)
-{
-    // std::cout << "node " << node.id()
-    //           << ", Changeset: " << node.changeset()
-    //           << ", Version: " << node.version()
-    //           << ", UID: " << node.uid()
-    //           << ", User: " << node.user()
-    //           << ", Timestamp: " << node.timestamp() << std::endl;
-
-    // cache[node.id()] = node.location();
     
-    std::string tags;
-    for (const osmium::Tag& t : node.tags()) {
-        std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
-        tags += "\"";
-        tags += t.key();
-        tags += "\"=>\"";
-        // Replace single quotes, as they screw up the query
-        std::string tmp = t.value();
-        boost::algorithm::replace_all(tmp, "\'", "&quot;");
-        tags += tmp;
-        tags += "\", ";
-    }
-    tags = tags.substr(0, tags.size()-2);
-}
-
-/// The way handler is called for each way in the input data.
-void
-way(const osmium::Way& way)
-{
-    std::cout << "way " << way.id()
-              << ", Changeset: " << way.changeset()
-              << ", Version: " << way.version()
-              << ", UID: " << way.uid()
-              << ", User: " << way.user()
-              << ", Timestamp: " << way.timestamp() << std::endl;
-    // Setup the tags
-    std::string tags;
-    for (const osmium::Tag& t : way.tags()) {
-        std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
-        tags += "\"";
-        tags += t.key();
-        tags += "\"=>\"";
-        // Replace single quotes, as they screw up the query
-        std::string tmp = t.value();
-        boost::algorithm::replace_all(tmp, "\'", "&quot;");
-        // Some values have a double quote, which is unnecesary, and
-        // screws up XML parsing.
-        boost::algorithm::replace_all(tmp, "\"", "");
-        tags += tmp;
-        tags += "\", ";
-    }
-    tags = tags.substr(0, tags.size()-2);
-
-    // Setup the node refs
-    std::string refs;
-    for (const osmium::NodeRef& nref : way.nodes()) {
-        refs += std::to_string(nref.ref()) + ", ";
-        // const osmium::Location loc = nref.location();
-    }
-    refs = refs.substr(0, refs.size()-2);
-
-    // Get the bounding box of the way
-    linestring_t lines;
-    for (const osmium::NodeRef& nref : way.nodes()) {
-        std::cout << "ref:  " << nref.ref() << std::endl;
-        // If the location data is bad, drop it
-        // if (cache[nref.ref()]) {
-        //     boost::geometry::append(lines, point_t(cache[nref.ref()].lat(), cache[nref.ref()].lon()));
-        // } else {
-        //     std::cout << "ERROR: bad location data in " << nref.ref() <<  std::endl;
-        // }
-    }
-}
-
-/// The relation handler is called for each relation in the input data.
-void
-relation(const osmium::Relation& relation)
-{
-    std::cout << "rel " << relation.id() << std::endl;
-    for (const osmium::Tag& t : relation.tags()) {
-        std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
-    }
 }
 
 }       // EOF osmchange

@@ -56,12 +56,6 @@
 #ifdef LIBXML
 #  include <libxml++/libxml++.h>
 #endif
-#include <deque>
-#include <osmium/io/any_input.hpp>
-#include <osmium/builder/osm_object_builder.hpp>
-#include <osmium/handler.hpp>
-#include <osmium/visitor.hpp>
-#include <osmium/io/any_output.hpp>
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -174,9 +168,13 @@ public:
     void on_start_element(const Glib::ustring& name,
                           const AttributeList& properties) override;
 #endif
+
+    /// Read an istream of the data and parse the XML
+    bool readXML(std::istream & xml);
+
     /// Setup the boundary data used to determine the country
     bool setupBoundaries(std::shared_ptr<geoutil::GeoUtil> &geou) {
-        boundaries = geou;
+        // boundaries = geou;
     };
 
     /// Get one set of change data from the parsed XML data
