@@ -371,6 +371,9 @@ ChangeSetFile::readXML(std::istream &xml)
         return false;
     }
 
+    changeset::ChangeSet change;
+    changes.push_back(change);
+    
     for (auto value: pt.get_child("osm")) {
         if (value.first == "changeset") {
             // Process the tags. These don't exist for every element
@@ -381,18 +384,20 @@ ChangeSetFile::readXML(std::istream &xml)
             std:: cout << value.second.get_optional<std::string>("version") << std::endl;
             std:: cout << value.second.get_optional<std::string>("imagery_used") << std::endl;
             // Process the attributes, which do exist in every element
-            std:: cout << value.second.get("<xmlattr>.id", "") << std::endl;
-            std:: cout << value.second.get("<xmlattr>.created_at", "") << std::endl;
-            std:: cout << value.second.get("<xmlattr>.closed_at", "") << std::endl;
-            std:: cout << value.second.get("<xmlattr>.open", "") << std::endl;
-            std:: cout << value.second.get("<xmlattr>.user", "") << std::endl;
-            std:: cout << value.second.get("<xmlattr>.uid", "") << std::endl;
-            std:: cout << value.second.get("<xmlattr>.min_lat", "") << std::endl;
-            std:: cout << value.second.get("<xmlattr>.min_lon", "") << std::endl;
-            std:: cout << value.second.get("<xmlattr>.max_lat", "") << std::endl;
-            std:: cout << value.second.get("<xmlattr>.max_lon", "") << std::endl;
-            std:: cout << value.second.get("<xmlattr>.num_changes", "") << std::endl;
-            std:: cout << value.second.get("<xmlattr>.comments_count", "") << std::endl;
+            change.id = value.second.get("<xmlattr>.id", 0);
+            change.created_at = value.second.get("<xmlattr>.created_at",
+                          boost::posix_time::second_clock::local_time());
+            std:: cout << value.second.get("<xmlattr>.closed_at",
+                          boost::posix_time::second_clock::local_time());
+            change.open = value.second.get("<xmlattr>.open", false);
+            change.user = value.second.get("<xmlattr>.user", "");
+            change.uid = value.second.get("<xmlattr>.uid", 0);
+            change.min_lat = value.second.get("<xmlattr>.min_lat", 0.0);
+            change.min_lon = value.second.get("<xmlattr>.min_lon", 0.0);
+            change.max_lat = value.second.get("<xmlattr>.max_lat", 0.0);
+            change.max_lon = value.second.get("<xmlattr>.max_lon", 0.0);
+            change.num_changes = value.second.get("<xmlattr>.num_changes", 0);
+            change.comments_count = value.second.get("<xmlattr>.comments_count", 0);
         }
     }
 #endif
