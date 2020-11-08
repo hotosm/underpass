@@ -371,23 +371,23 @@ ChangeSetFile::readXML(std::istream &xml)
         return false;
     }
 
-    changeset::ChangeSet change;
-    changes.push_back(change);
     
     for (auto value: pt.get_child("osm")) {
         if (value.first == "changeset") {
+            changeset::ChangeSet change;
             // Process the tags. These don't exist for every element
-            std:: cout << value.second.get_optional<std::string>("source") << std::endl;
-            std:: cout << value.second.get_optional<std::string>("comment") << std::endl;
-            std:: cout << value.second.get_optional<std::string>("created_by") << std::endl;
-            std:: cout << value.second.get_optional<std::string>("build") << std::endl;
-            std:: cout << value.second.get_optional<std::string>("version") << std::endl;
-            std:: cout << value.second.get_optional<std::string>("imagery_used") << std::endl;
+            for (auto tag: value.second) {
+                if (tag.first == "tag") {
+                    std::string key = tag.second.get("<xmlattr>.k", "");
+                    std::string val = tag.second.get("<xmlattr>.v", "");
+                    change.tags[key] = val;
+                }
+            }
             // Process the attributes, which do exist in every element
             change.id = value.second.get("<xmlattr>.id", 0);
             change.created_at = value.second.get("<xmlattr>.created_at",
                           boost::posix_time::second_clock::local_time());
-            std:: cout << value.second.get("<xmlattr>.closed_at",
+            change.closed_at = value.second.get("<xmlattr>.closed_at",
                           boost::posix_time::second_clock::local_time());
             change.open = value.second.get("<xmlattr>.open", false);
             change.user = value.second.get("<xmlattr>.user", "");
@@ -398,6 +398,7 @@ ChangeSetFile::readXML(std::istream &xml)
             change.max_lon = value.second.get("<xmlattr>.max_lon", 0.0);
             change.num_changes = value.second.get("<xmlattr>.num_changes", 0);
             change.comments_count = value.second.get("<xmlattr>.comments_count", 0);
+            changes.push_back(change);
         }
     }
 #endif

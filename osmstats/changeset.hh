@@ -52,7 +52,7 @@
 #include <map>
 #include <list>
 #include <iostream>
-#include <pqxx/pqxx>
+// #include <pqxx/pqxx>
 #ifdef LIBXML
 #  include <libxml++/libxml++.h>
 #endif
@@ -81,7 +81,7 @@ namespace changeset {
 class ChangeSet
 {
 public:
-    ChangeSet(void);
+    ChangeSet(void) { /* FIXME */};
 #ifdef LIBXML
     ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attrs);
 #endif
@@ -120,6 +120,7 @@ public:
     std::vector<std::string> hashtags; ///< Internal aray of hashtags in this changeset
     std::string comment;               ///< The comment for this changeset
     std::string editor;                ///< The OSM editor the end user used
+    std::map<std::string, std::string> tags;
 };
 
 /// This contains the data in a state.txt file, used to identify the timestamp
@@ -143,7 +144,7 @@ protected:
 /// A changeset file contains multiple changes, this then contains data
 /// for the entire file.
 #ifdef LIBXML
-class ChangeSetFile  : public xmlpp::SaxParser
+class ChangeSetFile: public xmlpp::SaxParser
 #else
 class ChangeSetFile
 #endif

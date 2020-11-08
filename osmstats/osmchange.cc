@@ -42,12 +42,7 @@
 #ifdef LIBXML
 # include <libxml++/libxml++.h>
 #endif
-
-// The Dump handler
-#include <osmium/handler/dump.hpp>
-
-// Allow any format of input files (XML, PBF, ...)
-#include <osmium/io/any_input.hpp>
+#include <glibmm/convert.h>
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -58,7 +53,13 @@ using namespace boost::gregorian;
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
 #include <boost/geometry/geometries/geometries.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/filesystem.hpp>
 #include <ogrsf_frmts.h>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/progress.hpp>
 
 #include "hotosm.hh"
 #include "osmstats/osmchange.hh"
@@ -76,7 +77,7 @@ namespace osmchange {
 #ifdef LIBXMLXX
 /// Called by libxml++ for each element of the XML file
 void
-OsmChange::on_start_element(const Glib::ustring& name,
+OsmChangeFile::on_start_element(const Glib::ustring& name,
                             const AttributeList& properties)
 {
 
@@ -86,9 +87,184 @@ OsmChange::on_start_element(const Glib::ustring& name,
 
 /// Read a changeset file from disk or memory into internal storage
 bool
-readChanges(const std::string &osc, bool memory)
+OsmChangeFile::readChanges(const std::string &file)
 {
+    std::ifstream change;
+    int size = 0;
+    unsigned char *buffer;
+    std::cout << "Reading OsmChange file " << file << std::endl;
+    std::string suffix = boost::filesystem::extension(file);
+    // It's a gzipped file, common for files downloaded from planet
+    std::ifstream ifile(file, std::ios_base::in | std::ios_base::binary);
+    if (suffix == ".gz") {  // it's a compressed file
+        change.open(file,  std::ifstream::in |  std::ifstream::binary);
+        try {
+            boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
+            inbuf.push(boost::iostreams::gzip_decompressor());
+            inbuf.push(ifile);
+            std::istream instream(&inbuf);
+            // std::cout << instream.rdbuf();
+            readXML(instream);
+        } catch(std::exception& e) {
+            std::cout << "ERROR opening " << file << std::endl;
+            std::cout << e.what() << std::endl;
+            // return false;
+        }
+    } else {                // it's a text file
+        change.open(file, std::ifstream::in);
+        readXML(change);
+    }
+}
+
+bool
+OsmChangeFile::readXML(std::istream &xml)
+{
+    // std::cout << xml.rdbuf();
+#ifdef LIBXML
+    // libxml calls on_element_start for each node, using a SAX parser,
+    // and works well for large files.
+    try {
+        set_substitute_entities(true);
+        parse_stream(xml);
+    }
+    catch(const xmlpp::exception& ex) {
+        std::cerr << "libxml++ exception: " << ex.what() << std::endl;
+        int return_code = EXIT_FAILURE;
+    }
+#else
+    // Boost::parser_tree with RapidXML is faster, but builds a DOM tree
+    // so loads the entire file into memory. Most replication files for
+    // hourly or minutely changes are small, so this is better for that
+    // case.
+    boost::property_tree::ptree pt;
+    boost::property_tree::read_xml(xml, pt);
+
+    if (pt.empty()) {
+        std::cerr << "ERROR: XML data is empty!" << std::endl;
+        return false;
+    }
+
+    boost::progress_display show_progress( 7000 );
+
+    for (auto value: pt.get_child("osmChange")) {
+        OsmChange change;
+        action_t action;
+        if (value.first == "modify") {
+            change.action = modify;
+        } else if (value.first == "create") {
+            change.action = create;
+        } else if (value.first == "remove") { // delete is a rerserved word
+            change.action = remove;
+        }
+        for (auto child: value.second) {
+            // Process the tags. These don't exist for every element.
+            // Both nodes and ways have tags
+           for (auto tag: value.second) {
+                if (tag.first == "tag") {
+                    std::string key = tag.second.get("<xmlattr>.k", "");
+                    std::string val = tag.second.get("<xmlattr>.v", "");
+                    change.tags[key] = val;
+                } else if (tag.first == "nd") {
+                    long rid = tag.second.get("<xmlattr>.ref", 0);
+                    change.refs.push_back(rid);
+                }
+           }
+           // Only nodes have coordinates
+           if (child.first == "node") {
+               change.lat = value.second.get("<xmlattr>.lat", 0.0);
+               change.lon = value.second.get("<xmlattr>.lon", 0.0);
+               change.lon = value.second.get("<xmlattr>.lon", 0.0);
+           }
+           // Process the attributes, which do exist in every element
+           // change.id = value.second.get("<xmlattr>.id", 0);
+           change.version = value.second.get("<xmlattr>.version", 0);
+           change.timestamp = value.second.get("<xmlattr>.timestamp",
+                              boost::posix_time::second_clock::local_time());
+           change.user = value.second.get("<xmlattr>.user", "");
+           change.uid = value.second.get("<xmlattr>.uid", 0);
+           changes.push_back(change);
+           //change.dump();
+           ++show_progress;
+        }
+    }
+#endif
+}
+
+#ifdef LIBXML
+// Called by libxml++ for each element of the XML file
+void
+OsmChangeFile::on_start_element(const Glib::ustring& name,
+                                const AttributeList& attributes)
+{
+    if (name == "create") {
+    } else if (name == "modify") {
+    } else if (name == "delete") {
+    }
+
+    for (const auto& attr_pair : attributes) {
+        if (attr_pair.name == "k" && attr_pair.value == "id") {
+            int max_lat = std::stod(attr_pair.value);
+//            max_lathit = true;
+        } else if (attr_pair.name == "k" && attr_pair.value == "version") {
+//            min_lathit = true;
+        } else if (attr_pair.name == "k" && attr_pair.value == "lat") {
+//            max_lonhit = true;
+        } else if (attr_pair.name == "k" && attr_pair.value == "lon") {
+//            min_lonhit = true;
+        } else if (attr_pair.name == "k" && attr_pair.value == "uid") {
+//            hashit = true;
+        } else if (attr_pair.name == "k" && attr_pair.value == "user") {
+//            comhit = true;
+        } else if (attr_pair.name == "k" && attr_pair.value == "changeset") {
+//            cbyhit = true;
+        } else {
+            continue;
+        }
+    }
+}
+#endif  // EOF LIBXML
+
+void
+OsmChange::dump(void)
+{
+    std::cout << "------------" << std::endl;
+    if (action == create) {
+        std::cout << "Action: create" << std::endl;
+    } else if(action == modify) {
+        std::cout << "Action: modify" << std::endl;
+    } else if(action == remove) {
+        std::cout << "Action: delete" << std::endl;
+    }
     
+    std::cout << "ID: " << id << std::endl;
+    // std::cout << "Version: " << version << std::endl;
+    // std::cout << "Timestamp: " << timestamp << std::endl;
+    // std::cout << "UID: " << uid << std::endl;
+    // std::cout << "User: " << user << std::endl;
+    // std::cout << "Change ID: " << change_id << std::endl;
+    // if (lat > 0) {
+    //     std::cout << "Latitude: " << lat << std::endl;
+    // }
+    // if (lon > 0) {
+    //     std::cout << "Longitude: " << lon << std::endl;
+    // }
+    if (tags.size() > 0) {
+        for (auto it = std::begin(tags); it != std::end(tags); ++it) {
+        }
+    }
+    if (refs.size() > 0) {
+        for (auto it = std::begin(refs); it != std::end(refs); ++it) {
+        }
+    }
+}
+
+void
+OsmChangeFile::dump(void)
+{
+    std::cout << "There are " << changes.size() << " changes" << std::endl;
+    for (auto it = std::begin(changes); it != std::end(changes); ++it) {
+        it->dump();
+    }
 }
 
 }       // EOF osmchange

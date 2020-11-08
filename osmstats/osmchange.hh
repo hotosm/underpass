@@ -56,18 +56,47 @@ using namespace boost::gregorian;
 
 namespace osmchange {
 
-/// This class manages an OSM change file, the details of which
-/// are handled by libosmium.
+typedef enum action {create, modify, remove} action_t; // delete is a reserved word
+// enum type {node, way};
+
 class OsmChange
 {
 public:
-    OsmChange(void) { };
-    OsmChange(const std::string &osc, bool memory) { readChanges(osc, memory); };
+    void dump(void);            ///< dump internal data, for debugging only
+// protected:
+    action_t action;
+    long id;
+    int version;
+    ptime timestamp;
+    long uid;
+    std::string user;
+    long change_id;
+    // Ways have references to nodes
+    std::vector<long> refs;
+    // Node have coordinates
+    double lat;
+    double lon;
+    // Both have tags
+    std::map<std::string, std::string> tags;
+};
+
+
+/// This class manages an OSM change file, the details of which
+/// are handled by libosmium.
+#ifdef LIBXML
+class OsmChangeFile : public xmlpp::SaxParser
+#else
+class OsmChangeFile
+#endif
+{
+public:
+    OsmChangeFile(void) { };
+    OsmChangeFile(const std::string &osc) { readChanges(osc); };
 
     /// Read a changeset file from disk or memory into internal storage
-    bool readChanges(const std::string &osc, bool memory);
+    bool readChanges(const std::string &osc);
     
-#ifdef LIBXMLXX
+#ifdef LIBXML
     /// Called by libxml++ for each element of the XML file
     void on_start_element(const Glib::ustring& name,
                           const AttributeList& properties) override;
@@ -77,9 +106,10 @@ public:
 //    };
 #endif
     /// Read an istream of the data and parse the XML
-    void readXML(std::istream & xml);
+    bool readXML(std::istream & xml);
 
-    
+    std::vector<OsmChange> changes;
+    void dump(void);            ///< dump internal data, for debugging only
 private:
 };
     
