@@ -49,40 +49,126 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
 using namespace boost::gregorian;
-
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/linestring.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+#include <boost/geometry/geometries/geometries.hpp>
+typedef boost::geometry::model::d2::point_xy<double> point_t;
+typedef boost::geometry::model::polygon<point_t> polygon_t;
+typedef boost::geometry::model::multi_point<point_t> mpoint_t;
+typedef boost::geometry::model::linestring<point_t> linestring_t;
+typedef boost::geometry::model::multi_linestring<linestring_t> mlinestring_t;
 
 #include "hotosm.hh"
 
 namespace osmchange {
 
-typedef enum action {create, modify, remove} action_t; // delete is a reserved word
-// enum type {node, way};
+typedef enum action {create, modify, remove, none} action_t; // delete is a reserved word
+
+/// This a template for the common data fields used by all OSM objects
+template<typename T>
+class OsmObject
+{
+  public:
+    void addTag(const std::string &key, const std::string &value) {
+        tags[key] = value;
+    };
+
+    action_t action = none;
+    long id = 0;
+    int version = 0;
+    ptime timestamp;
+    long uid = 0;
+    std::string user;
+    long change_id = 0;    
+    std::map<std::string, std::string> tags;
+    
+
+    void dump(void) {
+        std::cout << "\tID: " << id << std::endl;
+        std::cout << "\tVersion: " << version << std::endl;
+        std::cout << "\tTimestamp: " << timestamp << std::endl;
+        std::cout << "\tUID: " << uid << std::endl;
+        std::cout << "\tUser: " << user << std::endl;
+        std::cout << "\tChange ID: " << change_id << std::endl;
+        if (tags.size() > 0) {
+            std::cout << "\tTags: " << tags.size() << std::endl;            
+            for (auto it = std::begin(tags); it != std::end(tags); ++it) {
+                std::cout << "\t\t" << it->first << " : " << it->second << std::endl;
+            }
+        }
+    };
+};
+
+/// This represents an ODM node. A node has point coordinates, and may
+/// contain tags if it's a POI.
+class OsmNode: public OsmObject<OsmNode>
+{
+public:
+    OsmNode(void) { tags.clear(); };
+    OsmNode(double lat, double lon) {
+        setPoint(lat, lon);
+    };
+
+    void setLatitude(double lat) {
+        point.set<0>(lat);
+    };
+    void setLongitude(double lon) {
+        point.set<1>(lon);
+    };
+        
+    void setPoint(double lat, double lon) {
+        point.set<0>(lat);
+        point.set<1>(lon);
+    };
+    point_t point;
+};
+    
+class OsmWay : public OsmObject<OsmWay>
+{
+public:
+    std::vector<long> refs;
+    // Ways have references to nodes/ and no coordinates
+    void addRef(long ref) {
+        refs.push_back(ref);
+    };
+    std::vector<OsmNode> nodes;
+    void addRef(const OsmNode &node) {
+        //boost::geometry::append(point_t(lat, lon));
+    };
+
+    void dump(void) {
+        if (refs.size() > 0) {
+            std::cout << "\tRefs: " << refs.size() << std::endl;
+            //for (auto it = std::begin(refs); it != std::end(refs); ++it) {
+                // std::cout << "\t" << *it << std::endl;
+            //}
+        }
+    };
+};
+
+class OsmRelation : public OsmObject<OsmRelation>
+{
+public:
+    //. Relations have lists of members
+    std::vector<OsmWay> members;
+};
 
 class OsmChange
 {
 public:
     void dump(void);            ///< dump internal data, for debugging only
 // protected:
-    action_t action;
-    long id;
-    int version;
-    ptime timestamp;
-    long uid;
-    std::string user;
-    long change_id;
-    // Ways have references to nodes
-    std::vector<long> refs;
-    // Node have coordinates
-    double lat;
-    double lon;
-    // Both have tags
-    std::map<std::string, std::string> tags;
+    action_t action = none;
+    std::map<long, OsmNode> nodes;
+    std::map<long, OsmWay> ways;
+    std::map<long, OsmRelation> relations;
 };
 
 
-/// This class manages an OSM change file, the details of which
-/// are handled by libosmium.
+/// This class manages an OSM change file.
 #ifdef LIBXML
 class OsmChangeFile : public xmlpp::SaxParser
 #else
@@ -108,7 +194,16 @@ public:
     /// Read an istream of the data and parse the XML
     bool readXML(std::istream & xml);
 
+//    std::map<long, osmium::Location> nodes;
+    
     std::vector<OsmChange> changes;
+    //
+    //std::shared_ptr<OsmObject> object;
+    void *object;
+    // std::shared_ptr<OsmNode> current_node;
+    // std::shared_ptr<OsmWay> current_way;
+    // std::shared_ptr<OsmRelation> current_relation;
+    
     void dump(void);            ///< dump internal data, for debugging only
 private:
 };

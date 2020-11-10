@@ -38,6 +38,8 @@
 #include <array>
 #include <memory>
 #include <iostream>
+#include <codecvt>
+#include <locale>
 #include <pqxx/pqxx>
 #ifdef LIBXML
 # include <libxml++/libxml++.h>
@@ -73,22 +75,11 @@ typedef boost::geometry::model::linestring<point_t> linestring_t;
 
 namespace osmchange {
 
-
-#ifdef LIBXMLXX
-/// Called by libxml++ for each element of the XML file
-void
-OsmChangeFile::on_start_element(const Glib::ustring& name,
-                            const AttributeList& properties)
-{
-
-}
-
-#endif
-
 /// Read a changeset file from disk or memory into internal storage
 bool
 OsmChangeFile::readChanges(const std::string &file)
 {
+    setlocale(LC_ALL, "");
     std::ifstream change;
     int size = 0;
     unsigned char *buffer;
@@ -163,27 +154,33 @@ OsmChangeFile::readXML(std::istream &xml)
                 if (tag.first == "tag") {
                     std::string key = tag.second.get("<xmlattr>.k", "");
                     std::string val = tag.second.get("<xmlattr>.v", "");
-                    change.tags[key] = val;
+                    // static_cast<OsmNode *>(object)->addTag(key, val);
                 } else if (tag.first == "nd") {
-                    long rid = tag.second.get("<xmlattr>.ref", 0);
-                    change.refs.push_back(rid);
+                    long ref = tag.second.get("<xmlattr>.ref", 0);
+                    //object.addRef(ref);
                 }
            }
            // Only nodes have coordinates
            if (child.first == "node") {
-               change.lat = value.second.get("<xmlattr>.lat", 0.0);
-               change.lon = value.second.get("<xmlattr>.lon", 0.0);
-               change.lon = value.second.get("<xmlattr>.lon", 0.0);
+               double lat = value.second.get("<xmlattr>.lat", 0.0);
+               double lon = value.second.get("<xmlattr>.lon", 0.0);
+               object = new OsmNode();
+               // static_cast<OsmNode *>(object)->addTag(key, val);
+           } else if (child.first == "way") {
+               object = new OsmWay();
+           } else if (child.first == "relation") {
+               object = new OsmRelation();
            }
+           
            // Process the attributes, which do exist in every element
            // change.id = value.second.get("<xmlattr>.id", 0);
-           change.version = value.second.get("<xmlattr>.version", 0);
-           change.timestamp = value.second.get("<xmlattr>.timestamp",
-                              boost::posix_time::second_clock::local_time());
-           change.user = value.second.get("<xmlattr>.user", "");
-           change.uid = value.second.get("<xmlattr>.uid", 0);
-           changes.push_back(change);
-           //change.dump();
+           //change.version = value.second.get("<xmlattr>.version", 0);
+           //change.timestamp = value.second.get("<xmlattr>.timestamp",
+           //                   boost::posix_time::second_clock::local_time());
+        //change.user = value.second.get("<xmlattr>.user", "");
+           //change.uid = value.second.get("<xmlattr>.uid", 0);
+           //changes.push_back(change);
+           change.dump();
            ++show_progress;
         }
     }
@@ -196,31 +193,87 @@ void
 OsmChangeFile::on_start_element(const Glib::ustring& name,
                                 const AttributeList& attributes)
 {
+    // If a change is in progress, apply to to that instance
+    if (changes.size() > 0) {
+        OsmChange change = changes.back();
+        change.action = none;
+    }
+    // OsmChange change = changes.back();
+    std::cout << "NAME: " << name << std::endl;
+    if (name == "osmChange") {
+        return;
+    }
     if (name == "create") {
+        OsmChange change;
+        change.action = create;
+        changes.push_back(change);
+        return;
     } else if (name == "modify") {
+        OsmChange change;
+        change.action = modify;
+        changes.push_back(change);
+        return;
     } else if (name == "delete") {
+        OsmChange change;
+        change.action = remove;
+        changes.push_back(change);
+        return;
+    } else if (name == "node") {
+        object = new OsmNode();
+    } else if (name == "tag") {
+        // A tag element has only has 1 attribute, and numbers are stored as
+        // strings
+        // static_cast<OsmNode *>(object)->addTag(attributes[0].name, attributes[0].value);
+    } else if (name == "way") {
+        object = new OsmWay();
+    } else if (name == "relation") {
+        object = new OsmRelation();
+    } else if (name == "member") {
+        // It's a member of a relation
+    } else if (name == "nd") {
+        static_cast<OsmWay *>(object)->refs.push_back(std::stol(attributes[0].value));
     }
 
+    // process the attributes
+    std::string cache;
     for (const auto& attr_pair : attributes) {
-        if (attr_pair.name == "k" && attr_pair.value == "id") {
-            int max_lat = std::stod(attr_pair.value);
-//            max_lathit = true;
-        } else if (attr_pair.name == "k" && attr_pair.value == "version") {
-//            min_lathit = true;
-        } else if (attr_pair.name == "k" && attr_pair.value == "lat") {
-//            max_lonhit = true;
-        } else if (attr_pair.name == "k" && attr_pair.value == "lon") {
-//            min_lonhit = true;
-        } else if (attr_pair.name == "k" && attr_pair.value == "uid") {
-//            hashit = true;
-        } else if (attr_pair.name == "k" && attr_pair.value == "user") {
-//            comhit = true;
-        } else if (attr_pair.name == "k" && attr_pair.value == "changeset") {
-//            cbyhit = true;
-        } else {
+        // Sometimes the data string is unicode
+        std::wcout << "\tPAIR: " << attr_pair.name << " = " << attr_pair.value << std::endl;
+        // tags use a 'k' for the key, and 'v' for the value
+        if (attr_pair.name == "k") {
+            cache = attr_pair.value;
             continue;
+        } else if (attr_pair.name == "v") {
+            if (cache == "timestamp") {
+                static_cast<OsmNode *>(object)->timestamp = time_from_string(attr_pair.value);
+            } else {
+                static_cast<OsmNode *>(object)->tags[cache] = attr_pair.value;
+                cache.clear();
+            }
+        } else if (attr_pair.name == "timestamp") {
+            // Clean up the string to something boost can parse
+            std::string tmp = attr_pair.value;
+            tmp[10] = ' ';      // Drop the 'T' in the middle
+            tmp.erase(19);      // Drop the final 'Z'
+            static_cast<OsmNode *>(object)->timestamp = time_from_string(tmp);
+        } else if (attr_pair.name == "id") {
+            static_cast<OsmNode *>(object)->id = std::stol(attr_pair.value);
+        } else if (attr_pair.name == "uid") {
+            static_cast<OsmNode *>(object)->uid = std::stol(attr_pair.value);
+        } else if (attr_pair.name == "version") {
+            static_cast<OsmNode *>(object)->version = std::stod(attr_pair.value);
+        } else if (attr_pair.name == "user") {
+            static_cast<OsmNode *>(object)->user = attr_pair.value;
+        } else if (attr_pair.name == "changeset") {
+            static_cast<OsmNode *>(object)->change_id = std::stol(attr_pair.value);
+        } else if (attr_pair.name == "lat") {
+            static_cast<OsmNode *>(object)->setLatitude(std::stod(attr_pair.value));
+        } else if (attr_pair.name == "lon") {
+            static_cast<OsmNode *>(object)->setLongitude(std::stod(attr_pair.value));
         }
     }
+
+    static_cast<OsmNode *>(object)->dump();
 }
 #endif  // EOF LIBXML
 
@@ -229,33 +282,43 @@ OsmChange::dump(void)
 {
     std::cout << "------------" << std::endl;
     if (action == create) {
-        std::cout << "Action: create" << std::endl;
+        std::cout << "\tAction: create" << std::endl;
     } else if(action == modify) {
-        std::cout << "Action: modify" << std::endl;
+        std::cout << "\tAction: modify" << std::endl;
     } else if(action == remove) {
-        std::cout << "Action: delete" << std::endl;
+        std::cout << "\tAction: delete" << std::endl;
+    } else if(action == none) {
+        std::cout << "\tAction: data element" << std::endl;
     }
     
-    std::cout << "ID: " << id << std::endl;
-    // std::cout << "Version: " << version << std::endl;
-    // std::cout << "Timestamp: " << timestamp << std::endl;
-    // std::cout << "UID: " << uid << std::endl;
-    // std::cout << "User: " << user << std::endl;
-    // std::cout << "Change ID: " << change_id << std::endl;
+    // std::cout << "\tID: " << id << std::endl;
+    // std::cout << "\tVersion: " << version << std::endl;
+    // std::cout << "\tTimestamp: " << timestamp << std::endl;
+    // std::cout << "\tUID: " << uid << std::endl;
+    // std::cout << "\tUser: " << user << std::endl;
+    // std::cout << "\tChange ID: " << change_id << std::endl;
     // if (lat > 0) {
-    //     std::cout << "Latitude: " << lat << std::endl;
+    //     std::cout << "\tLatitude: " << lat << std::endl;
     // }
     // if (lon > 0) {
-    //     std::cout << "Longitude: " << lon << std::endl;
+    //     std::cout << "\tLongitude: " << lon << std::endl;
     // }
-    if (tags.size() > 0) {
-        for (auto it = std::begin(tags); it != std::end(tags); ++it) {
-        }
-    }
-    if (refs.size() > 0) {
-        for (auto it = std::begin(refs); it != std::end(refs); ++it) {
-        }
-    }
+    // if (attrs.size() > 0) {
+    //     for (auto it = std::begin(attrs); it != std::end(attrs); ++it) {
+    //         std::cout << "\tDumping attrs: " << it->first << std::endl;
+    //     }
+    // }
+    // if (refs.size() > 0) {
+    //     for (auto it = std::begin(refs); it != std::end(refs); ++it) {
+    //         std::cout << "\tDumping refs: " << *it << std::endl;
+    //     }
+    // }
+    // if (tags.size() > 0) {
+    //     std::cout << "\tDumping tags: " << change_id << std::endl;
+    //     for (auto it = std::begin(tags); it != std::end(tags); ++it) {
+    //         std::cout << it->first << std::endl;
+    //     }
+    // }
 }
 
 void
