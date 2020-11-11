@@ -69,6 +69,40 @@ namespace osmchange {
 typedef enum {none, create, modify, remove} action_t; // delete is a reserved word
 typedef enum {empty, node, way, relation, member} osmtype_t;
 
+
+// These are per user statistics
+class ChangeStats
+{
+public:
+    long buildings_added;
+    long buildings_modified;
+    long roads_added;
+    long roads_km_added;
+    long roads_km_modified;
+    long roads_modified;
+    long waterways_km_added;
+    long waterways_added;
+    long waterways_km_modified;
+    long waterways_modified;
+    long pois_added;
+    long pois_modified;
+
+    void dump(void) {
+        std::cout << "Roads Added (km): \t " << roads_km_added << std::endl;
+        std::cout << "Roads Modified (km):\t " << roads_km_modified << std::endl;
+        std::cout << "Waterways Added (km): \t " << waterways_km_added << std::endl;
+        std::cout << "Waterways Modified (km): " << waterways_km_modified << std::endl;
+        std::cout << "Roads Added: \t\t " << roads_added << std::endl;
+        std::cout << "Roads Modified: \t " << roads_modified << std::endl;
+        std::cout << "Waterways Added: \t " << waterways_added << std::endl;
+        std::cout << "Waterways Modified: \t " << waterways_modified << std::endl;
+        std::cout << "Buildings added: \t " << buildings_added << std::endl;
+        std::cout << "Buildings Modified: \t " << buildings_modified << std::endl;
+        std::cout << "POIs added: \t\t " << pois_added << std::endl;
+        std::cout << "POIs Modified: \t\t " << pois_modified << std::endl;
+    };
+};
+
 /// This a template for the common data fields used by all OSM objects
 // template<typename T>
 class OsmObject
@@ -159,14 +193,27 @@ public:
     OsmWay(void) { type = way; refs.clear(); };
     
     std::vector<long> refs;
-    // Ways have references to nodes/ and no coordinates
+    linestring_t linestring;
+    polygon_t polygon;
 
+    // Ways have references to nodes/ and no coordinates
     void addRef(long ref) {
         refs.push_back(ref);
     };
-    std::vector<OsmNode *> nodes;
-    void addRef(const OsmNode &node) {
-        //boost::geometry::append(point_t(lat, lon));
+
+    void makeLinestring(point_t point) {
+        // If the first and last ref are the same, it's a closed polygon,
+        // like a building.
+        if (refs.begin() == refs.end()) {
+            boost::geometry::append(polygon, point);
+        } else {
+            boost::geometry::append(linestring, point);
+        }
+    };
+
+    double getLength(void) {
+        boost::geometry::length(linestring,
+        boost::geometry::strategy::distance::haversine<float>(6371.0));
     };
 
     void dump(void) {
@@ -289,17 +336,20 @@ public:
     /// Read an istream of the data and parse the XML
     bool readXML(std::istream & xml);
 
-//    std::map<long, osmium::Location> nodes;
+    // Statistics collected for each user
+    std::map<long, std::shared_ptr<ChangeStats>> userstats;
     
     std::vector<std::shared_ptr<OsmChange>> changes;
     //
     //std::shared_ptr<OsmObject> object;
-    union object {
-        std::shared_ptr<OsmNode> node;
-        std::shared_ptr<OsmWay> way;
-        std::shared_ptr<OsmRelation> relation;
-    };
-    // std::shared_ptr<void> object;
+    // union object {
+    //     std::shared_ptr<std::map<long, OsmNode>> node;
+    //     std::shared_ptr<OsmWay> way;
+    //     std::shared_ptr<OsmRelation> relation;
+    // };
+
+    /// Collect statistics for each user
+    void collectStats(void);
     
     void dump(void);            ///< dump internal data, for debugging only
 private:

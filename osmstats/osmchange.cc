@@ -334,6 +334,76 @@ OsmChangeFile::dump(void)
         std::shared_ptr<OsmChange> change = *it;
         change->dump();
     }
+    if (userstats.size() > 0) {
+        for (auto it = std::begin(userstats); it != std::end(userstats); ++it) {
+            //std::shared_ptr<ChangeStats> stats = it->second;
+            it->second->dump();
+        }
+    }
+}
+
+void
+OsmChangeFile::collectStats(void)
+{
+    for (auto it = std::begin(changes); it != std::end(changes); ++it) {
+        auto stats = std::make_shared<ChangeStats>();
+        std::shared_ptr<OsmChange> change = *it;
+        if (change->action == create) {
+            for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
+                std::shared_ptr<OsmNode> node = *it;
+                if (node->tags.size() > 0) {
+                    std::cout << "Node ID " << node->id << " has tags!" << std::endl;
+                } else {
+                    ++stats->pois_added;
+                }
+            }
+            for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
+                std::shared_ptr<OsmWay> way = *it;
+                if (way->tags.size() == 0) {
+                    std::cerr << "Way ID " << way->id << " has no tags!" << std::endl;
+                    continue;
+                }
+                if (way->tags.find("building") != way->tags.end()) {
+                    ++stats->buildings_added;
+                }
+                if (way->tags.find("highway") != way->tags.end()) {
+                    stats->roads_km_added += way->getLength();
+                    ++stats->roads_added;
+                }
+                if (way->tags.find("waterway") != way->tags.end()) {
+                    stats->waterways_km_added += way->getLength();
+                    ++stats->waterways_added;
+                }
+            }
+        } else if (change->action == modify) {   
+            for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
+                std::shared_ptr<OsmNode> node = *it;
+                if (node->tags.size() > 0) {
+                    std::cout << "Node ID " << node->id << " has tags!" << std::endl;
+                } else {
+                    ++stats->pois_modified;
+                }
+            }
+            for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
+                std::shared_ptr<OsmWay> way = *it;
+                if (way->tags.size() == 0) {
+                    std::cerr << "Way ID " << way->id << " has no tags!" << std::endl;
+                    continue;
+                }
+                if (way->tags.find("building") != way->tags.end()) {
+                    ++stats->buildings_modified;
+                }
+                if (way->tags.find("highway") != way->tags.end()) {
+                    stats->roads_km_modified += way->getLength();
+                    ++stats->roads_modified;
+                }
+                if (way->tags.find("waterway") != way->tags.end()) {
+                    stats->waterways_km_modified += way->getLength();
+                    ++stats->waterways_modified;
+                }
+            }
+        }
+    }
 }
 
 }       // EOF osmchange
