@@ -241,6 +241,7 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
     } else if (name == "member") {
         // It's a member of a relation
     } else if (name == "nd") {
+        // change->addRef(std::stol(attributes[0].value));
         //static_cast<OsmWay *>(object)->refs.push_back(std::stol(attributes[0].value));
         //static_cast<OsmWay *>(object)->dump();
         // static_cast<OsmWay *>(object)->dump();        
@@ -261,10 +262,12 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
             continue;
         } else if (attr_pair.name == "v") {
             if (cache == "timestamp") {
-                //static_cast<std::shared_ptr<OsmNode>>(object)->timestamp = time_from_string(attr_pair.value);
-                // static_cast<std::shared_ptr<OsmNode> >(object)->timestamp = time_from_string(attr_pair.value);
+                std::string tmp = attr_pair.value;
+                tmp[10] = ' ';      // Drop the 'T' in the middle
+                tmp.erase(19);      // Drop the final 'Z'
+                change->setTimestamp(tmp);
             } else {
-                //static_cast<std::shared_ptr<OsmNode> >(object)->tags[cache] = attr_pair.value;
+                change->addTag(cache, attr_pair.value);
                 cache.clear();
             }
         } else if (attr_pair.name == "timestamp") {
