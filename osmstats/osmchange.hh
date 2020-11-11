@@ -50,6 +50,7 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
+#include <boost/progress.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/linestring.hpp>
@@ -141,12 +142,15 @@ public:
     void setLongitude(double lon) {
         point.set<1>(lon);
     };
-        
     void setPoint(double lat, double lon) {
         point.set<0>(lat);
         point.set<1>(lon);
     };
     point_t point;
+    void dump(void) {
+        std::cout << "\tLocation: " << point.get<0>() << ", " << point.get<1>() << std::endl;
+        OsmObject::dump();
+    };
 };
     
 class OsmWay : public OsmObject//<OsmWay>
@@ -166,6 +170,7 @@ public:
     };
 
     void dump(void) {
+        OsmObject::dump();
         if (refs.size() > 0) {
             std::cout << "\tRefs: " << refs.size() << std::endl;
             std::cout << "\t";
@@ -192,6 +197,12 @@ public:
     void dump(void);            ///< dump internal data, for debugging only
 // protected:
 
+    void setLatitude(double lat) {
+        if (type == node) { nodes.back()->setLatitude(lat); }
+    };
+    void setLongitude(double lon) {
+        if (type == node) { nodes.back()->setLongitude(lon); }
+    };
     void setTimestamp(const std::string &val) {
         if (type == node) { nodes.back()->timestamp = time_from_string(val); }
         if (type == way) { ways.back()->timestamp = time_from_string(val); }
@@ -199,6 +210,13 @@ public:
     void setVersion(double val) {
         if (type == node) { nodes.back()->version = val; }
         if (type == way) { ways.back()->version = val; }
+    };
+    void addTag(const std::string &key, const std::string &value) {
+        if (type == node) { nodes.back()->addTag(key, value); }
+        if (type == way) { ways.back()->addTag(key, value); }
+    };
+    void addRef(long ref) {
+        if (type == way) { ways.back()->addRef(ref); }
     };
     void setUID(long val) {
         if (type == node) { nodes.back()->uid = val; }

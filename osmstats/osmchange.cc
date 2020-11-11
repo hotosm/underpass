@@ -160,14 +160,14 @@ OsmChangeFile::readXML(std::istream &xml)
                     // static_cast<OsmNode *>(object)->addTag(key, val);
                 } else if (tag.first == "nd") {
                     long ref = tag.second.get("<xmlattr>.ref", 0);
-                    //object.addRef(ref);
+                    change->addRef(ref);
                 }
            }
            // Only nodes have coordinates
            if (child.first == "node") {
                double lat = value.second.get("<xmlattr>.lat", 0.0);
                double lon = value.second.get("<xmlattr>.lon", 0.0);
-               object = new OsmNode();
+               // object = new OsmNode();
                // static_cast<OsmNode *>(object)->addTag(key, val);
            } else if (child.first == "way") {
                object = new OsmWay();
@@ -184,8 +184,8 @@ OsmChangeFile::readXML(std::istream &xml)
            //change.uid = value.second.get("<xmlattr>.uid", 0);
            //changes.push_back(change);
            change.dump();
-           ++show_progress;
         }
+        ++show_progress;
     }
 #endif
     // FIXME: return a real value
@@ -224,9 +224,6 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
         return;
     } else if (name == "node") {
         changes.back()->newNode();
-        // object.node = change->currentNode();
-        // std::shared_ptr<OsmNode> tmp = change->newNode();
-        // auto tmp = std::shared_ptr<OsmNode>();
     } else if (name == "tag") {
         // static_cast<std::shared_ptr<OsmWay>>(object)->tags.clear();
         // A tag element has only has 1 attribute, and numbers are stored as
@@ -234,17 +231,12 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
         // static_cast<OsmNode *>(object)->addTag(attributes[0].name, attributes[0].value);
     } else if (name == "way") {
         changes.back()->newWay();
-        // object = std::make_shared<OsmWay>();
-        //change->addWay(object);
     } else if (name == "relation") {
-        // object = std::make_shared<OsmRelation>();
+        changes.back()->newRelation();
     } else if (name == "member") {
         // It's a member of a relation
     } else if (name == "nd") {
-        // change->addRef(std::stol(attributes[0].value));
-        //static_cast<OsmWay *>(object)->refs.push_back(std::stol(attributes[0].value));
-        //static_cast<OsmWay *>(object)->dump();
-        // static_cast<OsmWay *>(object)->dump();        
+        changes.back()->addRef(std::stol(attributes[0].value));
     }
 
     change = changes.back();
