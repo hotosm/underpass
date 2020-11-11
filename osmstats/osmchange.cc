@@ -200,7 +200,7 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
 {
     // If a change is in progress, apply to to that instance
     std::shared_ptr<OsmChange> change;
-    std::cout << "NAME: " << name << std::endl;
+    // std::cout << "NAME: " << name << std::endl;
     // Top level element can be ignored
     if (name == "osmChange") {
         return;
@@ -253,7 +253,7 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
     std::string cache;
     for (const auto& attr_pair : attributes) {
         // Sometimes the data string is unicode
-        std::wcout << "\tPAIR: " << attr_pair.name << " = " << attr_pair.value << std::endl;
+        // std::wcout << "\tPAIR: " << attr_pair.name << " = " << attr_pair.value << std::endl;
         // tags use a 'k' for the key, and 'v' for the value
         if (attr_pair.name == "ref") {
             //static_cast<OsmWay *>(object)->refs.push_back(std::stol(attr_pair.value));
@@ -287,11 +287,9 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
         } else if (attr_pair.name == "changeset") {
             //static_cast<std::shared_ptr<OsmNode> >(object)->change_id = std::stol(attr_pair.value);
         } else if (attr_pair.name == "lat") {
-            //static_cast<std::shared_ptr<OsmNode> >(object)->setLatitude(std::stod(attr_pair.value));
+            change->setLatitude(std::stod(attr_pair.value));
         } else if (attr_pair.name == "lon") {
-            // static_cast<std::shared_ptr<OsmNode> >(object)->setLongitude(std::stod(attr_pair.value));
-            // std::shared_ptr<OsmNode> obj = static_cast<std::shared_ptr<OsmNode>>(object);
-            // static_cast<std::shared_ptr<OsmNode>>(object)->setLongitude(std::stod(attr_pair.value));
+            change->setLongitude(std::stod(attr_pair.value));
         }
     }
 }
@@ -311,7 +309,7 @@ OsmChange::dump(void)
     } else if(action == none) {
         std::cout << "\tAction: data element" << std::endl;
     }
-    
+
     if (nodes.size() > 0) {
         std::cout << "\tDumping nodes:"  << std::endl;
         for (auto it = std::begin(nodes); it != std::end(nodes); ++it) {
@@ -322,8 +320,8 @@ OsmChange::dump(void)
     if (ways.size() > 0) {
         std::cout << "\tDumping ways:" << std::endl;
         for (auto it = std::begin(ways); it != std::end(ways); ++it) {
-            // std::shared_ptr<OsmWay> way = *it;
-            // way->dump();
+            std::shared_ptr<OsmWay> way = *it;
+            way->dump();
         }
     }
     if (relations.size() > 0) {
