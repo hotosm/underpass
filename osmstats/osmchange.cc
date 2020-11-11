@@ -96,7 +96,7 @@ OsmChangeFile::readChanges(const std::string &file)
             std::istream instream(&inbuf);
             // std::cout << instream.rdbuf();
             readXML(instream);
-        } catch(std::exception& e) {
+        } catch (std::exception& e) {
             std::cout << "ERROR opening " << file << std::endl;
             std::cout << e.what() << std::endl;
             // return false;
@@ -105,6 +105,9 @@ OsmChangeFile::readChanges(const std::string &file)
         change.open(file, std::ifstream::in);
         readXML(change);
     }
+
+    // FIXME: return a real value
+    return false;
 }
 
 bool
@@ -185,6 +188,8 @@ OsmChangeFile::readXML(std::istream &xml)
         }
     }
 #endif
+    // FIXME: return a real value
+    return false;
 }
 
 #ifdef LIBXML
@@ -194,45 +199,54 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
                                 const AttributeList& attributes)
 {
     // If a change is in progress, apply to to that instance
-    if (changes.size() > 0) {
-        OsmChange change = changes.back();
-        change.action = none;
-    }
-    // OsmChange change = changes.back();
+    std::shared_ptr<OsmChange> change;
     std::cout << "NAME: " << name << std::endl;
+    // Top level element can be ignored
     if (name == "osmChange") {
         return;
     }
+    // There are 3 change states to handle, each one contains possibly multiple
+    // nodes and ways.
     if (name == "create") {
-        OsmChange change;
-        change.action = create;
+        change = std::make_shared<OsmChange>();
+        change->action = create;
         changes.push_back(change);
         return;
     } else if (name == "modify") {
-        OsmChange change;
-        change.action = modify;
+        change = std::make_shared<OsmChange>();
+        change->action = modify;
         changes.push_back(change);
         return;
     } else if (name == "delete") {
-        OsmChange change;
-        change.action = remove;
+        change = std::make_shared<OsmChange>();
+        change->action = remove;
         changes.push_back(change);
         return;
     } else if (name == "node") {
-        object = new OsmNode();
+        changes.back()->newNode();
+        // object.node = change->currentNode();
+        // std::shared_ptr<OsmNode> tmp = change->newNode();
+        // auto tmp = std::shared_ptr<OsmNode>();
     } else if (name == "tag") {
+        // static_cast<std::shared_ptr<OsmWay>>(object)->tags.clear();
         // A tag element has only has 1 attribute, and numbers are stored as
         // strings
         // static_cast<OsmNode *>(object)->addTag(attributes[0].name, attributes[0].value);
     } else if (name == "way") {
-        object = new OsmWay();
+        changes.back()->newWay();
+        // object = std::make_shared<OsmWay>();
+        //change->addWay(object);
     } else if (name == "relation") {
-        object = new OsmRelation();
+        // object = std::make_shared<OsmRelation>();
     } else if (name == "member") {
         // It's a member of a relation
     } else if (name == "nd") {
-        static_cast<OsmWay *>(object)->refs.push_back(std::stol(attributes[0].value));
+        //static_cast<OsmWay *>(object)->refs.push_back(std::stol(attributes[0].value));
+        //static_cast<OsmWay *>(object)->dump();
+        // static_cast<OsmWay *>(object)->dump();        
     }
+
+    change = changes.back();
 
     // process the attributes
     std::string cache;
@@ -240,14 +254,17 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
         // Sometimes the data string is unicode
         std::wcout << "\tPAIR: " << attr_pair.name << " = " << attr_pair.value << std::endl;
         // tags use a 'k' for the key, and 'v' for the value
-        if (attr_pair.name == "k") {
+        if (attr_pair.name == "ref") {
+            //static_cast<OsmWay *>(object)->refs.push_back(std::stol(attr_pair.value));
+        } else if (attr_pair.name == "k") {
             cache = attr_pair.value;
             continue;
         } else if (attr_pair.name == "v") {
             if (cache == "timestamp") {
-                static_cast<OsmNode *>(object)->timestamp = time_from_string(attr_pair.value);
+                //static_cast<std::shared_ptr<OsmNode>>(object)->timestamp = time_from_string(attr_pair.value);
+                // static_cast<std::shared_ptr<OsmNode> >(object)->timestamp = time_from_string(attr_pair.value);
             } else {
-                static_cast<OsmNode *>(object)->tags[cache] = attr_pair.value;
+                //static_cast<std::shared_ptr<OsmNode> >(object)->tags[cache] = attr_pair.value;
                 cache.clear();
             }
         } else if (attr_pair.name == "timestamp") {
@@ -255,25 +272,25 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
             std::string tmp = attr_pair.value;
             tmp[10] = ' ';      // Drop the 'T' in the middle
             tmp.erase(19);      // Drop the final 'Z'
-            static_cast<OsmNode *>(object)->timestamp = time_from_string(tmp);
+            change->setTimestamp(tmp);
         } else if (attr_pair.name == "id") {
-            static_cast<OsmNode *>(object)->id = std::stol(attr_pair.value);
+            change->setChangeID(std::stol(attr_pair.value));
         } else if (attr_pair.name == "uid") {
-            static_cast<OsmNode *>(object)->uid = std::stol(attr_pair.value);
+            change->setUID(std::stol(attr_pair.value));
         } else if (attr_pair.name == "version") {
-            static_cast<OsmNode *>(object)->version = std::stod(attr_pair.value);
+            change->setVersion(std::stod(attr_pair.value));
         } else if (attr_pair.name == "user") {
-            static_cast<OsmNode *>(object)->user = attr_pair.value;
+            change->setUser(attr_pair.value);
         } else if (attr_pair.name == "changeset") {
-            static_cast<OsmNode *>(object)->change_id = std::stol(attr_pair.value);
+            //static_cast<std::shared_ptr<OsmNode> >(object)->change_id = std::stol(attr_pair.value);
         } else if (attr_pair.name == "lat") {
-            static_cast<OsmNode *>(object)->setLatitude(std::stod(attr_pair.value));
+            //static_cast<std::shared_ptr<OsmNode> >(object)->setLatitude(std::stod(attr_pair.value));
         } else if (attr_pair.name == "lon") {
-            static_cast<OsmNode *>(object)->setLongitude(std::stod(attr_pair.value));
+            // static_cast<std::shared_ptr<OsmNode> >(object)->setLongitude(std::stod(attr_pair.value));
+            // std::shared_ptr<OsmNode> obj = static_cast<std::shared_ptr<OsmNode>>(object);
+            // static_cast<std::shared_ptr<OsmNode>>(object)->setLongitude(std::stod(attr_pair.value));
         }
     }
-
-    static_cast<OsmNode *>(object)->dump();
 }
 #endif  // EOF LIBXML
 
@@ -281,6 +298,7 @@ void
 OsmChange::dump(void)
 {
     std::cout << "------------" << std::endl;
+    std::cout << "Dumping OsmChange()" << std::endl;
     if (action == create) {
         std::cout << "\tAction: create" << std::endl;
     } else if(action == modify) {
@@ -291,42 +309,37 @@ OsmChange::dump(void)
         std::cout << "\tAction: data element" << std::endl;
     }
     
-    // std::cout << "\tID: " << id << std::endl;
-    // std::cout << "\tVersion: " << version << std::endl;
-    // std::cout << "\tTimestamp: " << timestamp << std::endl;
-    // std::cout << "\tUID: " << uid << std::endl;
-    // std::cout << "\tUser: " << user << std::endl;
-    // std::cout << "\tChange ID: " << change_id << std::endl;
-    // if (lat > 0) {
-    //     std::cout << "\tLatitude: " << lat << std::endl;
-    // }
-    // if (lon > 0) {
-    //     std::cout << "\tLongitude: " << lon << std::endl;
-    // }
-    // if (attrs.size() > 0) {
-    //     for (auto it = std::begin(attrs); it != std::end(attrs); ++it) {
-    //         std::cout << "\tDumping attrs: " << it->first << std::endl;
-    //     }
-    // }
-    // if (refs.size() > 0) {
-    //     for (auto it = std::begin(refs); it != std::end(refs); ++it) {
-    //         std::cout << "\tDumping refs: " << *it << std::endl;
-    //     }
-    // }
-    // if (tags.size() > 0) {
-    //     std::cout << "\tDumping tags: " << change_id << std::endl;
-    //     for (auto it = std::begin(tags); it != std::end(tags); ++it) {
-    //         std::cout << it->first << std::endl;
-    //     }
-    // }
+    if (nodes.size() > 0) {
+        std::cout << "\tDumping nodes:"  << std::endl;
+        for (auto it = std::begin(nodes); it != std::end(nodes); ++it) {
+            std::shared_ptr<OsmNode> node = *it;
+            node->dump();
+        }
+    }
+    if (ways.size() > 0) {
+        std::cout << "\tDumping ways:" << std::endl;
+        for (auto it = std::begin(ways); it != std::end(ways); ++it) {
+            // std::shared_ptr<OsmWay> way = *it;
+            // way->dump();
+        }
+    }
+    if (relations.size() > 0) {
+        for (auto it = std::begin(relations); it != std::end(relations); ++it) {
+            // std::cout << "\tDumping relations: " << it->dump() << std::endl;
+            // std::shared_ptr<OsmWay> rel = *it;
+            // rel->dump();
+        }
+    }
 }
 
 void
 OsmChangeFile::dump(void)
 {
+    std::cout << "Dumping OsmChangeFile()" << std::endl;
     std::cout << "There are " << changes.size() << " changes" << std::endl;
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
-        it->dump();
+        std::shared_ptr<OsmChange> change = *it;
+        change->dump();
     }
 }
 
