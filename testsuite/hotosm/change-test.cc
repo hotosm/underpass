@@ -32,12 +32,12 @@
 #include <iostream>
 #include <string>
 #include <pqxx/pqxx>
-#include <libxml++/libxml++.h>
 
 #include "hottm.hh"
 #include "osmstats/osmstats.hh"
 #include "osmstats/changeset.hh"
-#include "osmstats/changefile.hh"
+#include "osmstats/osmchange.hh"
+#include "osmstats/geoutil.hh"
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -57,56 +57,12 @@ class TestCS : public changeset::ChangeSetFile
     bool testMem(const std::string &data);
 };
 
-class TestCF : public changefile::ChangeFile
+class TestCO : public osmchange::OsmChangeFile
 {
-    bool testFile(void) {
-        // Get input and output file names from command line.
-        std::string input_file_name{""};
-        std::string output_file_name{""};
-
-        try {
-            // Initialize Reader
-            osmium::io::Reader reader{input_file_name};
-
-            // Get header from input file and change the "generator" setting to
-            // ourselves.
-            osmium::io::Header header = reader.header();
-            header.set("generator", "osmium_change_tags");
-
-            // Initialize Writer using the header from above and tell it that it
-            // is allowed to overwrite a possibly existing file.
-            osmium::io::Writer writer{output_file_name, header, osmium::io::overwrite::allow};
-
-            // Read in buffers with OSM objects until there are no more.
-            while (osmium::memory::Buffer input_buffer = reader.read()) {
-                // Create an empty buffer with the same size as the input buffer.
-                // We'll copy the changed data into output buffer, the changes
-                // are small, so the output buffer needs to be about the same size.
-                // In case it has to be bigger, we allow it to grow automatically
-                // by adding the auto_grow::yes parameter.
-                osmium::memory::Buffer output_buffer{input_buffer.committed(), osmium::memory::Buffer::auto_grow::yes};
-
-                // Construct a handler as defined above and feed the input buffer
-                // to it.
-                changefile::ChangeFile handler{output_buffer};
-                osmium::apply(input_buffer, handler);
-
-                // Write out the contents of the output buffer.
-                writer(std::move(output_buffer));
-            }
-
-            // Explicitly close the writer and reader. Will throw an exception if
-            // there is a problem. If you wait for the destructor to close the writer
-            // and reader, you will not notice the problem, because destructors must
-            // not throw.
-            writer.close();
-            reader.close();
-        } catch (const std::exception& e) {
-            // All exceptions used by the Osmium library derive from std::exception.
-            std::cerr << e.what() << '\n';
-            std::exit(1);
-        }
-    }
+    bool testFile(const std::string &filespec) {
+        // std::string basedir="DATADIR";
+    };
+    bool testMem(const std::string &data);
 };
 
 class TestStateFile : public changeset::StateFile
@@ -122,7 +78,7 @@ public:
 int
 main(int argc, char* argv[])
 {
-    std::string basedir=DATADIR;
+    std::string basedir = DATADIR;
 
     // Read the changeset state file
     std::string buf = "---\nlast_run: 2020-10-08 22:30:01.737719000 +00:00\nsequence: 4139993\n";
@@ -150,27 +106,47 @@ main(int argc, char* argv[])
 
     osmstats::QueryOSMStats os;
     TestCS tests;
+    // auto geou = std::make_shared<geoutil::GeoUtil>();
 
-    os.startTimer();
-    tests.importChanges(basedir + "/foo.osm");
+    // geou->readFile(basedir + "/../../data/geoboundaries.osm", true);
+    // tests.setupBoundaries(geou);            
+
+    // tests.importChanges(basedir + "/foo.osm");
     std::cout << "Operation took " << os.endTimer() << " milliseconds" << std::endl;
 
     os.startTimer();
-    tests.readChanges(basedir + "/993.osm.gz", false);
-    std::cout << "Operation took " << os.endTimer() << " milliseconds" << std::endl;
-
-    if (os.connect("mystats")) {
-        runtest.pass("QueryOsmStats::connect()");
+    tests.readChanges(basedir + "/changeset-data.osm");
+    std::cout << "Operation readChanges(uncompressed) took " << os.endTimer() << " milliseconds" << std::endl;
+    if (tests[3].id > 0) {
+        runtest.pass("ChangeSetFile::readChanges(uncompressed)");
     } else {
-        runtest.fail("QueryOsmStats::connect()");
+        runtest.fail("ChangeSetFile::readChanges(uncompressed)");
+    }
+    os.startTimer();
+    tests.readChanges(basedir + "/changeset-data2.osm.gz");
+    std::cout << "Operation readChanges(compressed) took " << os.endTimer() << " milliseconds" << std::endl;
+    if (tests[3].id > 0) {
+        runtest.pass("ChangeSetFile::readChanges(compressed)");
+    } else {
+        runtest.fail("ChangeSetFile::readChanges(compressed)");
     }
 
-    // ChangeSet foo = tests.getChange(10);
-    // os.applyChange(foo);
-    // foo = tests.getChange(15);
-    // os.applyChange(foo);
-    // foo = tests.getChange(20);
-    // os.applyChange(foo);
-    // tests.importChanges("/home/rob/projects/HOT/changesets-reduced.osm");
+    TestCO testco;
+    os.startTimer();
+    // testco.readChanges("/tmp/y");
+    testco.readChanges(basedir + "/294.osc.gz");
+    std::cout << "Operation read osc took " << os.endTimer() << " milliseconds" << std::endl;
+    testco.dump();
+    os.startTimer();
+    testco.collectStats();
+    std::cout << "Operation collect stats took " << os.endTimer() << " milliseconds" << std::endl;
+
+    // if (os.connect("mystats")) {
+    //     runtest.pass("QueryOsmStats::connect()");
+    // } else {
+    //     runtest.fail("QueryOsmStats::connect()");
+    // }
+
+    std::cout << "Done..." << std::endl;
 };
 
