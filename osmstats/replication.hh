@@ -64,9 +64,21 @@ namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
 #include "osmstats/changeset.hh"
 // #include "osmstats/osmstats.hh"
 
+/// \namespace replication
 namespace replication {
 
-/// This class downloads replication files, and adds them to the database
+/// \file replication.hh
+/// \brief This class downloads replication files, and adds them to the database
+///
+/// Replication files are used to update the existing data with changes. There
+/// are 3 different intervals, minute, hourly, or daily replication files
+/// are available.
+
+/// \class Replication
+/// \brief Handle replication files from the OSM planet server.
+///
+/// This class handfles identifying the right replication file to download,
+/// and downloading it.
 class Replication
 {
 public:
@@ -108,13 +120,13 @@ public:
                     std::shared_ptr<std::vector<std::string>> &links);
 
 private:
-    std::string server;
-    std::string path;
-    int port;
-    ptime last_run;
-    long sequence;
-    int version;
-    std::vector<changeset::StateFile> states;
+    std::string server;         ///< The repliciation file server
+    std::string path;           ///< Default top level path to the data files
+    int port;                   ///< Network port for the server
+    ptime last_run;             ///< Timestamp of the replication file
+    long sequence;              ///< Sequence number of the replication
+    int version;                ///< Version number of the replication
+    std::vector<changeset::StateFile> states; ///< Stored state.txt files
 };
 
 }       // EOF replication
