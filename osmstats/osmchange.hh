@@ -66,29 +66,45 @@ typedef boost::geometry::model::multi_linestring<linestring_t> mlinestring_t;
 #include "data/osmobjects.hh"
 using namespace osmobjects;
 
+/// \namespace osmchange
 namespace osmchange {
 
+/// \file osmchange.hh
+/// \brief This file parses a change file in the OsmChange format
+///
+/// This file parses an OsmChange formatted data file using an libxml++
+/// SAX parser, which works better for large files, or boost parse trees
+/// using a DOM parser, which is faster for small files.
+
+/// \enum action_t
+/// The actions supported by OsmChange files
 typedef enum {none, create, modify, remove} action_t; // delete is a reserved word
+/// \enum osmtype_t
+/// The object types used by an OsmChange file
 typedef enum {empty, node, way, relation, member} osmtype_t;
 
-
-// These are per user statistics
+/// \class ChangeStats
+/// \brief These are per user statistics
+///
+/// This stores the calculated data from a change for a user,
+/// which later gets added to the database statistics.
 class ChangeStats
 {
 public:
-    long buildings_added;
-    long buildings_modified;
-    long roads_added;
-    long roads_km_added;
-    long roads_km_modified;
-    long roads_modified;
-    long waterways_km_added;
-    long waterways_added;
-    long waterways_km_modified;
-    long waterways_modified;
-    long pois_added;
-    long pois_modified;
+    long pois_added;            ///< The total number of POIs added
+    long buildings_added;       ///< The total number of buildings added
+    long waterways_added;       ///< The total number of waterways added
+    long roads_added;           ///< The total number of roads added
+    long roads_modified;        ///< The total number of roads modified
+    long waterways_modified;    ///< The total number of waterways modified
+    long buildings_modified;    ///< The total number of buildings modified
+    long roads_km_added;        ///< The length of the roads added in KM
+    long waterways_km_added;    ///< The length of the waterways added in KM
+    long roads_km_modified;     ///< The length of the roads modified in KM
+    long waterways_km_modified; ///< The length of the waterways added in KM
+    long pois_modified;         ///< The total number of POIs modified
 
+    /// Dump internal data to the terminal, only for debugging
     void dump(void) {
         std::cout << "Roads Added (km): \t " << roads_km_added << std::endl;
         std::cout << "Roads Modified (km):\t " << roads_km_modified << std::endl;
@@ -105,223 +121,104 @@ public:
     };
 };
 
-// /// This a template for the common data fields used by all OSM objects
-// // template<typename T>
-// class OsmObject
-// {
-//   public:
-//     void addTag(const std::string &key, const std::string &value) {
-//         tags[key] = value;
-//     };
-
-//     void setUID(long val) { uid = val; };
-    
-//     action_t action = none;
-//     osmtype_t type = empty;
-//     long id = 0;
-//     int version = 0;
-//     ptime timestamp;
-//     long uid = 0;
-//     std::string user;
-//     long change_id = 0;    
-//     std::map<std::string, std::string> tags;
-
-//     void dump(void) {
-//         std::cout << "Dumping OsmObject()" << std::endl;
-//         if (action == create) {
-//             std::cout << "\tAction: Create" << std::endl;
-//         } else if (action == modify) {
-//             std::cout << "\tAction: Modify" << std::endl;
-//         } else if (action == remove) {
-//             std::cout << "\tAction: Delete" << std::endl;
-//         }
-
-//         if (type == node) {
-//             std::cout << "\tType: OsmNode" << std::endl;
-//         } else if (type == way) {
-//             std::cout << "\tType: OsmWay" << std::endl;
-//         } else if (type == relation) {
-//             std::cout << "\tType: OsmRelation" << std::endl;
-//         }
-        
-//         std::cout << "\tID: " << id << std::endl;
-//         std::cout << "\tVersion: " << version << std::endl;
-//         std::cout << "\tTimestamp: " << timestamp << std::endl;
-//         std::cout << "\tUID: " << uid << std::endl;
-//         std::cout << "\tUser: " << user << std::endl;
-//         if (change_id > 0) {
-//             std::cout << "\tChange ID: " << change_id << std::endl;
-//         }
-//         if (tags.size() > 0) {
-//             std::cout << "\tTags: " << tags.size() << std::endl;            
-//             for (auto it = std::begin(tags); it != std::end(tags); ++it) {
-//                 std::cout << "\t\t" << it->first << " : " << it->second << std::endl;
-//             }
-//         }
-//     };
-// };
-
-// /// This represents an ODM node. A node has point coordinates, and may
-// /// contain tags if it's a POI.
-// class OsmNode: public OsmObject//<OsmNode>
-// {
-// public:
-//     OsmNode(void) { type = node; };
-//     OsmNode(double lat, double lon) {
-//         setPoint(lat, lon);
-//         type = node;
-//     };
-
-//     void setLatitude(double lat) {
-//         point.set<0>(lat);
-//     };
-//     void setLongitude(double lon) {
-//         point.set<1>(lon);
-//     };
-//     void setPoint(double lat, double lon) {
-//         point.set<0>(lat);
-//         point.set<1>(lon);
-//     };
-//     point_t point;
-//     void dump(void) {
-//         std::cout << "\tLocation: " << point.get<0>() << ", " << point.get<1>() << std::endl;
-//         OsmObject::dump();
-//     };
-// };
-    
-// class OsmWay : public OsmObject//<OsmWay>
-// {
-// public:
-//     OsmWay(void) { type = way; refs.clear(); };
-    
-//     std::vector<long> refs;
-//     linestring_t linestring;
-//     polygon_t polygon;
-
-//     // Ways have references to nodes/ and no coordinates
-//     void addRef(long ref) {
-//         refs.push_back(ref);
-//     };
-
-//     bool isClosed(void) {
-//         if (refs[0] == refs[refs.size()-1]) {
-//             return true;
-//         }
-//         return false;
-//     };
-//     // int numPoints(void) { return boost::geometry::num_points(linestring); };
-//     int numPoints(void) { return refs.size(); };
-
-//     void makeLinestring(point_t point) {
-//         // If the first and last ref are the same, it's a closed polygon,
-//         // like a building.
-//         if (refs.begin() == refs.end()) {
-//             boost::geometry::append(polygon, point);
-//         } else {
-//             boost::geometry::append(linestring, point);
-//         }
-//     };
-
-//     double getLength(void) {
-//         boost::geometry::length(linestring,
-//         boost::geometry::strategy::distance::haversine<float>(6371.0));
-//     };
-
-//     void dump(void) {
-//         OsmObject::dump();
-//         if (refs.size() > 0) {
-//             std::cout << "\tRefs: " << refs.size() << std::endl;
-//             std::cout << "\t";
-//             for (auto it = std::begin(refs); it != std::end(refs); ++it) {
-//                 std::cout << *it << ", ";
-//             }
-//             std::cout << std::endl;
-//         }
-//     };
-// };
-
-// class OsmRelation : public OsmObject//<OsmRelation>
-// {
-// public:
-//     OsmRelation(void) { type = relation; };
-    
-//     //. Relations have lists of members
-//     std::vector<OsmWay> members;
-// };
-
+/// \class OsmChange
+/// \brief This contains the data for a change
+///
+/// This contains all the data in a change. Redirection is used
+/// so the object type has a generic API
 class OsmChange
 {
 public:
-    void dump(void);            ///< dump internal data, for debugging only
+    ///< dump internal data, for debugging only
+    void dump(void);
+    
 // protected:
-
+    /// Set the latitude of the current node
     void setLatitude(double lat) {
         if (type == node) { nodes.back()->setLatitude(lat); }
     };
+    /// Set the longitude of the current node
     void setLongitude(double lon) {
         if (type == node) { nodes.back()->setLongitude(lon); }
     };
+    /// Set the timestamp of the current node or way
     void setTimestamp(const std::string &val) {
         if (type == node) { nodes.back()->timestamp = time_from_string(val); }
         if (type == way) { ways.back()->timestamp = time_from_string(val); }
     };
+    /// Set the version number of the current node or way
     void setVersion(double val) {
         if (type == node) { nodes.back()->version = val; }
         if (type == way) { ways.back()->version = val; }
     };
+    /// Add a tag to the current node or way
     void addTag(const std::string &key, const std::string &value) {
         if (type == node) { nodes.back()->addTag(key, value); }
         if (type == way) { ways.back()->addTag(key, value); }
     };
+    /// Add a node reference to the current way
     void addRef(long ref) {
         if (type == way) { ways.back()->addRef(ref); }
     };
+    /// Set the User ID for the current node or way
     void setUID(long val) {
         if (type == node) { nodes.back()->uid = val; }
         if (type == way) { ways.back()->uid = val; }
     };
+    /// Set the Change ID for the current node or way
     void setChangeID(long val) {
         if (type == node) { nodes.back()->id = val; }
         if (type == way) { ways.back()->id = val; }
     };
+    /// Set the User name for the current node or way
     void setUser(const std::string &val) {
         if (type == node) { nodes.back()->user = val; }
         if (type == way) { ways.back()->user = val; }
     };
-    
+    /// Instantiate a new node
     std::shared_ptr<OsmNode> newNode(void) {
         auto tmp = std::make_shared<OsmNode>();
         type = node;
         nodes.push_back(tmp);
         return tmp;
     };
+    /// Instantiate a new way
     std::shared_ptr<OsmWay> newWay(void) {
         std::shared_ptr<OsmWay> tmp = std::make_shared<OsmWay>();
         type = way;
         ways.push_back(tmp);
         return tmp;
     };
+    /// Instantiate a new relation    
     std::shared_ptr<OsmRelation> newRelation(void) {
         std::shared_ptr<OsmRelation> tmp = std::make_shared<OsmRelation>();
         type = relation;
         relations.push_back(tmp);
         return tmp;
     };
-    
+
+    /// Get a specific node in this change
     std::shared_ptr<OsmNode> getNode(int index) { return nodes[index]; };
+    /// Get the current node in this change
     std::shared_ptr<OsmNode> currentNode(void) { return nodes.back(); };
+    /// Get a specific way in this change
     std::shared_ptr<OsmWay> getWay(int index) { return ways[index]; };
+    /// Get a specific relation in this change
     std::shared_ptr<OsmRelation> getRelation(int index) { return relations[index]; };
 
-    action_t action = none;
-    osmtype_t type;
-    std::vector<std::shared_ptr<OsmNode>> nodes;
-    std::vector<std::shared_ptr<OsmWay>> ways;
-    std::vector<std::shared_ptr<OsmRelation>> relations;
+    action_t action = none;                              ///< The change action
+    osmtype_t type;                                      ///< The OSM object type
+    std::vector<std::shared_ptr<OsmNode>> nodes;         ///< The nodes in this change
+    std::vector<std::shared_ptr<OsmWay>> ways;           ///< The ways in this change
+    std::vector<std::shared_ptr<OsmRelation>> relations; ///< The relations in this change
 };
 
-
-/// This class manages an OSM change file.
+/// \class OsmChangeFile
+/// \brief This class manages an OSM change file.
+///
+/// This class handles the entire OsmChange file. Currently libxml++
+/// is used with a SAX parser, although optionally the boost parse tree
+/// can be used as a DOM parser.
 #ifdef LIBXML
 class OsmChangeFile : public xmlpp::SaxParser
 #else
@@ -340,30 +237,19 @@ public:
     void on_start_element(const Glib::ustring& name,
                           const AttributeList& properties) override;
 
-//    void on_end_element (const Glib::ustring& name) {
-//        std::cout << " on_end_element()" << name << std::endl;
-//    };
 #endif
     /// Read an istream of the data and parse the XML
     bool readXML(std::istream & xml);
 
-    // Statistics collected for each user
-    std::map<long, std::shared_ptr<ChangeStats>> userstats;
+    std::map<long, std::shared_ptr<ChangeStats>> userstats; ///< User statistics for this file
     
-    std::vector<std::shared_ptr<OsmChange>> changes;
-    //
-    //std::shared_ptr<OsmObject> object;
-    // union object {
-    //     std::shared_ptr<std::map<long, OsmNode>> node;
-    //     std::shared_ptr<OsmWay> way;
-    //     std::shared_ptr<OsmRelation> relation;
-    // };
+    std::vector<std::shared_ptr<OsmChange>> changes; ///< All the changes in this file
 
     /// Collect statistics for each user
     void collectStats(void);
     
-    void dump(void);            ///< dump internal data, for debugging only
-private:
+    /// dump internal data, for debugging only
+    void dump(void);
 };
     
 }       // EOF osmchange
