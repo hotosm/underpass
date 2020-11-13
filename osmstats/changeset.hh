@@ -71,13 +71,21 @@ namespace osmstats {
 class RawCountry;
 };
 
+/// \namespace changeset
 namespace changeset {
 
-// enum objtype {building, waterway, highway, poi);
+/// \file changeset.hh
+/// \brief The file is used for processing changeset files
+///
+/// The Changeset file contains the raw data on just the change,
+/// and doesn't contain any data of the change except the comment
+/// and hashtags used when the change was uploaded to OSM.
 
-/// This class reads a changeset file, as obtained from the OSM
-/// planet server. This format is not supported by other tools,
-/// so we add it there.
+/// \class ChangeSet
+/// \brief Data structure for a single changeset
+///
+/// This stores the hashtags and comments use for a change when it is
+/// uploaded to OSM
 class ChangeSet
 {
 public:
@@ -123,8 +131,12 @@ public:
     std::map<std::string, std::string> tags;
 };
 
-/// This contains the data in a state.txt file, used to identify the timestamp
-/// of the changeset replication file.
+/// \class StateFile
+/// \brief Data structure for state.text files
+///
+/// This contains the data in a ???.state.txt file, used to identify the timestamp
+/// of the changeset replication file. The replication file uses the same
+/// 3 digit number as the state file.
 class StateFile
 {
 public:
@@ -141,8 +153,14 @@ protected:
     long sequence;              ///< The sequence number of the associated changeset file
 };
 
-/// A changeset file contains multiple changes, this then contains data
-/// for the entire file.
+
+/// \class ChangeSetFile
+/// \brief This file reads a changeset file
+///
+/// This class reads a changeset file, as obtained from the OSM
+/// planet server. This format is not supported by other tools,
+/// so we add it there. As changeset file contains multiple changes,
+// this contains data for the entire file.
 #ifdef LIBXML
 class ChangeSetFile: public xmlpp::SaxParser
 #else
@@ -185,7 +203,7 @@ public:
     /// be used for debugging.
     void dump(void);
 protected:
-    bool store;
+//     bool store;
     std::string filename;       ///< The filename of this changeset for disk files
     std::vector<ChangeSet> changes; ///< Storage of all the changes in this data
     std::shared_ptr<geoutil::GeoUtil> boundaries; ///< A pointer to the geoboundary data
