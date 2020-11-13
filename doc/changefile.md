@@ -53,3 +53,34 @@ to do calculations, like the length of roads added.
 	<create> 
 		<node id="34567" version="1" timestamp="2020-10-30T20:15:24Z" uid="3333333" user="bar" changeset="93309184" lat="45.4303763" lon="10.9837526"/>\n 
 	</create> 
+
+## State Files
+
+There are two types of state files, one for changesets and the other
+for change files. The changeset one is the simplest, only containing
+the last_run timestamp and a changeset sequence number. An example
+changeset state file is: 
+
+	---
+	last_run: 2020-10-08 16:41:01.863533000 +00:00
+	sequence: 4139643
+
+The state file for change files contains more fields, but the only
+ones needed for database updates are the timestamp of the data file,
+and the sequence number. An example change file state file is: 
+
+	#Thu Oct 08 16:38:04 UTC 2020
+	sequenceNumber=4229951
+	txnMaxQueried=3081409719
+	txnActiveList=
+	txnReadyList=
+	txnMax=3081409719
+	timestamp=2020-10-08T16\:38\:02Z
+
+As the 3 digit prefix in the state filename matches the data file,
+this is used to get the right data that matches that state. Since
+the replication files are fetched via HTTP/HTTPS, there is no
+timestamp available. To find a specific replication file, a state file
+close to the timestamp is downloaded. Then the timestamp in the state
+file is checked, and if it matches, the the 3 digit part of the state
+file name can be used to find the appropriate replication data file.
