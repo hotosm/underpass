@@ -44,7 +44,7 @@ libhotosm_la_SOURCES = hotosm.cc hottm.cc \
 	osmstats/osmstats.cc \
 	osmstats/changeset.cc \
 	osmstats/osmchange.cc \
-	osmstats/geoutil.cc \
+	data/geoutil.cc \
 	data/pgsnapshot.cc \
 	data/import.cc \
 	data/osmobjects.cc
