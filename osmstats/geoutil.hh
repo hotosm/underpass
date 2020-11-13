@@ -57,16 +57,36 @@ using namespace boost::gregorian;
 #include "hotosm.hh"
 #include "osmstats/osmstats.hh"
 
+// Forward instantiate class
 namespace osmstats {
 class RawCountry;
 };
 
+/// \namespace geoutil
 namespace geoutil {
 
+/// \file geoutil.hh
+/// \brief This file parses a data file containing country boundaries
+///
+/// This uses GDAL to read and parse a file in any supported format
+/// and loads it into a data structure. This is used to determine which
+///country a change was made in.
+
+/// \typedef point_t
+/// \brief Simplify access to boost geometry point
 typedef boost::geometry::model::d2::point_xy<double> point_t;
+/// \typedef ploygon_t
+/// \brief Simplify access to boost geometry polygon
 typedef boost::geometry::model::polygon<point_t> polygon_t;
+/// \typedef linestring_t
+/// \brief Simplify access to boost geometry linestring
 typedef boost::geometry::model::linestring<point_t> linestring_t;
 
+/// \class GeoCountry
+/// \brief Data structure for country boundaries
+///
+/// This stores the data for a country boundary which is used to
+/// determine the country that a change was made in.
 class GeoCountry
 {
 public:
@@ -89,8 +109,11 @@ public:
         boost::geometry::read_wkt(border, boundary);
     };
 
+    /// Get the name for this country
     const std::string &getName(void) { return name; };
+    /// Get the alternate name for this country, if there is one
     const std::string &getAltName(void) { return alt_name; };
+    /// Get the Country ID for this country
     long getID(void) { return id; };
     const std::string &getAbbreviation(int width) {
         if (width == 2) {
@@ -99,27 +122,33 @@ public:
             return iso_a3;
         }
     };
+
+    /// Determine if a bounding box is contained within this country boundary
     bool inCountry(double max_lat, double max_lon, double min_lat, double min_lon);
 
+    /// Dump internal data to the terminal, only for debugging
     void dump(void);
 private:
-    long id;
-    // Default name
-    std::string name;
-    std::string alt_name;
-    // International names, if any
-    std::map<std::string, std::string> names;
-    // 2 letter ISO abbreviation
-    std::string iso_a2;
-    // 3 letter ISO abbreviation
-    std::string iso_a3;
-    std::string region;
-    std::string subregion;
-    // The boundary
-    // boost::geometry::model::polygon<point_t> boundary;
-    polygon_t boundary;
+    long id;                    ///< The Country ID
+    std::string name;           // Default name
+    std::string alt_name;       ///< The optional alternate name
+    std::map<std::string, std::string> names; ///< International locale names
+
+    std::string iso_a2;         ///< 2 letter ISO abbreviation
+    std::string iso_a3;         ///< 3 letter ISO abbreviation
+    // The region and subregion aren't currently used for anything
+    std::string region;         ///< The region this country is in
+    std::string subregion;      ///< The subregion this country is in
+    polygon_t boundary;         ///< The boundary of this country
 };
 
+
+/// \class GeoUtil
+/// \brief Read in the Country boundaries data file
+///
+/// This parses the data file in any GDAL supported format into a data
+/// structure that can be used to determine which country a change was
+/// made in.
 class GeoUtil
 {
 public:
@@ -148,9 +177,11 @@ public:
     /// See if the given location can be identified
     GeoCountry &inCountry(double max_lat, double max_lon, double min_lat, double min_lon);
 
+    /// Start a timer, only used for performance analysis
     void startTimer(void) {
         start = boost::posix_time::microsec_clock::local_time();
     };
+    /// Stop the timer, used for performance analysis
     long endTimer(void) {
         end = boost::posix_time::microsec_clock::local_time();
         boost::posix_time::time_duration delta = end - start;
@@ -159,12 +190,13 @@ public:
         return delta.total_milliseconds();
     };
 
-    // Export all the countries in the format used by OSM Stats, which
-    // doesn't use the geospatial data. This table needs to be regenerated
-    // using the same data file as used to geolocate which country a
-    // changeset is made it.
+    /// Export all the countries in the format used by OSM Stats, which
+    /// doesn't use the geospatial data. This table needs to be regenerated
+    /// using the same data file as used to geolocate which country a
+    /// changeset is made it.
     std::vector<osmstats::RawCountry> exportCountries(void);
 
+    /// Get parsed country data by name 
     GeoCountry &getCountry(const std::string country) {
         // return countries[country];
     }
@@ -172,21 +204,10 @@ public:
     void dump(void);
 
 private:
-    std::vector<GeoCountry> countries;
+    std::vector<GeoCountry> countries; ///< all the countries boundaries
     // These are just for performance testing
-    ptime start;                // Starting timestamop for operation
-    ptime end;                  // Ending timestamop for operation
-
-    //int extractTags(const std::string &other);
-    std::string dbserver;
-    std::string database;
-    pqxx::connection *db;
-    pqxx::work *worker;
-    /// This is a polygon boundary to use to only apply changesets
-    /// within it.
-    boost::geometry::model::polygon<point_t> boundary;
-    // boost::geometry::model::multi_polygon<polygon_t> boundaries;
-    // std::vector<GeoCountry> countries;
+    ptime start;                ///< Starting timestamop for operation
+    ptime end;                  ///< Ending timestamop for operation
 };
     
 }       // EOF geoutil
