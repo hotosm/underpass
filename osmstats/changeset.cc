@@ -83,8 +83,8 @@ using namespace boost::gregorian;
 
 namespace changeset {
 
-/// parse the two state file for a replication file, from
-/// disk or memory.
+// parse the two state file for a replication file, from
+// disk or memory.
 
 // There are two types of state files with of course different
 // formats for the same basic data. The simplest one is for

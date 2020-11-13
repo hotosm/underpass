@@ -66,7 +66,7 @@ namespace opts = boost::program_options;
 // #include "hotosm.hh"
 #include "osmstats/changeset.hh"
 // #include "osmstats/osmstats.hh"
-#include "osmstats/geoutil.hh"
+#include "data/geoutil.hh"
 #include "osmstats/replication.hh"
 #include "data/import.hh"
 

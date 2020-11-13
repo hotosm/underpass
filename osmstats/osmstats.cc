@@ -253,7 +253,7 @@ QueryOSMStats::dump(void)
     }
 }
 
-/// Write the list of hashtags to the database
+// Write the list of hashtags to the database
 int
 QueryOSMStats::updateRawHashtags(void)
 {

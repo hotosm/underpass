@@ -83,7 +83,7 @@ using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 
 namespace replication {
 
-/// parse a replication file containing changesets
+// parse a replication file containing changesets
 bool
 Replication::readChanges(const std::string &file)
 {
@@ -91,7 +91,7 @@ Replication::readChanges(const std::string &file)
     return false;
 }
 
-/// Add this replication data to the changeset database
+// Add this replication data to the changeset database
 bool
 Replication::mergeToDB()
 {
@@ -121,7 +121,7 @@ Replication::getLinks(GumboNode* node, std::shared_ptr<std::vector<std::string>>
     return links;
 }
 
-/// Download a file from planet
+// Download a file from planet
 std::shared_ptr<std::vector<std::string>>
 Replication::downloadFiles(std::vector<std::string> files, bool text)
 {
@@ -198,7 +198,7 @@ Replication::downloadFiles(std::vector<std::string> files, bool text)
     stream.shutdown(ec);
     
     return links;
-}
+} // EOF replication namespace
 
 }       // EOF replication
 

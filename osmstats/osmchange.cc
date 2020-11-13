@@ -77,7 +77,7 @@ typedef boost::geometry::model::linestring<point_t> linestring_t;
 
 namespace osmchange {
 
-/// Read a changeset file from disk or memory into internal storage
+// Read a changeset file from disk or memory into internal storage
 bool
 OsmChangeFile::readChanges(const std::string &file)
 {
