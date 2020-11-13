@@ -63,13 +63,26 @@ namespace geoutil {
   class GeoUtil;
 };
 
+/// \namespace osmstats
 namespace osmstats {
 
-class OsmStats
+/// \file osmstats.hh
+/// \brief This file is used to work with the OSM Stats database
+///
+/// This manages the OSM Stats schema in a postgres database. This
+/// includes querying existing data in the database, as well as
+/// updating the database.
+
+/// \class RawChangeset
+/// \brief This is the data strucutre for a raw changeset
+///
+/// The raw_changesets table contains all the calculated statistics
+/// for a change. This stores the data as parsed from the database.
+class RawChangeset
 {
 public:
-    OsmStats(pqxx::const_result_iterator &res);
-    OsmStats(const std::string filespec);
+    RawChangeset(pqxx::const_result_iterator &res);
+    RawChangeset(const std::string filespec);
     void dump(void);
 // protected:
     // These are from the OSM Stats 'raw_changesets' table
@@ -87,59 +100,77 @@ public:
     long operator[](const std::string &key) { return counters[key]; };
 };
 
-/// Stores the data from the raw countries table
+/// \class RawCountry
+/// \brief Stores the data from the raw countries table
+///
+/// The raw_countries table is used to correlate a country ID with
+/// with it's name. This stores the data as parsed from the database.
 class RawCountry
 {
   public:
     RawCountry(void);
+    /// Instantiate the Country data from an iterator
     RawCountry(pqxx::const_result_iterator &res) {
         id = res[0].as(int(0));
         name = res[1].c_str();
         abbrev = res[2].c_str();
     }
+    /// Instantiate the Country data
     RawCountry(int cid, const std::string &country, const std::string &code) {
         id = cid;
         name = country;
         abbrev = code;
     }
 
-    int id;
-    std::string name;
-    std::string abbrev;
+    int id;                     ///< The Country ID column
+    std::string name;           ///< The Country name column
+    std::string abbrev;         ///< The 3 letter ISO abbreviation for the country
 };
 
-/// Stores the data from the raw user table
+/// \class RawUser
+/// \brief Stores the data from the raw user table
+///
+/// The raw_user table is used to coorelate a user ID with their name.
+/// This stores the data as parsed from the database.
 class RawUser
 {
   public:
     RawUser(void) { };
+    /// Instantiate the user data from an iterator
     RawUser(pqxx::const_result_iterator &res) {
         id = res[0].as(int(0));
         name = res[1].c_str();
     }
+    /// Instantiate the user data
     RawUser(long uid, const std::string &tag) {
         id = uid;
         name = tag;
     }
-    int id;
-    std::string name;
+    int id;                     ///< The users OSM ID
+    std::string name;           ///< The users OSM username 
 };
 
-/// Stores the data from the raw user table
+/// \class RawHashtag
+/// \brief Stores the data from the raw hashtag table
+///
+/// The raw_hashtag table is used to coorelate a hashtag ID with the
+/// hashtag name. This stores the data as parsed from the database.
 class RawHashtag
 {
   public:
     RawHashtag(void) { };
+    /// Instantiate the hashtag data from an iterator
     RawHashtag(pqxx::const_result_iterator &res) {
         id = res[0].as(int(0));
         name = res[1].c_str();
     }
+    /// Instantiate the hashtag data
     RawHashtag(int hid, const std::string &tag) {
         id = hid;
         name = tag;
     }
-    int id = 0;
-    std::string name;
+    int id = 0;                 ///< The hashtag ID
+    std::string name;           ///< The hashtag value
 };
 
 class QueryOSMStats : public apidb::QueryStats
@@ -217,7 +248,7 @@ class QueryOSMStats : public apidb::QueryStats
         std::cout << "Operation took " << delta.total_milliseconds() << " milliseconds" << std::endl;
     };
 
-    OsmStats &operator[](int index){ return ostats[index]; }
+    RawChangeset &operator[](int index){ return ostats[index]; }
 
     /// Dump internal data, debugging usage only!
     void dump(void);
@@ -226,7 +257,7 @@ private:
     ptime getLastUpdate(void);
 
     bool updateCounters(long cid, std::map<std::string, long> data);
-    bool updateChangeset(const OsmStats &stats);
+    bool updateChangeset(const RawChangeset &stats);
 
     // Subqueries take too much time, it's faster to query the data field we
     // need and update it.
@@ -262,7 +293,7 @@ private:
     pqxx::connection *db;
     pqxx::work *worker;
 
-    std::vector<OsmStats> ostats;
+    std::vector<RawChangeset> ostats;
     std::vector<RawCountry> countries;
     std::vector<RawUser> users;
     std::map<std::string, RawHashtag> hashtags;

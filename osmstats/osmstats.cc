@@ -216,7 +216,7 @@ QueryOSMStats::getRawChangeSets(std::vector<long> &changeset_ids)
     worker->commit();
 
     for (auto it = std::begin(result); it != std::end(result); ++it) {
-        OsmStats os(it);
+        RawChangeset os(it);
         ostats.push_back(os);
     }
 
@@ -281,7 +281,7 @@ QueryOSMStats::updateCountries(std::vector<RawCountry> &countries)
     return countries.size();
 }
 
-OsmStats::OsmStats(pqxx::const_result_iterator &res)
+RawChangeset::RawChangeset(pqxx::const_result_iterator &res)
 {
     id = std::stol(res[0].c_str());
     for (auto it = std::begin(res); it != std::end(res); ++it) {
@@ -305,7 +305,7 @@ OsmStats::OsmStats(pqxx::const_result_iterator &res)
 }
 
 void
-OsmStats::dump(void)
+RawChangeset::dump(void)
 {
     std::cout << "-----------------------------------" << std::endl;
     std::cout << "changeset id: \t\t " << id << std::endl;
