@@ -74,7 +74,7 @@ namespace osmstats {
 /// updating the database.
 
 /// \class RawChangeset
-/// \brief This is the data strucutre for a raw changeset
+/// \brief This is the data structure for a raw changeset
 ///
 /// The raw_changesets table contains all the calculated statistics
 /// for a change. This stores the data as parsed from the database.
@@ -173,6 +173,12 @@ class RawHashtag
     std::string name;           ///< The hashtag value
 };
 
+/// \class QueryOSMStats
+/// \brief This handles all direct database access
+///
+/// This class handles all the queries to the OSM Stats database.
+/// This includes querying the database for existing data, as
+/// well as updating the data whenh applying a replication file.
 class QueryOSMStats : public apidb::QueryStats
 {
   public:
@@ -293,14 +299,14 @@ private:
     pqxx::connection *db;
     pqxx::work *worker;
 
-    std::vector<RawChangeset> ostats;
-    std::vector<RawCountry> countries;
-    std::vector<RawUser> users;
+    std::vector<RawChangeset> ostats;  ///< All the raw changset data
+    std::vector<RawCountry> countries; ///< All the raw country data
+    std::vector<RawUser> users;        ///< All the raw user data
     std::map<std::string, RawHashtag> hashtags;
     // These are only used to get performance statistics used for
     // debugging.
-    ptime start;                // Starting timestamop for operation
-    ptime end;                  // Ending timestamop for operation
+    ptime start;                ///< Starting timestamop for operation
+    ptime end;                  ///< Ending timestamop for operation
 };
 
     
