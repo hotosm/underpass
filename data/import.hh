@@ -57,8 +57,21 @@ using namespace boost::gregorian;
 
 #include "data/pgsnapshot.hh"
 
+/// \file import.hh
+/// \brief Import an OSM data file into postgres
+///
+/// This uses osmium to read an OSM data file into postgres,
+/// currently supporting only the pgsnapshot schema, as it
+/// can be updated by replication files.
+
+/// \namespace import
 namespace import {
 
+/// \class OSMHandler
+/// \brief Osmium object handler
+///
+/// This class contains the callbacks used by osmium when
+/// parsing an OSM data file.
 class OSMHandler : public osmium::handler::Handler {
 public:
     /// Process a way
@@ -76,12 +89,17 @@ public:
     bool connect(const std::string &dbname, const std::string &server);
 
 private:
-    pqxx::connection *db;
-    pqxx::work *worker;
+    pqxx::connection *db;       ///< PQXX database connection handle
+    pqxx::work *worker;         ///< PQXX database worker handle
     // cache the nodes in between ways
-    std::map<long, osmium::Location> cache;
+    std::map<long, osmium::Location> cache; ///< Cache of nodes used for a way
 };
 
+/// \class ImportOSM
+/// \brief Derived class for Osmium
+///
+/// This class uses Osmium to reads in an OSM data file and insert
+/// it into a postgres database.
 class ImportOSM
 {
 public:
@@ -95,9 +113,9 @@ public:
 
     // ~ImportOSM(void) { reader.close(); };
 private:
-    std::string database;
-    std::string server;
-    OSMHandler handler;
+    std::string database;       ///< The name of the database
+    std::string server;         ///< The database server hostname
+    OSMHandler handler;         ///< Handle for Osmium
 };
 
 

@@ -56,10 +56,12 @@ typedef boost::geometry::model::multi_point<point_t> mpoint_t;
 typedef boost::geometry::model::linestring<point_t> linestring_t;
 typedef boost::geometry::model::multi_linestring<linestring_t> mlinestring_t;
 
-#include "hotosm.hh"
-
+/// \namespace osmobjects
 namespace osmobjects {
 
+/// \file osmobjects.hh
+/// \brief Data structures for OSM objects
+///
 /// This file contains class definitions for the 3 objects used for OSM data.
 /// These are nodes, which are a single point. These are used to mark a
 /// point of interest, like a traffic light,
@@ -70,7 +72,8 @@ namespace osmobjects {
 typedef enum {none, create, modify, remove} action_t; // delete is a reserved word
 typedef enum {empty, node, way, relation, member} osmtype_t;
 
-/// This is the base class for the common data fields used by all OSM objects
+/// \class OsmObject
+/// \brief This is the base class for the common data fields used by all OSM objects
 class OsmObject
 {
   public:
@@ -95,8 +98,10 @@ class OsmObject
     void dump(void);
 };
 
-/// This represents an OSM node. A node has point coordinates, and may
-/// contain tags if it's a POI.
+/// \class OsmNode
+/// \brief This represents an OSM node.
+///
+/// A node has point coordinates, and may contain tags if it's a POI.
 class OsmNode: public OsmObject//<OsmNode>
 {
 public:
@@ -126,9 +131,12 @@ public:
         OsmObject::dump();
     };
 };
-    
-/// This represents an OSM way. A way has multiple nodes, and should always have
-/// standard OSM tags or it's bad data.
+
+/// \class OsmWay
+/// \brief This represents an OSM way.
+///
+/// A way has multiple nodes, and should always have standard OSM tags
+/// or it's bad data.
 class OsmWay : public OsmObject
 {
 public:
@@ -165,8 +173,11 @@ public:
     void dump(void);
 };
 
-/// This represents an OSM relation. A relation contains multiple ways, and
-/// contains tags about the relation
+
+/// class OsmRelation
+/// \brief This represents an OSM relation.
+///
+/// A relation contains multiple ways, and contains tags about the relation
 class OsmRelation : public OsmObject//<OsmRelation>
 {
 public:
