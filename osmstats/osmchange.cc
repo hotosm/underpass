@@ -66,6 +66,8 @@ using namespace boost::gregorian;
 #include "hotosm.hh"
 #include "osmstats/osmchange.hh"
 // #include "osmstats/geoutil.hh"
+#include "data/osmobjects.hh"
+using namespace osmobjects;
 
 typedef boost::geometry::model::d2::point_xy<double> point_t;
 typedef boost::geometry::model::polygon<point_t> polygon_t;
@@ -336,8 +338,8 @@ OsmChangeFile::dump(void)
     }
     if (userstats.size() > 0) {
         for (auto it = std::begin(userstats); it != std::end(userstats); ++it) {
-            //std::shared_ptr<ChangeStats> stats = it->second;
-            it->second->dump();
+            std::shared_ptr<ChangeStats> stats = it->second;
+            stats->dump();
         }
     }
 }
@@ -352,7 +354,7 @@ OsmChangeFile::collectStats(void)
             for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
                 std::shared_ptr<OsmNode> node = *it;
                 if (node->tags.size() > 0) {
-                    std::cout << "Node ID " << node->id << " has tags!" << std::endl;
+                    std::cout << "New Node ID " << node->id << " has tags!" << std::endl;
                 } else {
                     ++stats->pois_added;
                 }
@@ -360,7 +362,10 @@ OsmChangeFile::collectStats(void)
             for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
                 std::shared_ptr<OsmWay> way = *it;
                 if (way->tags.size() == 0) {
-                    std::cerr << "Way ID " << way->id << " has no tags!" << std::endl;
+                    std::cerr << "New Way ID " << way->id << " has no tags!" << std::endl;
+                    if (way->isClosed() && way->numPoints() == 5) {
+                        std::cerr << "WARNING: " << way->id << " might be a building!" << std::endl;
+                    }
                     continue;
                 }
                 if (way->tags.find("building") != way->tags.end()) {
@@ -379,7 +384,7 @@ OsmChangeFile::collectStats(void)
             for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
                 std::shared_ptr<OsmNode> node = *it;
                 if (node->tags.size() > 0) {
-                    std::cout << "Node ID " << node->id << " has tags!" << std::endl;
+                    std::cout << "Modified Node ID " << node->id << " has tags!" << std::endl;
                 } else {
                     ++stats->pois_modified;
                 }
@@ -387,7 +392,7 @@ OsmChangeFile::collectStats(void)
             for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
                 std::shared_ptr<OsmWay> way = *it;
                 if (way->tags.size() == 0) {
-                    std::cerr << "Way ID " << way->id << " has no tags!" << std::endl;
+                    std::cerr << "Modified Way ID " << way->id << " has no tags!" << std::endl;
                     continue;
                 }
                 if (way->tags.find("building") != way->tags.end()) {
@@ -406,5 +411,5 @@ OsmChangeFile::collectStats(void)
     }
 }
 
-}       // EOF osmchange
+} // EOF namespace osmchange
 

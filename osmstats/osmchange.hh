@@ -63,6 +63,8 @@ typedef boost::geometry::model::linestring<point_t> linestring_t;
 typedef boost::geometry::model::multi_linestring<linestring_t> mlinestring_t;
 
 #include "hotosm.hh"
+#include "data/osmobjects.hh"
+using namespace osmobjects;
 
 namespace osmchange {
 
@@ -103,140 +105,149 @@ public:
     };
 };
 
-/// This a template for the common data fields used by all OSM objects
-// template<typename T>
-class OsmObject
-{
-  public:
-    void addTag(const std::string &key, const std::string &value) {
-        tags[key] = value;
-    };
+// /// This a template for the common data fields used by all OSM objects
+// // template<typename T>
+// class OsmObject
+// {
+//   public:
+//     void addTag(const std::string &key, const std::string &value) {
+//         tags[key] = value;
+//     };
 
-    void setUID(long val) { uid = val; };
+//     void setUID(long val) { uid = val; };
     
-    action_t action = none;
-    osmtype_t type = empty;
-    long id = 0;
-    int version = 0;
-    ptime timestamp;
-    long uid = 0;
-    std::string user;
-    long change_id = 0;    
-    std::map<std::string, std::string> tags;
+//     action_t action = none;
+//     osmtype_t type = empty;
+//     long id = 0;
+//     int version = 0;
+//     ptime timestamp;
+//     long uid = 0;
+//     std::string user;
+//     long change_id = 0;    
+//     std::map<std::string, std::string> tags;
 
-    void dump(void) {
-        std::cout << "Dumping OsmObject()" << std::endl;
-        if (action == create) {
-            std::cout << "\tAction: Create" << std::endl;
-        } else if (action == modify) {
-            std::cout << "\tAction: Modify" << std::endl;
-        } else if (action == remove) {
-            std::cout << "\tAction: Delete" << std::endl;
-        }
+//     void dump(void) {
+//         std::cout << "Dumping OsmObject()" << std::endl;
+//         if (action == create) {
+//             std::cout << "\tAction: Create" << std::endl;
+//         } else if (action == modify) {
+//             std::cout << "\tAction: Modify" << std::endl;
+//         } else if (action == remove) {
+//             std::cout << "\tAction: Delete" << std::endl;
+//         }
 
-        if (type == node) {
-            std::cout << "\tType: OsmNode" << std::endl;
-        } else if (type == way) {
-            std::cout << "\tType: OsmWay" << std::endl;
-        } else if (type == relation) {
-            std::cout << "\tType: OsmRelation" << std::endl;
-        }
+//         if (type == node) {
+//             std::cout << "\tType: OsmNode" << std::endl;
+//         } else if (type == way) {
+//             std::cout << "\tType: OsmWay" << std::endl;
+//         } else if (type == relation) {
+//             std::cout << "\tType: OsmRelation" << std::endl;
+//         }
         
-        std::cout << "\tID: " << id << std::endl;
-        std::cout << "\tVersion: " << version << std::endl;
-        std::cout << "\tTimestamp: " << timestamp << std::endl;
-        std::cout << "\tUID: " << uid << std::endl;
-        std::cout << "\tUser: " << user << std::endl;
-        if (change_id > 0) {
-            std::cout << "\tChange ID: " << change_id << std::endl;
-        }
-        if (tags.size() > 0) {
-            std::cout << "\tTags: " << tags.size() << std::endl;            
-            for (auto it = std::begin(tags); it != std::end(tags); ++it) {
-                std::cout << "\t\t" << it->first << " : " << it->second << std::endl;
-            }
-        }
-    };
-};
+//         std::cout << "\tID: " << id << std::endl;
+//         std::cout << "\tVersion: " << version << std::endl;
+//         std::cout << "\tTimestamp: " << timestamp << std::endl;
+//         std::cout << "\tUID: " << uid << std::endl;
+//         std::cout << "\tUser: " << user << std::endl;
+//         if (change_id > 0) {
+//             std::cout << "\tChange ID: " << change_id << std::endl;
+//         }
+//         if (tags.size() > 0) {
+//             std::cout << "\tTags: " << tags.size() << std::endl;            
+//             for (auto it = std::begin(tags); it != std::end(tags); ++it) {
+//                 std::cout << "\t\t" << it->first << " : " << it->second << std::endl;
+//             }
+//         }
+//     };
+// };
 
-/// This represents an ODM node. A node has point coordinates, and may
-/// contain tags if it's a POI.
-class OsmNode: public OsmObject//<OsmNode>
-{
-public:
-    OsmNode(void) { type = node; };
-    OsmNode(double lat, double lon) {
-        setPoint(lat, lon);
-        type = node;
-    };
+// /// This represents an ODM node. A node has point coordinates, and may
+// /// contain tags if it's a POI.
+// class OsmNode: public OsmObject//<OsmNode>
+// {
+// public:
+//     OsmNode(void) { type = node; };
+//     OsmNode(double lat, double lon) {
+//         setPoint(lat, lon);
+//         type = node;
+//     };
 
-    void setLatitude(double lat) {
-        point.set<0>(lat);
-    };
-    void setLongitude(double lon) {
-        point.set<1>(lon);
-    };
-    void setPoint(double lat, double lon) {
-        point.set<0>(lat);
-        point.set<1>(lon);
-    };
-    point_t point;
-    void dump(void) {
-        std::cout << "\tLocation: " << point.get<0>() << ", " << point.get<1>() << std::endl;
-        OsmObject::dump();
-    };
-};
+//     void setLatitude(double lat) {
+//         point.set<0>(lat);
+//     };
+//     void setLongitude(double lon) {
+//         point.set<1>(lon);
+//     };
+//     void setPoint(double lat, double lon) {
+//         point.set<0>(lat);
+//         point.set<1>(lon);
+//     };
+//     point_t point;
+//     void dump(void) {
+//         std::cout << "\tLocation: " << point.get<0>() << ", " << point.get<1>() << std::endl;
+//         OsmObject::dump();
+//     };
+// };
     
-class OsmWay : public OsmObject//<OsmWay>
-{
-public:
-    OsmWay(void) { type = way; refs.clear(); };
+// class OsmWay : public OsmObject//<OsmWay>
+// {
+// public:
+//     OsmWay(void) { type = way; refs.clear(); };
     
-    std::vector<long> refs;
-    linestring_t linestring;
-    polygon_t polygon;
+//     std::vector<long> refs;
+//     linestring_t linestring;
+//     polygon_t polygon;
 
-    // Ways have references to nodes/ and no coordinates
-    void addRef(long ref) {
-        refs.push_back(ref);
-    };
+//     // Ways have references to nodes/ and no coordinates
+//     void addRef(long ref) {
+//         refs.push_back(ref);
+//     };
 
-    void makeLinestring(point_t point) {
-        // If the first and last ref are the same, it's a closed polygon,
-        // like a building.
-        if (refs.begin() == refs.end()) {
-            boost::geometry::append(polygon, point);
-        } else {
-            boost::geometry::append(linestring, point);
-        }
-    };
+//     bool isClosed(void) {
+//         if (refs[0] == refs[refs.size()-1]) {
+//             return true;
+//         }
+//         return false;
+//     };
+//     // int numPoints(void) { return boost::geometry::num_points(linestring); };
+//     int numPoints(void) { return refs.size(); };
 
-    double getLength(void) {
-        boost::geometry::length(linestring,
-        boost::geometry::strategy::distance::haversine<float>(6371.0));
-    };
+//     void makeLinestring(point_t point) {
+//         // If the first and last ref are the same, it's a closed polygon,
+//         // like a building.
+//         if (refs.begin() == refs.end()) {
+//             boost::geometry::append(polygon, point);
+//         } else {
+//             boost::geometry::append(linestring, point);
+//         }
+//     };
 
-    void dump(void) {
-        OsmObject::dump();
-        if (refs.size() > 0) {
-            std::cout << "\tRefs: " << refs.size() << std::endl;
-            std::cout << "\t";
-            for (auto it = std::begin(refs); it != std::end(refs); ++it) {
-                std::cout << *it << ", ";
-            }
-            std::cout << std::endl;
-        }
-    };
-};
+//     double getLength(void) {
+//         boost::geometry::length(linestring,
+//         boost::geometry::strategy::distance::haversine<float>(6371.0));
+//     };
 
-class OsmRelation : public OsmObject//<OsmRelation>
-{
-public:
-    OsmRelation(void) { type = relation; };
+//     void dump(void) {
+//         OsmObject::dump();
+//         if (refs.size() > 0) {
+//             std::cout << "\tRefs: " << refs.size() << std::endl;
+//             std::cout << "\t";
+//             for (auto it = std::begin(refs); it != std::end(refs); ++it) {
+//                 std::cout << *it << ", ";
+//             }
+//             std::cout << std::endl;
+//         }
+//     };
+// };
+
+// class OsmRelation : public OsmObject//<OsmRelation>
+// {
+// public:
+//     OsmRelation(void) { type = relation; };
     
-    //. Relations have lists of members
-    std::vector<OsmWay> members;
-};
+//     //. Relations have lists of members
+//     std::vector<OsmWay> members;
+// };
 
 class OsmChange
 {
