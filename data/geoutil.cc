@@ -98,29 +98,29 @@ GeoCountry::extractTags(const std::string &other)
     return tags.size();
 }
 
-bool
-GeoUtil::connect(const std::string &dbserver, const std::string &dbname)
-{
-    std::string args;
-    if (dbname.empty()) {
-	args = "dbname = geobundaries";
-    } else {
-	args = "dbname = " + dbname;
-    }
+// bool
+// GeoUtil::connect(const std::string &dbserver, const std::string &dbname)
+// {
+//     std::string args;
+//     if (dbname.empty()) {
+// 	args = "dbname = geobundaries";
+//     } else {
+// 	args = "dbname = " + dbname;
+//     }
     
-    try {
-	db = new pqxx::connection(args);
-	if (db->is_open()) {
-            // worker = new pqxx::work(*db);
-	    return true;
-	} else {
-	    return false;
-	}
-    } catch (const std::exception &e) {
-	std::cerr << e.what() << std::endl;
-	return false;
-   }    
-}
+//     try {
+// 	db = new pqxx::connection(args);
+// 	if (db->is_open()) {
+//             // worker = new pqxx::work(*db);
+// 	    return true;
+// 	} else {
+// 	    return false;
+// 	}
+//     } catch (const std::exception &e) {
+// 	std::cerr << e.what() << std::endl;
+// 	return false;
+//    }    
+// }
 
 bool
 GeoUtil::readFile(const std::string &filespec, bool multi)
