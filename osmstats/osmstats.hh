@@ -87,14 +87,15 @@ public:
 // protected:
     // These are from the OSM Stats 'raw_changesets' table
     std::map<std::string, long> counters;
-    long id;
-    std::string editor;
-    long user_id;
-    ptime created_at;
-    ptime closed_at;
-    bool verified;
-    std::vector<long> augmented_diffs;
-    ptime updated_at;
+    long id;                    ///< The change ID
+    std::string editor;         ///< The editor used for this change
+    long user_id;               ///< The user ID 
+    ptime created_at;           ///< The starting timestamp
+    ptime closed_at;            ///< The finished timestamp
+    bool verified;              ///< Whether this change has been validated
+    std::vector<long> augmented_diffs; ///< The diffs, currently unused
+    ptime updated_at;                  ///< Time this change was updated
+    //
     long updateCounter(const std::string &key, long value) { counters[key] = value; };
     long updateCounters(std::map<const std::string &, long> data);
     long operator[](const std::string &key) { return counters[key]; };
