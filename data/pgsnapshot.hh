@@ -55,7 +55,14 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
+/// \file pgsnapshot.hh
+/// \brief This file writes data to the pgsnapshot schema
+///
+/// This file takes the data from Osmium and write it to a postgres
+/// database using the pgsnapshot schema. Pgsnapshot is used as it can
+/// be updated by replication files.
 
+/// \namespace pgsnapshot
 namespace pgsnapshot {
 
 // pgsnapshots database schema
@@ -91,8 +98,14 @@ namespace pgsnapshot {
 //
 // pgsnapshot.users
 // id | name
+
+/// \class PGSnapshot
+/// \brief Support class to write OSM data to postgres
+///
+/// This class writes the Osmium objects to the postgres database
 class PGSnapshot
 {
+    /// Connect to postgres
     bool connect(const std::string &database, const std::string & server);
 
     /// Add a user to the users table
@@ -107,8 +120,8 @@ class PGSnapshot
     /// Add a relation to the relations and relation_members tables
     bool addRelation(const osmium::Relation& relation);
 private:
-    pqxx::connection *db;
-    pqxx::work *worker;
+    pqxx::connection *db;       ///< PQXX database connection handle
+    pqxx::work *worker;         ///< PQXX database worker handle
 };
 
 
