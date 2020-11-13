@@ -186,7 +186,7 @@ ChangeSetFile::importChanges(const std::string &file)
 {
     std::ifstream change;
     int size = 0;
-    store = false;
+//    store = false;
 
 #ifdef LIBXML
     // FIXME: this should really use CHUNKS, since the files can
@@ -225,7 +225,7 @@ ChangeSetFile::readChanges(const std::string &file)
 {
     std::ifstream change;
     int size = 0;
-    store = false;
+//    store = false;
     
     unsigned char *buffer;
     std::cout << "Reading changeset file " << file << std::endl;

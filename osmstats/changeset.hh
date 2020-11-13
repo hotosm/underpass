@@ -64,7 +64,7 @@ using namespace boost::gregorian;
 
 #include "hotosm.hh"
 #include "osmstats/osmstats.hh"
-#include "osmstats/geoutil.hh"
+#include "data/geoutil.hh"
 
 // Forward declaration
 namespace osmstats {

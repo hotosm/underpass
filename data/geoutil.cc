@@ -60,7 +60,7 @@ using namespace boost::gregorian;
 #include "hotosm.hh"
 #include "osmstats/osmstats.hh"
 #include "osmstats/changeset.hh"
-#include "osmstats/geoutil.hh"
+#include "data/geoutil.hh"
 
 #include <gdal/ogrsf_frmts.h>
 

@@ -48,7 +48,7 @@ using namespace boost::gregorian;
 
 #include "osmstats/osmstats.hh"
 #include "osmstats/changeset.hh"
-#include "osmstats/geoutil.hh"
+#include "data/geoutil.hh"
 
 using namespace apidb;
 
