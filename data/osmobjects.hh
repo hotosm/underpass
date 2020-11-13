@@ -38,13 +38,7 @@
 
 #include <string>
 #include <vector>
-#include <array>
-#include <memory>
 #include <iostream>
-//#include <pqxx/pqxx>
-#ifdef LIBXML
-# include <libxml++/libxml++.h>
-#endif
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
@@ -66,101 +60,122 @@ typedef boost::geometry::model::multi_linestring<linestring_t> mlinestring_t;
 
 namespace osmobjects {
 
+/// This file contains class definitions for the 3 objects used for OSM data.
+/// These are nodes, which are a single point. These are used to mark a
+/// point of interest, like a traffic light,
+/// Ways contain multiple points, and are used for buildings and highways.
+/// Relations contain multipe ways, and are often used for combining
+/// highway segments or administrative boundaries.
+
 typedef enum {none, create, modify, remove} action_t; // delete is a reserved word
 typedef enum {empty, node, way, relation, member} osmtype_t;
 
-/// This a template for the common data fields used by all OSM objects
-// template<typename T>
+/// This is the base class for the common data fields used by all OSM objects
 class OsmObject
 {
   public:
+    /// Add a metadata tag to an OSM object
     void addTag(const std::string &key, const std::string &value) {
         tags[key] = value;
     };
 
     void setUID(long val) { uid = val; };
     
-    action_t action = none;
-    osmtype_t type = empty;
-    long id = 0;
-    int version = 0;
-    ptime timestamp;
-    long uid = 0;
-    std::string user;
-    long change_id = 0;    
-    std::map<std::string, std::string> tags;
+    action_t action = none;     ///< the action that contains this object
+    osmtype_t type = empty;     ///< The type of this object, node, way, or relation
+    long id = 0;                ///< The object ID within OSM
+    int version = 0;            ///< The version of this object
+    ptime timestamp;            ///< The timestamp of this object's creation or modification
+    long uid = 0;               ///< The User ID of the mapper of this object
+    std::string user;           ///< The User name  of the mapper of this object
+    long change_id = 0;         ///< The changeset ID this object is contained in
+    std::map<std::string, std::string> tags; ///< OSM metadata tags
 
+    /// Dump internal data to the terminal, only for debugging
     void dump(void);
 };
 
-/// This represents an ODM node. A node has point coordinates, and may
+/// This represents an OSM node. A node has point coordinates, and may
 /// contain tags if it's a POI.
 class OsmNode: public OsmObject//<OsmNode>
 {
 public:
+    point_t point;              ///< The location of this node
     OsmNode(void) { type = node; };
     OsmNode(double lat, double lon) {
         setPoint(lat, lon);
         type = node;
     };
-
+    /// Set the latitude of this node
     void setLatitude(double lat) {
         point.set<0>(lat);
     };
+    /// Set the longitude of this node
     void setLongitude(double lon) {
         point.set<1>(lon);
     };
+    /// Set the location of this node
     void setPoint(double lat, double lon) {
         point.set<0>(lat);
         point.set<1>(lon);
     };
-    point_t point;
+
+    /// Dump internal data to the terminal, only for debugging
     void dump(void) {
         std::cout << "\tLocation: " << point.get<0>() << ", " << point.get<1>() << std::endl;
         OsmObject::dump();
     };
 };
     
-class OsmWay : public OsmObject//<OsmWay>
+/// This represents an OSM way. A way has multiple nodes, and should always have
+/// standard OSM tags or it's bad data.
+class OsmWay : public OsmObject
 {
 public:
     OsmWay(void) { type = way; refs.clear(); };
     
-    std::vector<long> refs;
-    linestring_t linestring;
-    polygon_t polygon;
+    std::vector<long> refs;     ///< Store all the nodes by reference ID
+    linestring_t linestring;    ///< Store the node as a linestring
+    polygon_t polygon;          ///< Store the nodes as a polygon
 
-    // Ways have references to nodes/ and no coordinates
-    void addRef(long ref) {
-        refs.push_back(ref);
-    };
+    /// Add a reference to a node to this way
+    void addRef(long ref) { refs.push_back(ref); };
 
+    /// Polygons are closed objects, like a building, while a highway
+    /// is a linestring
     bool isClosed(void) {
         if (refs[0] == refs[refs.size()-1]) {
             return true;
         }
         return false;
     };
-    // int numPoints(void) { return boost::geometry::num_points(linestring); };
+    /// Return the number of nodes in this way
     int numPoints(void) { return refs.size(); };
 
+    /// Add a point to the way's geometric data storage
     void makeLinestring(point_t point);
 
+    /// Calculate the length of the linestring in Kilometers
     double getLength(void) {
         return boost::geometry::length(linestring,
                boost::geometry::strategy::distance::haversine<float>(6371.0));
     };
 
+    /// Dump internal data to the terminal, only for debugging
     void dump(void);
 };
 
+/// This represents an OSM relation. A relation contains multiple ways, and
+/// contains tags about the relation
 class OsmRelation : public OsmObject//<OsmRelation>
 {
 public:
     OsmRelation(void) { type = relation; };
     
-    //. Relations have lists of members
-    std::vector<OsmWay> members;
+    std::vector<OsmWay> members; ///< The members contained in this relation
+
+    /// Dump internal data to the terminal, only for debugging
+    void dump(void);
 };
 
 }
