@@ -38,10 +38,7 @@
 
 #include <string>
 #include <vector>
-#include <array>
-#include <memory>
 #include <iostream>
-#include <pqxx/pqxx>
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -90,25 +87,31 @@ typedef enum {notags, isbuilding } errortype_t;
 
 class Validate
 {
-    Validate();
+public:
+    Validate() {};
 
     /// Check a POI for tags. A node that is part of a way shouldn't have any
     /// tags, this is to check actual POIs, like a school.
-    bool checkPOI(const osmobjects::OsmNode &node);
+    bool checkPOI(osmobjects::OsmNode &node);
 
     /// This checks a way. A way should always have some tags. Often a polygon
     /// is a building 
-    bool checkWay(const osmobjects::OsmWay &way);
+    bool checkWay(osmobjects::OsmWay &way);
 
-    /// CHeck a tag for typical errors
-    bool checkTag(const std:;string &key, const std::string &value);
+    bool checkTags (std::map<std::string, std::string> tags) {
+        for (auto it = std::begin(tags); it != std::end(tags); ++it) {
+            //checkTag(it->first, it->value);
+        }
+    };
+
+    bool checkTag(const std::string &key, const std::string &value);
 
 private:
     std::vector<long> buildings;
     std::vector<long> node_errors;
     std::vector<long> way_errors;
     std::vector<long> relation_errors;
-}
+};
 
 } // EOF validate namespace
 

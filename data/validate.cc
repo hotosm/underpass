@@ -35,10 +35,7 @@
 
 #include <string>
 #include <vector>
-#include <array>
-#include <memory>
 #include <iostream>
-#include <pqxx/pqxx>
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -61,7 +58,7 @@ using namespace boost::gregorian;
 //   Empty tag key
 //   Unknown highway type
 //   Single node way
-//   Interescting ways
+//   Intersecting ways
 
 // OSMose
 //   Overlapping buildings
@@ -79,38 +76,48 @@ namespace validate {
 // Check a POI for tags. A node that is part of a way shouldn't have any
 // tags, this is to check actual POIs, like a school.
 bool
-Validate::checkPOI(const osmobjects::OsmNode &node)
+Validate::checkPOI(osmobjects::OsmNode &node)
 {
     if (node.tags.size() == 0) {
-        std::cerr << "WARNING: POI " << node->id << " has no tags!" << std::endl;
-        none_errors.push_back(node->id);
+        std::cerr << "WARNING: POI " << node.id << " has no tags!" << std::endl;
+        node_errors.push_back(node.id);
     }
 }
 
 // This checks a way. A way should always have some tags. Often a polygon
 // is a building 
 bool
-Validate::checkWay(const osmobjects::OsmWay &way) {
-    if (way->isClosed() && way->numPoints() == 5) {
-        std::cerr << "WARNING: " << way->id << " might be a building!" << std::endl;
-        buildings.push_back(way->id);
+Validate::checkWay(osmobjects::OsmWay &way)
+{
+    if (way.isClosed() && way.numPoints() == 5) {
+        std::cerr << "WARNING: " << way.id << " might be a building!" << std::endl;
+        buildings.push_back(way.id);
     }
+    
+    for (auto it = std::begin(way.tags); it != std::end(way.tags); ++it) {
+        // checkTag(it->first, it->value);
+    }
+
+    return true;
 }
 
 // Check a tag for typical errors
 bool
-Validate::checkTag(const std:;string &key, const std::string &value)
+Validate::checkTag(const std::string &key, const std::string &value)
 {
-
     // Check for an empty value
     if (value.empty() && !key.empty()) {
         std::cout << "WARNING: empty value for tag " << key << "!" << std::endl;
+        return false;
     }
     
     // Check for a space in the tag key
     if (key.find(' ') != std::string::npos) {
         std::cout << "WARNING: spaces in tag key " << key << "!" << std::endl;
+        return false;
     }
+
+    return true;
 }
 
 } // EOF validate namespace
