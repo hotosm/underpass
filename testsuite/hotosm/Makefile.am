@@ -33,9 +33,25 @@ AM_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/hottm \
 	-I$(top_srcdir)/osmstats
 
-check_PROGRAMS =  hotosm-test tm-test stats-test change-test
+check_PROGRAMS =  \
+	hotosm-test \
+	tm-test \
+	stats-test \
+	change-test \
+	geo-test \
+	val-test
 
 BOOST_LIBS = $(BOOST_DATE_TIME_LIB) $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_LOG_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_IOSTREAMS_LIB) $(BOOST_THREAD_LIB)
+
+geo_test_SOURCES = geo-test.cc
+geo_test_LDFLAGS = -L../..
+geo_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
+geo_test_LDADD = -lpqxx -lhotosm -lboost_date_time
+
+val_test_SOURCES = val-test.cc
+val_test_LDFLAGS = -L../..
+val_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
+val_test_LDADD = -lpqxx -lhotosm $(BOOST_LIBS)
 
 # Test the OSM DB classes
 hotosm_test_SOURCES = hotosm-test.cc
