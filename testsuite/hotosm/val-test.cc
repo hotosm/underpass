@@ -78,4 +78,51 @@ main(int argc, char *argv[])
     } else {
         runtest.fail("Validate::checkTag(space)");
     }
+
+    osmobjects::OsmNode node;
+    node.addTag("traffic-light", "yes");
+    if (tv.checkPOI(node)) {
+        runtest.pass("Validate::checkNode(tag)");
+    } else {
+        runtest.fail("Validate::checkNode(tag)");
+    }
+
+    osmobjects::OsmWay way;
+    way.addTag("building", "yes");
+    if (tv.checkWay(way)) {
+        runtest.pass("Validate::checkWay(empty way)");
+    } else {
+        runtest.fail("Validate::checkWay(empty way)");
+    }
+
+    // point_t p(1.0, 2.0);
+    way.addRef(1234);
+    way.addRef(234);
+    way.addRef(345);
+    way.addRef(456);
+    way.addRef(1234);
+    if (tv.checkWay(way) == false) {
+        runtest.pass("Validate::checkWay(building no tags)");
+    } else {
+        runtest.fail("Validate::checkWay(building no tags)");
+    }
+    way.tags.clear();
+    if (tv.checkWay(way) == false) {
+        runtest.pass("Validate::checkWay(no tags)");
+    } else {
+        runtest.fail("Validate::checkWay(no tags)");
+    }
+
+    way.addTag("building", "");
+    if (tv.checkWay(way) == false) {
+        runtest.pass("Validate::checkWay(empty value)");
+    } else {
+        runtest.fail("Validate::checkWay(empty value)");
+    }
+    way.addTag("foo bar", "yes");
+    if (tv.checkWay(way) == false) {
+        runtest.pass("Validate::checkWay(space)");
+    } else {
+        runtest.fail("Validate::checkWay(space)");
+    }
 }
