@@ -52,60 +52,58 @@ The *apidb* schema is the one that operates the core OpenStreetMap
 servers, and is usually access through a REST API.
 
 
-&nbsp;
-
 Keyword | Description |
 --------|------------ |
-acls |
-active_storage_attachments |
-active_storage_blobs |
-ar_internal_metadata |
-changeset_comments |
-changeset_tags |
-changesets |
-changesets_subscribers |
-client_applications |
-current_node_tags |
-current_nodes |
-current_relation_members |
-current_relation_tags |
-current_relations |
-current_way_nodes |
-current_way_tags |
-current_ways |
-delayed_jobs |
-diary_comments |
-diary_entries |
-diary_entry_subscriptions |
-friends |
-gps_points |
-gpx_file_tags |
-gpx_files |
-issue_comments |
-issues |
-languages |
-messages |
-node_tags |
-nodes |
-note_comments |
-notes |
-oauth_nonces |
-oauth_tokens |
-redactions |
-relation_members |
-relation_tags |
-relations |
-reports |
-schema_migrations |
-spatial_ref_sys |
-user_blocks |
-user_preferences |
-user_roles |
-user_tokens |
-users |
-way_nodes |
-way_tags |
-ways |
+acls | tbd
+active_storage_attachments | tbd
+active_storage_blobs | tbd
+ar_internal_metadata | tbd
+changeset_comments | tbd
+changeset_tags | tbd
+changesets | tbd
+changesets_subscribers | tbd
+client_applications | tbd
+current_node_tags | tbd
+current_nodes | tbd
+current_relation_members | tbd
+current_relation_tags | tbd
+current_relations | tbd
+current_way_nodes | tbd
+current_way_tags | tbd
+current_ways | tbd
+delayed_jobs | tbd
+diary_comments | tbd
+diary_entries | tbd
+diary_entry_subscriptions | tbd
+friends | tbd
+gps_points | tbd
+gpx_file_tags | tbd
+gpx_files | tbd
+issue_comments | tbd
+issues | tbd
+languages | tbd
+messages | tbd
+node_tags | tbd
+nodes | tbd
+note_comments | tbd
+notes | tbd
+oauth_nonces | tbd
+oauth_tokens | tbd
+redactions | tbd
+relation_members | tbd
+relation_tags | tbd
+relations | tbd
+reports | tbd
+schema_migrations | tbd
+spatial_ref_sys | tbd
+user_blocks | tbd
+user_preferences | tbd
+user_roles | tbd
+user_tokens | tbd
+users | tbd
+way_nodes | tbd
+way_tags | tbd
+ways | tbd
 
 &nbsp;
 ## osm2pgsql
