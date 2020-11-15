@@ -14,13 +14,17 @@ years. It’s written in Java, and as it uses temporary files on disk,
 an import can consume upwards of a terabyte.
 
 Underpass can import a data file into the *pgsnapshot* schema without
-*osmosis*. 
+*osmosis*. It can use replication files to update the database. 
 
 ## pgsnapshot
 
 The *pgsnapshot* schema is a more compact version of the main
 database. It contains geospatial information, and can be updated using
-replication files.
+replication files. It can also be easily queried to produce data
+extracts in OSM format. By default, it is not well suited to any data
+analysis that uses geospatial calculations since the nodes are stored
+separately from the ways. Underpass extends this schema by by adding a
+geometry column to the ways table.
 
 schema.
 
@@ -120,7 +124,7 @@ Keyword | Description |
 planet_osm_line | All of the ways that aren't a polygon
 planet_osm_point | All of the nodes
 planet_osm_polygon | All of the polygons
-planet_osm_roads | Unused
+planet_osm_roads | Unused currently
 spatial_ref_sys | Geospatial data for postgis
 
 &nbsp;
