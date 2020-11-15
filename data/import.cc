@@ -109,7 +109,10 @@ bool
 OSMHandler::addUser(long uid, const std::string &user)
 {
     std::string query = "INSERT INTO users VALUES(";
-    query += std::to_string(uid) + ",\'" + user;
+    std::string tmp = user;
+    // some user names have an embeded quote
+    boost::algorithm::replace_all(tmp, "\'", "&quot;");
+    query += std::to_string(uid) + ",\'" + tmp;
     query += "\') ON CONFLICT DO NOTHING;";
     worker = new pqxx::work(*db);
     pqxx::result result = worker->exec(query);
@@ -177,7 +180,7 @@ OSMHandler::way(const osmium::Way& way)
     query += "," + std::to_string(way.changeset());
     query += ",\'" + tags + "\', ";
     query += "ARRAY[" + refs += "], ";
-    // FIXME: this whole methnod should probably use ostringstream
+    // FIXME: this whole method should probably use ostringstream
     boost::geometry::model::box<point_t> box;
     boost::geometry::envelope(lines, box);
     std::ostringstream bbox;
@@ -224,15 +227,15 @@ OSMHandler::way(const osmium::Way& way)
 
 void
 OSMHandler::node(const osmium::Node& node) {
-    // std::cout << "node " << node.id()
-    //           << ", Changeset: " << node.changeset()
-    //           << ", Version: " << node.version()
-    //           << ", UID: " << node.uid()
-    //           << ", User: " << node.user()
-    //           << ", Timestamp: " << node.timestamp() << std::endl;
+    std::cout << "node " << node.id()
+              << ", Changeset: " << node.changeset()
+              << ", Version: " << node.version()
+              << ", UID: " << node.uid()
+              << ", User: " << node.user()
+              << ", Timestamp: " << node.timestamp() << std::endl;
 
     cache[node.id()] = node.location();
-    
+
     std::string tags;
     for (const osmium::Tag& t : node.tags()) {
         std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
@@ -242,6 +245,8 @@ OSMHandler::node(const osmium::Node& node) {
         // Replace single quotes, as they screw up the query
         std::string tmp = t.value();
         boost::algorithm::replace_all(tmp, "\'", "&quot;");
+        boost::algorithm::replace_all(tmp, "\'", "&quot;");
+        boost::algorithm::replace_all(tmp, " ", "&#160;");
         tags += tmp;
         tags += "\", ";
     }
