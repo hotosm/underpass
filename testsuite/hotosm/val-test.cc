@@ -95,18 +95,23 @@ main(int argc, char *argv[])
         runtest.fail("Validate::checkWay(empty way)");
     }
 
-    // point_t p(1.0, 2.0);
     way.addRef(1234);
     way.addRef(234);
     way.addRef(345);
     way.addRef(456);
     way.addRef(1234);
-    if (tv.checkWay(way) == false) {
-        runtest.pass("Validate::checkWay(building no tags)");
+    if (tv.checkWay(way)) {
+        runtest.pass("Validate::checkWay(building with tags)");
     } else {
-        runtest.fail("Validate::checkWay(building no tags)");
+        runtest.fail("Validate::checkWay(building with tags)");
     }
     way.tags.clear();
+    if (tv.checkWay(way) == false) {
+        runtest.pass("Validate::checkWay(not building)");
+    } else {
+        runtest.fail("Validate::checkWay(n0t building)");
+    }
+    
     if (tv.checkWay(way) == false) {
         runtest.pass("Validate::checkWay(no tags)");
     } else {

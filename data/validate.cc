@@ -81,23 +81,31 @@ Validate::checkPOI(osmobjects::OsmNode &node)
     if (node.tags.size() == 0) {
         std::cerr << "WARNING: POI " << node.id << " has no tags!" << std::endl;
         node_errors.push_back(node.id);
+        return false;
     }
+
+    return true;
 }
 
 // This checks a way. A way should always have some tags. Often a polygon
-// is a building 
+// with no tags is a building.
 bool
 Validate::checkWay(osmobjects::OsmWay &way)
 {
-    if (way.isClosed() && way.numPoints() == 5) {
-        std::cerr << "WARNING: " << way.id << " might be a building!" << std::endl;
-        buildings.push_back(way.id);
-    }
-    
+    bool result = true;
     for (auto it = std::begin(way.tags); it != std::end(way.tags); ++it) {
-        // checkTag(it->first, it->value);
+        result = checkTag(it->first, it->second);
+        if (!result) {
+            return result;
+        }
     }
 
+    if (way.numPoints() == 5 && way.isClosed() && way.tags.size() == 0) {
+        std::cerr << "WARNING: " << way.id << " might be a building!" << std::endl;
+        buildings.push_back(way.id);
+        return false;
+    }
+    
     return true;
 }
 
@@ -107,13 +115,13 @@ Validate::checkTag(const std::string &key, const std::string &value)
 {
     // Check for an empty value
     if (value.empty() && !key.empty()) {
-        std::cout << "WARNING: empty value for tag " << key << "!" << std::endl;
+        std::cout << "WARNING: empty value for tag \"" << key << "\"!" << std::endl;
         return false;
     }
     
     // Check for a space in the tag key
     if (key.find(' ') != std::string::npos) {
-        std::cout << "WARNING: spaces in tag key " << key << "!" << std::endl;
+        std::cout << "WARNING: spaces in tag key \"" << key << "\"!" << std::endl;
         return false;
     }
 

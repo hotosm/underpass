@@ -99,18 +99,20 @@ public:
     bool checkWay(osmobjects::OsmWay &way);
 
     bool checkTags (std::map<std::string, std::string> tags) {
+        bool result;
         for (auto it = std::begin(tags); it != std::end(tags); ++it) {
-            //checkTag(it->first, it->value);
+            result = checkTag(it->first, it->second);
         }
+        return result;
     };
 
     bool checkTag(const std::string &key, const std::string &value);
 
 private:
-    std::vector<long> buildings;
-    std::vector<long> node_errors;
-    std::vector<long> way_errors;
-    std::vector<long> relation_errors;
+    std::vector<long> buildings;       ///< 
+    std::vector<long> node_errors;     ///< 
+    std::vector<long> way_errors;      ///< 
+    std::vector<long> relation_errors; ///< 
 };
 
 } // EOF validate namespace
