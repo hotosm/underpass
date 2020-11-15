@@ -20,9 +20,11 @@ action. As this file contains the data created when uploading it to
 OpenStreetMap, it's the only way to access the commit hashtags or
 comments. 
 
-As hashtags didn’t exist until late 2014, and between 2014 and 2017,
-hashtag were contained in the comment field. In 2017, the official
-hashtag tag was added. A typical changefile entry looks like this:
+Hashtags didn’t exist until late 2014, so between 2014 and 2017,
+hashtags were contained in the comment field. In 2017, the official
+hashtag tag was added. The first mentions of the hashtags
+_#missingmaps_ and _#hotosm_ starts 2017-10-20. A typical changefile
+entry looks like this:
 
 	<changeset id="12345" created_at="2014-10-10T01:57:09Z" closed_at="2014-10-10T01:57:23Z" open="false" user="foo" uid="54321" min_lat="-2.8042325" min_lon="29.5842812" max_lat="-2.7699398" max_lon="29.6012844" num_changes="569" comments_count="0">
 	    <tag k="source" v="Bing"/>
@@ -33,7 +35,7 @@ hashtag tag was added. A typical changefile entry looks like this:
 The **created_by** and **source** fields can be used to generate
 statistics of editor choices and imagery sources. Underpass uses only
 the comment and hashtag fields currently as a way to group sets of
-changes by organization, or mapping campaign.
+changes by organization, or mapping campaign. The first hashtag 
 
 ## OsmChange
 
@@ -61,7 +63,7 @@ for change files. The changeset one is the simplest, only containing
 the last_run timestamp and a changeset sequence number. An example
 changeset state file is: 
 
-	---
+	\---
 	last_run: 2020-10-08 16:41:01.863533000 +00:00
 	sequence: 4139643
 
