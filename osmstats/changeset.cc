@@ -81,30 +81,33 @@ using namespace boost::gregorian;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
+/// \namespace changeset
 namespace changeset {
 
-// parse the two state file for a replication file, from
-// disk or memory.
+/// Parse the two state files for a replication file, from
+/// disk or memory.
 
-// There are two types of state files with of course different
-// formats for the same basic data. The simplest one is for
-// changesets, which looks like this:
-// ---
-// last_run: 2020-10-08 22:30:01.737719000 +00:00
-// sequence: 4139992
-//
-// The other format is used for minutely change files, and
-// has mnore fields. For now, only the timestamp and sequence
-// number is stored. It looks like this:
-// #Fri Oct 09 10:03:04 UTC 2020
-// sequenceNumber=4230996
-// txnMaxQueried=3083073477
-// txnActiveList=
-// txnReadyList=
-// txnMax=3083073477
-// timestamp=2020-10-09T10\:03\:02Z
-//
-// State files are used to know where to start downloading files
+/// There are two types of state files with of course different
+/// formats for the same basic data. The simplest one is for
+/// a changeset file. which looks like this:
+///
+/// \-\-\-
+/// last_run: 2020-10-08 22:30:01.737719000 +00:00
+/// sequence: 4139992
+///
+/// The other format is used for minutely change files, and
+/// has more fields. For now, only the timestamp and sequence
+/// number is stored. It looks like this:
+///
+/// \#Fri Oct 09 10:03:04 UTC 2020
+/// sequenceNumber=4230996
+/// txnMaxQueried=3083073477
+/// txnActiveList=
+/// txnReadyList=
+/// txnMax=3083073477
+/// timestamp=2020-10-09T10\:03\:02Z
+///
+/// State files are used to know where to start downloading files
 StateFile::StateFile(const std::string &file, bool memory)
 {
     std::string line;
@@ -178,9 +181,16 @@ StateFile::StateFile(const std::string &file, bool memory)
     state.close();
 }
 
-// Read a changeset file from disk, which may be a huge file
-// Since it is a huge file, process in pieces and don't store
-// anything except in the database
+/// Read a changeset file from disk, which may be a huge file
+/// Since it is a huge file, process in pieces and don't store
+/// anything except in the database. A changeset file entry
+/// looks like this:
+///
+/// <changeset id="12345" created_at="2014-10-10T01:57:09Z" closed_at="2014-10-10T01:57:23Z" open="false" user="foo" uid="54321" min_lat="-2.8042325" min_lon="29.5842812" max_lat="-2.7699398" max_lon="29.6012844" num_changes="569" comments_count="0">
+///  <tag k="source" v="Bing"/>
+///  <tag k="comment" v="#hotosm-task-001 #redcross #missingmaps"/>
+///  <tag k="created_by" v="JOSM/1.5 (7182 en)"/>
+/// </changeset>
 bool
 ChangeSetFile::importChanges(const std::string &file)
 {

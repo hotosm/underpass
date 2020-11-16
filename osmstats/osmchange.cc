@@ -77,6 +77,20 @@ typedef boost::geometry::model::linestring<point_t> linestring_t;
 
 namespace osmchange {
 
+/// And OsmChange file contains the data of the actual change. It uses the same
+/// syntax as an OSM data file plus the addition of one of the three actions.
+/// Nodes, ways, and relations can be created, deleted, or modified.
+///
+/// <modify>
+///     <node id="12345" version="7" timestamp="2020-10-30T20:40:38Z" uid="111111" user="foo" changeset="93310152" lat="50.9176152" lon="-1.3751891"/>
+/// </modify>
+/// <delete>
+///     <node id="23456" version="7" timestamp="2020-10-30T20:40:38Z" uid="22222" user="foo" changeset="93310152" lat="50.9176152" lon="-1.3751891"/>
+/// </delete>
+/// <create>
+///     <node id="34567" version="1" timestamp="2020-10-30T20:15:24Z" uid="3333333" user="bar" changeset="93309184" lat="45.4303763" lon="10.9837526"/>
+///</create>
+
 // Read a changeset file from disk or memory into internal storage
 bool
 OsmChangeFile::readChanges(const std::string &file)

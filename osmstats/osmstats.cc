@@ -52,6 +52,7 @@ using namespace boost::gregorian;
 
 using namespace apidb;
 
+/// \namespace osmstats
 namespace osmstats {
 
 QueryOSMStats::QueryOSMStats(void)

@@ -52,6 +52,7 @@ using namespace boost::gregorian;
 // #include "hotosm.hh"
 #include "osmstats/changeset.hh"
 #include "data/geoutil.hh"
+#include "timer.hh"
 
 using namespace apidb;
 
@@ -180,7 +181,7 @@ class RawHashtag
 /// This class handles all the queries to the OSM Stats database.
 /// This includes querying the database for existing data, as
 /// well as updating the data whenh applying a replication file.
-class QueryOSMStats : public apidb::QueryStats
+class QueryOSMStats : public apidb::QueryStats, public Timer
 {
   public:
     QueryOSMStats(void);
@@ -243,18 +244,6 @@ class QueryOSMStats : public apidb::QueryStats
 
     int lookupHashtag(const std::string &hashtag);
 
-    /// Start a timer for collecting performance statistics of queries
-    void startTimer(void) {
-        start = boost::posix_time::microsec_clock::local_time();
-    };
-    /// End the current performance timer
-    long endTimer(void) {
-        end = boost::posix_time::microsec_clock::local_time();
-        boost::posix_time::time_duration delta = end - start;
-        return delta.total_milliseconds();
-        std::cout << "Operation took " << delta.total_milliseconds() << " milliseconds" << std::endl;
-    };
-
     RawChangeset &operator[](int index){ return ostats[index]; }
 
     /// Dump internal data, debugging usage only!
@@ -304,10 +293,6 @@ private:
     std::vector<RawCountry> countries; ///< All the raw country data
     std::vector<RawUser> users;        ///< All the raw user data
     std::map<std::string, RawHashtag> hashtags;
-    // These are only used to get performance statistics used for
-    // debugging.
-    ptime start;                ///< Starting timestamop for operation
-    ptime end;                  ///< Ending timestamop for operation
 };
 
     

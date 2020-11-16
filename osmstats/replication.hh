@@ -74,6 +74,11 @@ namespace replication {
 /// are 3 different intervals, minute, hourly, or daily replication files
 /// are available.
 
+
+// These are the columns in the pgsnapshot.replication_changes table
+// id | tstamp | nodes_modified | nodes_added | nodes_deleted | ways_modified | ways_added | ways_deleted | relations_modified | relations_added | relations_deleted | changesets_applied | earliest_timestamp | latest_timestamp
+
+
 /// \class Replication
 /// \brief Handle replication files from the OSM planet server.
 ///
