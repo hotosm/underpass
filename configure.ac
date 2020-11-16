@@ -43,10 +43,10 @@ AC_PROG_RANLIB
 AC_CHECK_HEADER_STDBOOL
 
 dnl RapidXML is the default, as it's used by boost
-build_rapidxml=yes
-build_libxml=no
+build_rapidxml=no
+build_libxml=yes
 AC_ARG_ENABLE(parser,
-  AS_HELP_STRING([--enable-parser], [Enable support for the specified XML parser (default=rapidxml)]),
+  AS_HELP_STRING([--enable-parser], [Enable support for the specified XML parser (default=libxml++)]),
   [if test -n ${enableval}; then
     enableval=`echo ${enableval} | tr '\054' ' ' `
   fi
