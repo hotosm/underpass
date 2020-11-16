@@ -37,6 +37,7 @@
 #include <vector>
 #include <array>
 #include <memory>
+#include <codecvt>
 #include <iostream>
 #include <pqxx/pqxx>
 
@@ -236,6 +237,8 @@ OSMHandler::node(const osmium::Node& node) {
 
     cache[node.id()] = node.location();
 
+    // Use a stringstream to handle unicode conversion
+    std::stringstream ss;
     std::string tags;
     for (const osmium::Tag& t : node.tags()) {
         std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
@@ -245,10 +248,11 @@ OSMHandler::node(const osmium::Node& node) {
         // Replace single quotes, as they screw up the query
         std::string tmp = t.value();
         boost::algorithm::replace_all(tmp, "\'", "&quot;");
-        boost::algorithm::replace_all(tmp, "\'", "&quot;");
-        boost::algorithm::replace_all(tmp, " ", "&#160;");
-        tags += tmp;
+        boost::algorithm::replace_all(tmp, "\"", "&quot;");
+        //boost::algorithm::replace_all(tmp, " ", "&#160;");
+        ss << "\"" << t.key() << "\"=>\"" << tmp << "\", ";
         tags += "\", ";
+        tags = ss.str();
     }
     tags = tags.substr(0, tags.size()-2);
 
