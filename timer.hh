@@ -62,13 +62,18 @@ public:
     };
     /// Stop the timer, used for performance analysis
     long endTimer(void) {
-        if (interval >= timer) {
-            end = boost::posix_time::microsec_clock::local_time();
-            boost::posix_time::time_duration delta = end - start;
-            average += delta.total_milliseconds();
-            std::cout << "Operation took " << average/interval << " milliseconds" << std::endl;
+        end = boost::posix_time::microsec_clock::local_time();
+        boost::posix_time::time_duration delta = end - start;
+        average += delta.total_milliseconds();
+        if (interval >= counter || interval == 0) {
+            if (interval > 0) {
+                std::cout << "Operation took " << average/interval << " milliseconds" << std::endl;
+            } else {
+                std::cout << "Operation took " << average << " milliseconds" << std::endl;
+            }
+            
             counter = 0;
-            average += delta.total_milliseconds();
+            average = 0;
         }
         counter++;
         return delta.total_milliseconds();
@@ -80,7 +85,7 @@ private:
     // These are just for performance testing
     ptime start;                ///< Starting timestamop for operation
     ptime end;                  ///< Ending timestamop for operation
-    int interval = 0;           ///< Interval for printing collected statistics
+    int interval = 0;           ///< Time Interval for long running commands
     int counter = 0;            ///< counter for printing collected statistics
     long average = 0;           ///< The average time in each interval
 };
