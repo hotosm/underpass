@@ -77,14 +77,14 @@ main(int argc, char *argv[])
     std::cout << "Operation took " << testos.endTimer() << " milliseconds" << std::endl;
 
     // modify a counter
-    OsmStats os = testos[2];
-    os.updateCounter("roads_added", 12345);
-    if (os["roads_added"] == 12345) {
-        runtest.pass("OsmStats::updateCounter()");
-    } else {
-        runtest.fail("OsmStats::updateCounter()");        
-    }
-    
+    // osmstats::OsmStats os = testos[2];
+    // os.updateCounter("roads_added", 12345);
+    // if (os["roads_added"] == 12345) {
+    //     runtest.pass("OsmStats::updateCounter()");
+    // } else {
+    //     runtest.fail("OsmStats::updateCounter()");
+    // }
+    // testos.endTimer();
     //testos.dump();
     
     // testos.updateRawHashtags("/work/Mapping/HOT/changesets-reduced.osm");
@@ -94,7 +94,7 @@ main(int argc, char *argv[])
     // better performance
     testos.startTimer();
     testos.populate();
-    std::cout << "Operation took " << testos.endTimer() << " milliseconds" << std::endl;
+    testos.endTimer();
 
     // Test if the Country data works
     RawCountry rc = testos.getCountryData(73);

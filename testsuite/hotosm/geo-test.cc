@@ -64,12 +64,14 @@ main(int argc, char* argv[])
     std::string basedir = DATADIR;
 
     // Read a single polygon
-    tgu.readFile(basedir + "/include.osm", false);
+    // tgu.readFile(basedir + "/include.osm", false);
     // Read a multipolygon
-    tgu.readFile(basedir + "/geoboundaries.osm", true);
+    tgu.startTimer();
+    tgu.readFile(basedir + "/data/geoboundaries.osm", true);
+    tgu.endTimer();
 
     // See if it worked, which it needs to if any other tests will work
-    // tgu.dump();
+    tgu.dump();
 
     // Changesets have a bounding box, so we want to find the
     // country the changes were made in.

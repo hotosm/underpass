@@ -87,7 +87,7 @@ main(int argc, char *argv[])
         runtest.fail("Validate::checkNode(tag)");
     }
 
-    osmobjects::OsmWay way;
+    osmobjects::OsmWay way(11111);
     way.addTag("building", "yes");
     if (tv.checkWay(way)) {
         runtest.pass("Validate::checkWay(empty way)");
@@ -100,17 +100,21 @@ main(int argc, char *argv[])
     way.addRef(345);
     way.addRef(456);
     way.addRef(1234);
+    tv.startTimer();
     if (tv.checkWay(way)) {
         runtest.pass("Validate::checkWay(building with tags)");
     } else {
         runtest.fail("Validate::checkWay(building with tags)");
     }
+    tv.endTimer();
     way.tags.clear();
+    tv.startTimer();
     if (tv.checkWay(way) == false) {
         runtest.pass("Validate::checkWay(not building)");
     } else {
-        runtest.fail("Validate::checkWay(n0t building)");
+        runtest.fail("Validate::checkWay(not building)");
     }
+    tv.endTimer();
     
     if (tv.checkWay(way) == false) {
         runtest.pass("Validate::checkWay(no tags)");
