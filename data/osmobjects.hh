@@ -102,9 +102,10 @@ class OsmObject
 /// \brief This represents an OSM node.
 ///
 /// A node has point coordinates, and may contain tags if it's a POI.
-class OsmNode: public OsmObject//<OsmNode>
+class OsmNode: public OsmObject
 {
 public:
+    OsmNode(long nid) { id = nid; };
     point_t point;              ///< The location of this node
     OsmNode(void) { type = node; };
     OsmNode(double lat, double lon) {
@@ -140,6 +141,7 @@ public:
 class OsmWay : public OsmObject
 {
 public:
+    OsmWay(long wid) { id = wid; };
     OsmWay(void) { type = way; refs.clear(); };
     
     std::vector<long> refs;     ///< Store all the nodes by reference ID
@@ -152,8 +154,10 @@ public:
     /// Polygons are closed objects, like a building, while a highway
     /// is a linestring
     bool isClosed(void) {
-        if (refs[0] == refs[refs.size()-1]) {
-            return true;
+        if (refs.size() > 0) {
+            if (refs[0] == refs[refs.size()-1]) {
+                return true;
+            }
         }
         return false;
     };
@@ -178,7 +182,7 @@ public:
 /// \brief This represents an OSM relation.
 ///
 /// A relation contains multiple ways, and contains tags about the relation
-class OsmRelation : public OsmObject//<OsmRelation>
+class OsmRelation : public OsmObject
 {
 public:
     OsmRelation(void) { type = relation; };

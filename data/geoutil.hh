@@ -56,6 +56,7 @@ using namespace boost::gregorian;
 
 #include "hotosm.hh"
 #include "osmstats/osmstats.hh"
+#include "timer.hh"
 
 // Forward instantiate class
 namespace osmstats {
@@ -149,7 +150,7 @@ private:
 /// This parses the data file in any GDAL supported format into a data
 /// structure that can be used to determine which country a change was
 /// made in.
-class GeoUtil
+class GeoUtil : public Timer
 {
 public:
     GeoUtil(void) {
@@ -177,19 +178,6 @@ public:
     /// See if the given location can be identified
     GeoCountry &inCountry(double max_lat, double max_lon, double min_lat, double min_lon);
 
-    /// Start a timer, only used for performance analysis
-    void startTimer(void) {
-        start = boost::posix_time::microsec_clock::local_time();
-    };
-    /// Stop the timer, used for performance analysis
-    long endTimer(void) {
-        end = boost::posix_time::microsec_clock::local_time();
-        boost::posix_time::time_duration delta = end - start;
-        std::cout << "Operation took " << delta.total_milliseconds() << " milliseconds" << std::endl;
-
-        return delta.total_milliseconds();
-    };
-
     /// Export all the countries in the format used by OSM Stats, which
     /// doesn't use the geospatial data. This table needs to be regenerated
     /// using the same data file as used to geolocate which country a
@@ -205,9 +193,6 @@ public:
 
 private:
     std::vector<GeoCountry> countries; ///< all the countries boundaries
-    // These are just for performance testing
-    ptime start;                ///< Starting timestamop for operation
-    ptime end;                  ///< Ending timestamop for operation
 };
     
 }       // EOF geoutil

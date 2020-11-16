@@ -249,7 +249,9 @@ OSMHandler::node(const osmium::Node& node) {
         std::string tmp = t.value();
         boost::algorithm::replace_all(tmp, "\'", "&quot;");
         boost::algorithm::replace_all(tmp, "\"", "&quot;");
-        //boost::algorithm::replace_all(tmp, " ", "&#160;");
+        // "&apos;" is not a supported HTML 4 entity
+        boost::algorithm::replace_all(tmp, "&apos;", "&rsquo;");
+        // boost::algorithm::replace_all(tmp, "&apos;", "&#39;;");
         ss << "\"" << t.key() << "\"=>\"" << tmp << "\", ";
         tags += "\", ";
         tags = ss.str();

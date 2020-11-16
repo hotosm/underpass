@@ -100,8 +100,8 @@ OsmObject::dump(void)
     }
 };
 
-/// This represents an ODM node. A node has point coordinates, and may
-/// contain tags if it's a POI.
+// This represents an ODM node. A node has point coordinates, and may
+// contain tags if it's a POI.
 void
 OsmWay::makeLinestring(point_t point)
 {

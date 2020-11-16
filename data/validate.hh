@@ -46,6 +46,7 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "data/osmobjects.hh"
+#include "timer.hh"
 
 /// \file validate.hh
 /// \brief This class tries to validate the OSM objects
@@ -77,15 +78,14 @@ using namespace boost::gregorian;
 //   Missing tags
 //   Duplicate object
 //   
-//   
-
+//
 
 /// \namespace validate
 namespace validate {
 
 typedef enum {notags, isbuilding } errortype_t;
 
-class Validate
+class Validate : public Timer
 {
 public:
     Validate() {};
