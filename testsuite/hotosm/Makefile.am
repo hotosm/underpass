@@ -46,7 +46,7 @@ BOOST_LIBS = $(BOOST_DATE_TIME_LIB) $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) 
 geo_test_SOURCES = geo-test.cc
 geo_test_LDFLAGS = -L../..
 geo_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
-geo_test_LDADD = -lpqxx -lhotosm -lboost_date_time
+geo_test_LDADD = -lpqxx -lhotosm $(BOOST_LIBS)
 
 val_test_SOURCES = val-test.cc
 val_test_LDFLAGS = -L../..
@@ -56,17 +56,17 @@ val_test_LDADD = -lpqxx -lhotosm $(BOOST_LIBS)
 # Test the OSM DB classes
 hotosm_test_SOURCES = hotosm-test.cc
 hotosm_test_LDFLAGS = -L../..
-hotosm_test_LDADD = -lpqxx -lhotosm -lboost_date_time
+hotosm_test_LDADD = -lpqxx -lhotosm  $(BOOST_LIBS)
 
 # Test the TM DB classes
 tm_test_SOURCES = tm-test.cc
 tm_test_LDFLAGS = -L../..
-tm_test_LDADD = -lpqxx -lhotosm -lboost_date_time
+tm_test_LDADD = -lpqxx -lhotosm  $(BOOST_LIBS)
 
 # Test the OSM Stats class
 stats_test_SOURCES = stats-test.cc
 stats_test_LDFLAGS = -L../..
-stats_test_LDADD = -lpqxx -lhotosm -lboost_date_time
+stats_test_LDADD = -lpqxx -lhotosm $(BOOST_LIBS)
 
 # Test the Changeset class
 change_test_SOURCES = change-test.cc
