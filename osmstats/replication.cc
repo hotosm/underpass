@@ -35,8 +35,7 @@
 
 #include <string>
 #include <vector>
-#include <array>
-#include <memory>
+#include <filesystem>
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
@@ -83,6 +82,104 @@ using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 
 namespace replication {
 
+
+/// Parse the two state files for a replication file, from
+/// disk or memory.
+
+/// There are two types of state files with of course different
+/// formats for the same basic data. The simplest one is for
+/// a changeset file. which looks like this:
+///
+/// \-\-\-
+/// last_run: 2020-10-08 22:30:01.737719000 +00:00
+/// sequence: 4139992
+///
+/// The other format is used for minutely change files, and
+/// has more fields. For now, only the timestamp and sequence
+/// number is stored. It looks like this:
+///
+/// \#Fri Oct 09 10:03:04 UTC 2020
+/// sequenceNumber=4230996
+/// txnMaxQueried=3083073477
+/// txnActiveList=
+/// txnReadyList=
+/// txnMax=3083073477
+/// timestamp=2020-10-09T10\:03\:02Z
+///
+/// State files are used to know where to start downloading files
+StateFile::StateFile(const std::string &file, bool memory)
+{
+    std::string line;
+    std::ifstream state;
+    std::stringstream ss;
+
+    // It's a disk file, so read it in.
+    if (!memory) {
+        try {
+            state.open(file, std::ifstream::in);
+        }
+        catch(std::exception& e) {
+            std::cout << "ERROR opening " << file << std::endl;
+            std::cout << e.what() << std::endl;
+            // return false;
+        }
+        // For a disk file, none of the state files appears to be larger than
+        // 70 bytes, so read the whole thing into memory without
+        // any iostream buffering.
+        std::filesystem::path path = file;
+        int size = std::filesystem::file_size(path);
+        char *buffer = new char[size];
+        state.read(buffer, size);
+        ss << buffer;
+        // FIXME: We do it this way to save lots of extra buffering
+        // ss.rdbuf()->pubsetbuf(&buffer[0], size);
+    } else {
+        // It's in memory
+        ss << file;
+    }
+
+    // Get the first line
+    std::getline(ss, line, '\n');
+
+    // This is a changeset state.txt file
+    if (line == "---") {
+        // Second line is the last_run timestamp
+        std::getline(ss, line, '\n');
+        // The timestamp is the second field
+        std::size_t pos = line.find(" ");
+        // 2020-10-08 22:30:01.737719000 +00:00
+        timestamp = time_from_string(line.substr(pos+1));
+
+        // Third and last line is the sequence number
+        std::getline(ss, line, '\n');
+        pos = line.find(" ");
+        // The sequence is the second field
+        sequence = std::stol(line.substr(pos+1));
+        // This is a change file state.txt file
+    } else {
+        std::getline(ss, line, '\n'); // sequenceNumber
+        std::size_t pos = line.find("=");
+        sequence= std::stol(line.substr(pos+1));
+        std::getline(ss, line, '\n'); // txnMaxQueried
+        std::getline(ss, line, '\n'); // txnActiveList
+        std::getline(ss, line, '\n'); // txnReadyList
+        std::getline(ss, line, '\n'); // txnMax
+        std::getline(ss, line, '\n');
+        pos = line.find("=");
+        // The time stamp is in ISO format, ie... 2020-10-09T10\:03\:02
+        // But we have to unescape the colon or boost chokes.
+        std::string tmp = line.substr(pos+1);
+        pos = tmp.find('\\', pos+1);
+        std::string tstamp = tmp.substr(0, pos); // get the date and the hour
+        tstamp += tmp.substr(pos+1, 3); // get minutes
+        pos = tmp.find('\\', pos+1);
+        tstamp += tmp.substr(pos+1, 3); // get seconds
+        timestamp = from_iso_extended_string(tstamp);
+    }
+
+    state.close();
+}
+
 // parse a replication file containing changesets
 bool
 Replication::readChanges(const std::string &file)
@@ -123,7 +220,7 @@ Replication::getLinks(GumboNode* node, std::shared_ptr<std::vector<std::string>>
 
 // Download a file from planet
 std::shared_ptr<std::vector<std::string>>
-Replication::downloadFiles(std::vector<std::string> files, bool text)
+Replication::downloadFiles(std::vector<std::string> files, bool disk)
 {
     // The io_context is required for all I/O
     boost::asio::io_context ioc;
@@ -149,9 +246,9 @@ Replication::downloadFiles(std::vector<std::string> files, bool text)
 
     auto links =  std::make_shared<std::vector<std::string>>();
     for (auto it = std::begin(files); it != std::end(files); ++it) {
-        std::cout << "Downloading https://" + server << path + *it << std::endl;
+        std::cout << "Downloading " << *it << std::endl;
         // Set up an HTTP GET request message
-        http::request<http::string_body> req{http::verb::get, path + *it, version };
+        http::request<http::string_body> req{http::verb::get, *it, version };
 
         req.set(http::field::host, server);
         req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
@@ -171,12 +268,31 @@ Replication::downloadFiles(std::vector<std::string> files, bool text)
         // Parse the HTML content to extract the hyperlinks to
         // the directories and files
         GumboOutput* output = gumbo_parse(parser.get().body().c_str());
-        if (text) {
+        // Check the magic number of the file
+        if (parser.get().body()[0] == 0x1f) {
+            std::cout << "It's gzipped" << std::endl;
+            // it's gzipped
+        } else {
+            std::cout << "It's text" << std::endl;
+            if (parser.get().body()[0] == '<') {
+                // It's an OSM XML file
+                std::cout << "It's XML" << std::endl;
+                if (disk) {
+                    // FIXME: write to disk is specified
+                }
+            } else {
+                // It's text, probably a state.txt file. State
+                // files are never compressed.
+                StateFile(parser.get().body(), true);
+                if (disk) {
+                    // FIXME: write to disk is specified
+                }
+            }
             std::cout << parser.get().body() << std::endl;
-            std::string suffix = boost::filesystem::extension(*it);
-            // if (suffix == ".txt") {
-            //     changeset::StateFile(parser.get().body());
-            // }
+        }
+        if (disk) {
+            // std::cout << parser.get().body() << std::endl;
+            // std::string suffix = boost::filesystem::extension(*it);
         } else {
             getLinks(output->root, links);
         }

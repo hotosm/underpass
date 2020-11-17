@@ -39,7 +39,7 @@
 #include <string>
 #include <vector>
 #include <array>
-#include <memory>
+#include <filesystem>
 #include <iostream>
 #include <pqxx/pqxx>
 #include <cstdlib>
@@ -75,6 +75,28 @@ namespace replication {
 /// are available.
 
 
+/// \class StateFile
+/// \brief Data structure for state.text files
+///
+/// This contains the data in a ???.state.txt file, used to identify the timestamp
+/// of the changeset replication file. The replication file uses the same
+/// 3 digit number as the state file.
+class StateFile
+{
+public:
+    StateFile(void) {
+        timestamp = boost::posix_time::second_clock::local_time();
+        sequence = 0;
+    };
+    /// Initialize with a state file from disk or memory
+    StateFile(const std::string &file, bool memory);
+
+    // protected so testcases can access private data
+protected:
+    ptime timestamp;            ///< The timestamp of the associated changeset file
+    long sequence;              ///< The sequence number of the associated changeset file
+};
+
 // These are the columns in the pgsnapshot.replication_changes table
 // id | tstamp | nodes_modified | nodes_added | nodes_deleted | ways_modified | ways_added | ways_deleted | relations_modified | relations_added | relations_deleted | changesets_applied | earliest_timestamp | latest_timestamp
 
@@ -98,7 +120,7 @@ public:
     // Downloading a replication requires either a sequence
     // number or a starting timestamp
     Replication(const std::string &host, ptime last, long seq) : Replication() {
-        if (!server.empty()) { server = server; }
+        if (!host.empty()) { server = host; }
         if (!last.is_not_a_date_time()) { last_run = last; }
         if (seq > 0) { sequence = seq; }
     }
@@ -131,7 +153,13 @@ private:
     ptime last_run;             ///< Timestamp of the replication file
     long sequence;              ///< Sequence number of the replication
     int version;                ///< Version number of the replication
-    std::vector<changeset::StateFile> states; ///< Stored state.txt files
+    std::vector<StateFile> states; ///< Stored state.txt files
+};
+
+struct membuf: std::streambuf {
+    membuf(char* base, std::ptrdiff_t n) {
+        this->setg(base, base, base + n);
+    }
 };
 
 }       // EOF replication

@@ -131,29 +131,6 @@ public:
     std::map<std::string, std::string> tags;
 };
 
-/// \class StateFile
-/// \brief Data structure for state.text files
-///
-/// This contains the data in a ???.state.txt file, used to identify the timestamp
-/// of the changeset replication file. The replication file uses the same
-/// 3 digit number as the state file.
-class StateFile
-{
-public:
-    StateFile(void) {
-        timestamp = boost::posix_time::second_clock::local_time();
-        sequence = 0;
-    };
-    /// Initialize with a state file from disk or memory
-    StateFile(const std::string &file, bool memory);
-
-    // protected so testcases can access private data
-protected:
-    ptime timestamp;            ///< The timestamp of the associated changeset file
-    long sequence;              ///< The sequence number of the associated changeset file
-};
-
-
 /// \class ChangeSetFile
 /// \brief This file reads a changeset file
 ///
