@@ -82,7 +82,6 @@ using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 
 namespace replication {
 
-
 /// Parse the two state files for a replication file, from
 /// disk or memory.
 
@@ -157,24 +156,26 @@ StateFile::StateFile(const std::string &file, bool memory)
         sequence = std::stol(line.substr(pos+1));
         // This is a change file state.txt file
     } else {
-        std::getline(ss, line, '\n'); // sequenceNumber
-        std::size_t pos = line.find("=");
-        sequence= std::stol(line.substr(pos+1));
-        std::getline(ss, line, '\n'); // txnMaxQueried
-        std::getline(ss, line, '\n'); // txnActiveList
-        std::getline(ss, line, '\n'); // txnReadyList
-        std::getline(ss, line, '\n'); // txnMax
-        std::getline(ss, line, '\n');
-        pos = line.find("=");
-        // The time stamp is in ISO format, ie... 2020-10-09T10\:03\:02
-        // But we have to unescape the colon or boost chokes.
-        std::string tmp = line.substr(pos+1);
-        pos = tmp.find('\\', pos+1);
-        std::string tstamp = tmp.substr(0, pos); // get the date and the hour
-        tstamp += tmp.substr(pos+1, 3); // get minutes
-        pos = tmp.find('\\', pos+1);
-        tstamp += tmp.substr(pos+1, 3); // get seconds
-        timestamp = from_iso_extended_string(tstamp);
+        for (std::string line; std::getline(ss, line, '\n'); ) {
+            std::size_t pos = line.find("=");
+            if (line.substr(0, pos) == "sequenceNumber") {
+                sequence= std::stol(line.substr(pos+1));
+            } else if (line.substr(0, pos) == "txnMaxQueried") {
+            } else if (line.substr(0, pos) == "txnActiveList") {
+            } else if (line.substr(0, pos) == "txnReadyList") {
+            } else if (line.substr(0, pos) == "txnMax") {
+            } else if (line.substr(0, pos) == "timestamp") {
+                // The time stamp is in ISO format, ie... 2020-10-09T10\:03\:02
+                // But we have to unescape the colon or boost chokes.
+                std::string tmp = line.substr(pos+1);
+                pos = tmp.find('\\', pos+1);
+                std::string tstamp = tmp.substr(0, pos); // get the date and the hour
+                tstamp += tmp.substr(pos+1, 3); // get minutes
+                pos = tmp.find('\\', pos+1);
+                tstamp += tmp.substr(pos+1, 3); // get seconds
+                timestamp = from_iso_extended_string(tstamp);
+            }
+        }
     }
 
     state.close();
@@ -198,6 +199,11 @@ Replication::mergeToDB()
 std::shared_ptr<std::vector<std::string>> &
 Replication::getLinks(GumboNode* node, std::shared_ptr<std::vector<std::string>> &links)
 {
+    if (node->type == GUMBO_NODE_TEXT) {
+        std::string val = std::string(node->v.text.text);
+        std::cout << "FIXME: " << "GUMBO_NODE_TEXT " << val << std::endl;
+    }
+    
     if (node->type == GUMBO_NODE_ELEMENT) {
         GumboAttribute* href;
         if (node->v.element.tag == GUMBO_TAG_A &&
@@ -314,7 +320,72 @@ Replication::downloadFiles(std::vector<std::string> files, bool disk)
     stream.shutdown(ec);
     
     return links;
-} // EOF replication namespace
+}
 
-}       // EOF replication
+Planet::Planet(void)
+{
+    /// These timestamps are base on the state.text files
+    minute.insert(std::pair(time_from_string("2012-09-13 02:06"), "/000" ));
+    minute.insert(std::pair(time_from_string("2014-08-12 22:41"), "/001" ));
+    minute.insert(std::pair(time_from_string("2016-07-09 14:33"), "/002" ));
+    minute.insert(std::pair(time_from_string("2018-06-04 23:24"), "/003" ));
+    minute.insert(std::pair(time_from_string("2020-04-30 23:20"), "/004" ));
+    
+    hour.insert(std::pair(time_from_string("2012-12-04 14:02"), "/000/001"));
+    
+    day.insert(std::pair(time_from_string("2015-06-08 00:05"), "/000/000"));
+    day.insert(std::pair(time_from_string("2015-06-09 00:06"), "/001/000"));
+    day.insert(std::pair(time_from_string("2018-03-05 00:06"), "/002/000"));
+};
+
+// Find the path to download the right file
+std::string
+Planet::findData(frequency_t freq, ptime starttime)
+{
+    boost::posix_time::time_duration delta;
+    // Look for the top level directory
+    if (freq == minutely) {
+        for (auto it = std::begin(minute); it != std::end(minute); ++it) {
+            //delta = it->first - starttime;
+            delta = starttime - it->first;
+            std::cout << "Delta: " << delta.hours() << ":"
+                      <<  delta.minutes()
+                      <<  ":" << delta.minutes()*60
+                      << " : " << it->first
+                      << std::endl;
+            // There are a thousand minutely updates in each low level directory
+            if (delta.hours() < 17000) {
+                std::cout << "Found minutely top path " << it->second << " for "
+                          << starttime << std::endl;
+                int diff = (delta.hours()*60) + delta.minutes();
+                ptime more = it->first + delta;
+                std::cout << "Found minutely full path " << it->second << "/"
+                          << diff/1000 << " for " << " more: " << more
+                          << " start:" << starttime << std::endl;
+                std::string sub = it->second + "/" + std::to_string(diff/1000);
+                return sub;
+            }
+        }
+    } else if (freq == hourly) {
+        for (auto it = std::begin(hour); it != std::end(hour); ++it) {
+            delta = starttime - it->first;
+            if (delta.hours() <= 1) {
+                std::cout << "Found hourly path " << it->second << " for "
+                          << starttime << std::endl;
+                return it->second;
+            }
+        }
+    } else if (freq == daily) {
+        for (auto it = std::begin(day); it != std::end(day); ++it) {
+            delta =  starttime - it->first;
+            if (delta.hours() <= 24) {
+                std::cout << "Found daily path " << it->second << " for "
+                          << starttime << std::endl;
+                return it->second;
+            }
+        }
+    }
+}
+
+} // EOF replication namespace
 
