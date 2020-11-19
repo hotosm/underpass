@@ -30,3 +30,14 @@ data on the changes made when uploaded.
 	changesets/001/001/001.osm.gz
 	changesets/001/001/001.state.txt
 	etc...
+
+Since the data file uses the same 3 digit prefix as the state file,
+it's easy to get the right data for the timestamp. Because the size of
+the data in the changefiles varies, plus CPU load, network latency,
+etc... the time interval varies, so can't be calculated accurately. It
+is possible to get a rough idea. Underpass makes the best guess it
+can, and downloads a *state.txt* file that is close to the desired
+timestamp. Using that initial state.txt file it's possible to
+increment or decrement the prefix till the proper timestamp is
+found. Then the prefix is used to download the data file for
+processing.
