@@ -40,11 +40,14 @@
 #include <cstdlib>
 #include <cstring>
 #include <exception>
+#include <algorithm>
 #include <utility>
 #include <pqxx/pqxx>
 #include <fstream>
 #include <cctype>
+#include <cmath>
 #include <sstream>
+#include <iterator>
 #ifdef LIBXML
 #  include <libxml++/libxml++.h>
 #endif
@@ -181,6 +184,15 @@ StateFile::StateFile(const std::string &file, bool memory)
     state.close();
 }
 
+// Dump internal data to the terminal, used only for debugging
+void
+StateFile::dump(void)
+{
+    std::cout << "Dumping state.txt file" << std::endl;    
+    std::cout << "\tTimestamp: " << timestamp << std::endl;
+    std::cout << "\tSequence: " << sequence << std::endl;
+}
+
 // parse a replication file containing changesets
 bool
 Replication::readChanges(const std::string &file)
@@ -225,7 +237,7 @@ Replication::getLinks(GumboNode* node, std::shared_ptr<std::vector<std::string>>
 }
 
 // Download a file from planet
-std::shared_ptr<std::vector<std::string>>
+std::shared_ptr<std::vector<unsigned char>>
 Replication::downloadFiles(std::vector<std::string> files, bool disk)
 {
     // The io_context is required for all I/O
@@ -250,6 +262,7 @@ Replication::downloadFiles(std::vector<std::string> files, bool disk)
     // Perform the SSL handshake
     stream.handshake(ssl::stream_base::client);
 
+    auto data = std::make_shared<std::vector<unsigned char>>();
     auto links =  std::make_shared<std::vector<std::string>>();
     for (auto it = std::begin(files); it != std::end(files); ++it) {
         std::cout << "Downloading " << *it << std::endl;
@@ -270,46 +283,53 @@ Replication::downloadFiles(std::vector<std::string> files, bool disk)
         http::response_parser<http::string_body> parser;
         // read_header(stream, buffer, parser);
         read(stream, buffer, parser);
+        if (parser.get().result() == boost::beast::http::status::not_found) {
+            continue;
+        }
+        
         // read(stream, buffer, parser.base());
         // Parse the HTML content to extract the hyperlinks to
         // the directories and files
-        GumboOutput* output = gumbo_parse(parser.get().body().c_str());
         // Check the magic number of the file
         if (parser.get().body()[0] == 0x1f) {
             std::cout << "It's gzipped" << std::endl;
             // it's gzipped
         } else {
-            std::cout << "It's text" << std::endl;
             if (parser.get().body()[0] == '<') {
                 // It's an OSM XML file
                 std::cout << "It's XML" << std::endl;
                 if (disk) {
                     // FIXME: write to disk is specified
                 }
+                // ::cout << parser.get().body() << std::endl;
             } else {
                 // It's text, probably a state.txt file. State
                 // files are never compressed.
-                StateFile(parser.get().body(), true);
+                //StateFile fooby(parser.get().body(), true);
+                // Copy the data into the shared point, as this memory will be
+                // deleted.
+                for (auto body = std::begin(parser.get().body()); body != std::end(parser.get().body()); ++body) {
+                    data->push_back((unsigned char)*body);
+                }
+                
+                //data->reserve(parser.get().body().size());
+                // std::copy(parser.get().body().begin(), parser.get().body().end(),
+                //           std::back_inserter(data));
+                // states.push_back(fooby);
+                // fooby.dump();
                 if (disk) {
                     // FIXME: write to disk is specified
                 }
             }
-            std::cout << parser.get().body() << std::endl;
         }
         if (disk) {
             // std::cout << parser.get().body() << std::endl;
             // std::string suffix = boost::filesystem::extension(*it);
         } else {
+            GumboOutput* output = gumbo_parse(parser.get().body().c_str());
             getLinks(output->root, links);
+            gumbo_destroy_output(&kGumboDefaultOptions, output);
         }
-        gumbo_destroy_output(&kGumboDefaultOptions, output);
-        // } else {
-        // // Declare a container to hold the response
-        // http::response<http::string_body> res;
-        // http::read(stream, buffer, res);
-        // // Write the message to standard out
-        // std::cout << res << std::endl;
-        // }
         if (files.size() == 1) {
             path += files[0];
         }
@@ -319,7 +339,7 @@ Replication::downloadFiles(std::vector<std::string> files, bool disk)
     boost::system::error_code ec;
     stream.shutdown(ec);
     
-    return links;
+    return data;
 }
 
 Planet::Planet(void)
@@ -338,6 +358,37 @@ Planet::Planet(void)
     day.insert(std::pair(time_from_string("2018-03-05 00:06"), "/002/000"));
 };
 
+// Scan remote directory from planet
+std::shared_ptr<std::vector<std::string>>
+Replication::scanDirectory(const std::string &dir)
+{
+    auto links =  std::make_shared<std::vector<std::string>>();
+
+    // The io_context is required for all I/O
+    boost::asio::io_context ioc;
+
+    // The SSL context is required, and holds certificates
+    ssl::context ctx{ssl::context::sslv23_client};
+
+    // Verify the remote server's certificate
+    ctx.set_verify_mode(ssl::verify_none);
+    
+    // These objects perform our I/O
+    tcp::resolver resolver{ioc};
+    ssl::stream<tcp::socket> stream{ioc, ctx};
+    
+    // Look up the domain name
+    auto const results = resolver.resolve(server, std::to_string(port));
+    
+    // Make the connection on the IP address we get from a lookup
+    boost::asio::connect(stream.next_layer(), results.begin(), results.end());
+
+    // Perform the SSL handshake
+    stream.handshake(ssl::stream_base::client);
+
+    //return getLinks(output->root, links);
+}
+
 // Find the path to download the right file
 std::string
 Planet::findData(frequency_t freq, ptime starttime)
@@ -345,25 +396,26 @@ Planet::findData(frequency_t freq, ptime starttime)
     boost::posix_time::time_duration delta;
     // Look for the top level directory
     if (freq == minutely) {
-        for (auto it = std::begin(minute); it != std::end(minute); ++it) {
-            //delta = it->first - starttime;
-            delta = starttime - it->first;
+        for (auto it = std::rbegin(minute); it != std::rend(minute); ++it) {
+            delta = it->first - starttime;
+            // delta = starttime - it->first;
             std::cout << "Delta: " << delta.hours() << ":"
                       <<  delta.minutes()
-                      <<  ":" << delta.minutes()*60
                       << " : " << it->first
+                      << " = " << it->second
                       << std::endl;
             // There are a thousand minutely updates in each low level directory
-            if (delta.hours() < 17000) {
+            // if (delta.hours() < 16600) {
+            if (delta.minutes() < 0) {
                 std::cout << "Found minutely top path " << it->second << " for "
                           << starttime << std::endl;
-                int diff = (delta.hours()*60) + delta.minutes();
-                ptime more = it->first + delta;
-                std::cout << "Found minutely full path " << it->second << "/"
-                          << diff/1000 << " for " << " more: " << more
-                          << " start:" << starttime << std::endl;
-                std::string sub = it->second + "/" + std::to_string(diff/1000);
-                return sub;
+                // delta = it->first + delta; 
+                ptime diff = it->first - boost::posix_time::hours(delta.hours())
+                                       - boost::posix_time::minutes(delta.minutes());
+                std::cout << "Found minutely full path " << diff
+                          << " for " << " start: "
+                          << starttime << std::endl;
+                return it->second;
             }
         }
     } else if (freq == hourly) {

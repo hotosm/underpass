@@ -58,9 +58,11 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 #include <boost/asio/ssl/error.hpp>
 #include <boost/asio/ssl/stream.hpp>
+#include <boost/asio/ip/tcp.hpp>
 namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
 
 #include "hotosm.hh"
+#include "timer.hh"
 #include "osmstats/changeset.hh"
 // #include "osmstats/osmstats.hh"
 
@@ -74,6 +76,40 @@ namespace replication {
 /// are 3 different intervals, minute, hourly, or daily replication files
 /// are available.
 
+// OsmChange file structure on planet
+// https://planet.openstreetmap.org/replication/day
+//    dir/dir/???.osc.gz
+//    dir/dir/???.state.txt
+// https://planet.openstreetmap.org/replication/hour
+//    dir/dir/???.osc.gz
+//    dir/dir/???.state.txt
+// https://planet.openstreetmap.org/replication/minute/
+//    dir/dir/???.osc.gz
+//    dir/dir/???.state.txt
+//
+// Changeset file structure on planet
+// https://planet.openstreetmap.org/replication/changesets/
+//    dir/dir/???.osm.gz
+
+typedef enum {minutely, hourly, daily} frequency_t;
+
+/// \class Planet
+/// \brief This stores file paths and timestamps from planet.
+class Planet : public Timer
+{
+public:
+    Planet(void);
+
+    // Find the path to download a the right
+    std::string findData(frequency_t freq, ptime starttime);
+    std::string findData(frequency_t freq, int sequence) {
+        boost::posix_time::time_duration delta;
+    };
+private:
+    std::map<ptime, std::string> minute;
+    std::map<ptime, std::string> hour;
+    std::map<ptime, std::string> day;
+};
 
 /// \class StateFile
 /// \brief Data structure for state.text files
@@ -88,11 +124,15 @@ public:
         timestamp = boost::posix_time::second_clock::local_time();
         sequence = 0;
     };
+
     /// Initialize with a state file from disk or memory
     StateFile(const std::string &file, bool memory);
 
+    /// Dump internal data to the terminal, used only for debugging
+    void dump(void);
+
     // protected so testcases can access private data
-protected:
+//protected:
     ptime timestamp;            ///< The timestamp of the associated changeset file
     long sequence;              ///< The sequence number of the associated changeset file
 };
@@ -106,7 +146,7 @@ protected:
 ///
 /// This class handfles identifying the right replication file to download,
 /// and downloading it.
-class Replication
+class Replication : public Timer
 {
 public:
     Replication(void) {
@@ -136,16 +176,23 @@ public:
     bool mergeToDB();
 
     /// Scan remote directory from planet
-    // std::shared_ptr<std::vector<std::string>> scanDirectory(const std::string &dir);
-    
+    std::shared_ptr<std::vector<std::string>> scanDirectory(const std::string &dir);
+
     /// Download a file from planet
-    std::shared_ptr<std::vector<std::string>> downloadFiles(std::vector<std::string> file, bool text);
+    std::shared_ptr<std::vector<unsigned char>> downloadFiles(const std::string &file, bool text) {
+        std::vector<std::string> tmp;
+        tmp.push_back(file);
+        return downloadFiles(tmp, text);
+    };
+
+    std::shared_ptr<std::vector<unsigned char>> downloadFiles(std::vector<std::string> file, bool text);
 
     /// Extract the links in an HTML document. This is used
     /// to find the directories on planet for replication files
     std::shared_ptr<std::vector<std::string>> &getLinks(GumboNode* node,
                     std::shared_ptr<std::vector<std::string>> &links);
 
+    std::vector<StateFile> states; ///< Stored state.txt files
 private:
     std::string server;         ///< The repliciation file server
     std::string path;           ///< Default top level path to the data files
@@ -153,7 +200,7 @@ private:
     ptime last_run;             ///< Timestamp of the replication file
     long sequence;              ///< Sequence number of the replication
     int version;                ///< Version number of the replication
-    std::vector<StateFile> states; ///< Stored state.txt files
+    //ssl::stream<tcp::socket> stream; ///< The incoming network stream    
 };
 
 struct membuf: std::streambuf {
