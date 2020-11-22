@@ -48,7 +48,8 @@ libhotosm_la_SOURCES = hotosm.cc hottm.cc \
 	data/pgsnapshot.cc \
 	data/import.cc \
 	data/osmobjects.cc \
-	data/validate.cc
+	data/validate.cc \
+	data/threads.cc
 libhotosm_la_LDFLAGS = -avoid-version
 SWIGdir = swig
 
