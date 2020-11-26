@@ -38,12 +38,11 @@
 
 #include <string>
 #include <vector>
-#include <array>
+#include <thread>
 #include <filesystem>
 #include <iostream>
-#include <pqxx/pqxx>
+//#include <pqxx/pqxx>
 #include <cstdlib>
-#include "changeset.hh"
 #include <gumbo.h>
 
 #include <osmium/io/any_input.hpp>
@@ -63,6 +62,7 @@ namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
 
 #include "hotosm.hh"
 #include "timer.hh"
+#include "data/threads.hh"
 #include "osmstats/changeset.hh"
 // #include "osmstats/osmstats.hh"
 
@@ -75,6 +75,8 @@ namespace replication {
 /// Replication files are used to update the existing data with changes. There
 /// are 3 different intervals, minute, hourly, or daily replication files
 /// are available.
+/// Data on the directory structure and timestamps of replication files is
+/// cached on disk, to shorten the lookup time on program startup.
 
 // OsmChange file structure on planet
 // https://planet.openstreetmap.org/replication/day
@@ -91,25 +93,7 @@ namespace replication {
 // https://planet.openstreetmap.org/replication/changesets/
 //    dir/dir/???.osm.gz
 
-typedef enum {minutely, hourly, daily} frequency_t;
-
-/// \class Planet
-/// \brief This stores file paths and timestamps from planet.
-class Planet : public Timer
-{
-public:
-    Planet(void);
-
-    // Find the path to download a the right
-    std::string findData(frequency_t freq, ptime starttime);
-    std::string findData(frequency_t freq, int sequence) {
-        boost::posix_time::time_duration delta;
-    };
-private:
-    std::map<ptime, std::string> minute;
-    std::map<ptime, std::string> hour;
-    std::map<ptime, std::string> day;
-};
+typedef enum {minutely, hourly, daily, changeset} frequency_t;
 
 /// \class StateFile
 /// \brief Data structure for state.text files
@@ -133,8 +117,73 @@ public:
 
     // protected so testcases can access private data
 //protected:
+    std::string path;           ///< URL to this file
     ptime timestamp;            ///< The timestamp of the associated changeset file
     long sequence;              ///< The sequence number of the associated changeset file
+    std::string frequency;      ///< The time interval of this change file
+};
+
+/// \class Planet
+/// \brief This stores file paths and timestamps from planet.
+class Planet : public Timer
+{
+public:
+    Planet(void);
+    ~Planet(void) {};
+
+    /// Connect to the database
+    bool connect(const std::string &database);
+
+    /// Find the path to download a replication file
+    std::string findData(frequency_t freq, ptime starttime);
+    std::string findData(frequency_t freq, int sequence) {
+        boost::posix_time::time_duration delta;
+        // FIXME: this should return a real value
+        std::string fixme;
+        return fixme;
+    };
+    /// Write the stored data on the directories and timestamps
+    /// on the planet server.
+    bool writeState(StateFile &state);
+
+    /// Get the state.txt file data by it's path
+    std::shared_ptr<StateFile> getState(const std::string &path);
+
+    /// Get the state.txt date by timestamp
+    std::shared_ptr<StateFile> getState(ptime &tstamp);
+
+    /// Get the maximum timestamp for the state.txt data
+    std::shared_ptr<StateFile> getLastState(void);
+
+    /// Get the minimum timestamp for the state.txt data
+    std::shared_ptr<StateFile> getFirstState(void);
+
+    /// Monitor the remote planet server for new replication files
+    bool monitor(const std::string &server, const std::string &statsdb,
+                 const std::string &osmdb, int port);
+
+    /// Dump internal data to the terminal, used only for debugging
+    void dump(void);
+
+    /// Scan remote directory from planet
+    std::shared_ptr<std::vector<std::string>> scanDirectory(const std::string &dir);
+
+    /// Extract the links in an HTML document. This is used
+    /// to find the directories on planet for replication files
+    std::shared_ptr<std::vector<std::string>> &getLinks(GumboNode* node,
+                    std::shared_ptr<std::vector<std::string>> &links);
+
+// private:
+    pqxx::connection *db;
+    pqxx::work *worker;
+    std::string server = "planet.openstreetmap.org"; ///< planet server
+    int port = 443;             ///< Network port on the server, note SSL only allowed
+    int version = 11;           ///< HTTP version
+    std::map<ptime, std::string> minute;
+    std::map<ptime, std::string> changeset;
+    std::map<ptime, std::string> hour;
+    std::map<ptime, std::string> day;
+    std::map<frequency_t, std::map<ptime, std::string>> states;
 };
 
 // These are the columns in the pgsnapshot.replication_changes table
@@ -175,9 +224,6 @@ public:
     /// Add this replication data to the changeset database
     bool mergeToDB();
 
-    /// Scan remote directory from planet
-    std::shared_ptr<std::vector<std::string>> scanDirectory(const std::string &dir);
-
     /// Download a file from planet
     std::shared_ptr<std::vector<unsigned char>> downloadFiles(const std::string &file, bool text) {
         std::vector<std::string> tmp;
@@ -186,11 +232,6 @@ public:
     };
 
     std::shared_ptr<std::vector<unsigned char>> downloadFiles(std::vector<std::string> file, bool text);
-
-    /// Extract the links in an HTML document. This is used
-    /// to find the directories on planet for replication files
-    std::shared_ptr<std::vector<std::string>> &getLinks(GumboNode* node,
-                    std::shared_ptr<std::vector<std::string>> &links);
 
     std::vector<StateFile> states; ///< Stored state.txt files
 private:

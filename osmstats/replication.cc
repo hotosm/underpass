@@ -42,12 +42,12 @@
 #include <exception>
 #include <algorithm>
 #include <utility>
-#include <pqxx/pqxx>
+// #include <pqxx/pqxx>
 #include <fstream>
 #include <cctype>
 #include <cmath>
 #include <sstream>
-#include <iterator>
+// #include <iterator>
 #ifdef LIBXML
 #  include <libxml++/libxml++.h>
 #endif
@@ -59,10 +59,16 @@
 #include <osmium/visitor.hpp>
 #include <osmium/io/any_output.hpp>
 
+#include <boost/serialization/binary_object.hpp>
+#include <boost/serialization/serialization.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/serialization/map.hpp>
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
 using namespace boost::gregorian;
+#include <boost/tokenizer.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -191,13 +197,13 @@ StateFile::dump(void)
     std::cout << "Dumping state.txt file" << std::endl;    
     std::cout << "\tTimestamp: " << timestamp << std::endl;
     std::cout << "\tSequence: " << sequence << std::endl;
+    std::cout << "\tPath: " << path << std::endl;
 }
 
 // parse a replication file containing changesets
 bool
 Replication::readChanges(const std::string &file)
 {
-
     return false;
 }
 
@@ -209,12 +215,12 @@ Replication::mergeToDB()
 }
 
 std::shared_ptr<std::vector<std::string>> &
-Replication::getLinks(GumboNode* node, std::shared_ptr<std::vector<std::string>> &links)
+Planet::getLinks(GumboNode* node, std::shared_ptr<std::vector<std::string>> &links)
 {
-    if (node->type == GUMBO_NODE_TEXT) {
-        std::string val = std::string(node->v.text.text);
-        std::cout << "FIXME: " << "GUMBO_NODE_TEXT " << val << std::endl;
-    }
+    // if (node->type == GUMBO_NODE_TEXT) {
+    //     std::string val = std::string(node->v.text.text);
+    //     std::cout << "FIXME: " << "GUMBO_NODE_TEXT " << val << std::endl;
+    // }
     
     if (node->type == GUMBO_NODE_ELEMENT) {
         GumboAttribute* href;
@@ -222,9 +228,12 @@ Replication::getLinks(GumboNode* node, std::shared_ptr<std::vector<std::string>>
             (href = gumbo_get_attribute(&node->v.element.attributes, "href"))) {
             // All the directories are a 3 digit number, and all the files
             // start with a 3 digit number
-            if (std::isalnum(href->value[0]) && std::isalnum(href->value[1])) {
-                std::cout << href->value << std::endl;
-                links->push_back(href->value);
+            if (href->value[0] >= 48 && href->value[0] <= 57) {
+                //if (std::isalnum(href->value[0]) && std::isalnum(href->value[1])) {
+                // std::cout << "FIXME: " << href->value << std::endl;
+                if (std::strlen(href->value) > 0) {
+                    links->push_back(href->value);
+                }
             }
         }
         GumboVector* children = &node->v.element.children;
@@ -325,10 +334,10 @@ Replication::downloadFiles(std::vector<std::string> files, bool disk)
         if (disk) {
             // std::cout << parser.get().body() << std::endl;
             // std::string suffix = boost::filesystem::extension(*it);
-        } else {
-            GumboOutput* output = gumbo_parse(parser.get().body().c_str());
-            getLinks(output->root, links);
-            gumbo_destroy_output(&kGumboDefaultOptions, output);
+        // } else {
+        //     GumboOutput* output = gumbo_parse(parser.get().body().c_str());
+        //     getLinks(output->root, links);
+        //     gumbo_destroy_output(&kGumboDefaultOptions, output);
         }
         if (files.size() == 1) {
             path += files[0];
@@ -358,12 +367,136 @@ Planet::Planet(void)
     day.insert(std::pair(time_from_string("2018-03-05 00:06"), "/002/000"));
 };
 
-// Scan remote directory from planet
-std::shared_ptr<std::vector<std::string>>
-Replication::scanDirectory(const std::string &dir)
-{
-    auto links =  std::make_shared<std::vector<std::string>>();
 
+// Dump internal data to the terminal, used only for debugging
+void
+Planet::dump(void)
+{
+    std::cout << "Dumping Planet data" << std::endl;
+    for (auto it = std::begin(changeset); it != std::end(changeset); ++it) {
+        std::cout << "Changeset at: " << it->first << ": " << it->second << std::endl;
+    }
+    for (auto it = std::begin(minute); it != std::end(minute); ++it) {
+        std::cout << "Minutely at: " << it->first << ": " << it->second << std::endl;
+    }
+    for (auto it = std::begin(hour); it != std::end(hour); ++it) {
+        std::cout << "Minutely at: " << it->first << ": " << it->second << std::endl;
+    }
+    for (auto it = std::begin(day); it != std::end(day); ++it) {
+        std::cout << "Daily at: " << it->first << ": " << it->second << std::endl;
+    }
+}
+
+bool
+Planet::connect(const std::string &dbname)
+{
+    std::string args;
+    if (dbname.empty()) {
+	args = "dbname = underpass";
+    } else {
+	args = "dbname = " + dbname;
+    }
+    try {
+	db = new pqxx::connection(args);
+	if (db->is_open()) {
+	    return true;
+	} else {
+	    return false;
+	}
+    } catch (const std::exception &e) {
+	std::cerr << e.what() << std::endl;
+	return false;
+   }
+}
+
+/// Get the maximum timestamp for the state.txt data
+std::shared_ptr<StateFile>
+Planet::getLastState(void)
+{
+    worker = new pqxx::work(*db);
+    std::string query = "SELECT timestamp,sequence,path,frequency FROM states ORDER BY timestamp DESC LIMIT 1;";
+    std::cout << "QUERY: " << query << std::endl;
+    pqxx::result result = worker->exec(query);
+    auto last = std::make_shared<StateFile>();
+    last->timestamp = time_from_string(pqxx::to_string(result[0][0]));
+    last->sequence = result[0][1].as(int(0));
+    last->path = pqxx::to_string(result[0][2]);
+
+    worker->commit();
+
+    return last;
+}
+
+// Get the minimum timestamp for the state.txt data. As hashtags didn't
+// appear until late 2014, we don't care as much about the older data.
+std::shared_ptr<StateFile>
+Planet::getFirstState(void)
+{
+    worker = new pqxx::work(*db);
+    std::string query = "SELECT timestamp,sequence,path,frequency FROM states ORDER BY timestamp ASC LIMIT 1;";
+    std::cout << "QUERY: " << query << std::endl;
+    pqxx::result result = worker->exec(query);
+    auto first = std::make_shared<StateFile>();
+    first->timestamp = time_from_string(pqxx::to_string(result[0][0]));
+    first->sequence = result[0][1].as(int(0));
+    first->path = pqxx::to_string(result[0][2]);
+
+    worker->commit();
+
+    return first;
+}
+
+/// Write the stored data on the directories and timestamps
+/// on the planet server.
+bool
+Planet::writeState(StateFile &state)
+{
+    worker = new pqxx::work(*db);
+    std::string query = "INSERT INTO states(timestamp, sequence, path, frequency) VALUES(";
+    query += "\'" + to_simple_string(state.timestamp) + "\',";
+    query += std::to_string(state.sequence);
+    query += ",\'" + state.path + "\'";
+    if (state.path.find("changeset") != std::string::npos) {
+        query += ", \'changeset\'";
+    } else if (state.path.find("minute") != std::string::npos) {
+        query += ", \'minute\'";
+    } else if (state.path.find("hour") != std::string::npos) {
+        query += ", \'hour\'";
+    } else if (state.path.find("day") != std::string::npos) {
+        query += ", \'day\'";
+    }
+
+    query += ") ON CONFLICT DO NOTHING;";
+    std::cout << "QUERY: " << query << std::endl;
+    pqxx::result result = worker->exec(query);
+    worker->commit();
+}
+
+std::shared_ptr<StateFile>
+Planet::getState(const std::string &path)
+{
+    worker = new pqxx::work(*db);
+    std::string query = "SELECT timestamp,path,sequence,frequency FROM states WHERE path=\'";
+    query += path + "\';";
+    std::cout << "QUERY: " << query << std::endl;
+    pqxx::result result = worker->exec(query);
+    auto state = std::make_shared<StateFile>();
+    if (result.size() > 0) {
+        state->timestamp = time_from_string(pqxx::to_string(result[0][0]));
+        state->path = pqxx::to_string(result[0][1]);
+        state->sequence = result[0][2].as(int(0));
+        state->frequency =  pqxx::to_string(result[0][3]);
+    }
+    worker->commit();
+
+    return state;
+}
+
+
+bool
+Planet::monitor(const std::string &server, const std::string &statsdb,
+                const std::string &osmdb, int port)
+{
     // The io_context is required for all I/O
     boost::asio::io_context ioc;
 
@@ -384,9 +517,72 @@ Replication::scanDirectory(const std::string &dir)
     boost::asio::connect(stream.next_layer(), results.begin(), results.end());
 
     // Perform the SSL handshake
+    // ScanDirectory()
     stream.handshake(ssl::stream_base::client);
 
-    //return getLinks(output->root, links);
+    // List remote directory
+    // Grab state files to check timestamps
+    // Grab changeset data file if new
+    // std::thread changeset_thread (threadChangeSet, std::ref(ow));
+    // Grab osmchange data file if new
+    // std::thread osmchange_thread (threadOsmChange, std::ref(ow));
+    // std::thread stats_thread (threadStatistics, std::ref(ow));
+    // std::thread osm_thread (threadOsm, std::ref(ow));
+};
+
+// Scan remote directory from planet
+std::shared_ptr<std::vector<std::string>>
+Planet::scanDirectory(const std::string &dir)
+{
+    std::cout << "Scanning remote Directory: " << dir << std::endl;
+
+    // The io_context is required for all I/O
+    boost::asio::io_context ioc;
+
+    // The SSL context is required, and holds certificates
+    ssl::context ctx{ssl::context::sslv23_client};
+
+    // Verify the remote server's certificate
+    ctx.set_verify_mode(ssl::verify_none);
+
+    // These objects perform our I/O
+    tcp::resolver resolver{ioc};
+    ssl::stream<tcp::socket> stream{ioc, ctx};
+
+    // Look up the domain name
+    auto const results = resolver.resolve(server, std::to_string(port));
+
+    // Make the connection on the IP address we get from a lookup
+    boost::asio::connect(stream.next_layer(), results.begin(), results.end());
+
+    // Perform the SSL handshake
+    stream.handshake(ssl::stream_base::client);
+
+    auto links =  std::make_shared<std::vector<std::string>>();
+
+    // Set up an HTTP GET request message
+    http::request<http::string_body> req{http::verb::get, dir, version };
+    req.set(http::field::host, server);
+    req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+
+    // Send the HTTP request to the remote host
+    http::write(stream, req);
+
+    // This buffer is used for reading and must be persistant
+    boost::beast::flat_buffer buffer;
+
+    // Receive the HTTP response
+    boost::beast::error_code ec;
+    http::response_parser<http::string_body> parser;
+    // read_header(stream, buffer, parser);
+    read(stream, buffer, parser);
+    if (parser.get().result() == boost::beast::http::status::not_found) {
+        return links;
+    }
+    GumboOutput* output = gumbo_parse(parser.get().body().c_str());
+    getLinks(output->root, links);
+    gumbo_destroy_output(&kGumboDefaultOptions, output);
+    return links;
 }
 
 // Find the path to download the right file
