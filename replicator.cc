@@ -77,7 +77,7 @@ namespace changeset {
   class ChangeSet;
 };
 
-// A helper function to simplify the main part.
+/// A helper function to simplify the main part.
 template<class T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 {
@@ -85,8 +85,12 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
     return os;
 }
 
-// This class does all the actual work
-class Replicator
+/// \class Replicator
+/// \brief This class does all the actual work
+///
+/// This class identifies, downloads, and processes a replication file.
+/// Replication files are available from the OSM planet server.
+class Replicator : public replication::Replication, public Timer
 {
 public:
     /// Create a new instance, and read in the geoboundaries file.
@@ -97,7 +101,8 @@ public:
         // FIXME: this shouldn't be hardcoded
         geou->readFile("../underpass.git/data/geoboundaries.osm", true);
         geou->endTimer();
-        changes.setupBoundaries(geou);
+        changes = std::make_shared<changeset::ChangeSetFile>();
+        changes->setupBoundaries(geou);
 
         // FIXME: should return a real value
         return false;
@@ -107,10 +112,13 @@ public:
     /// in the OSM stats database from a changeset file
     bool initializeRaw(std::vector<std::string> &rawfile, const std::string &database) {
         for (auto it = std::begin(rawfile); it != std::end(rawfile); ++it) {
-            changes.importChanges(*it);
+            changes->importChanges(*it);
         }
+        // FIXME: return a real value
+        return false;
     };
 
+    /// Get the value for a hashtag
     int lookupHashID(const std::string &hash) {
         auto found = hashes->find(hash);
         if (found != hashes->end()) {
@@ -119,6 +127,8 @@ public:
             int id = ostats.lookupHashtag(hash);
             return id;
         }
+
+        return 0;
     };
     /// Get the numeric ID of the country by name
     long lookupCountryID(const std::string &country) {
@@ -130,104 +140,190 @@ public:
     // };
 
 private:
-    osmstats::QueryOSMStats ostats;
-    changeset::ChangeSetFile changes;
-    std::shared_ptr<geoutil::GeoUtil> geou;
-    std::shared_ptr<std::map<std::string, int>> hashes;
+    osmstats::QueryOSMStats ostats;                    ///< OSM Stats database access
+    std::shared_ptr<changeset::ChangeSetFile> changes; ///< All the changes in the file
+    std::shared_ptr<geoutil::GeoUtil> geou;             ///< Country boundaries
+    std::shared_ptr<std::map<std::string, int>> hashes; ///< Existing hashtags
 };
 
 int
 main(int argc, char *argv[])
 {
+    // Store the file names for replication files
+    std::string changeset;
+    std::string osmchange;
+    // The update frequency between downloads
+    std::string interval = "minutely";
+    //bool encrypted = false;
     long sequence = 0;
-    std::string server;
-    bool encrypted = false;
     ptime timestamp(not_a_date_time);
 
-    try {
+    opts::positional_options_description p;
+    opts::variables_map vm;
+     try {
         opts::options_description desc("Allowed options");
         desc.add_options()
             ("help,h", "display help")
-            ("encrypted,e", "enable HTTPS (the default)")
             ("server,s", "database server (defaults to localhost)")
-            ("format,f", "database format (defaults to pgsnapshot)")
             ("statistics,s", "OSM Stats database name (defaults to osmstats)")
-            ("osm,o", "OSM database name (defaults to pgsnapshot)")
-            ("verbose,v", "enable verbosity")
-            ("sequence,s", opts::value<int>(), "Sequence number")
+            ("url,u", opts::value<std::string>(), "Starting URL")
+            ("frequency,f", opts::value<std::string>(), "Update frequency (hour, daily), default minute)")
             ("timestamp,t", opts::value<std::string>(), "Starting timestamp")
-            ("url,u", opts::value<std::string>(), "Replication File URL")
-            ("initialize,r", opts::value<std::vector<std::string>>(), "Initialize OSM Stats Raw data from OSM files")
-            ("import,i", opts::value<std::string>(), "Initialize OSM database with datafile")
+            ("changeset,c", opts::value<std::vector<std::string>>(), "Initialize OSM Stats with changeset")
+            ("osmchange,o", opts::value<std::vector<std::string>>(), "Apply osmchange to OSM Stats")
+            ("import,i", opts::value<std::string>(), "Initialize pgsnapshot database with datafile")
+//            ("osm,o", "OSM database name (defaults to pgsnapshot)")
+//            ("url,u", opts::value<std::string>(), "Replication File URL")
+//            ("encrypted,e", "enable HTTPS (the default)")
+//            ("format,f", "database format (defaults to pgsnapshot)")
+//            ("verbose,v", "enable verbosity")
             ;
         
-        opts::positional_options_description p;
-        opts::variables_map vm;
         opts::store(opts::command_line_parser(argc, argv).
                   options(desc).positional(p).run(), vm);
         opts::notify(vm);
 
-        Replicator replicator;
-        replicator.initializeData();
-        
-        std::vector<std::string> rawfile;
-        
         if (vm.count("help")) {
             std::cout << "Usage: options_description [options]\n";
             std::cout << desc;
             return 0;
         }
+     } catch(std::exception& e) {
+         std::cout << e.what() << "\n";
+         return 1;
+     }
 
-        if (vm.count("encrypted")) {
-            encrypted = true;
-        }
+     Replicator replicator;
+     replicator.initializeData();
+     std::vector<std::string> rawfile;
+     std::shared_ptr<std::vector<unsigned char>> data;
 
-        if (vm.count("sequence")) {
-            std::cout << "Sequence is " << vm["sequence"].as<int>() << std::endl;
-        }
+     // A changeset has the hashtags and comments we need. Multiple URLS
+     // or filename may be specified on the command line, common when
+     // catching up on changes.
+     if (vm.count("changeset")) {
+         std::vector<std::string> files = vm["changeset"].as<std::vector<std::string>>();
+         if (files[0].substr(0, 4) == "http") {
+             data = replicator.downloadFiles(files, true);
+         } else {
+             for (auto it = std::begin(files); it != std::end(files); ++it) {
+                 replicator.readChanges(*it);
+             }
+         }
+     }
+     if (vm.count("osmchange")) {
+         std::vector<std::string> files = vm["osmchange"].as<std::vector<std::string>>();
+         if (files[0].substr(0, 4) == "http") {
+             data = replicator.downloadFiles(files, false);
+         } else {
+             for (auto it = std::begin(files); it != std::end(files); ++it) {
+                 replicator.readChanges(*it);
+             }
+         }
+     }
+     if (vm.count("sequence")) {
+         std::cout << "Sequence is " << vm["sequence"].as<int>() << std::endl;
+     }
+     replication::Planet planet;
+     if (vm.count("url")) {
+         planet.connect("underpass");
+         auto first = planet.getFirstState();
+         std::string url = vm["url"].as<std::string>();
+         auto links =  std::make_shared<std::vector<std::string>>();
+         links = planet.scanDirectory(url);
+         for (auto it = std::begin(*links); it != std::end(*links); ++it) {
+             if (it->empty()) {
+                 continue;
+             }
+             if (it->at(0) >= 48 &&  it->at(0) <= 57) {
+                 std::cout << "Directory: " << url + *it << std::endl;
+             }
+             if (*it != "state.yaml") {
+                 auto slinks =  std::make_shared<std::vector<std::string>>();
+                 slinks = planet.scanDirectory(url + *it);
+                 for (auto sit = std::begin(*slinks); sit != std::end(*slinks); ++sit) {
+                     if (sit->empty()) {
+                         continue;
+                     }
+                     planet.startTimer();
+                     std::string subdir = url + *it + *sit;
+                     std::cout << "Sub Directory: " << subdir << std::endl;
+                     auto flinks = planet.scanDirectory(subdir);
+                     for (auto fit = std::begin(*flinks); fit != std::end(*flinks); ++fit) {
+                         std::string subpath = subdir + fit->substr(0, 3);
+                         std::shared_ptr<replication::StateFile> exists = planet.getState(subpath);
+                         // boost::filesystem::path path(first->path);
+                         std::string suffix = boost::filesystem::extension(*fit);
+                         if (suffix == ".txt") {
+                             if (!exists->path.empty()) {
+                                 std::cout << "Already have: " << subdir << *fit<< std::endl;
+                                 continue;
+                             }
+                             data = replicator.downloadFiles(subdir + *fit, true);
+                             if (!data) {
+                                 std::cout << "File not found: " << subdir << *fit << std::endl;
+                                 continue;
+                                 // exit(-1);
+                             } else {
+                                 std::string tmp(reinterpret_cast<const char *>(data->data()));
+                                 replication::StateFile state(tmp, true);
+                                 state.path = subpath;
+                                 state.dump();
+                                 planet.changeset[state.timestamp] = subdir;
+                                 planet.writeState(state);
+                             }
+                         }
+                     }
+                     planet.endTimer();                        
+                 }
+             }
+         }
+         // links->clear();
+     }
 
-        if (vm.count("url")) {
-            // std::cout << "URL is: " << vm["url"].as<std::vector<std::string> >() << "\n";
-        }
+     //replicator.startTimer();
+     planet.startTimer();
+     if (vm.count("timestamp")) {
+         std::cout << "Timestamp is: " << vm["timestamp"].as<std::string> () << "\n";
+         timestamp = time_from_string(vm["timestamp"].as<std::string>());
+         std::string foo = planet.findData(replication::minutely, timestamp);
+         std::cout << "Full path: " << foo << std::endl;
+         data = replicator.downloadFiles("https://planet.openstreetmap.org/replication/minute" + foo + "/000/000.state.txt", true);
+         if (data->empty()) {
+             std::cout << "File not found" << std::endl;
+             exit(-1);
+         }
+         std::string tmp(reinterpret_cast<const char *>(data->data()));
+         replication::StateFile state(tmp, true);
+         state.dump();
+     }
 
-        if (vm.count("timestamp")) {
-            // std::cout << "Timestamp is: " << vm["timestamp"].as<std::vector<std::string> >() << "\n";
-            timestamp = time_from_string(vm["timestamp"].as<std::vector<std::string> >()[0]);
-        }
+     planet.endTimer();
+     std::string statistics;
+     if (vm.count("initialize")) {
+         rawfile = vm["initialize"].as<std::vector<std::string>>();
+         replicator.initializeRaw(rawfile, statistics);
+     }
+     std::string osmdb;
+     if (vm.count("osm")) {
+         osmdb = vm["osm"].as<std::vector<std::string>>()[0];
+     }
+     if (vm.count("import")) {
+         std::string file = vm["import"].as<std::string>();
+         import::ImportOSM osm(file, osmdb);
+     }
+     // FIXME: add logging
+     if (vm.count("verbose")) {
+         std::cout << "Verbosity enabled.  Level is " << vm["verbose"].as<int>() << std::endl;
+     }
 
-        std::string statistics;
-        if (vm.count("initialize")) {
-            rawfile = vm["initialize"].as<std::vector<std::string>>();
-            replicator.initializeRaw(rawfile, statistics);
-        }
-
-        std::string osmdb;
-        if (vm.count("osm")) {
-            osmdb = vm["osm"].as<std::vector<std::string>>()[0];
-        }
-        
-        if (vm.count("import")) {
-            std::string file = vm["import"].as<std::string>();
-            import::ImportOSM osm(file, osmdb);
-        }
-
-        // FIXME: add logging
-        if (vm.count("verbose")) {
-            std::cout << "Verbosity enabled.  Level is " << vm["verbose"].as<int>() << std::endl;
-        }
-    }
-    catch(std::exception& e)
-    {
-        std::cout << e.what() << "\n";
-        return 1;
-    }
-
-    if (sequence > 0 and !timestamp.is_not_a_date_time()) {
+     if (sequence > 0 and !timestamp.is_not_a_date_time()) {
         std::cout << "ERROR: Can only specify a timestamp or a sequence" << std::endl;
         exit(1);
     }
 
-    replication::Replication rep(server, timestamp, sequence);
+    // replication::Replication rep(server, timestamp, sequence);
+    replication::Replication rep("https://planet.openstreetmap.org", timestamp, sequence);
 
 
     
