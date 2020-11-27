@@ -60,8 +60,9 @@ to do calculations, like the length of roads added.
 
 There are two types of state files, one for changesets and the other
 for change files. The changeset one is the simplest, only containing
-the last_run timestamp and a changeset sequence number. An example
-changeset state file is: 
+the last_run timestamp and a changeset sequence number. The first
+state file starts *2016-09-07 10:45*. An example changeset state file
+is:
 
 	\---
 	last_run: 2020-10-08 16:41:01.863533000 +00:00
@@ -86,3 +87,17 @@ timestamp available. To find a specific replication file, a state file
 close to the timestamp is downloaded. Then the timestamp in the state
 file is checked, and if it matches, the the 3 digit part of the state
 file name can be used to find the appropriate replication data file.
+
+# Finding The Right Data File
+
+It is desirable to be able to start processing changes starting with a
+specific timestamp. This enables the end user to update databases
+after a period of downtime. With minute updates, there are many
+thousands of files. Since it takes about 10 milliseconds to download a
+state.txt file from planet, scanning for files isn't really
+practical. Once the proper data file is found, then it's easy to just
+download the next data file in sequence.
+
+Underpass has a table in it's database to store the timestamps, and
+paths to the data files. That makes it possible to quickly find the
+appropriate starting data file. 
