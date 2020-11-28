@@ -50,6 +50,28 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/version.hpp>
+#include <boost/asio/connect.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/ssl/error.hpp>
+#include <boost/asio/ssl/stream.hpp>
+#include <boost/beast/http/parser.hpp>
+
+namespace beast = boost::beast;
+namespace net = boost::asio;
+namespace ssl = boost::asio::ssl;
+namespace http = beast::http;
+using tcp = net::ip::tcp;
+
+#include "osmstats/replication.hh"
+
+namespace replication {
+class StateFile;
+};
+
+
 /// \file threads.hh
 /// \brief Threads for monitoring the OSM planet server for replication files.
 ///
@@ -59,20 +81,40 @@ using namespace boost::gregorian;
 
 /// \namespace threads
 namespace threads {
+class ThreadManager
+{
+public:
+    ThreadManager(void);
+
+    /// Get the number of processor cores in this machine
+    int numThreads(void) { return std::thread::hardware_concurrency(); };
+
+    void startStateThreads(const std::string &base, std::vector<std::string> &files);
+
+    //replication::Planet planet;
+};
+
+/// Updates the states table in the Underpass database
+extern std::shared_ptr<replication::StateFile> threadStateFile(ssl::stream<tcp::socket> &stream,
+                            const std::string &file);
 
 /// Updates the raw_hashtags, raw_users, and raw_changesets_countries tables
 /// from a changeset file
-extern void updateRaw(void);
+extern void threadOsmChange(const std::string &database, ptime &timestamp);
 
 /// This updates several fields in the raw_changesets table, which are part of
 /// the changeset file, and don't need to be calculated.
-extern void updateChangeSet(void);
+extern void threadChangeSet(const std::string &database, ptime &timestamp);
 
 /// This updates the calculated fields in the raw_changesets table, based on
-/// the data in the OSM stats database.
-extern void gatherStatistics(void);
+/// the data in the OSM stats database. These should be calculated by the
+/// OsmChange thread, but as changesets and osmchange files are on different
+/// timestamps, this looks for anything that got missed.
+extern void threadStatistics(const std::string &database, ptime &timestamp);
 
-/// the raw_changesets table, which is where all the statistics go
+/// This updates an OSM database, which can be used for extracts and other
+/// validation.
+extern void threadOSM(const std::string &database, ptime &timestamp);
 
 } // EOF threads namespace
 

@@ -36,11 +36,25 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <mutex>
 
+#include <boost/asio.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/asio/ssl/error.hpp>
+#include <boost/asio/ssl/stream.hpp>
+#include <boost/beast/http/parser.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/version.hpp>
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
 using namespace boost::gregorian;
+namespace beast = boost::beast;     // from <boost/beast.hpp>
+namespace net = boost::asio;        // from <boost/asio.hpp>
+namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
+namespace http = beast::http;       // from <boost/beast/http.hpp>
+using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 
 #include "data/threads.hh"
 #include "osmstats/osmstats.hh"
@@ -48,18 +62,95 @@ using namespace boost::gregorian;
 #include "osmstats/changeset.hh"
 #include "osmstats/replication.hh"
 
+std::mutex stream_mutex;
+
 namespace threads {
 
-void updateRaw(void)
+ThreadManager::ThreadManager(void)
 {
+    // Launch the pool with four threads.
+    boost::asio::thread_pool pool(numThreads());
+
+    // Submit a function to the pool.
+    //boost::asio::post(pool, threadStateFile);
+    // Submit a lambda object to the pool.
+    int i = 0;
+    boost::asio::post(pool, [i]() {
+        std::cout << "FIXME: " << i << std::endl;            
+    });
+    
+    // Wait for all tasks in the pool to complete.
+    pool.join();
+};
+
+void
+ThreadManager::startStateThreads(const std::string &base, std::vector<std::string> &files)
+{
+    replication::Planet planet;
+    auto state = [&planet](const std::string &path) {
+        std::shared_ptr<replication::StateFile> exists = planet.getState(path);
+        if (!exists->path.empty()) {
+            std::cout << "Already have: " << path << std::endl;
+        } else {
+            std::shared_ptr<replication::StateFile> state = threadStateFile(planet.stream, path + ".state.txt");
+            if (!state->path.empty()) {
+                planet.writeState(*state);
+                state->dump();
+            } else {
+                std::this_thread::sleep_for(std::chrono::milliseconds{1000});
+                planet.connectServer();
+                std::shared_ptr<replication::StateFile> state = threadStateFile(planet.stream, path + ".state.txt");
+                return;
+            }
+        }
+        // Don't hit the server too hard while testing, it's not polite
+        //std::this_thread::sleep_for(std::chrono::milliseconds{2000});
+    };
+
+    // boost::asio::thread_pool pool(2);
+    boost::asio::thread_pool pool(numThreads());
+
+    for (auto it = std::begin(files); it != std::end(files); ++it) {
+        if (boost::filesystem::extension(*it) != ".txt") {
+            continue;
+        }
+        std::string subpath = base + it->substr(0, it->size() - 10);
+        if (!it->size() <= 1) {
+            boost::asio::post(pool, [subpath, state]{state(subpath);});
+        }   
+    }
+    pool.join();
+}
+
+void
+threadOsmChange(const std::string &database, ptime &timestamp)
+{
+    ptime now = boost::posix_time::second_clock::local_time();
     osmstats::QueryOSMStats ostats;
     replication::Replication repl;
+    replication::Planet planet;
+#if 0
+    auto data = std::make_shared<std::vector<unsigned char>>();
+    std::string dir = planet.findData(replication::changeset, timestamp);
+    data = replicator.downloadFiles("https://planet.openstreetmap.org/" + dir + ".state.txt", true);
+    if (data->empty()) {
+        std::cout << "File not found" << std::endl;
+        exit(-1);
+    }
+    std::string tmp(reinterpret_cast<const char *>(data->data()));
+    changeset::ChangeSetFile change;
+    change.readXML();
+    state.dump();
+    if (state.timestamp >= timestamp) {
+        data = replicator.downloadFiles("https://planet.openstreetmap.org/" + dir + ".state.txt", true);
+    }
+#endif
 }
 
 // This updates several fields in the raw_changesets table, which are part of
 // the changeset file, and don't need to be calculated.
 void
-updateChangeSet(void)
+threadChangeSet(const std::string &database, ptime &timestamp)
 {
     osmstats::QueryOSMStats ostats;
     replication::Replication repl;
@@ -68,10 +159,65 @@ updateChangeSet(void)
 // This updates the calculated fields in the raw_changesets table, based on
 // the data in the OSM stats database.
 void
-gatherStatistics(void)
+threadStatistics(const std::string &database, ptime &timestamp)
 {
     osmstats::QueryOSMStats ostats;
     replication::Replication repl;
+}
+
+/// Updates the states table in the Underpass database
+std::shared_ptr<replication::StateFile>
+threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
+{
+    std::cout << "Downloading " << file << std::endl;
+
+    std::string server = "planet.openstreetmap.org";
+    // See if the data exists in the databse already
+    // std::shared_ptr<replication::StateFile> exists = planet.getState(subpath);    
+
+    stream_mutex.lock();
+    // This buffer is used for reading and must be persistant
+    boost::beast::flat_buffer buffer;
+
+    boost::beast::error_code ec;
+
+    // Set up an HTTP GET request message
+    http::request<http::string_body> req{http::verb::get, file, 11};
+
+    req.set(http::field::host, server);
+    req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    
+    // Send the HTTP request to the remote host
+    // std::lock_guard<std::mutex> guard(stream_mutex);
+    http::write(stream, req);
+    
+    boost::beast::http::response_parser<http::string_body> parser;
+    boost::beast::http::read(stream, buffer, parser, ec);
+    stream_mutex.unlock();
+    if (ec == http::error::end_of_stream) {
+        boost::beast::http::read(stream, buffer, parser, ec);        
+        stream_mutex.unlock();
+    } else if (ec) {
+        std::cerr << "ERROR: stream read failed" << ": " << ec.message() << std::endl;
+        return std::make_shared<replication::StateFile>();
+    }
+    if (parser.get().result() == boost::beast::http::status::not_found) {
+        // continue;
+    }
+    
+    auto data = std::make_shared<std::vector<unsigned char>>();
+    for (auto body = std::begin(parser.get().body()); body != std::end(parser.get().body()); ++body) {
+        data->push_back((unsigned char)*body);
+    }
+    if ((parser.get().body()).size() == 0) {
+        std::cout << "File not found: " << file << std::endl;
+        return std::make_shared<replication::StateFile>();
+    } else {
+        std::string tmp(reinterpret_cast<const char *>(data->data()));
+        auto state = std::make_shared<replication::StateFile>(tmp, true);
+        state->path = file.substr(0, file.size() - 10);
+        return state;
+    }
 }
 
 }       // EOF namespace threads
