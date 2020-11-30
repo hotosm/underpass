@@ -67,8 +67,9 @@ namespace opts = boost::program_options;
 #include "osmstats/changeset.hh"
 // #include "osmstats/osmstats.hh"
 #include "data/geoutil.hh"
-#include "osmstats/replication.hh"
+// #include "osmstats/replication.hh"
 #include "data/import.hh"
+#include "data/threads.hh"
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
@@ -100,7 +101,7 @@ public:
         geou->startTimer();
         // FIXME: this shouldn't be hardcoded
         geou->readFile("../underpass.git/data/geoboundaries.osm", true);
-        geou->endTimer();
+        geou->endTimer("Replicator");
         changes = std::make_shared<changeset::ChangeSetFile>();
         changes->setupBoundaries(geou);
 
@@ -226,12 +227,15 @@ main(int argc, char *argv[])
      }
      replication::Planet planet;
      if (vm.count("url")) {
-         planet.connect("underpass");
+         planet.connectDB("underpass");
          auto first = planet.getFirstState();
          std::string url = vm["url"].as<std::string>();
          auto links =  std::make_shared<std::vector<std::string>>();
          links = planet.scanDirectory(url);
-         for (auto it = std::begin(*links); it != std::end(*links); ++it) {
+         for (auto it = std::rbegin(*links); it != std::rend(*links); ++it) {
+             // if (*it == "000/" || *it == "001/") {
+             //     continue;
+             // }
              if (it->empty()) {
                  continue;
              }
@@ -241,7 +245,9 @@ main(int argc, char *argv[])
              if (*it != "state.yaml") {
                  auto slinks =  std::make_shared<std::vector<std::string>>();
                  slinks = planet.scanDirectory(url + *it);
-                 for (auto sit = std::begin(*slinks); sit != std::end(*slinks); ++sit) {
+                 // Looping backwards means we start with 000, and end with 999. Oldest data
+                 // first.
+                 for (auto sit = std::rbegin(*slinks); sit != std::rend(*slinks); ++sit) {
                      if (sit->empty()) {
                          continue;
                      }
@@ -249,16 +255,20 @@ main(int argc, char *argv[])
                      std::string subdir = url + *it + *sit;
                      std::cout << "Sub Directory: " << subdir << std::endl;
                      auto flinks = planet.scanDirectory(subdir);
-                     for (auto fit = std::begin(*flinks); fit != std::end(*flinks); ++fit) {
+                     threads::ThreadManager tmanager;
+#ifdef USE_MULTI     // Multi-threaded
+                     tmanager.startStateThreads(subdir, *flinks);
+#else     // Single threaded
+                     for (auto fit = std::rbegin(*flinks); fit != std::rend(*flinks); ++fit) {
                          std::string subpath = subdir + fit->substr(0, 3);
                          std::shared_ptr<replication::StateFile> exists = planet.getState(subpath);
                          // boost::filesystem::path path(first->path);
                          std::string suffix = boost::filesystem::extension(*fit);
+                         if (!exists->path.empty()) {
+                             std::cout << "Already have: " << subdir << *fit<< std::endl;
+                             continue;
+                         }
                          if (suffix == ".txt") {
-                             if (!exists->path.empty()) {
-                                 std::cout << "Already have: " << subdir << *fit<< std::endl;
-                                 continue;
-                             }
                              data = replicator.downloadFiles(subdir + *fit, true);
                              if (!data) {
                                  std::cout << "File not found: " << subdir << *fit << std::endl;
@@ -274,7 +284,8 @@ main(int argc, char *argv[])
                              }
                          }
                      }
-                     planet.endTimer();                        
+#endif
+                     planet.endTimer("main");
                  }
              }
          }
@@ -298,7 +309,7 @@ main(int argc, char *argv[])
          state.dump();
      }
 
-     planet.endTimer();
+     planet.endTimer("stats");
      std::string statistics;
      if (vm.count("initialize")) {
          rawfile = vm["initialize"].as<std::vector<std::string>>();
