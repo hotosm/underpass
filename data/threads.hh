@@ -91,7 +91,7 @@ public:
 
     void startStateThreads(const std::string &base, std::vector<std::string> &files);
 
-    //replication::Planet planet;
+//replication::Planet planet;
 };
 
 /// Updates the states table in the Underpass database

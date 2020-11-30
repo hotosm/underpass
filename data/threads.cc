@@ -37,7 +37,12 @@
 #include <vector>
 #include <iostream>
 #include <mutex>
+#include <range/v3/all.hpp>
+#include<algorithm>
+#include<iterator>
 
+// #include <boost/range/sub_range.hpp>
+// #include <boost/range.hpp>
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/asio/ssl/error.hpp>
@@ -66,60 +71,109 @@ std::mutex stream_mutex;
 
 namespace threads {
 
+
 ThreadManager::ThreadManager(void)
 {
     // Launch the pool with four threads.
-    boost::asio::thread_pool pool(numThreads());
+    // boost::asio::thread_pool pool(numThreads());
 
-    // Submit a function to the pool.
-    //boost::asio::post(pool, threadStateFile);
-    // Submit a lambda object to the pool.
-    int i = 0;
-    boost::asio::post(pool, [i]() {
-        std::cout << "FIXME: " << i << std::endl;            
-    });
-    
     // Wait for all tasks in the pool to complete.
-    pool.join();
+    // pool.join();
 };
 
 void
 ThreadManager::startStateThreads(const std::string &base, std::vector<std::string> &files)
 {
-    replication::Planet planet;
-    auto state = [&planet](const std::string &path) {
-        std::shared_ptr<replication::StateFile> exists = planet.getState(path);
-        if (!exists->path.empty()) {
-            std::cout << "Already have: " << path << std::endl;
+    // std::map<std::string, std::thread> thread_pool;
+    auto planet = std::make_shared<replication::Planet>();
+    //replication::Planet> planet;
+
+    boost::system::error_code ec;
+    // This lambda gets creates inline code for each thread in the pool
+    auto state = [planet](const std::string &path)->bool {
+        std::shared_ptr<replication::StateFile> state = threadStateFile(planet->stream,
+                                                                        path + ".state.txt");
+        if (!state->path.empty()) {
+            planet->writeState(*state);
+            state->dump();
+            return true;
         } else {
-            std::shared_ptr<replication::StateFile> state = threadStateFile(planet.stream, path + ".state.txt");
-            if (!state->path.empty()) {
-                planet.writeState(*state);
-                state->dump();
-            } else {
-                std::this_thread::sleep_for(std::chrono::milliseconds{1000});
-                planet.connectServer();
-                std::shared_ptr<replication::StateFile> state = threadStateFile(planet.stream, path + ".state.txt");
-                return;
-            }
+            std::cerr << "ERROR: No StateFile returned: " << path << std::endl;
+            // planet.reset(new replication::Planet);
+            // planet.reset(new replication::Planet());
+
+            // planet.connectServer();
+            // std::this_thread::sleep_for(std::chrono::seconds{1});
+            // state = threadStateFile(planet.stream, path + ".state.txt");
+            // if (!state->path.empty()) {
+            //     planet.writeState(*state);
+            //     state->dump();
+            //     return true;
+            // }
+            return false;
         }
-        // Don't hit the server too hard while testing, it's not polite
-        //std::this_thread::sleep_for(std::chrono::milliseconds{2000});
     };
 
-    // boost::asio::thread_pool pool(2);
+    // boost::asio::thread_pool pool(20);
     boost::asio::thread_pool pool(numThreads());
 
-    for (auto it = std::begin(files); it != std::end(files); ++it) {
-        if (boost::filesystem::extension(*it) != ".txt") {
-            continue;
+    // Note this uses ranges, which only got added in C++20, so
+    // for now use the ranges-v3 library, which is the implementation.
+    // The planet server drops the network connection after 111
+    // GET requests, so break the 1000 strings into smaller chunks
+    // 144, 160, 176, 192, 208, 224
+    auto rng  = files | ranges::views::chunk(200);
+
+    Timer timer;
+    timer.startTimer();
+    int counter = 0;
+    std::vector<std::string> foo;
+    for (auto cit = std::begin(rng); cit != std::end(rng); ++cit) {
+        //std::copy(std::begin(*cit), std::end(*cit), std::back_inserter(foo));
+        planet->startTimer();
+        // std::cout << "Chunk data: " << *cit << std::endl;
+        for (auto it = std::begin(*cit); it != std::end(*cit); ++it) {
+            if (boost::filesystem::extension(*it) != ".txt") {
+                continue;
+            }
+            std::string subpath = base + it->substr(0, it->size() - 10);
+            std::shared_ptr<replication::StateFile> exists = planet->getState(subpath);
+            if (!exists->path.empty()) {
+                std::cout << "Already stored: " << subpath << std::endl;
+                continue;
+            }
+            // Add a thread to the pool for this file
+            if (!it->size() <= 1) {
+#ifdef USE_MULTI_LOADER
+                boost::asio::post(pool, [subpath, state]{state(subpath);});
+#else
+                std::shared_ptr<replication::StateFile> state = threadStateFile(planet->stream,
+                                                                base + *it);
+                if (!state->path.empty()) {
+                    planet->writeState(*state);
+                    state->dump();
+                    continue;
+                }
+#endif
+            }
         }
-        std::string subpath = base + it->substr(0, it->size() - 10);
-        if (!it->size() <= 1) {
-            boost::asio::post(pool, [subpath, state]{state(subpath);});
-        }   
+
+        // Wait for all the threads to finish before shutting down the socket
+        // pool.join();
+        // try {
+        //     planet->db->close();
+        //     planet->stream.shutdown();
+        //     planet->ioc.reset();
+        // } catch (const std::exception &e) {
+        //     std::cerr << "Couldn't shutdown stream" << e.what() << std::endl;
+        // }
+        // Don't hit the server too hard while testing, it's not polite
+        planet->endTimer("chunk ");
+        std::this_thread::sleep_for(std::chrono::seconds{1});
+        planet.reset(new replication::Planet);
     }
     pool.join();
+    timer.endTimer("directory ");
 }
 
 void
@@ -134,7 +188,7 @@ threadOsmChange(const std::string &database, ptime &timestamp)
     std::string dir = planet.findData(replication::changeset, timestamp);
     data = replicator.downloadFiles("https://planet.openstreetmap.org/" + dir + ".state.txt", true);
     if (data->empty()) {
-        std::cout << "File not found" << std::endl;
+        std::cout << "OsmChange File not found" << std::endl;
         exit(-1);
     }
     std::string tmp(reinterpret_cast<const char *>(data->data()));
@@ -169,34 +223,45 @@ threadStatistics(const std::string &database, ptime &timestamp)
 std::shared_ptr<replication::StateFile>
 threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
 {
-    std::cout << "Downloading " << file << std::endl;
-
     std::string server = "planet.openstreetmap.org";
     // See if the data exists in the databse already
     // std::shared_ptr<replication::StateFile> exists = planet.getState(subpath);    
 
-    stream_mutex.lock();
     // This buffer is used for reading and must be persistant
     boost::beast::flat_buffer buffer;
-
     boost::beast::error_code ec;
 
     // Set up an HTTP GET request message
     http::request<http::string_body> req{http::verb::get, file, 11};
 
+    req.keep_alive();
     req.set(http::field::host, server);
     req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
     
+    // std::cout << "(" << std::this_thread::get_id() << ")Downloading " << file << std::endl;
+
+    // Stays locked till the function exits
+    const std::lock_guard<std::mutex> lock(stream_mutex);
+
     // Send the HTTP request to the remote host
     // std::lock_guard<std::mutex> guard(stream_mutex);
-    http::write(stream, req);
-    
     boost::beast::http::response_parser<http::string_body> parser;
+    std::cout << "Downloading: " << file << std::endl;
+
+    http::write(stream, req);
     boost::beast::http::read(stream, buffer, parser, ec);
-    stream_mutex.unlock();
+    if (ec == http::error::partial_message) {
+        std::cerr << "ERROR: partial read" << ": " << ec.message() << std::endl;
+        // Give the network a chance to recover
+        std::this_thread::yield();
+        // std::this_thread::sleep_for(std::chrono::seconds{1});
+        //return std::make_shared<replication::StateFile>();
+    }
     if (ec == http::error::end_of_stream) {
-        boost::beast::http::read(stream, buffer, parser, ec);        
-        stream_mutex.unlock();
+        std::cerr << "ERROR: end of stream read failed" << ": " << ec.message() << std::endl;
+        // Give the network a chance to recover
+        // stream.socket().shutdown(tcp::socket::shutdown_both, ec);
+        return std::make_shared<replication::StateFile>();
     } else if (ec) {
         std::cerr << "ERROR: stream read failed" << ": " << ec.message() << std::endl;
         return std::make_shared<replication::StateFile>();
@@ -204,13 +269,20 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
     if (parser.get().result() == boost::beast::http::status::not_found) {
         // continue;
     }
-    
+
+    // File never downloaded, return empty
+    if (parser.get().body().size() < 10) {
+        std::cerr << "ERROR: failed to download:  " << ": " << file << std::endl;
+        return std::make_shared<replication::StateFile>();
+    }
+
+    //const std::lock_guard<std::mutex> unlock(stream_mutex);
     auto data = std::make_shared<std::vector<unsigned char>>();
     for (auto body = std::begin(parser.get().body()); body != std::end(parser.get().body()); ++body) {
         data->push_back((unsigned char)*body);
     }
-    if ((parser.get().body()).size() == 0) {
-        std::cout << "File not found: " << file << std::endl;
+    if (data->size() == 0) {
+        std::cout << "StateFile not found: " << file << std::endl;
         return std::make_shared<replication::StateFile>();
     } else {
         std::string tmp(reinterpret_cast<const char *>(data->data()));
