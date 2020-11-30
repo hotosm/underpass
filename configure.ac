@@ -42,6 +42,68 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_CHECK_HEADER_STDBOOL
 
+build_single=no
+build_multi=yes
+AC_ARG_ENABLE(threads,
+  AS_HELP_STRING([--enable-threads], [Enable support for multi-threading (default=single)]),
+  [if test -n ${enableval}; then
+    enableval=`echo ${enableval} | tr '\054' ' ' `
+  fi
+  while test -n "${enableval}" ; do
+    val=`echo ${enableval} | cut -d ' ' -f 1`
+    case "${val}" in
+        single|s)
+            build_single=yes
+        ;;
+      multi|m)
+        build_multi=yes
+        ;;
+     *) AC_MSG_ERROR([invalid option ${enableval} given (accept: single, multi)])
+         ;;
+      esac
+    enableval=`echo ${enableval} | cut -d ' ' -f 2-6`
+    if test "x$val" = "x$enableval"; then
+      break;
+    fi
+  done]
+])
+if test x"${build_single}" = x"yes"; then
+  AC_DEFINE(USE_SINGLE, [1], [Don't use multiple threads])
+else
+  AC_DEFINE(USE_MULTI, [1], [Use multiple threads])
+fi
+
+build_single_loader=yes
+build_multi_loader=no
+AC_ARG_ENABLE(threads,
+  AS_HELP_STRING([--enable-downloader], [Enable support for multi-threaded downloader (default=single)]),
+  [if test -n ${enableval}; then
+    enableval=`echo ${enableval} | tr '\054' ' ' `
+  fi
+  while test -n "${enableval}" ; do
+    val=`echo ${enableval} | cut -d ' ' -f 1`
+    case "${val}" in
+        single|s)
+            build_single_loader=yes
+        ;;
+      multi|m)
+        build_multi_loader=yes
+        ;;
+     *) AC_MSG_ERROR([invalid option ${enableval} given (accept: single, multi)])
+         ;;
+      esac
+    enableval=`echo ${enableval} | cut -d ' ' -f 2-6`
+    if test "x$val" = "x$enableval"; then
+      break;
+    fi
+  done]
+])
+if test x"${build_single_loader}" = x"yes"; then
+  AC_DEFINE(USE_SINGLE_LOADER, [1], [Don't use multiple threaded file downloader])
+else
+  AC_DEFINE(USE_MULTI_LOADER, [1], [Use multiple threaded downloader])
+fi
+
 dnl RapidXML is the default, as it's used by boost
 build_rapidxml=no
 build_libxml=yes
@@ -69,6 +131,7 @@ AC_ARG_ENABLE(parser,
   done]
 ])
 
+dnl range-v3
 CPPFLAGS=$(pkg-config --cflags python)
 CPPFLAGS+=" $(pkg-config --cflags libpqxx)"
 CPPFLAGS+=" $(pkg-config --cflags glibmm-2.4)"
@@ -131,6 +194,7 @@ LIBS+=" -lpthread -ldl"
 dnl 1.69 or newer
 AX_BOOST_BASE(1.69)
 AX_BOOST_SYSTEM
+AX_BOOST_SERIALIZATION
 AX_BOOST_LOG
 AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_DATE_TIME
