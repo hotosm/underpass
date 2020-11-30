@@ -89,10 +89,12 @@ public:
     /// Get the number of processor cores in this machine
     int numThreads(void) { return std::thread::hardware_concurrency(); };
 
-    void startStateThreads(const std::string &base, std::vector<std::string> &files);
+    //void startStateThreads(const std::string &base, std::vector<std::string> &files);
 
 //replication::Planet planet;
 };
+
+extern void startStateThreads(const std::string &base, std::vector<std::string> &files);
 
 /// Updates the states table in the Underpass database
 extern std::shared_ptr<replication::StateFile> threadStateFile(ssl::stream<tcp::socket> &stream,

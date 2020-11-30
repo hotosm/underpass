@@ -45,6 +45,7 @@
 #include <cassert>
 #include <deque>
 #include <list>
+#include <thread>
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -257,7 +258,8 @@ main(int argc, char *argv[])
                      auto flinks = planet.scanDirectory(subdir);
                      threads::ThreadManager tmanager;
 #ifdef USE_MULTI     // Multi-threaded
-                     tmanager.startStateThreads(subdir, *flinks);
+                     std::thread tstate (threads::startStateThreads, std::ref(subdir),
+                                         std::ref(*flinks));
 #else     // Single threaded
                      for (auto fit = std::rbegin(*flinks); fit != std::rend(*flinks); ++fit) {
                          std::string subpath = subdir + fit->substr(0, 3);
@@ -285,6 +287,7 @@ main(int argc, char *argv[])
                          }
                      }
 #endif
+                     tstate.join();
                      planet.endTimer("main");
                  }
              }

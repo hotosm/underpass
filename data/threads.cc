@@ -38,8 +38,9 @@
 #include <iostream>
 #include <mutex>
 #include <range/v3/all.hpp>
-#include<algorithm>
-#include<iterator>
+#include <algorithm>
+#include <iterator>
+#include <thread>
 
 // #include <boost/range/sub_range.hpp>
 // #include <boost/range.hpp>
@@ -82,7 +83,7 @@ ThreadManager::ThreadManager(void)
 };
 
 void
-ThreadManager::startStateThreads(const std::string &base, std::vector<std::string> &files)
+startStateThreads(const std::string &base, std::vector<std::string> &files)
 {
     // std::map<std::string, std::thread> thread_pool;
     auto planet = std::make_shared<replication::Planet>();
@@ -115,7 +116,7 @@ ThreadManager::startStateThreads(const std::string &base, std::vector<std::strin
     };
 
     // boost::asio::thread_pool pool(20);
-    boost::asio::thread_pool pool(numThreads());
+    boost::asio::thread_pool pool(/* std::thread::hardware_concurrency() */ );
 
     // Note this uses ranges, which only got added in C++20, so
     // for now use the ranges-v3 library, which is the implementation.
@@ -172,7 +173,9 @@ ThreadManager::startStateThreads(const std::string &base, std::vector<std::strin
         std::this_thread::sleep_for(std::chrono::seconds{1});
         planet.reset(new replication::Planet);
     }
+#ifdef USE_MULTI_LOADER
     pool.join();
+#endif
     timer.endTimer("directory ");
 }
 
