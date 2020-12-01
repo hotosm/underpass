@@ -86,7 +86,8 @@ void
 startStateThreads(const std::string &base, std::vector<std::string> &files)
 {
     // std::map<std::string, std::thread> thread_pool;
-    auto planet = std::make_shared<replication::Planet>();
+     auto planet = std::make_shared<replication::Planet>();
+    
     //replication::Planet> planet;
 
     boost::system::error_code ec;
@@ -127,10 +128,7 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
 
     Timer timer;
     timer.startTimer();
-    int counter = 0;
-    std::vector<std::string> foo;
     for (auto cit = std::begin(rng); cit != std::end(rng); ++cit) {
-        //std::copy(std::begin(*cit), std::end(*cit), std::back_inserter(foo));
         planet->startTimer();
         // std::cout << "Chunk data: " << *cit << std::endl;
         for (auto it = std::begin(*cit); it != std::end(*cit); ++it) {
@@ -154,28 +152,23 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
                     planet->writeState(*state);
                     state->dump();
                     continue;
+                } else {
+                    std::cerr << "ERROR: No StateFile returned: " << subpath << std::endl;
                 }
 #endif
             }
         }
-
-        // Wait for all the threads to finish before shutting down the socket
-        // pool.join();
-        // try {
-        //     planet->db->close();
-        //     planet->stream.shutdown();
-        //     planet->ioc.reset();
-        // } catch (const std::exception &e) {
-        //     std::cerr << "Couldn't shutdown stream" << e.what() << std::endl;
-        // }
-        // Don't hit the server too hard while testing, it's not polite
         planet->endTimer("chunk ");
-        std::this_thread::sleep_for(std::chrono::seconds{1});
+        // Don't hit the server too hard while testing, it's not polite
+        // std::this_thread::sleep_for(std::chrono::seconds{1});
+        planet->disconnectServer();
         planet.reset(new replication::Planet);
     }
 #ifdef USE_MULTI_LOADER
     pool.join();
 #endif
+    planet->ioc.reset();
+    // planet->stream.socket().shutdown(tcp::socket::shutdown_both, ec);
     timer.endTimer("directory ");
 }
 
@@ -290,7 +283,9 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
     } else {
         std::string tmp(reinterpret_cast<const char *>(data->data()));
         auto state = std::make_shared<replication::StateFile>(tmp, true);
-        state->path = file.substr(0, file.size() - 10);
+        if (!file.empty()) {
+            state->path = file.substr(0, file.size() - 10);
+        }
         return state;
     }
 }

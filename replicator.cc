@@ -226,6 +226,7 @@ main(int argc, char *argv[])
      if (vm.count("sequence")) {
          std::cout << "Sequence is " << vm["sequence"].as<int>() << std::endl;
      }
+     Timer timer;
      replication::Planet planet;
      if (vm.count("url")) {
          planet.connectDB("underpass");
@@ -252,42 +253,17 @@ main(int argc, char *argv[])
                      if (sit->empty()) {
                          continue;
                      }
-                     planet.startTimer();
+                     timer.startTimer();
                      std::string subdir = url + *it + *sit;
                      std::cout << "Sub Directory: " << subdir << std::endl;
                      auto flinks = planet.scanDirectory(subdir);
-                     threads::ThreadManager tmanager;
-#ifdef USE_MULTI     // Multi-threaded
                      std::thread tstate (threads::startStateThreads, std::ref(subdir),
-                                         std::ref(*flinks));
-#else     // Single threaded
-                     for (auto fit = std::rbegin(*flinks); fit != std::rend(*flinks); ++fit) {
-                         std::string subpath = subdir + fit->substr(0, 3);
-                         std::shared_ptr<replication::StateFile> exists = planet.getState(subpath);
-                         // boost::filesystem::path path(first->path);
-                         std::string suffix = boost::filesystem::extension(*fit);
-                         if (!exists->path.empty()) {
-                             std::cout << "Already have: " << subdir << *fit<< std::endl;
-                             continue;
-                         }
-                         if (suffix == ".txt") {
-                             data = replicator.downloadFiles(subdir + *fit, true);
-                             if (!data) {
-                                 std::cout << "File not found: " << subdir << *fit << std::endl;
-                                 continue;
-                                 // exit(-1);
-                             } else {
-                                 std::string tmp(reinterpret_cast<const char *>(data->data()));
-                                 replication::StateFile state(tmp, true);
-                                 state.path = subpath;
-                                 state.dump();
-                                 planet.changeset[state.timestamp] = subdir;
-                                 planet.writeState(state);
-                             }
-                         }
-                     }
-#endif
+                                        std::ref(*flinks));
+                     // threads::startStateThreads(subdir, *flinks) ;
+                     std::cout << "Waiting..." << std::endl;
                      tstate.join();
+                     timer.endTimer("sub directory");
+                     continue;
                      planet.endTimer("main");
                  }
              }
