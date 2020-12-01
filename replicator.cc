@@ -169,6 +169,7 @@ main(int argc, char *argv[])
             ("server,s", "database server (defaults to localhost)")
             ("statistics,s", "OSM Stats database name (defaults to osmstats)")
             ("url,u", opts::value<std::string>(), "Starting URL")
+            ("monitor,m", opts::value<std::string>(), "Starting URL to monitor")
             ("frequency,f", opts::value<std::string>(), "Update frequency (hour, daily), default minute)")
             ("timestamp,t", opts::value<std::string>(), "Starting timestamp")
             ("changeset,c", opts::value<std::vector<std::string>>(), "Initialize OSM Stats with changeset")
@@ -186,12 +187,12 @@ main(int argc, char *argv[])
         opts::notify(vm);
 
         if (vm.count("help")) {
-            std::cout << "Usage: options_description [options]\n";
+            std::cout << "Usage: options_description [options]" << std::endl;
             std::cout << desc;
             return 0;
         }
      } catch(std::exception& e) {
-         std::cout << e.what() << "\n";
+         std::cout << e.what() << std::endl;
          return 1;
      }
 
@@ -226,6 +227,12 @@ main(int argc, char *argv[])
      if (vm.count("sequence")) {
          std::cout << "Sequence is " << vm["sequence"].as<int>() << std::endl;
      }
+
+     if (vm.count("monitor")) {
+         std::string url = vm["monitor"].as<std::string>();
+         threads::startMonitor(url);
+     }
+
      Timer timer;
      replication::Planet planet;
      if (vm.count("url")) {
