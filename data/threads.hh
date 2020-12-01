@@ -95,6 +95,7 @@ public:
 };
 
 extern void startStateThreads(const std::string &base, std::vector<std::string> &files);
+extern void startMonitor(const std::string &url);
 
 /// Updates the states table in the Underpass database
 extern std::shared_ptr<replication::StateFile> threadStateFile(ssl::stream<tcp::socket> &stream,

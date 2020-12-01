@@ -42,8 +42,7 @@
 #include <iterator>
 #include <thread>
 
-// #include <boost/range/sub_range.hpp>
-// #include <boost/range.hpp>
+#include <boost/format.hpp>
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/asio/ssl/error.hpp>
@@ -52,6 +51,7 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
@@ -72,15 +72,72 @@ std::mutex stream_mutex;
 
 namespace threads {
 
-
-ThreadManager::ThreadManager(void)
+// Starting with this URL, download the file, incrmenting
+void
+startMonitor(const std::string &url)
 {
-    // Launch the pool with four threads.
-    // boost::asio::thread_pool pool(numThreads());
-
-    // Wait for all tasks in the pool to complete.
-    // pool.join();
-};
+    auto planet = std::make_shared<replication::Planet>();
+    replication::Replication server;
+    bool mainloop = true;
+    std::string path = url;
+    while (mainloop) {
+        // Look for the statefile first
+        //std::shared_ptr<replication::StateFile> state = threadStateFile(planet->stream, path);
+        bool subloop = true;
+        planet->startTimer();
+        while (subloop) {
+            auto state = threadStateFile(planet->stream, path + ".state.txt");
+            if (state->timestamp != boost::posix_time::not_a_date_time) {
+                // planet->writeState(*state);
+                state->dump();
+                subloop = false;
+            } else {
+                std::cout << "Waiting for the next StateFile: " << path << std::endl;
+                if (url.find("minute") != std::string::npos) {
+                    planet->disconnectServer();
+                    std::this_thread::sleep_for(std::chrono::minutes{1});
+                    planet.reset(new replication::Planet);
+                } else if (url.find("hour") != std::string::npos) {
+                    planet->disconnectServer();
+                    std::this_thread::sleep_for(std::chrono::hours{1});
+                    planet.reset(new replication::Planet);
+                } else if (url.find("day") != std::string::npos) {
+                    planet->disconnectServer();
+                    std::this_thread::sleep_for(std::chrono::hours{24});
+                    planet.reset(new replication::Planet);
+                }
+            }
+        }
+        if (url.find("minute") != std::string::npos) {
+            planet->downloadFile(path + ".osc.gz");
+        }
+        std::vector<std::string> result;
+        // The path is always something like this:
+        // https://planet.openstreetmap.org/replication/minute/004/304/997.osm.gz
+        // so it's safe to just grab the directory entries we need. Every directory
+        /// has 1000 files in it, so the minor needs to get incremented.
+        boost::split(result, path, boost::is_any_of("/"));
+        int major = std::stoi(result[5]);
+        int minor = std::stoi(result[6]);
+        int index = std::stoi(result[7]);
+        // Increment the index number
+        path = url.substr(0, url.size() - 7);
+        boost::format fmt("%03d");
+        if (index == 999) {
+            fmt % (minor + 1);
+            path += fmt.str() + "000/";
+        } else {
+            path += result[6];
+            fmt % (index + 1);
+            path += "/" + fmt.str();
+        }
+        if (minor == 999) {
+            fmt % (major + 1);
+            path += fmt.str() + "000/";
+        }
+        planet->endTimer("change file");
+    }
+}
 
 void
 startStateThreads(const std::string &base, std::vector<std::string> &files)
@@ -215,7 +272,7 @@ threadStatistics(const std::string &database, ptime &timestamp)
     replication::Replication repl;
 }
 
-/// Updates the states table in the Underpass database
+// Updates the states table in the Underpass database
 std::shared_ptr<replication::StateFile>
 threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
 {
