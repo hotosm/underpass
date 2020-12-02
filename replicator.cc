@@ -71,6 +71,7 @@ namespace opts = boost::program_options;
 // #include "osmstats/replication.hh"
 #include "data/import.hh"
 #include "data/threads.hh"
+#include "timer.hh"
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
@@ -92,17 +93,15 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 ///
 /// This class identifies, downloads, and processes a replication file.
 /// Replication files are available from the OSM planet server.
-class Replicator : public replication::Replication, public Timer
+class Replicator : public replication::Replication
 {
 public:
     /// Create a new instance, and read in the geoboundaries file.
     bool initializeData(void) {
         auto hashes = std::make_shared<std::map<std::string, int>>();
         auto geou = std::make_shared<geoutil::GeoUtil>();
-        geou->startTimer();
         // FIXME: this shouldn't be hardcoded
         geou->readFile("../underpass.git/data/geoboundaries.osm", true);
-        geou->endTimer("Replicator");
         changes = std::make_shared<changeset::ChangeSetFile>();
         changes->setupBoundaries(geou);
 
@@ -281,7 +280,6 @@ main(int argc, char *argv[])
                      tstate.join();
                      timer.endTimer("sub directory");
                      continue;
-                     planet.endTimer("main");
                  }
              }
          }
@@ -289,7 +287,6 @@ main(int argc, char *argv[])
      }
 
      //replicator.startTimer();
-     planet.startTimer();
      if (vm.count("timestamp")) {
          std::cout << "Timestamp is: " << vm["timestamp"].as<std::string> () << "\n";
          timestamp = time_from_string(vm["timestamp"].as<std::string>());
@@ -305,7 +302,6 @@ main(int argc, char *argv[])
          state.dump();
      }
 
-     planet.endTimer("stats");
      std::string statistics;
      if (vm.count("initialize")) {
          rawfile = vm["initialize"].as<std::vector<std::string>>();
