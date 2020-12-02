@@ -230,7 +230,17 @@ main(int argc, char *argv[])
 
      if (vm.count("monitor")) {
          std::string url = vm["monitor"].as<std::string>();
-         threads::startMonitor(url);
+         // url = "https://planet.openstreetmap.org/replication/minute/004/308/210";
+         std::thread mstate (threads::startMonitor, std::ref(url));
+         //url = "https://planet.openstreetmap.org/replication/hour/004/308/210";
+         // std::thread hstate (threads::startMonitor, std::ref(url));
+         //url = "https://planet.openstreetmap.org/replication/changesets/004/308/210";
+         // std::thread cstate (threads::startMonitor, std::ref(url));
+         // threads::startMonitor(url);
+         std::cout << "Waiting..." << std::endl;
+         // cstate.join();
+         mstate.join();
+         // hstate.join();
      }
 
      Timer timer;
