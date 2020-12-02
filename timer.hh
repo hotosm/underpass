@@ -39,6 +39,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <iomanip>
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -52,7 +53,7 @@ using namespace boost::gregorian;
 /// \brief create a performance timer
 ///
 /// This implements a simple timer used for performance testing
-/// during devlopment,
+/// during development.
 class Timer
 {
 public:
@@ -62,15 +63,21 @@ public:
     };
     /// Stop the timer, used for performance analysis
     long endTimer(void) {
+        return endTimer("");
+    };
+    long endTimer(const std::string &msg) {
         end = boost::posix_time::microsec_clock::local_time();
         boost::posix_time::time_duration delta = end - start;
-        average += delta.total_milliseconds();
+        average += delta.total_seconds() + (delta.total_milliseconds()/1000);
         if (interval >= counter || interval == 0) {
-            if (interval > 0) {
-                std::cout << "Operation took " << average/interval << " milliseconds" << std::endl;
-            } else {
-                std::cout << "Operation took " << average << " milliseconds" << std::endl;
-            }
+            // if (interval > 0) {
+            //     std::cout << msg << ": Operation took " << average/interval << " milliseconds" << std::endl;
+            // } else {
+            std::cout << msg << ": Operation took " << std::setprecision(3)
+                //<< std::to_string(delta.total_seconds())
+                      << (double)delta.total_milliseconds()/1000
+                      << " seconds" << std::endl;
+            // }
             
             counter = 0;
             average = 0;
@@ -87,7 +94,7 @@ private:
     ptime end;                  ///< Ending timestamop for operation
     int interval = 0;           ///< Time Interval for long running commands
     int counter = 0;            ///< counter for printing collected statistics
-    long average = 0;           ///< The average time in each interval
+    double average = 0.0;           ///< The average time in each interval
 };
 
 
