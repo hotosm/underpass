@@ -1,5 +1,3 @@
-# Underpass
-
 # Overview
 
 Underpass is a C++ API and utility programs for mainipulating
@@ -83,3 +81,20 @@ the changeset information and imports it into the database. The data
 fields in the changeset file that get imported are the changeset ID,
 the User ID, the hashtag or comment, and the creation and closed
 timestamp. 
+
+# Dependencies
+
+Underpass requires a modern C++ compiler that supports the 2011 C++
+standard. The 2011 standard simplified the syntax by adding the *auto*
+keyword, and thread support became part of the standard C++
+library. Underpass is a heavy user of of the *boost* libraries, and
+also requires reasonably up to date C++ libraries for other
+dependencies. Underpass also uses the ranges-v3 library. This will be
+in the 2020 C++ standard.
+
+Fedora 33, Debian Buster, and Ubuntu Groovy contain a package for
+libranges-v3, which is the code base for what will be in
+C++ 2020. Both Debian Buster and Ubuntu Groovy ship *libpqxx 6.x*,
+which has a bug which has been fixed in *libpqxx 7.x*. Fedora 33 ships
+the newer version.
+
