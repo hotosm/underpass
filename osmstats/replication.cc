@@ -59,16 +59,11 @@
 #include <osmium/visitor.hpp>
 #include <osmium/io/any_output.hpp>
 
-#include <boost/serialization/binary_object.hpp>
-#include <boost/serialization/serialization.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/serialization/map.hpp>
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
 using namespace boost::gregorian;
-#include <boost/tokenizer.hpp>
+//#include <boost/tokenizer.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -88,6 +83,9 @@ using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 #include "hotosm.hh"
 #include "osmstats/replication.hh"
 #include "osmstats/changeset.hh"
+
+/// Control access to the database connection
+std::mutex db_mutex;
 
 namespace replication {
 
@@ -247,8 +245,49 @@ Planet::getLinks(GumboNode* node, std::shared_ptr<std::vector<std::string>> &lin
 
 // Download a file from planet
 std::shared_ptr<std::vector<unsigned char>>
+Planet::downloadFile(const std::string &file)
+{
+    boost::system::error_code ec;
+    auto data = std::make_shared<std::vector<unsigned char>>();
+    std::cout << "Downloading " << file << std::endl;
+    // Set up an HTTP GET request message
+    http::request<http::string_body> req{http::verb::get, file, version };
+
+    req.set(http::field::host, server);
+    req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+
+    // Send the HTTP request to the remote host
+    http::write(stream, req);
+
+    // This buffer is used for reading and must be persistant
+    boost::beast::flat_buffer buffer;
+
+    // Receive the HTTP response
+    http::response_parser<http::string_body> parser;
+    // read_header(stream, buffer, parser);
+    read(stream, buffer, parser);
+    if (parser.get().result() == boost::beast::http::status::not_found) {
+        // continue;
+    }
+
+    // Check the magic number of the file
+    if (parser.get().body()[0] == 0x1f) {
+        std::cout << "It's gzipped" << std::endl;
+    } else {
+        if (parser.get().body()[0] == '<') {
+            std::cout << "It's XML" << std::endl;
+        }
+    }
+
+    return data;
+}
+
+// Download a file from planet
+std::shared_ptr<std::vector<unsigned char>>
 Replication::downloadFiles(std::vector<std::string> files, bool disk)
 {
+    boost::system::error_code ec;
+
     // The io_context is required for all I/O
     boost::asio::io_context ioc;
 
@@ -257,20 +296,24 @@ Replication::downloadFiles(std::vector<std::string> files, bool disk)
 
     // Verify the remote server's certificate
     ctx.set_verify_mode(ssl::verify_none);
-    
+
     // These objects perform our I/O
     tcp::resolver resolver{ioc};
     ssl::stream<tcp::socket> stream{ioc, ctx};
-    
+
     // Look up the domain name
     auto const results = resolver.resolve(server, std::to_string(port));
-    
+
     // Make the connection on the IP address we get from a lookup
     boost::asio::connect(stream.next_layer(), results.begin(), results.end());
 
     // Perform the SSL handshake
-    stream.handshake(ssl::stream_base::client);
-
+    try {
+        stream.handshake(ssl::stream_base::client, ec);
+    } catch (const std::exception &e) {
+        std::cerr << "Couldn't shutdown stream" << e.what() << std::endl;
+    }
+    //stream.expires_after (std::chrono::seconds(30));
     auto data = std::make_shared<std::vector<unsigned char>>();
     auto links =  std::make_shared<std::vector<std::string>>();
     for (auto it = std::begin(files); it != std::end(files); ++it) {
@@ -288,7 +331,6 @@ Replication::downloadFiles(std::vector<std::string> files, bool disk)
         boost::beast::flat_buffer buffer;
 
         // Receive the HTTP response
-        boost::beast::error_code ec;
         http::response_parser<http::string_body> parser;
         // read_header(stream, buffer, parser);
         read(stream, buffer, parser);
@@ -331,24 +373,27 @@ Replication::downloadFiles(std::vector<std::string> files, bool disk)
                 }
             }
         }
-        if (disk) {
-            // std::cout << parser.get().body() << std::endl;
-            // std::string suffix = boost::filesystem::extension(*it);
-        // } else {
-        //     GumboOutput* output = gumbo_parse(parser.get().body().c_str());
-        //     getLinks(output->root, links);
-        //     gumbo_destroy_output(&kGumboDefaultOptions, output);
-        }
         if (files.size() == 1) {
             path += files[0];
         }
     }
 
     // Gracefully close the socket
-    boost::system::error_code ec;
     stream.shutdown(ec);
+    if (ec) {
+        std::cerr << "ERROR: stream shutdown failed" << ": " << ec.message() << std::endl;
+    }
     
     return data;
+}
+
+Planet::~Planet(void)
+{
+    boost::system::error_code ec;
+
+    db->close();                // close the database connection
+    ioc.reset();                // reset the I/O conhtext
+    stream.shutdown();          // shutdown the socket used by the stream
 }
 
 Planet::Planet(void)
@@ -365,6 +410,9 @@ Planet::Planet(void)
     day.insert(std::pair(time_from_string("2015-06-08 00:05"), "/000/000"));
     day.insert(std::pair(time_from_string("2015-06-09 00:06"), "/001/000"));
     day.insert(std::pair(time_from_string("2018-03-05 00:06"), "/002/000"));
+
+    connectDB();
+    connectServer();
 };
 
 
@@ -388,8 +436,9 @@ Planet::dump(void)
 }
 
 bool
-Planet::connect(const std::string &dbname)
+Planet::connectDB(const std::string &dbname)
 {
+    // Connect to the database
     std::string args;
     if (dbname.empty()) {
 	args = "dbname = underpass";
@@ -406,7 +455,33 @@ Planet::connect(const std::string &dbname)
     } catch (const std::exception &e) {
 	std::cerr << e.what() << std::endl;
 	return false;
-   }
+    }
+}
+
+bool
+Planet::connectServer(const std::string &planet)
+{
+    if (!planet.empty()) {
+        server = planet;
+    }
+
+    // Gracefully close the socket
+    boost::system::error_code ec;
+    ioc.reset();
+    ctx.set_verify_mode(ssl::verify_none);
+    auto const results = resolver.resolve(server, std::to_string(port));
+    boost::asio::connect(stream.next_layer(), results.begin(), results.end(), ec);
+    if (ec) {
+        std::cerr << "ERROR: stream connect failed" << ": " << ec.message() << std::endl;
+        return false;
+    }
+    stream.handshake(ssl::stream_base::client, ec);
+    if (ec) {
+        std::cerr << "ERROR: stream handshake failed" << ": " << ec.message() << std::endl;
+        return false;
+    }
+
+    return true;
 }
 
 /// Get the maximum timestamp for the state.txt data
@@ -415,7 +490,7 @@ Planet::getLastState(void)
 {
     worker = new pqxx::work(*db);
     std::string query = "SELECT timestamp,sequence,path,frequency FROM states ORDER BY timestamp DESC LIMIT 1;";
-    std::cout << "QUERY: " << query << std::endl;
+    // std::cout << "QUERY: " << query << std::endl;
     pqxx::result result = worker->exec(query);
     auto last = std::make_shared<StateFile>();
     last->timestamp = time_from_string(pqxx::to_string(result[0][0]));
@@ -434,7 +509,7 @@ Planet::getFirstState(void)
 {
     worker = new pqxx::work(*db);
     std::string query = "SELECT timestamp,sequence,path,frequency FROM states ORDER BY timestamp ASC LIMIT 1;";
-    std::cout << "QUERY: " << query << std::endl;
+    // std::cout << "QUERY: " << query << std::endl;
     pqxx::result result = worker->exec(query);
     auto first = std::make_shared<StateFile>();
     first->timestamp = time_from_string(pqxx::to_string(result[0][0]));
@@ -451,7 +526,6 @@ Planet::getFirstState(void)
 bool
 Planet::writeState(StateFile &state)
 {
-    worker = new pqxx::work(*db);
     std::string query = "INSERT INTO states(timestamp, sequence, path, frequency) VALUES(";
     query += "\'" + to_simple_string(state.timestamp) + "\',";
     query += std::to_string(state.sequence);
@@ -467,19 +541,26 @@ Planet::writeState(StateFile &state)
     }
 
     query += ") ON CONFLICT DO NOTHING;";
-    std::cout << "QUERY: " << query << std::endl;
+    // std::cout << "QUERY: " << query << std::endl;
+    db_mutex.lock();
+    worker = new pqxx::work(*db);
     pqxx::result result = worker->exec(query);
     worker->commit();
+    db_mutex.unlock();
+    // FIXME: return a real value
+    return false;
 }
 
 std::shared_ptr<StateFile>
 Planet::getState(const std::string &path)
 {
-    worker = new pqxx::work(*db);
+    db_mutex.lock();
     std::string query = "SELECT timestamp,path,sequence,frequency FROM states WHERE path=\'";
     query += path + "\';";
-    std::cout << "QUERY: " << query << std::endl;
+    // std::cout << "QUERY: " << query << std::endl;
+    worker = new pqxx::work(*db);
     pqxx::result result = worker->exec(query);
+    worker->commit();
     auto state = std::make_shared<StateFile>();
     if (result.size() > 0) {
         state->timestamp = time_from_string(pqxx::to_string(result[0][0]));
@@ -487,48 +568,10 @@ Planet::getState(const std::string &path)
         state->sequence = result[0][2].as(int(0));
         state->frequency =  pqxx::to_string(result[0][3]);
     }
-    worker->commit();
+    db_mutex.unlock();
 
     return state;
 }
-
-
-bool
-Planet::monitor(const std::string &server, const std::string &statsdb,
-                const std::string &osmdb, int port)
-{
-    // The io_context is required for all I/O
-    boost::asio::io_context ioc;
-
-    // The SSL context is required, and holds certificates
-    ssl::context ctx{ssl::context::sslv23_client};
-
-    // Verify the remote server's certificate
-    ctx.set_verify_mode(ssl::verify_none);
-    
-    // These objects perform our I/O
-    tcp::resolver resolver{ioc};
-    ssl::stream<tcp::socket> stream{ioc, ctx};
-    
-    // Look up the domain name
-    auto const results = resolver.resolve(server, std::to_string(port));
-    
-    // Make the connection on the IP address we get from a lookup
-    boost::asio::connect(stream.next_layer(), results.begin(), results.end());
-
-    // Perform the SSL handshake
-    // ScanDirectory()
-    stream.handshake(ssl::stream_base::client);
-
-    // List remote directory
-    // Grab state files to check timestamps
-    // Grab changeset data file if new
-    // std::thread changeset_thread (threadChangeSet, std::ref(ow));
-    // Grab osmchange data file if new
-    // std::thread osmchange_thread (threadOsmChange, std::ref(ow));
-    // std::thread stats_thread (threadStatistics, std::ref(ow));
-    // std::thread osm_thread (threadOsm, std::ref(ow));
-};
 
 // Scan remote directory from planet
 std::shared_ptr<std::vector<std::string>>
@@ -582,6 +625,7 @@ Planet::scanDirectory(const std::string &dir)
     GumboOutput* output = gumbo_parse(parser.get().body().c_str());
     getLinks(output->root, links);
     gumbo_destroy_output(&kGumboDefaultOptions, output);
+    stream.shutdown();
     return links;
 }
 

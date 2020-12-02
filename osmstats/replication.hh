@@ -44,6 +44,7 @@
 //#include <pqxx/pqxx>
 #include <cstdlib>
 #include <gumbo.h>
+#include <mutex>
 
 #include <osmium/io/any_input.hpp>
 #include <osmium/builder/osm_object_builder.hpp>
@@ -58,6 +59,7 @@ using namespace boost::gregorian;
 #include <boost/asio/ssl/error.hpp>
 #include <boost/asio/ssl/stream.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/connect.hpp>
 namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
 
 #include "hotosm.hh"
@@ -65,6 +67,10 @@ namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
 #include "data/threads.hh"
 #include "osmstats/changeset.hh"
 // #include "osmstats/osmstats.hh"
+
+namespace net = boost::asio;        // from <boost/asio.hpp>
+namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
+using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 
 /// \namespace replication
 namespace replication {
@@ -111,6 +117,8 @@ public:
 
     /// Initialize with a state file from disk or memory
     StateFile(const std::string &file, bool memory);
+    StateFile(const std::vector<unsigned char> &data)
+        : StateFile (reinterpret_cast<const char *>(data.data()), true) {};
 
     /// Dump internal data to the terminal, used only for debugging
     void dump(void);
@@ -129,10 +137,26 @@ class Planet : public Timer
 {
 public:
     Planet(void);
-    ~Planet(void) {};
+    ~Planet(void);
 
     /// Connect to the database
-    bool connect(const std::string &database);
+    bool connectDB(void) {
+        return connectDB(database);
+    };
+    bool connectDB(const std::string &database);
+    bool connectServer(void) {
+        return connectServer(server);
+    }
+    bool connectServer(const std::string &server);
+    bool disconnectServer(void) {
+        db->close();                // close the database connection
+        ioc.reset();                // reset the I/O conhtext
+        stream.shutdown();          // shutdown the socket used by the stream
+        // FIXME: this should return a real value
+        return false;
+    }
+
+    std::shared_ptr<std::vector<unsigned char>> downloadFile(const std::string &file);
 
     /// Find the path to download a replication file
     std::string findData(frequency_t freq, ptime starttime);
@@ -158,10 +182,6 @@ public:
     /// Get the minimum timestamp for the state.txt data
     std::shared_ptr<StateFile> getFirstState(void);
 
-    /// Monitor the remote planet server for new replication files
-    bool monitor(const std::string &server, const std::string &statsdb,
-                 const std::string &osmdb, int port);
-
     /// Dump internal data to the terminal, used only for debugging
     void dump(void);
 
@@ -177,6 +197,8 @@ public:
     pqxx::connection *db;
     pqxx::work *worker;
     std::string server = "planet.openstreetmap.org"; ///< planet server
+    std::string database = "underpass"; ///< The database to use
+    std::string dbserver = "localhost"; ///< The database server to use
     int port = 443;             ///< Network port on the server, note SSL only allowed
     int version = 11;           ///< HTTP version
     std::map<ptime, std::string> minute;
@@ -184,6 +206,11 @@ public:
     std::map<ptime, std::string> hour;
     std::map<ptime, std::string> day;
     std::map<frequency_t, std::map<ptime, std::string>> states;
+    // These are for the boost::asio data stream
+    boost::asio::io_context ioc;
+    ssl::context ctx{ssl::context::sslv23_client};
+    tcp::resolver resolver{ioc};
+    boost::asio::ssl::stream<tcp::socket> stream{ioc, ctx};
 };
 
 // These are the columns in the pgsnapshot.replication_changes table
@@ -241,7 +268,6 @@ private:
     ptime last_run;             ///< Timestamp of the replication file
     long sequence;              ///< Sequence number of the replication
     int version;                ///< Version number of the replication
-    //ssl::stream<tcp::socket> stream; ///< The incoming network stream    
 };
 
 struct membuf: std::streambuf {
