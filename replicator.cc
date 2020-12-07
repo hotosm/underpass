@@ -56,6 +56,7 @@ using namespace boost::gregorian;
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/regex.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/device/back_inserter.hpp>
@@ -105,6 +106,9 @@ public:
         changes = std::make_shared<changeset::ChangeSetFile>();
         changes->setupBoundaries(geou);
 
+        // Connect to the OSM Stats database
+        ostats.connect("mystats");
+
         // FIXME: should return a real value
         return false;
     };
@@ -136,9 +140,14 @@ public:
         return geou->getCountry(country).getID();
     };
 
+    std::string getLastPath(replication::frequency_t interval) {
+        ptime last = ostats.getLastUpdate();
+        replication::Planet planet;
+        auto state = planet.getState(last);
+        return state->path;
+    };
     // osmstats::RawCountry & findCountry() {
     //     geou.inCountry();
-    // };
 
 private:
     osmstats::QueryOSMStats ostats;                    ///< OSM Stats database access
@@ -229,15 +238,19 @@ main(int argc, char *argv[])
 
      if (vm.count("monitor")) {
          std::string url = vm["monitor"].as<std::string>();
+         std::string last = replicator.getLastPath(replication::minutely);
+         std::cout << "Last minutely is " << last  << std::endl;
          // url = "https://planet.openstreetmap.org/replication/minute/004/308/210";
-         std::thread mstate (threads::startMonitor, std::ref(url));
+         std::thread mstate (threads::startMonitor, std::ref(last));
          //url = "https://planet.openstreetmap.org/replication/hour/004/308/210";
+         // std::string last = replicator::getLastPath(replication::hourly);
          // std::thread hstate (threads::startMonitor, std::ref(url));
-         //url = "https://planet.openstreetmap.org/replication/changesets/004/308/210";
-         // std::thread cstate (threads::startMonitor, std::ref(url));
+         last = replicator.getLastPath(replication::changeset);
+         std::cout << "Last changeset is " << last  << std::endl;
+         std::thread cstate (threads::startMonitor, std::ref(last));
          // threads::startMonitor(url);
          std::cout << "Waiting..." << std::endl;
-         // cstate.join();
+         cstate.join();
          mstate.join();
          // hstate.join();
      }
@@ -248,38 +261,85 @@ main(int argc, char *argv[])
          planet.connectDB("underpass");
          auto first = planet.getFirstState();
          std::string url = vm["url"].as<std::string>();
-         auto links =  std::make_shared<std::vector<std::string>>();
-         links = planet.scanDirectory(url);
-         for (auto it = std::rbegin(*links); it != std::rend(*links); ++it) {
-             // if (*it == "000/" || *it == "001/") {
-             //     continue;
-             // }
-             if (it->empty()) {
-                 continue;
-             }
-             if (it->at(0) >= 48 &&  it->at(0) <= 57) {
-                 std::cout << "Directory: " << url + *it << std::endl;
-             }
-             if (*it != "state.yaml") {
-                 auto slinks =  std::make_shared<std::vector<std::string>>();
-                 slinks = planet.scanDirectory(url + *it);
-                 // Looping backwards means we start with 000, and end with 999. Oldest data
-                 // first.
-                 for (auto sit = std::rbegin(*slinks); sit != std::rend(*slinks); ++sit) {
-                     if (sit->empty()) {
-                         continue;
-                     }
-                     timer.startTimer();
-                     std::string subdir = url + *it + *sit;
-                     std::cout << "Sub Directory: " << subdir << std::endl;
-                     auto flinks = planet.scanDirectory(subdir);
-                     std::thread tstate (threads::startStateThreads, std::ref(subdir),
-                                        std::ref(*flinks));
+         // patterns used to figure out directory depth
+         boost::regex lowpat{"https.*/[0-9][0-9][0-9]/[0-9][0-9][0-9]/[0-9][0-9][0-9][/]*"};
+         boost::regex midpat{"https.*/[0-9][0-9][0-9]/[0-9][0-9][0-9][/]*"};
+         boost::regex highpat{"https.*/[0-9][0-9][0-9][/]*"};
+         bool lowest = boost::regex_match(url, lowpat);
+         bool middle = boost::regex_match(url, midpat);
+         bool highest = boost::regex_match(url, highpat);
+         if (lowest && middle && highest) {
+             timer.startTimer();
+             std::cout << "Lowest matches" << std::endl;
+             auto llinks = planet.scanDirectory(url);
+             // std::thread tstate (threads::startStateThreads, std::ref(url),
+             //                     std::ref(*llinks));
+             threads::startStateThreads(std::ref(url), std::ref(*llinks));
+             std::cout << "Waiting for startStateThreads()..." << std::endl;
+             //tstate.join();
+             timer.endTimer("sub directory");
+         }
+         if (middle && !lowest) {
+             std::cout << "Middle matches" << std::endl;
+             timer.startTimer();
+             auto mlinks = planet.scanDirectory(url);
+             // threads::startStateThreads(std::ref(url), std::ref(*mlinks));
+             std::thread tstate (threads::startStateThreads, std::ref(url),
+                                 std::ref(*mlinks));
+             std::cout << "Waiting for startStateThreads()..." << std::endl;
+             tstate.join();
+             timer.endTimer("sub directory");
+         }
+         if (!highest && !middle && !lowest) {
+             std::cout << "Base URL matches" << std::endl;
+             auto links =  std::make_shared<std::vector<std::string>>();
+             links = planet.scanDirectory(url);
+             for (auto it = std::begin(*links); it != std::end(*links); ++it) {
+                 // if (*it == "000/" || *it == "001/") {
+                 //     continue;
+                 // }
+                 if (it->empty()) {
+                     continue;
+                 }
+                 std::string suffix = boost::filesystem::extension(*it);
+                 if (suffix == ".txt") {
+                     std::thread tstate (threads::startStateThreads, std::ref(url),
+                                         std::ref(*links));
                      // threads::startStateThreads(subdir, *flinks) ;
                      std::cout << "Waiting..." << std::endl;
                      tstate.join();
-                     timer.endTimer("sub directory");
                      continue;
+                 } else if (suffix == ".gz") {
+                     // FIXME: start thread to process file
+                     std::cout << "Ignoring for now..." << std::endl;
+                     // tstate.join();
+                     continue;
+                 }
+             
+                 if (it->at(0) >= 48 &&  it->at(0) <= 57) {
+                     std::cout << "Directory: " << url + *it << std::endl;
+                 }
+                 if (*it != "state.yaml") {
+                     auto slinks =  std::make_shared<std::vector<std::string>>();
+                     slinks = planet.scanDirectory(url + *it);
+                     // Looping backwards means we start with 000, and end with 999. Oldest data
+                     // first.
+                     for (auto sit = std::begin(*slinks); sit != std::end(*slinks); ++sit) {
+                         if (sit->empty()) {
+                             continue;
+                         }
+                         timer.startTimer();
+                         std::string subdir = url + *it + *sit;
+                         std::cout << "Sub Directory: " << subdir << std::endl;
+                         auto flinks = planet.scanDirectory(subdir);
+                         std::thread tstate (threads::startStateThreads, std::ref(subdir),
+                                             std::ref(*flinks));
+                         // threads::startStateThreads(subdir, *flinks) ;
+                         std::cout << "Waiting..." << std::endl;
+                         tstate.join();
+                         timer.endTimer("sub directory");
+                         continue;
+                     }
                  }
              }
          }

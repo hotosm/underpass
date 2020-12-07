@@ -133,7 +133,7 @@ public:
 
 /// \class Planet
 /// \brief This stores file paths and timestamps from planet.
-class Planet : public Timer
+class Planet
 {
 public:
     Planet(void);
@@ -222,7 +222,7 @@ public:
 ///
 /// This class handfles identifying the right replication file to download,
 /// and downloading it.
-class Replication : public Timer
+class Replication
 {
 public:
     Replication(void) {

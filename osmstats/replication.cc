@@ -573,6 +573,28 @@ Planet::getState(const std::string &path)
     return state;
 }
 
+// Get the state.txt date by timestamp
+std::shared_ptr<StateFile>
+Planet::getState(ptime &tstamp)
+{
+    auto state = std::make_shared<StateFile>();
+
+    std::string query = "SELECT * FROM states WHERE timestamp>=";
+    query += "\'" + to_simple_string(tstamp) + "\' ";
+    query += " ORDER BY timestamp ASC LIMIT 1;";
+    std::cout << "QUERY: " << query << std::endl;
+    worker = new pqxx::work(*db);
+    pqxx::result result = worker->exec(query);
+    worker->commit();
+    if (result.size() > 0) {
+        state->timestamp = time_from_string(pqxx::to_string(result[0][0]));
+        state->path = pqxx::to_string(result[0][1]);
+        state->sequence = result[0][2].as(int(0));
+        state->frequency =  pqxx::to_string(result[0][3]);
+    }
+    return state;
+}
+
 // Scan remote directory from planet
 std::shared_ptr<std::vector<std::string>>
 Planet::scanDirectory(const std::string &dir)
