@@ -84,33 +84,40 @@ startMonitor(const std::string &url)
         // Look for the statefile first
         //std::shared_ptr<replication::StateFile> state = threadStateFile(planet->stream, path);
         bool subloop = true;
-        planet->startTimer();
         while (subloop) {
+            std::shared_ptr<replication::StateFile> exists = planet->getState(path);
+            if (!exists->path.empty()) {
+                std::cout << "Already stored: " << path << std::endl;
+                subloop = true;
+                break;
+            }
+            std::cout << "Downloading StateFile: " << path << std::endl;
             auto state = threadStateFile(planet->stream, path + ".state.txt");
-            if (state->timestamp != boost::posix_time::not_a_date_time) {
-                // planet->writeState(*state);
+            if (state->timestamp != boost::posix_time::not_a_date_time && (state->sequence != 0 && state->path.size() != 0)) {
                 state->dump();
+                planet->writeState(*state);
                 subloop = false;
             } else {
                 std::cout << "Waiting for the next StateFile: " << path << std::endl;
+                planet->disconnectServer();
                 if (url.find("minute") != std::string::npos) {
-                    planet->disconnectServer();
                     std::this_thread::sleep_for(std::chrono::minutes{1});
-                    planet.reset(new replication::Planet);
                 } else if (url.find("hour") != std::string::npos) {
-                    planet->disconnectServer();
                     std::this_thread::sleep_for(std::chrono::hours{1});
-                    planet.reset(new replication::Planet);
                 } else if (url.find("day") != std::string::npos) {
-                    planet->disconnectServer();
                     std::this_thread::sleep_for(std::chrono::hours{24});
-                    planet.reset(new replication::Planet);
                 }
+                planet.reset(new replication::Planet);
             }
         }
-        if (url.find("minute") != std::string::npos) {
-            planet->downloadFile(path + ".osc.gz");
+        if (!subloop) {
+            if (url.find("changeset") != std::string::npos) {
+                //planet->downloadFile(path + ".osm.gz");
+            } else {
+                //planet->downloadFile(path + ".osc.gz");
+            }
         }
+
         std::vector<std::string> result;
         // The path is always something like this:
         // https://planet.openstreetmap.org/replication/minute/004/304/997.osm.gz
@@ -120,12 +127,13 @@ startMonitor(const std::string &url)
         int major = std::stoi(result[5]);
         int minor = std::stoi(result[6]);
         int index = std::stoi(result[7]);
+
         // Increment the index number
         path = url.substr(0, url.size() - 7);
         boost::format fmt("%03d");
         if (index == 999) {
             fmt % (minor + 1);
-            path += fmt.str() + "000/";
+            path += fmt.str() + "/000";
         } else {
             path += result[6];
             fmt % (index + 1);
@@ -133,9 +141,9 @@ startMonitor(const std::string &url)
         }
         if (minor == 999) {
             fmt % (major + 1);
-            path += fmt.str() + "000/";
+            path += fmt.str() + "/000";
         }
-        planet->endTimer("change file");
+        //planet->endTimer("change file");
     }
 }
 
@@ -145,8 +153,6 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
     // std::map<std::string, std::thread> thread_pool;
      auto planet = std::make_shared<replication::Planet>();
     
-    //replication::Planet> planet;
-
     boost::system::error_code ec;
     // This lambda gets creates inline code for each thread in the pool
     auto state = [planet](const std::string &path)->bool {
@@ -186,7 +192,6 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
     Timer timer;
     timer.startTimer();
     for (auto cit = std::begin(rng); cit != std::end(rng); ++cit) {
-        planet->startTimer();
         // std::cout << "Chunk data: " << *cit << std::endl;
         for (auto it = std::begin(*cit); it != std::end(*cit); ++it) {
             if (boost::filesystem::extension(*it) != ".txt") {
@@ -215,7 +220,7 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
 #endif
             }
         }
-        planet->endTimer("chunk ");
+        //timer.endTimer("chunk ");
         // Don't hit the server too hard while testing, it's not polite
         // std::this_thread::sleep_for(std::chrono::seconds{1});
         planet->disconnectServer();
@@ -299,7 +304,6 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
     // Send the HTTP request to the remote host
     // std::lock_guard<std::mutex> guard(stream_mutex);
     boost::beast::http::response_parser<http::string_body> parser;
-    std::cout << "Downloading: " << file << std::endl;
 
     http::write(stream, req);
     boost::beast::http::read(stream, buffer, parser, ec);
