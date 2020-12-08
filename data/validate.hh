@@ -85,7 +85,7 @@ namespace validate {
 
 typedef enum {notags, isbuilding } errortype_t;
 
-class Validate : public Timer
+class Validate
 {
 public:
     Validate() {};
