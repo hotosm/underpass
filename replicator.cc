@@ -143,7 +143,7 @@ public:
     std::string getLastPath(replication::frequency_t interval) {
         ptime last = ostats.getLastUpdate();
         replication::Planet planet;
-        auto state = planet.getState(last);
+        auto state = planet.getState(interval, last);
         return state->path;
     };
     // osmstats::RawCountry & findCountry() {
@@ -259,7 +259,7 @@ main(int argc, char *argv[])
      replication::Planet planet;
      if (vm.count("url")) {
          planet.connectDB("underpass");
-         auto first = planet.getFirstState();
+         auto first = planet.getFirstState(replication::minutely);
          std::string url = vm["url"].as<std::string>();
          // patterns used to figure out directory depth
          boost::regex lowpat{"https.*/[0-9][0-9][0-9]/[0-9][0-9][0-9]/[0-9][0-9][0-9][/]*"};
