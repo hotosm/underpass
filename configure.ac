@@ -201,9 +201,9 @@ AX_BOOST_DATE_TIME
 AX_BOOST_FILESYSTEM
 AX_BOOST_IOSTREAMS
 AX_BOOST_THREAD
-dnl AX_BOOST_REGEX
-dnl FOr some reason this test works on Fedora, and fails on Debian. For now
+dnl For some reason this test works on Fedora, and fails on Debian. For now
 dnl hardcode it.
+dnl AX_BOOST_REGEX
 LIBS+=" -lboost_regex"
 
 dnl LIBS += "${BOOST_DATE_TIME} ${BOOST_SYSTEM} ${BOOST_FILESYSTEM} ${BOOST_LOG_LIB}"
