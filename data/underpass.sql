@@ -9,6 +9,7 @@ CREATE TABLE public.states (
     sequence integer NOT NULL,
     frequency text NOT NULL
 );
+ALTER TABLE states ADD PRIMARY KEY (path);
 
 CREATE TABLE public.way_nodes (
     way_id bigint NOT NULL,
