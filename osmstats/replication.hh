@@ -174,13 +174,13 @@ public:
     std::shared_ptr<StateFile> getState(const std::string &path);
 
     /// Get the state.txt date by timestamp
-    std::shared_ptr<StateFile> getState(ptime &tstamp);
+    std::shared_ptr<StateFile> getState(frequency_t freq, ptime &tstamp);
 
     /// Get the maximum timestamp for the state.txt data
-    std::shared_ptr<StateFile> getLastState(void);
+    std::shared_ptr<StateFile> getLastState(frequency_t freq);
 
     /// Get the minimum timestamp for the state.txt data
-    std::shared_ptr<StateFile> getFirstState(void);
+    std::shared_ptr<StateFile> getFirstState(frequency_t freq);
 
     /// Dump internal data to the terminal, used only for debugging
     void dump(void);
@@ -206,6 +206,7 @@ public:
     std::map<ptime, std::string> hour;
     std::map<ptime, std::string> day;
     std::map<frequency_t, std::map<ptime, std::string>> states;
+    std::map<frequency_t, std::string> frequency_tags;
     // These are for the boost::asio data stream
     boost::asio::io_context ioc;
     ssl::context ctx{ssl::context::sslv23_client};

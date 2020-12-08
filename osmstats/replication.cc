@@ -398,19 +398,11 @@ Planet::~Planet(void)
 
 Planet::Planet(void)
 {
-    /// These timestamps are base on the state.text files
-    minute.insert(std::pair(time_from_string("2012-09-13 02:06"), "/000" ));
-    minute.insert(std::pair(time_from_string("2014-08-12 22:41"), "/001" ));
-    minute.insert(std::pair(time_from_string("2016-07-09 14:33"), "/002" ));
-    minute.insert(std::pair(time_from_string("2018-06-04 23:24"), "/003" ));
-    minute.insert(std::pair(time_from_string("2020-04-30 23:20"), "/004" ));
+    frequency_tags[replication::minutely] = "minute";
+    frequency_tags[replication::hourly] = "hour";
+    frequency_tags[replication::daily] = "day";
+    frequency_tags[replication::changeset] = "changeset";
     
-    hour.insert(std::pair(time_from_string("2012-12-04 14:02"), "/000/001"));
-    
-    day.insert(std::pair(time_from_string("2015-06-08 00:05"), "/000/000"));
-    day.insert(std::pair(time_from_string("2015-06-09 00:06"), "/001/000"));
-    day.insert(std::pair(time_from_string("2018-03-05 00:06"), "/002/000"));
-
     connectDB();
     connectServer();
 };
@@ -486,7 +478,7 @@ Planet::connectServer(const std::string &planet)
 
 /// Get the maximum timestamp for the state.txt data
 std::shared_ptr<StateFile>
-Planet::getLastState(void)
+Planet::getLastState(frequency_t freq)
 {
     worker = new pqxx::work(*db);
     std::string query = "SELECT timestamp,sequence,path,frequency FROM states ORDER BY timestamp DESC LIMIT 1;";
@@ -505,7 +497,7 @@ Planet::getLastState(void)
 // Get the minimum timestamp for the state.txt data. As hashtags didn't
 // appear until late 2014, we don't care as much about the older data.
 std::shared_ptr<StateFile>
-Planet::getFirstState(void)
+Planet::getFirstState(frequency_t freq)
 {
     worker = new pqxx::work(*db);
     std::string query = "SELECT timestamp,sequence,path,frequency FROM states ORDER BY timestamp ASC LIMIT 1;";
@@ -575,12 +567,13 @@ Planet::getState(const std::string &path)
 
 // Get the state.txt date by timestamp
 std::shared_ptr<StateFile>
-Planet::getState(ptime &tstamp)
+Planet::getState(frequency_t freq, ptime &tstamp)
 {
     auto state = std::make_shared<StateFile>();
 
     std::string query = "SELECT * FROM states WHERE timestamp>=";
     query += "\'" + to_simple_string(tstamp) + "\' ";
+    query += " AND frequency=\'" + frequency_tags[freq] + "\'";
     query += " ORDER BY timestamp ASC LIMIT 1;";
     std::cout << "QUERY: " << query << std::endl;
     worker = new pqxx::work(*db);
