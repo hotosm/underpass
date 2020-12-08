@@ -97,7 +97,11 @@ public:
     std::vector<long> augmented_diffs; ///< The diffs, currently unused
     ptime updated_at;                  ///< Time this change was updated
     //
-    long updateCounter(const std::string &key, long value) { counters[key] = value; };
+    long updateCounter(const std::string &key, long value) {
+        counters[key] = value;
+        // FIXME: this should return a real value
+        return 0;
+    };
     long updateCounters(std::map<const std::string &, long> data);
     long operator[](const std::string &key) { return counters[key]; };
 };
@@ -181,7 +185,7 @@ class RawHashtag
 /// This class handles all the queries to the OSM Stats database.
 /// This includes querying the database for existing data, as
 /// well as updating the data whenh applying a replication file.
-class QueryOSMStats : public apidb::QueryStats, public Timer
+class QueryOSMStats : public apidb::QueryStats
 {
   public:
     QueryOSMStats(void);
@@ -248,10 +252,10 @@ class QueryOSMStats : public apidb::QueryStats, public Timer
 
     /// Dump internal data, debugging usage only!
     void dump(void);
-private:
+
     // Get the timestamp of the last update in the database
     ptime getLastUpdate(void);
-
+private:
     bool updateCounters(long cid, std::map<std::string, long> data);
     bool updateChangeset(const RawChangeset &stats);
 
@@ -277,6 +281,9 @@ private:
         query += " WHERE id=" + std::to_string(cid);
         std::cout << "QUERY: " << query << std::endl;
         pqxx::result result = worker->exec(query);
+
+        // FIXME: this should return a real value
+        return 0;
     }
 
     long updateData(long uid, const std::string &column, long value) {
@@ -284,6 +291,9 @@ private:
         query += std::to_string(value) + " WHERE id=" + std::to_string(uid);
         std::cout << "QUERY: " << query << std::endl;
         pqxx::result result = worker->exec(query);
+
+        // FIXME: this should return a real value
+        return 0;
     }
 
     pqxx::connection *db;

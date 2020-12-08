@@ -230,9 +230,16 @@ QueryOSMStats::getLastUpdate(void)
 {
     std::string query = "SELECT MAX(updated_at) FROM raw_changesets;";
     std::cout << "QUERY: " << query << std::endl;
+    worker = new pqxx::work(*db);
     pqxx::result result = worker->exec(query);
+    worker->commit();
 
-    // return time_from_string(result[0][0]);
+    ptime last;
+    if (result[0][0].size() > 0) {
+        last = time_from_string(result[0][0].c_str());
+        return last;
+    }
+    return not_a_date_time;
 }
 
 bool
