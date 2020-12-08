@@ -201,7 +201,10 @@ AX_BOOST_DATE_TIME
 AX_BOOST_FILESYSTEM
 AX_BOOST_IOSTREAMS
 AX_BOOST_THREAD
-AX_BOOST_REGEX
+dnl AX_BOOST_REGEX
+dnl FOr some reason this test works on Fedora, and fails on Debian. For now
+dnl hardcode it.
+LIBS+="-lboost_regex"
 
 dnl LIBS += "${BOOST_DATE_TIME} ${BOOST_SYSTEM} ${BOOST_FILESYSTEM} ${BOOST_LOG_LIB}"
 AC_LANG_POP(C++)
