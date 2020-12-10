@@ -1,0 +1,5 @@
+uses: rob.savoye/doxygen-action@v1
+with:
+    working-directory: 'docs/'
+    doxyfile-path: 'docs/'
+
