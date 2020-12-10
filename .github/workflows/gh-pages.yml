@@ -1,3 +1,10 @@
+name: default
+
+on:
+   push:
+      branches:
+      - '*'
+
 uses: rob.savoye/doxygen-action@v1
 with:
     working-directory: '.'
