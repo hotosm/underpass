@@ -1,5 +1,5 @@
 uses: rob.savoye/doxygen-action@v1
 with:
-    working-directory: 'docs/'
+    working-directory: '.'
     doxyfile-path: 'docs/'
 
