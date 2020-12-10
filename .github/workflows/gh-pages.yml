@@ -1,6 +1,7 @@
 name: default
 
-on: push:
+on:
+   push:
 
 jobs:
    build:
