@@ -3,6 +3,7 @@ on:
    push:
 jobs:
    build:
+      runs-on: fedora-latest
       steps:
 	- uses: actions/doxygen-action@v1
 	- run: ./configure
