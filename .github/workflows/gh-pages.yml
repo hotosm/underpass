@@ -4,7 +4,7 @@ on:
 jobs:
    build:
       steps:
-	uses: rob.savoye/doxygen-action@v1
+	uses: robsavoye/doxygen-action@v1
 	run: ./configure
 with:
     working-directory: '.'
