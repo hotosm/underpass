@@ -84,7 +84,7 @@ swig: libhotosm.la $(SWIG_PYTHON) $(SWIG_JAVASCRIPT) # $(SWIG_JAVA)
 AM_JAVACFLAGS=-sourcepath swig/
 JAVAROOT = swig
 
-SUFFIXES = .py .cc .java .js
+SUFFIXES = .py .cc .java .js .hh
 # Generate the wrapper for swig, then build the module
 .cc.py:
 	$(SWIG) $(SWIG_FLAGS) -python -o swig/$*_wrap_py.cc $(top_srcdir)/$*.i
@@ -103,6 +103,67 @@ apidoc:
 	$(MAKE) -C doc $@
 endif
 
-# All of these are generated files
-CLEANFILES = swig/* swig/*/*.class
+if ENABLE_PCH
+# yes, a little consistency on the suffix would be nice.
+.hh.gch:
+	$(CXX) $(PCHFLAGS) $(CPPFLAGS) $(CXXFLAGS) $< -o all.h.gch/`basename $<`
+.hpp.gch:
+	$(CXX) $(PCHFLAGS) $(CPPFLAGS) $(CXXFLAGS) $< -o all.h.gch/`basename $<`
+.hxx.gch:
+	$(CXX) $(PCHFLAGS) $(CPPFLAGS) $(CXXFLAGS) $< -o all.h.gch/`basename $<`
 
+PCHFLAGS = \
+        -I$(top_builddir) \
+        -I$(top_srcdir) \
+        -I$(top_srcdir)/osmstats \
+        -I$(top_srcdir)/data \
+        -I$(top_srcdir)/hottm
+
+PCHHEADERS = \
+        $(top_srcdir)/hotosm.hh \
+        $(top_srcdir)/timer.hh \
+        $(top_srcdir)/hottm.hh \
+        $(top_srcdir)/osmstats/osmstats.hh \
+        $(top_srcdir)/osmstats/replication.hh \
+        $(top_srcdir)/osmstats/osmchange.hh \
+        $(top_srcdir)/osmstats/changeset.hh \
+        $(top_srcdir)/data/import.hh \
+        $(top_srcdir)/data/validate.hh \
+        $(top_srcdir)/data/pgsnapshot.hh \
+        $(top_srcdir)/data/osmobjects.hh \
+        $(top_srcdir)/data/geoutil.hh \
+        $(top_srcdir)/data/threads.hh \
+        $(top_srcdir)/hottm/tmusers.hh \
+        $(top_srcdir)/hottm/tmteams.hh \
+        $(top_srcdir)/hottm/tmprojects.hh
+
+PCHOTHER = \
+	array \
+	iostream \
+	vector \
+	string \
+	pqxx/pqxx \
+	libxml++/libxml++.h \
+	boost/beast.hpp
+
+precomp:=$(subst .hh,.gch,$(PCHHEADERS))
+
+# foo: $(precomp) pqxx.gch
+foo: pqxx/pqxx.hxx.gch
+
+all-includes.h: $(PCHHEADERS)
+	for i in  $(PCHHEADERS); do \
+	    file=`basename $$i`; \
+	    echo "#include \"$$file\"" >> all-includes.h ; \
+	done;
+
+all-includes.h.gch: all-includes.h
+	$(CXX) $(DEFAULT_INCLUDES) $(CPPFLAGS) $(CXXFLAGS) $(PCHHEADERS) \
+	/usr/include/boost/*.hpp \
+	-o all-includes.h.gch
+
+# $(PCHHEADERS): all-includes.h.gch
+endif
+
+# All of these are generated files
+CLEANFILES = swig/* swig/*/*.class all-includes.h.gch all-includes.h

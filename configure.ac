@@ -137,6 +137,7 @@ CPPFLAGS+=" $(pkg-config --cflags libpqxx)"
 CPPFLAGS+=" $(pkg-config --cflags glibmm-2.4)"
 CPPFLAGS+=" $(pkg-config --cflags gumbo)"
 CPPFLAGS+=" $(pkg-config --cflags gdal)"
+CPPFLAGS+=" $(pkg-config --cflags ompi)"
 CPPFLAGS+=" $(pkg-config --cflags webkit2gtk-4.0)"
 
 dnl This is a C++ project only
@@ -169,6 +170,7 @@ LIBS+=" $(pkg-config --libs openssl)"
 LIBS+=" $(pkg-config --libs gumbo)"
 LIBS+=" $(pkg-config --libs zlib)"
 LIBS+=" $(pkg-config --libs gdal)"
+LIBS+=" $(pkg-config --libs ompi)"
 LIBS+=" $(pkg-config --libs glibmm-2.4)"
 if test x"${build_libxml}" = x"yes"; then
 dnl Debian Buster and Ubuntu Focal ship 2.6, Fedora ships 3,.0
@@ -211,6 +213,14 @@ AC_LANG_POP(C++)
 
 AC_PATH_PROG(DOXYGEN, doxygen)
 AM_CONDITIONAL(ENABLE_DOXYGEN, [ test x"$DOXYGEN" != x ])
+
+AC_ARG_ENABLE([pch],
+  AS_HELP_STRING([--enable-pch],[Enable precompiled header support]), [], [enable_pch=no])
+
+AM_CONDITIONAL([ENABLE_PCH], [test x"$enable_pch" != x"no"])
+
+PCH_FLAGS="-include all-includes.h -Winvalid-pch"
+AC_SUBST(PCH_FLAGS)
 
 AC_CONFIG_FILES([
 Makefile
