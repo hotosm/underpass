@@ -103,11 +103,11 @@ extern std::shared_ptr<replication::StateFile> threadStateFile(ssl::stream<tcp::
 
 /// Updates the raw_hashtags, raw_users, and raw_changesets_countries tables
 /// from a changeset file
-extern void threadOsmChange(const std::string &database, ptime &timestamp);
+extern void threadOsmChange(const std::string &file);
 
 /// This updates several fields in the raw_changesets table, which are part of
 /// the changeset file, and don't need to be calculated.
-extern void threadChangeSet(const std::string &database, ptime &timestamp);
+extern void threadChangeSet(const std::string &file);
 
 /// This updates the calculated fields in the raw_changesets table, based on
 /// the data in the OSM stats database. These should be calculated by the

@@ -52,10 +52,14 @@
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/iostreams/device/array.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
 using namespace boost::gregorian;
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 namespace beast = boost::beast;     // from <boost/beast.hpp>
 namespace net = boost::asio;        // from <boost/asio.hpp>
 namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
@@ -80,6 +84,7 @@ startMonitor(const std::string &url)
     replication::Replication server;
     bool mainloop = true;
     std::string path = url;
+    std::string base = url.substr(0, url.size() - 7);
     while (mainloop) {
         // Look for the statefile first
         //std::shared_ptr<replication::StateFile> state = threadStateFile(planet->stream, path);
@@ -110,12 +115,14 @@ startMonitor(const std::string &url)
                 planet.reset(new replication::Planet);
             }
         }
-        if (!subloop) {
-            if (url.find("changeset") != std::string::npos) {
-                //planet->downloadFile(path + ".osm.gz");
-            } else {
-                //planet->downloadFile(path + ".osc.gz");
-            }
+        if (path.find("minute") != std::string::npos) {
+            std::string file = path + ".osc.gz";
+            // std::thread osm(threads::threadOsmChange, std::ref(file));
+            threadOsmChange(file);
+        } else {
+            std::string file = path + ".osm.gz";
+            // std::thread osm(threads::threadChangeSet, std::ref(file));
+            // threadChangeSet(file);
         }
 
         std::vector<std::string> result;
@@ -129,7 +136,7 @@ startMonitor(const std::string &url)
         int index = std::stoi(result[7]);
 
         // Increment the index number
-        path = url.substr(0, url.size() - 7);
+        path = base;
         boost::format fmt("%03d");
         if (index == 999) {
             fmt % (minor + 1);
@@ -234,29 +241,55 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
     timer.endTimer("directory ");
 }
 
+// This thread get started for every osmChange file
 void
-threadOsmChange(const std::string &database, ptime &timestamp)
+threadOsmChange(const std::string &file)
 {
-    ptime now = boost::posix_time::second_clock::local_time();
-    osmstats::QueryOSMStats ostats;
-    replication::Replication repl;
+    // osmstats::QueryOSMStats ostats;
     replication::Planet planet;
-#if 0
-    auto data = std::make_shared<std::vector<unsigned char>>();
-    std::string dir = planet.findData(replication::changeset, timestamp);
-    data = replicator.downloadFiles("https://planet.openstreetmap.org/" + dir + ".state.txt", true);
-    if (data->empty()) {
-        std::cout << "OsmChange File not found" << std::endl;
-        exit(-1);
-    }
-    std::string tmp(reinterpret_cast<const char *>(data->data()));
-    changeset::ChangeSetFile change;
-    change.readXML();
-    state.dump();
-    if (state.timestamp >= timestamp) {
-        data = replicator.downloadFiles("https://planet.openstreetmap.org/" + dir + ".state.txt", true);
-    }
+    // changeset::ChangeSetFile change;
+    osmchange::OsmChangeFile changeset;
+
+    std::cout << "Downloading osmChange: " << file << std::endl;
+    auto data = planet.downloadFile(file);
+    if (data->size() == 0) {
+        std::cout << "osmChange file not found: " << file << std::endl;
+        return;
+    } else {
+        // XML parsers expect every line to have a newline, including the end of file
+        data->push_back('\n');
+#ifdef WRITE_DATA
+        std::ofstream myfile;
+        std::vector<std::string> result;
+        boost::split(result, file, boost::is_any_of("/"));
+        boost::filesystem::create_directory(result[4]);
+        boost::filesystem::create_directory(result[4] + "/" + result[5]);
+        boost::filesystem::create_directory(result[4] + "/" + result[5] + "/" + result[6]);
+        myfile.open(result[4] + "/" + result[5] + "/" + result[6] + "/" + result[7]);
+        myfile << data->data();
+        myfile.close();
 #endif
+        try {
+            boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
+            inbuf.push(boost::iostreams::gzip_decompressor());
+            boost::iostreams::array_source arrs{reinterpret_cast<char const*>(data->data()), data->size()};
+            inbuf.push(arrs);
+            std::istream instream(&inbuf);
+            try {
+                changeset.readXML(instream);
+            } catch (std::exception& e) {
+                std::cerr << "ERROR: Couldn't parse: " << file << std::endl;
+                std::cerr << e.what() << std::endl;
+                // return false;
+            }
+            // change.readXML(instream);
+        } catch (std::exception& e) {
+            std::cerr << "ERROR: " << file << " is corrupted!" << std::endl;
+            std::cerr << e.what() << std::endl;
+            // return false;
+        }
+    }
+    changeset.dump();
 }
 
 // This updates several fields in the raw_changesets table, which are part of
@@ -282,7 +315,7 @@ std::shared_ptr<replication::StateFile>
 threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
 {
     std::string server = "planet.openstreetmap.org";
-    // See if the data exists in the databse already
+    // See if the data exists in the database already
     // std::shared_ptr<replication::StateFile> exists = planet.getState(subpath);    
 
     // This buffer is used for reading and must be persistant
