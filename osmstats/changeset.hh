@@ -71,6 +71,11 @@ namespace osmstats {
 class RawCountry;
 };
 
+// Forward declaration
+namespace geoutil {
+class GeoUtil;
+};
+
 /// \namespace changeset
 namespace changeset {
 
