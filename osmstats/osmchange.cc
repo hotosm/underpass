@@ -64,6 +64,7 @@ using namespace boost::gregorian;
 #include <boost/progress.hpp>
 
 #include "hotosm.hh"
+#include "timer.hh"
 #include "osmstats/osmchange.hh"
 // #include "osmstats/geoutil.hh"
 #include "data/osmobjects.hh"
@@ -129,13 +130,27 @@ OsmChangeFile::readChanges(const std::string &file)
 bool
 OsmChangeFile::readXML(std::istream &xml)
 {
-    // std::cout << xml.rdbuf();
+    // std::cout << "OsmChangeFile::readXML(): " << xml.rdbuf();
+    std::ofstream myfile;
+#if 1 // def USE_TMPFILE
+    myfile.open ("tmp.xml");
+    myfile << xml.rdbuf();
+    myfile << std::endl;
+    myfile.close();
+#endif
 #ifdef LIBXML
     // libxml calls on_element_start for each node, using a SAX parser,
     // and works well for large files.
+    Timer timer;
     try {
         set_substitute_entities(true);
+        timer.startTimer();
+#if 1 //def USE_TMPFILE
+        parse_file("tmp.xml");
+#else
         parse_stream(xml);
+#endif
+        timer.endTimer("libxml++");
     }
     catch(const xmlpp::exception& ex) {
         std::cerr << "libxml++ exception: " << ex.what() << std::endl;
@@ -147,14 +162,22 @@ OsmChangeFile::readXML(std::istream &xml)
     // hourly or minutely changes are small, so this is better for that
     // case.
     boost::property_tree::ptree pt;
+    Timer timer;
+    timer.startTimer();
+#if 1 //def USE_TMPFILE
+    boost::property_tree::read_xml("tmp.xml", pt);
+#else
     boost::property_tree::read_xml(xml, pt);
+#endif
+
+    timer.endTimer("parse_tree");
 
     if (pt.empty()) {
         std::cerr << "ERROR: XML data is empty!" << std::endl;
-        return false;
+        // return false;
     }
 
-    boost::progress_display show_progress( 7000 );
+//    boost::progress_display show_progress( 7000 );
 
     for (auto value: pt.get_child("osmChange")) {
         OsmChange change;
@@ -163,45 +186,51 @@ OsmChangeFile::readXML(std::istream &xml)
             change.action = modify;
         } else if (value.first == "create") {
             change.action = create;
-        } else if (value.first == "remove") { // delete is a rerserved word
+        } else if (value.first == "remove") { // delete is a reserved word
             change.action = remove;
         }
         for (auto child: value.second) {
             // Process the tags. These don't exist for every element.
             // Both nodes and ways have tags
-           for (auto tag: value.second) {
+            std::cout << "CHILD: " << child.first << std::endl;
+            for (auto tag: value.second) {
                 if (tag.first == "tag") {
                     std::string key = tag.second.get("<xmlattr>.k", "");
                     std::string val = tag.second.get("<xmlattr>.v", "");
                     // static_cast<OsmNode *>(object)->addTag(key, val);
                 } else if (tag.first == "nd") {
                     long ref = tag.second.get("<xmlattr>.ref", 0);
-                    change->addRef(ref);
+                    change.addRef(ref);
                 }
            }
            // Only nodes have coordinates
            if (child.first == "node") {
                double lat = value.second.get("<xmlattr>.lat", 0.0);
                double lon = value.second.get("<xmlattr>.lon", 0.0);
-               // object = new OsmNode();
-               // static_cast<OsmNode *>(object)->addTag(key, val);
+               auto object = std::make_shared<OsmNode>();
+               object->setLatitude(lat);
+               object->setLongitude(lon);
+               object->setAction(change.action);
+               change.nodes.push_back(object);
            } else if (child.first == "way") {
-               object = new OsmWay();
+               auto object = std::make_shared<OsmWay>();
+               change.ways.push_back(object);
            } else if (child.first == "relation") {
-               object = new OsmRelation();
+               auto object = std::make_shared<OsmRelation>();
+               change.relations.push_back(object);
            }
            
            // Process the attributes, which do exist in every element
            // change.id = value.second.get("<xmlattr>.id", 0);
-           //change.version = value.second.get("<xmlattr>.version", 0);
-           //change.timestamp = value.second.get("<xmlattr>.timestamp",
+           // change.version = value.second.get("<xmlattr>.version", 0);
+           // change.timestamp = value.second.get("<xmlattr>.timestamp",
            //                   boost::posix_time::second_clock::local_time());
-        //change.user = value.second.get("<xmlattr>.user", "");
-           //change.uid = value.second.get("<xmlattr>.uid", 0);
-           //changes.push_back(change);
+           // change.user = value.second.get("<xmlattr>.user", "");
+           // change.uid = value.second.get("<xmlattr>.uid", 0);
+           // changes.push_back(change);
            change.dump();
         }
-        ++show_progress;
+//        ++show_progress;
     }
 #endif
     // FIXME: return a real value
@@ -240,6 +269,7 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
         return;
     } else if (name == "node") {
         changes.back()->newNode();
+        // changes.back()->setAction(changes.back()->action);
     } else if (name == "tag") {
         // static_cast<std::shared_ptr<OsmWay>>(object)->tags.clear();
         // A tag element has only has 1 attribute, and numbers are stored as
@@ -278,7 +308,7 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
                 change->addTag(cache, attr_pair.value);
                 cache.clear();
             }
-        } else if (attr_pair.name == "timestamp") {
+         } else if (attr_pair.name == "timestamp") {
             // Clean up the string to something boost can parse
             std::string tmp = attr_pair.value;
             tmp[10] = ' ';      // Drop the 'T' in the middle
