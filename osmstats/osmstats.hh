@@ -189,6 +189,9 @@ class QueryOSMStats : public apidb::QueryStats
 {
   public:
     QueryOSMStats(void);
+    /// close the database connection
+    ~QueryOSMStats(void) { db->close(); };
+
     bool readGeoBoundaries(const std::string &rawfile) {
         //geou.readFile(rawfile, true);
         //countries = geou.exportCountries();
