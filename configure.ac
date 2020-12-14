@@ -217,6 +217,12 @@ AM_CONDITIONAL(ENABLE_DOXYGEN, [ test x"$DOXYGEN" != x ])
 AC_ARG_ENABLE([pch],
   AS_HELP_STRING([--enable-pch],[Enable precompiled header support]), [], [enable_pch=no])
 
+AC_ARG_ENABLE([disk],
+  AS_HELP_STRING([--enable-disk],[Enable storing downloaded filea to disk]), [], [enable_disk=yes])
+if test x"${enable_disk}" = x"yes"; then
+  AC_DEFINE(USE_DISK, [1], [Store downloaded files to disk])
+fi
+
 AM_CONDITIONAL([ENABLE_PCH], [test x"$enable_pch" != x"no"])
 
 PCH_FLAGS="-include all-includes.h -Winvalid-pch"
