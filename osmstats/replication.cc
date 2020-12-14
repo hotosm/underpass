@@ -249,10 +249,11 @@ Planet::downloadFile(const std::string &file)
 {
     boost::system::error_code ec;
     auto data = std::make_shared<std::vector<unsigned char>>();
-    std::cout << "Downloading " << file << std::endl;
+    // std::cout << "Downloading: " << file << std::endl;
     // Set up an HTTP GET request message
     http::request<http::string_body> req{http::verb::get, file, version };
 
+    req.keep_alive();
     req.set(http::field::host, server);
     req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
@@ -279,6 +280,9 @@ Planet::downloadFile(const std::string &file)
         }
     }
 
+    for (auto body = std::begin(parser.get().body()); body != std::end(parser.get().body()); ++body) {
+        data->push_back((unsigned char)*body);
+    }
     return data;
 }
 
