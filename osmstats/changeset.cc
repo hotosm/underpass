@@ -284,7 +284,6 @@ ChangeSetFile::readXML(std::istream &xml)
         std::cerr << "ERROR: XML data is empty!" << std::endl;
         return false;
     }
-
     
     for (auto value: pt.get_child("osm")) {
         if (value.first == "changeset") {
