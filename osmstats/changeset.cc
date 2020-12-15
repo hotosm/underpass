@@ -74,6 +74,7 @@ using namespace boost::gregorian;
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
+#include<boost/tokenizer.hpp>
 
 #include "hotosm.hh"
 #include "osmstats/osmstats.hh"
@@ -383,23 +384,16 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
                 comhit = false;
                 std::string tmp = attr_pair.value;
                 boost::algorithm::replace_all(tmp, "\'", "&quot;");
-                changes.back().addComment(attr_pair.value);
-                std::size_t pos = attr_pair.value.find('#', 0);
-                if (pos != std::string::npos) {
-                    std::string tmp = attr_pair.value;
-                    boost::algorithm::replace_all(tmp, "\'", "&quot;");
-                    char *token = std::strtok((char *)attr_pair.value.c_str(), "#;");
-                    while (token != NULL) {
-                        token = std::strtok(NULL, ";/]: [");
-                        if (token) {
-                            if (token[0] == '#') {
-                                changes.back().addHashtags(token);
-                            }
-                        }
+                changes.back().addComment(tmp);
+                std::vector<std::string> result;
+                boost::split(result, tmp, boost::is_any_of(" "));
+                for (auto it=std::begin(result); it != std::end(result); ++it){
+                    std::cout << "TOKEN: " << *it << std::endl;
+                    if (it[0] == "#") {
+                        changes.back().addHashtags(it->substr(1));
                     }
                 }
             }
-            // std::wcout << "\tPAIR: " << attr_pair.name << " = " << attr_pair.value << std::endl;
             if (cbyhit && attr_pair.name == "v") {
                 cbyhit = false;
                 changes.back().addEditor(attr_pair.value);
