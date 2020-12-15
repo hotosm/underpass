@@ -388,7 +388,6 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
                 std::vector<std::string> result;
                 boost::split(result, tmp, boost::is_any_of(" "));
                 for (auto it=std::begin(result); it != std::end(result); ++it){
-                    std::cout << "TOKEN: " << *it << std::endl;
                     if (it[0] == "#") {
                         changes.back().addHashtags(it->substr(1));
                     }
