@@ -360,8 +360,6 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
                 comhit = true;
             } else if (attr_pair.name == "k" && attr_pair.value == "created_by") {
                 cbyhit = true;
-            } else {
-                continue;                
             }
 
             if (hashit && attr_pair.name == "v") {
@@ -383,39 +381,29 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
             // field instead.
             if (comhit && attr_pair.name == "v") {
                 comhit = false;
+                std::string tmp = attr_pair.value;
+                boost::algorithm::replace_all(tmp, "\'", "&quot;");
                 changes.back().addComment(attr_pair.value);
                 std::size_t pos = attr_pair.value.find('#', 0);
                 if (pos != std::string::npos) {
+                    std::string tmp = attr_pair.value;
+                    boost::algorithm::replace_all(tmp, "\'", "&quot;");
                     char *token = std::strtok((char *)attr_pair.value.c_str(), "#;");
                     while (token != NULL) {
-                        token = std::strtok(NULL, "#;");
+                        token = std::strtok(NULL, ";/]: [");
                         if (token) {
-                            changes.back().addHashtags(token);
+                            if (token[0] == '#') {
+                                changes.back().addHashtags(token);
+                            }
                         }
                     }
                 }
             }
+            // std::wcout << "\tPAIR: " << attr_pair.name << " = " << attr_pair.value << std::endl;
             if (cbyhit && attr_pair.name == "v") {
                 cbyhit = false;
-                changes.back().addEditor(attr_pair.value );
+                changes.back().addEditor(attr_pair.value);
             }
-
-            // Get the country the change was made in
-            // geoutil::GeoCountry geo = boundaries->inCountry(max_lat, max_lon, min_lat, min_lon);
-            // changes.back().countryid = geo.getID();
-
-            // // try {
-            //     std::cout << "  Attribute name =" <<  attr_pair.name;
-            // }
-            // catch(const Glib::ConvertError& ex) {
-            //     std::cerr << "ChangeSetFile::on_start_element(): Exception caught while converting name for std::cout: " << ex.what() << std::endl;
-            // }
-            // try {
-            //     std::cout << "    , value = " <<  attr_pair.value << std::endl;
-            // }
-            // catch(const Glib::ConvertError& ex) {
-            //     std::cerr << "ChangeSetFile::on_start_element(): Exception caught while converting value for std::cout: " << ex.what() << std::endl;
-            // }
         }
     }
 }
