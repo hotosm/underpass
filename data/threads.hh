@@ -40,6 +40,7 @@
 #include <vector>
 #include <iostream>
 #include <pqxx/pqxx>
+#include <future>
 
 #include <thread>
 #include <mutex>
@@ -107,7 +108,8 @@ extern void threadOsmChange(const std::string &file);
 
 /// This updates several fields in the raw_changesets table, which are part of
 /// the changeset file, and don't need to be calculated.
-extern void threadChangeSet(const std::string &file);
+extern bool threadChangeSet(const std::string &file);
+// extern bool threadChangeSet(const std::string &file, std::promise<bool> && result);
 
 /// This updates the calculated fields in the raw_changesets table, based on
 /// the data in the OSM stats database. These should be calculated by the

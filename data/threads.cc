@@ -41,6 +41,9 @@
 #include <algorithm>
 #include <iterator>
 #include <thread>
+#include <fstream>
+#include <future>
+#include <unistd.h>
 
 #include <boost/format.hpp>
 #include <boost/asio.hpp>
@@ -89,21 +92,34 @@ startMonitor(const std::string &url)
         // Look for the statefile first
         //std::shared_ptr<replication::StateFile> state = threadStateFile(planet->stream, path);
         bool subloop = true;
+#if 0
         while (subloop) {
             std::shared_ptr<replication::StateFile> exists = planet->getState(path);
             if (!exists->path.empty()) {
                 std::cout << "Already stored: " << path << std::endl;
                 subloop = true;
                 break;
-            }
-            std::cout << "Downloading StateFile: " << path << std::endl;
-            auto state = threadStateFile(planet->stream, path + ".state.txt");
-            if (state->timestamp != boost::posix_time::not_a_date_time && (state->sequence != 0 && state->path.size() != 0)) {
-                state->dump();
-                planet->writeState(*state);
-                subloop = false;
             } else {
-                std::cout << "Waiting for the next StateFile: " << path << std::endl;
+                std::cout << "Downloading StateFile: " << path << std::endl;
+                auto state = threadStateFile(planet->stream, path + ".state.txt");
+                if (state->timestamp != boost::posix_time::not_a_date_time && (state->sequence != 0 && state->path.size() != 0)) {
+                    state->dump();
+                    planet->writeState(*state);
+                    subloop = false;
+                }
+            }
+        }
+#endif
+        if (path.find("changeset") != std::string::npos) {
+            std::string file = path + ".osm.gz";
+            // std::promise<bool> exists;
+            // std::thread osm(&threads::threadChangeSet, std::ref(file), std::move(exists));
+            // osm.join();
+            // auto found = exists.get_future();
+            Timer timer;
+            timer.startTimer();
+            bool found = threadChangeSet(file);
+            if (!found) {
                 planet->disconnectServer();
                 if (url.find("minute") != std::string::npos) {
                     std::this_thread::sleep_for(std::chrono::minutes{1});
@@ -113,17 +129,27 @@ startMonitor(const std::string &url)
                     std::this_thread::sleep_for(std::chrono::hours{24});
                 }
                 planet.reset(new replication::Planet);
+            } else {
+                std::cout << "Processed: " << path << std::endl;
             }
-        }
-        if (path.find("minute") != std::string::npos) {
+            timer.endTimer("changeset");
+        // planet->db->deactivate();
+        } else {
             std::string file = path + ".osc.gz";
             // std::thread osm(threads::threadOsmChange, std::ref(file));
-            threadOsmChange(file);
-        } else {
-            std::string file = path + ".osm.gz";
-            // std::thread osm(threads::threadChangeSet, std::ref(file));
-            // threadChangeSet(file);
+            // osm.detach();
+            //threadOsmChange(file);
         }
+        //         planet->disconnectServer();
+        //         if (url.find("minute") != std::string::npos) {
+        //             std::this_thread::sleep_for(std::chrono::minutes{1});
+        //         } else if (url.find("hour") != std::string::npos) {
+        //             std::this_thread::sleep_for(std::chrono::hours{1});
+        //         } else if (url.find("day") != std::string::npos) {
+        //             std::this_thread::sleep_for(std::chrono::hours{24});
+        //         }
+        //         planet.reset(new replication::Planet);
+        //     }
 
         std::vector<std::string> result;
         // The path is always something like this:
@@ -131,25 +157,45 @@ startMonitor(const std::string &url)
         // so it's safe to just grab the directory entries we need. Every directory
         /// has 1000 files in it, so the minor needs to get incremented.
         boost::split(result, path, boost::is_any_of("/"));
-        int major = std::stoi(result[5]);
-        int minor = std::stoi(result[6]);
-        int index = std::stoi(result[7]);
+        int major = 0;
+        int minor = 0;
+        int index = 0;
+        try {
+            major = std::stoi(result[5]);
+            minor = std::stoi(result[6]);
+            index = std::stoi(result[7]);
+        } catch (std::exception& e) {
+            std::cerr << "ERROR: Couldn't parse: " << path << std::endl;
+            std::cerr << e.what() << std::endl;
+            continue;
+        }
 
         // Increment the index number
         path = base;
         boost::format fmt("%03d");
-        if (index == 999) {
-            fmt % (minor + 1);
+        if (minor == 999) {
+            major++;
+            fmt % (major);
             path += fmt.str() + "/000";
+            index = 0;
+        }
+        if (index == 999) {
+            minor++;
+            fmt % (minor);
+            path += fmt.str();
+            path += "/000";
         } else {
-            path += result[6];
+            fmt % (minor);
+            path += fmt.str();
             fmt % (index + 1);
             path += "/" + fmt.str();
         }
         if (minor == 999) {
-            fmt % (major + 1);
+            major++;
+            fmt % (major);
             path += fmt.str() + "/000";
         }
+        // std::cerr << "PATH: " << path << ": /" << major << "/ " << minor << "/ " << index << std::endl;
         //planet->endTimer("change file");
     }
 }
@@ -245,33 +291,130 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
 void
 threadOsmChange(const std::string &file)
 {
-    // osmstats::QueryOSMStats ostats;
+    osmstats::QueryOSMStats ostats;
     replication::Planet planet;
     // changeset::ChangeSetFile change;
-    osmchange::OsmChangeFile changeset;
+    osmchange::OsmChangeFile osmchanges;
 
-    std::cout << "Downloading osmChange: " << file << std::endl;
-    auto data = planet.downloadFile(file);
+    // boost::filesystem::path dir(file);
+    std::string dir = file.substr(file.find("minute"));
+    auto data = std::make_shared<std::vector<unsigned char>>();
+    // If the file is stored on disk, read it in instead of downloading
+    if (boost::filesystem::exists(dir)) {
+        std::cout << "Reading osmChange: " << file << std::endl;
+        std::ifstream osc(dir, std::ifstream::binary);
+        data->reserve(boost::filesystem::file_size(dir));
+        data->insert(data->begin(), std::istream_iterator<unsigned char>(osc),
+                    std::istream_iterator<unsigned char>());
+        osc.close();
+    } else {
+        std::cout << "Downloading osmChange: " << file << std::endl;
+        data = planet.downloadFile(file);
+    }
     if (data->size() == 0) {
         std::cout << "osmChange file not found: " << file << std::endl;
         return;
     } else {
         // XML parsers expect every line to have a newline, including the end of file
         data->push_back('\n');
-#ifdef WRITE_DATA
-        std::ofstream myfile;
-        std::vector<std::string> result;
-        boost::split(result, file, boost::is_any_of("/"));
-        boost::filesystem::create_directory(result[4]);
-        boost::filesystem::create_directory(result[4] + "/" + result[5]);
-        boost::filesystem::create_directory(result[4] + "/" + result[5] + "/" + result[6]);
-        myfile.open(result[4] + "/" + result[5] + "/" + result[6] + "/" + result[7]);
-        myfile << data->data();
-        myfile.close();
+#ifdef USE_DISK
+        if (!boost::filesystem::exists(dir)) {
+            std::ofstream myfile;
+            std::vector<std::string> result;
+            boost::split(result, file, boost::is_any_of("/"));
+            boost::filesystem::create_directory(result[4]);
+            boost::filesystem::create_directory(result[4] + "/" + result[5]);
+            boost::filesystem::create_directory(result[4] + "/" + result[5] + "/" + result[6]);
+            myfile.open(dir, std::ios::binary);
+            myfile.write(reinterpret_cast<char *>(data->data()), data->size());
+            myfile.close();
+        }
 #endif
         try {
             boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
             inbuf.push(boost::iostreams::gzip_decompressor());
+            boost::iostreams::array_source arrs{reinterpret_cast<char const*>(data->data()), data->size()};
+            inbuf.push(arrs);
+            std::istream instream(&inbuf);
+            try {
+                osmchanges.readXML(instream);
+            } catch (std::exception& e) {
+                std::cerr << "ERROR: Couldn't parse: " << file << std::endl;
+                std::cerr << e.what() << std::endl;
+                // return false;
+            }
+            // change.readXML(instream);
+        } catch (std::exception& e) {
+            std::cerr << "ERROR: " << file << " is corrupted!" << std::endl;
+            std::cerr << e.what() << std::endl;
+            // return false;
+        }
+    }
+
+    // Apply the changes to the database
+    for (auto it = std::begin(osmchanges.changes); it != std::end(osmchanges.changes); ++it) {
+        ostats.applyChange(*(*it));
+    }
+    ostats.disconnect();
+    osmchanges.dump();
+}
+
+// This updates several fields in the raw_changesets table, which are part of
+// the changeset file, and don't need to be calculated.
+//void threadChangeSet(const std::string &file, std::promise<bool> &&result)
+bool
+threadChangeSet(const std::string &file)
+{
+    //osmstats::QueryOSMStats ostats;
+    replication::Planet planet;
+    changeset::ChangeSetFile changeset;
+
+    auto data = std::make_shared<std::vector<unsigned char>>();
+    std::string dir = file.substr(file.find("changesets"));
+    if (boost::filesystem::exists(dir)) {
+        std::cout << "Reading ChangeSet: " << dir << std::endl;
+        // Since we want to read in the entire file so it can be
+        // decompressed, blow off C++ streaming and just load the
+        // entire thing.
+        int size = boost::filesystem::file_size(dir);
+        data->reserve(size);
+        data->resize(size);
+        int fd = open(dir.c_str(), O_RDONLY);
+        char *buf = new char[size];
+        //memset(buf, 0, size);
+        read(fd, buf, size);
+        // FIXME: it would be nice to avoid this copy
+        std::copy(buf, buf+size, data->begin());
+        close(fd);
+    } else {
+        std::cout << "Downloading ChangeSet: " << file << std::endl;
+        data = planet.downloadFile(file);
+    }
+    if (data->size() == 0) {
+        std::cout << "ChangeSet file not found: " << file << std::endl;
+        //result.set_value(false);
+        return false;
+    } else {
+        //result.set_value(true);
+        // XML parsers expect every line to have a newline, including the end of file
+#ifdef USE_CACHE
+        if (!boost::filesystem::exists(dir)) {
+            std::ofstream myfile;
+            std::vector<std::string> result;
+            boost::split(result, file, boost::is_any_of("/"));
+            boost::filesystem::create_directory(result[4]);
+            boost::filesystem::create_directory(result[4] + "/" + result[5]);
+            boost::filesystem::create_directory(result[4] + "/" + result[5] + "/" + result[6]);
+            myfile.open(result[4] + "/" + result[5] + "/" + result[6] + "/" + result[7], std::ios::binary);
+            myfile.write(reinterpret_cast<char *>(data->data()), data->size()-1);
+            myfile.close();
+        }
+#endif
+        //data->push_back('\n');
+        try {
+            boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
+            inbuf.push(boost::iostreams::gzip_decompressor());
+            // data->push_back('\n');
             boost::iostreams::array_source arrs{reinterpret_cast<char const*>(data->data()), data->size()};
             inbuf.push(arrs);
             std::istream instream(&inbuf);
@@ -289,16 +432,13 @@ threadOsmChange(const std::string &file)
             // return false;
         }
     }
-    changeset.dump();
-}
 
-// This updates several fields in the raw_changesets table, which are part of
-// the changeset file, and don't need to be calculated.
-void
-threadChangeSet(const std::string &database, ptime &timestamp)
-{
-    osmstats::QueryOSMStats ostats;
-    replication::Replication repl;
+    // // Apply the changes to the database
+    for (auto it = std::begin(changeset.changes); it != std::end(changeset.changes); ++it) {
+        //ostats.applyChange(*it);
+    }
+    changeset.dump();
+    return true;
 }
 
 // This updates the calculated fields in the raw_changesets table, based on
