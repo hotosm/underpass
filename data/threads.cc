@@ -130,7 +130,7 @@ startMonitor(const std::string &url)
                 }
                 planet.reset(new replication::Planet);
             } else {
-                std::cout << "Processed: " << path << std::endl;
+                std::cout << "Processed ChangeSet: " << path << std::endl;
             }
             timer.endTimer("changeset");
         // planet->db->deactivate();
@@ -138,19 +138,21 @@ startMonitor(const std::string &url)
             std::string file = path + ".osc.gz";
             // std::thread osm(threads::threadOsmChange, std::ref(file));
             // osm.detach();
-            //threadOsmChange(file);
+            bool found = threadOsmChange(file);
+            if (!found) {
+                planet->disconnectServer();
+                if (url.find("minute") != std::string::npos) {
+                    std::this_thread::sleep_for(std::chrono::minutes{1});
+                } else if (url.find("hour") != std::string::npos) {
+                    std::this_thread::sleep_for(std::chrono::hours{1});
+                } else if (url.find("day") != std::string::npos) {
+                    std::this_thread::sleep_for(std::chrono::hours{24});
+                }
+                planet.reset(new replication::Planet);
+            } else {
+                std::cout << "Processed OsmChange: " << path << std::endl;
+            }
         }
-        //         planet->disconnectServer();
-        //         if (url.find("minute") != std::string::npos) {
-        //             std::this_thread::sleep_for(std::chrono::minutes{1});
-        //         } else if (url.find("hour") != std::string::npos) {
-        //             std::this_thread::sleep_for(std::chrono::hours{1});
-        //         } else if (url.find("day") != std::string::npos) {
-        //             std::this_thread::sleep_for(std::chrono::hours{24});
-        //         }
-        //         planet.reset(new replication::Planet);
-        //     }
-
         std::vector<std::string> result;
         // The path is always something like this:
         // https://planet.openstreetmap.org/replication/minute/004/304/997.osm.gz
@@ -288,7 +290,7 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
 }
 
 // This thread get started for every osmChange file
-void
+bool
 threadOsmChange(const std::string &file)
 {
     osmstats::QueryOSMStats ostats;
@@ -302,22 +304,30 @@ threadOsmChange(const std::string &file)
     // If the file is stored on disk, read it in instead of downloading
     if (boost::filesystem::exists(dir)) {
         std::cout << "Reading osmChange: " << file << std::endl;
-        std::ifstream osc(dir, std::ifstream::binary);
-        data->reserve(boost::filesystem::file_size(dir));
-        data->insert(data->begin(), std::istream_iterator<unsigned char>(osc),
-                    std::istream_iterator<unsigned char>());
-        osc.close();
+        // Since we want to read in the entire file so it can be
+        // decompressed, blow off C++ streaming and just load the
+        // entire thing.
+        int size = boost::filesystem::file_size(dir);
+        data->reserve(size);
+        data->resize(size);
+        int fd = open(dir.c_str(), O_RDONLY);
+        char *buf = new char[size];
+        //memset(buf, 0, size);
+        read(fd, buf, size);
+        // FIXME: it would be nice to avoid this copy
+        std::copy(buf, buf+size, data->begin());
+        close(fd);
     } else {
         std::cout << "Downloading osmChange: " << file << std::endl;
         data = planet.downloadFile(file);
     }
     if (data->size() == 0) {
         std::cout << "osmChange file not found: " << file << std::endl;
-        return;
+        return false;
     } else {
         // XML parsers expect every line to have a newline, including the end of file
-        data->push_back('\n');
-#ifdef USE_DISK
+        // data->push_back('\n');
+#ifdef USE_CACHE
         if (!boost::filesystem::exists(dir)) {
             std::ofstream myfile;
             std::vector<std::string> result;
@@ -326,7 +336,7 @@ threadOsmChange(const std::string &file)
             boost::filesystem::create_directory(result[4] + "/" + result[5]);
             boost::filesystem::create_directory(result[4] + "/" + result[5] + "/" + result[6]);
             myfile.open(dir, std::ios::binary);
-            myfile.write(reinterpret_cast<char *>(data->data()), data->size());
+            myfile.write(reinterpret_cast<char *>(data->data()), data->size()-1);
             myfile.close();
         }
 #endif
@@ -357,6 +367,7 @@ threadOsmChange(const std::string &file)
     }
     ostats.disconnect();
     osmchanges.dump();
+    return true;
 }
 
 // This updates several fields in the raw_changesets table, which are part of
