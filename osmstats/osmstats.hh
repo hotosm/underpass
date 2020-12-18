@@ -51,6 +51,7 @@ using namespace boost::gregorian;
 
 // #include "hotosm.hh"
 #include "osmstats/changeset.hh"
+#include "osmstats/osmchange.hh"
 #include "data/geoutil.hh"
 #include "timer.hh"
 
@@ -189,12 +190,12 @@ class QueryOSMStats : public apidb::QueryStats
 {
   public:
     QueryOSMStats(void);
+    QueryOSMStats(const std::string &dbname) { connect(dbname); };
     /// close the database connection
     ~QueryOSMStats(void) { db->close(); };
+    void disconnect(void) { db->close(); };
 
     bool readGeoBoundaries(const std::string &rawfile) {
-        //geou.readFile(rawfile, true);
-        //countries = geou.exportCountries();
         return false;
     };
 
@@ -248,6 +249,7 @@ class QueryOSMStats : public apidb::QueryStats
 
     /// Apply a change to the database
     bool applyChange(changeset::ChangeSet &change);
+    bool applyChange(osmchange::OsmChange &change);
 
     int lookupHashtag(const std::string &hashtag);
 
@@ -258,7 +260,7 @@ class QueryOSMStats : public apidb::QueryStats
 
     // Get the timestamp of the last update in the database
     ptime getLastUpdate(void);
-private:
+//private:
     bool updateCounters(long cid, std::map<std::string, long> data);
     bool updateChangeset(const RawChangeset &stats);
 
@@ -283,7 +285,9 @@ private:
         std::string query = "SELECT " + column + " FROM raw_changesets";
         query += " WHERE id=" + std::to_string(cid);
         std::cout << "QUERY: " << query << std::endl;
-        pqxx::result result = worker->exec(query);
+        pqxx::work worker(*db);
+        pqxx::result result = worker.exec(query);
+        worker.commit();
 
         // FIXME: this should return a real value
         return 0;
@@ -293,14 +297,16 @@ private:
         std::string query = "UPDATE raw_changesets SET " + column + "=";
         query += std::to_string(value) + " WHERE id=" + std::to_string(uid);
         std::cout << "QUERY: " << query << std::endl;
-        pqxx::result result = worker->exec(query);
+        pqxx::work worker(*db);
+        pqxx::result result = worker.exec(query);
+        worker.commit();
 
         // FIXME: this should return a real value
         return 0;
     }
 
     pqxx::connection *db;
-    pqxx::work *worker;
+    // pqxx::work *worker;
 
     std::vector<RawChangeset> ostats;  ///< All the raw changset data
     std::vector<RawCountry> countries; ///< All the raw country data
