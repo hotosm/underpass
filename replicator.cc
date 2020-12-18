@@ -72,6 +72,7 @@ namespace opts = boost::program_options;
 // #include "osmstats/replication.hh"
 #include "data/import.hh"
 #include "data/threads.hh"
+#include "data/underpass.hh"
 #include "timer.hh"
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
@@ -105,6 +106,8 @@ public:
         geou->readFile("../underpass.git/data/geoboundaries.osm", true);
         changes = std::make_shared<changeset::ChangeSetFile>();
         changes->setupBoundaries(geou);
+
+        under.connect("underpass");
 
         // Connect to the OSM Stats database
         ostats.connect("mystats");
@@ -142,14 +145,15 @@ public:
 
     std::string getLastPath(replication::frequency_t interval) {
         ptime last = ostats.getLastUpdate();
-        replication::Planet planet;
-        auto state = planet.getState(interval, last);
+        under.connect("underpass");
+        auto state = under.getState(interval, last);
         return state->path;
     };
     // osmstats::RawCountry & findCountry() {
     //     geou.inCountry();
 
 private:
+    underpass::Underpass under;
     osmstats::QueryOSMStats ostats;                    ///< OSM Stats database access
     std::shared_ptr<changeset::ChangeSetFile> changes; ///< All the changes in the file
     std::shared_ptr<geoutil::GeoUtil> geou;             ///< Country boundaries
@@ -236,12 +240,17 @@ main(int argc, char *argv[])
          std::cout << "Sequence is " << vm["sequence"].as<int>() << std::endl;
      }
 
+     osmstats::QueryOSMStats ostats;                    ///< OSM Stats database access
+     replication::Planet planet;
+     underpass::Underpass under("underpass");
      if (vm.count("monitor")) {
          std::string url = vm["monitor"].as<std::string>();
+         //std::string last = ostats.getLastUpdate();
          std::string last = replicator.getLastPath(replication::minutely);
          std::cout << "Last minutely is " << last  << std::endl;
          // url = "https://planet.openstreetmap.org/replication/minute/004/308/210";
          std::thread mstate (threads::startMonitor, std::ref(last));
+         //threads::startMonitor(std::ref(last));
          //url = "https://planet.openstreetmap.org/replication/hour/004/308/210";
          // std::string last = replicator::getLastPath(replication::hourly);
          // std::thread hstate (threads::startMonitor, std::ref(url));
@@ -256,10 +265,8 @@ main(int argc, char *argv[])
      }
 
      Timer timer;
-     replication::Planet planet;
      if (vm.count("url")) {
-         planet.connectDB("underpass");
-         auto first = planet.getFirstState(replication::minutely);
+         auto first = under.getFirstState(replication::minutely);
          std::string url = vm["url"].as<std::string>();
          // patterns used to figure out directory depth
          boost::regex lowpat{"https.*/[0-9][0-9][0-9]/[0-9][0-9][0-9]/[0-9][0-9][0-9][/]*"};
