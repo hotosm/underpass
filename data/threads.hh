@@ -67,6 +67,7 @@ namespace http = beast::http;
 using tcp = net::ip::tcp;
 
 #include "osmstats/replication.hh"
+#include "osmstats/osmstats.hh"
 
 namespace replication {
 class StateFile;
@@ -82,18 +83,6 @@ class StateFile;
 
 /// \namespace threads
 namespace threads {
-class ThreadManager
-{
-public:
-    ThreadManager(void);
-
-    /// Get the number of processor cores in this machine
-    int numThreads(void) { return std::thread::hardware_concurrency(); };
-
-    //void startStateThreads(const std::string &base, std::vector<std::string> &files);
-
-//replication::Planet planet;
-};
 
 extern void startStateThreads(const std::string &base, std::vector<std::string> &files);
 extern void startMonitor(const std::string &url);

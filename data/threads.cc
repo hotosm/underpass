@@ -74,6 +74,7 @@ using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 #include "osmstats/osmchange.hh"
 #include "osmstats/changeset.hh"
 #include "osmstats/replication.hh"
+#include "data/underpass.hh"
 
 std::mutex stream_mutex;
 
@@ -83,18 +84,21 @@ namespace threads {
 void
 startMonitor(const std::string &url)
 {
-    auto planet = std::make_shared<replication::Planet>();
+    // auto planet = std::make_shared<replication::Planet>();
     replication::Replication server;
     bool mainloop = true;
     std::string path = url;
     std::string base = url.substr(0, url.size() - 7);
+    underpass::Underpass under("underpass");
+
     while (mainloop) {
+        auto planet = std::make_shared<replication::Planet>();
         // Look for the statefile first
         //std::shared_ptr<replication::StateFile> state = threadStateFile(planet->stream, path);
         bool subloop = true;
 #if 0
         while (subloop) {
-            std::shared_ptr<replication::StateFile> exists = planet->getState(path);
+            std::shared_ptr<replication::StateFile> exists = under.getState(path);
             if (!exists->path.empty()) {
                 std::cout << "Already stored: " << path << std::endl;
                 subloop = true;
@@ -104,7 +108,7 @@ startMonitor(const std::string &url)
                 auto state = threadStateFile(planet->stream, path + ".state.txt");
                 if (state->timestamp != boost::posix_time::not_a_date_time && (state->sequence != 0 && state->path.size() != 0)) {
                     state->dump();
-                    planet->writeState(*state);
+                    under.writeState(*state);
                     subloop = false;
                 }
             }
@@ -214,7 +218,7 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
         std::shared_ptr<replication::StateFile> state = threadStateFile(planet->stream,
                                                                         path + ".state.txt");
         if (!state->path.empty()) {
-            planet->writeState(*state);
+            // under.writeState(*state);
             state->dump();
             return true;
         } else {
@@ -226,7 +230,7 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
             // std::this_thread::sleep_for(std::chrono::seconds{1});
             // state = threadStateFile(planet.stream, path + ".state.txt");
             // if (!state->path.empty()) {
-            //     planet.writeState(*state);
+            //     under.writeState(*state);
             //     state->dump();
             //     return true;
             // }
@@ -244,6 +248,7 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
     // 144, 160, 176, 192, 208, 224
     auto rng  = files | ranges::views::chunk(200);
 
+    underpass::Underpass under;
     Timer timer;
     timer.startTimer();
     for (auto cit = std::begin(rng); cit != std::end(rng); ++cit) {
@@ -253,7 +258,7 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
                 continue;
             }
             std::string subpath = base + it->substr(0, it->size() - 10);
-            std::shared_ptr<replication::StateFile> exists = planet->getState(subpath);
+            std::shared_ptr<replication::StateFile> exists = under.getState(subpath);
             if (!exists->path.empty()) {
                 std::cout << "Already stored: " << subpath << std::endl;
                 continue;
@@ -266,7 +271,7 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
                 std::shared_ptr<replication::StateFile> state = threadStateFile(planet->stream,
                                                                 base + *it);
                 if (!state->path.empty()) {
-                    planet->writeState(*state);
+                    // under.writeState(*state);
                     state->dump();
                     continue;
                 } else {
@@ -293,7 +298,7 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
 bool
 threadOsmChange(const std::string &file)
 {
-    osmstats::QueryOSMStats ostats;
+    // osmstats::QueryOSMStats ostats;
     replication::Planet planet;
     // changeset::ChangeSetFile change;
     osmchange::OsmChangeFile osmchanges;
@@ -362,10 +367,10 @@ threadOsmChange(const std::string &file)
     }
 
     // Apply the changes to the database
+    osmstats::QueryOSMStats ostats("osmstats");
     for (auto it = std::begin(osmchanges.changes); it != std::end(osmchanges.changes); ++it) {
         ostats.applyChange(*(*it));
     }
-    ostats.disconnect();
     osmchanges.dump();
     return true;
 }
@@ -376,8 +381,6 @@ threadOsmChange(const std::string &file)
 bool
 threadChangeSet(const std::string &file)
 {
-    //osmstats::QueryOSMStats ostats;
-    replication::Planet planet;
     changeset::ChangeSetFile changeset;
 
     auto data = std::make_shared<std::vector<unsigned char>>();
@@ -399,6 +402,7 @@ threadChangeSet(const std::string &file)
         close(fd);
     } else {
         std::cout << "Downloading ChangeSet: " << file << std::endl;
+        replication::Planet planet;
         data = planet.downloadFile(file);
     }
     if (data->size() == 0) {
@@ -444,9 +448,10 @@ threadChangeSet(const std::string &file)
         }
     }
 
-    // // Apply the changes to the database
+    osmstats::QueryOSMStats ostats("osmstats");
+    // Apply the changes to the database
     for (auto it = std::begin(changeset.changes); it != std::end(changeset.changes); ++it) {
-        //ostats.applyChange(*it);
+        ostats.applyChange(*it);
     }
     changeset.dump();
     return true;
@@ -457,7 +462,7 @@ threadChangeSet(const std::string &file)
 void
 threadStatistics(const std::string &database, ptime &timestamp)
 {
-    osmstats::QueryOSMStats ostats;
+    //osmstats::QueryOSMStats ostats;
     replication::Replication repl;
 }
 
@@ -467,7 +472,7 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
 {
     std::string server = "planet.openstreetmap.org";
     // See if the data exists in the database already
-    // std::shared_ptr<replication::StateFile> exists = planet.getState(subpath);    
+    // std::shared_ptr<replication::StateFile> exists = under.getState(subpath);
 
     // This buffer is used for reading and must be persistant
     boost::beast::flat_buffer buffer;
