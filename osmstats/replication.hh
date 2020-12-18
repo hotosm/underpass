@@ -139,17 +139,13 @@ public:
     Planet(void);
     ~Planet(void);
 
-    /// Connect to the database
-    bool connectDB(void) {
-        return connectDB(database);
-    };
-    bool connectDB(const std::string &database);
     bool connectServer(void) {
         return connectServer(server);
     }
     bool connectServer(const std::string &server);
     bool disconnectServer(void) {
-        db->close();                // close the database connection
+        // db->disconnect();           // close the database connection
+        // db->close();                // close the database connection
         ioc.reset();                // reset the I/O conhtext
         stream.shutdown();          // shutdown the socket used by the stream
         // FIXME: this should return a real value
@@ -166,21 +162,6 @@ public:
         std::string fixme;
         return fixme;
     };
-    /// Write the stored data on the directories and timestamps
-    /// on the planet server.
-    bool writeState(StateFile &state);
-
-    /// Get the state.txt file data by it's path
-    std::shared_ptr<StateFile> getState(const std::string &path);
-
-    /// Get the state.txt date by timestamp
-    std::shared_ptr<StateFile> getState(frequency_t freq, ptime &tstamp);
-
-    /// Get the maximum timestamp for the state.txt data
-    std::shared_ptr<StateFile> getLastState(frequency_t freq);
-
-    /// Get the minimum timestamp for the state.txt data
-    std::shared_ptr<StateFile> getFirstState(frequency_t freq);
 
     /// Dump internal data to the terminal, used only for debugging
     void dump(void);
@@ -194,11 +175,7 @@ public:
                     std::shared_ptr<std::vector<std::string>> &links);
 
 // private:
-    pqxx::connection *db;
-    pqxx::work *worker;
     std::string server = "planet.openstreetmap.org"; ///< planet server
-    std::string database = "underpass"; ///< The database to use
-    std::string dbserver = "localhost"; ///< The database server to use
     int port = 443;             ///< Network port on the server, note SSL only allowed
     int version = 11;           ///< HTTP version
     std::map<ptime, std::string> minute;

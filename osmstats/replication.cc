@@ -283,6 +283,9 @@ Planet::downloadFile(const std::string &file)
     for (auto body = std::begin(parser.get().body()); body != std::end(parser.get().body()); ++body) {
         data->push_back((unsigned char)*body);
     }
+
+    // Add the last newline back
+    data->push_back('\n');
     return data;
 }
 
@@ -393,9 +396,6 @@ Replication::downloadFiles(std::vector<std::string> files, bool disk)
 
 Planet::~Planet(void)
 {
-    boost::system::error_code ec;
-
-    db->close();                // close the database connection
     ioc.reset();                // reset the I/O conhtext
     stream.shutdown();          // shutdown the socket used by the stream
 }
@@ -407,7 +407,6 @@ Planet::Planet(void)
     frequency_tags[replication::daily] = "day";
     frequency_tags[replication::changeset] = "changeset";
     
-    connectDB();
     connectServer();
 };
 
@@ -428,29 +427,6 @@ Planet::dump(void)
     }
     for (auto it = std::begin(day); it != std::end(day); ++it) {
         std::cout << "Daily at: " << it->first << ": " << it->second << std::endl;
-    }
-}
-
-bool
-Planet::connectDB(const std::string &dbname)
-{
-    // Connect to the database
-    std::string args;
-    if (dbname.empty()) {
-	args = "dbname = underpass";
-    } else {
-	args = "dbname = " + dbname;
-    }
-    try {
-	db = new pqxx::connection(args);
-	if (db->is_open()) {
-	    return true;
-	} else {
-	    return false;
-	}
-    } catch (const std::exception &e) {
-	std::cerr << e.what() << std::endl;
-	return false;
     }
 }
 
@@ -478,118 +454,6 @@ Planet::connectServer(const std::string &planet)
     }
 
     return true;
-}
-
-/// Get the maximum timestamp for the state.txt data
-std::shared_ptr<StateFile>
-Planet::getLastState(frequency_t freq)
-{
-    worker = new pqxx::work(*db);
-    std::string query = "SELECT timestamp,sequence,path,frequency FROM states ORDER BY timestamp DESC LIMIT 1;";
-    // std::cout << "QUERY: " << query << std::endl;
-    pqxx::result result = worker->exec(query);
-    auto last = std::make_shared<StateFile>();
-    last->timestamp = time_from_string(pqxx::to_string(result[0][0]));
-    last->sequence = result[0][1].as(int(0));
-    last->path = pqxx::to_string(result[0][2]);
-
-    worker->commit();
-
-    return last;
-}
-
-// Get the minimum timestamp for the state.txt data. As hashtags didn't
-// appear until late 2014, we don't care as much about the older data.
-std::shared_ptr<StateFile>
-Planet::getFirstState(frequency_t freq)
-{
-    worker = new pqxx::work(*db);
-    std::string query = "SELECT timestamp,sequence,path,frequency FROM states ORDER BY timestamp ASC LIMIT 1;";
-    // std::cout << "QUERY: " << query << std::endl;
-    pqxx::result result = worker->exec(query);
-    auto first = std::make_shared<StateFile>();
-    first->timestamp = time_from_string(pqxx::to_string(result[0][0]));
-    first->sequence = result[0][1].as(int(0));
-    first->path = pqxx::to_string(result[0][2]);
-
-    worker->commit();
-
-    return first;
-}
-
-/// Write the stored data on the directories and timestamps
-/// on the planet server.
-bool
-Planet::writeState(StateFile &state)
-{
-    std::string query = "INSERT INTO states(timestamp, sequence, path, frequency) VALUES(";
-    query += "\'" + to_simple_string(state.timestamp) + "\',";
-    query += std::to_string(state.sequence);
-    query += ",\'" + state.path + "\'";
-    if (state.path.find("changeset") != std::string::npos) {
-        query += ", \'changeset\'";
-    } else if (state.path.find("minute") != std::string::npos) {
-        query += ", \'minute\'";
-    } else if (state.path.find("hour") != std::string::npos) {
-        query += ", \'hour\'";
-    } else if (state.path.find("day") != std::string::npos) {
-        query += ", \'day\'";
-    }
-
-    query += ") ON CONFLICT DO NOTHING;";
-    // std::cout << "QUERY: " << query << std::endl;
-    db_mutex.lock();
-    worker = new pqxx::work(*db);
-    pqxx::result result = worker->exec(query);
-    worker->commit();
-    db_mutex.unlock();
-    // FIXME: return a real value
-    return false;
-}
-
-std::shared_ptr<StateFile>
-Planet::getState(const std::string &path)
-{
-    db_mutex.lock();
-    std::string query = "SELECT timestamp,path,sequence,frequency FROM states WHERE path=\'";
-    query += path + "\';";
-    // std::cout << "QUERY: " << query << std::endl;
-    worker = new pqxx::work(*db);
-    pqxx::result result = worker->exec(query);
-    worker->commit();
-    auto state = std::make_shared<StateFile>();
-    if (result.size() > 0) {
-        state->timestamp = time_from_string(pqxx::to_string(result[0][0]));
-        state->path = pqxx::to_string(result[0][1]);
-        state->sequence = result[0][2].as(int(0));
-        state->frequency =  pqxx::to_string(result[0][3]);
-    }
-    db_mutex.unlock();
-
-    return state;
-}
-
-// Get the state.txt date by timestamp
-std::shared_ptr<StateFile>
-Planet::getState(frequency_t freq, ptime &tstamp)
-{
-    auto state = std::make_shared<StateFile>();
-
-    std::string query = "SELECT * FROM states WHERE timestamp>=";
-    query += "\'" + to_simple_string(tstamp) + "\' ";
-    query += " AND frequency=\'" + frequency_tags[freq] + "\'";
-    query += " ORDER BY timestamp ASC LIMIT 1;";
-    std::cout << "QUERY: " << query << std::endl;
-    worker = new pqxx::work(*db);
-    pqxx::result result = worker->exec(query);
-    worker->commit();
-    if (result.size() > 0) {
-        state->timestamp = time_from_string(pqxx::to_string(result[0][0]));
-        state->path = pqxx::to_string(result[0][1]);
-        state->sequence = result[0][2].as(int(0));
-        state->frequency =  pqxx::to_string(result[0][3]);
-    }
-    return state;
 }
 
 // Scan remote directory from planet
