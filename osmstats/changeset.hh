@@ -184,7 +184,7 @@ public:
     /// Dump the data of this class to the terminal. This should only
     /// be used for debugging.
     void dump(void);
-protected:
+// protected:
 //     bool store;
     std::string filename;       ///< The filename of this changeset for disk files
     std::vector<ChangeSet> changes; ///< Storage of all the changes in this data
