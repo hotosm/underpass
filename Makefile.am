@@ -45,19 +45,22 @@ BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
 	$(BOOST_SERIALIZATION_LIB)
 
 # inst_HEADERS = hotosm.hh hottm.hh
-libhotosm_la_SOURCES = hotosm.cc hottm.cc \
+libhotosm_la_SOURCES = \
+	hotosm.cc hottm.cc \
 	hottm/tmusers.cc \
 	hottm/tmteams.cc \
 	hottm/tmprojects.cc \
 	osmstats/osmstats.cc \
 	osmstats/changeset.cc \
 	osmstats/osmchange.cc \
+	osmstats/replication.cc \
 	data/geoutil.cc \
 	data/pgsnapshot.cc \
 	data/import.cc \
 	data/osmobjects.cc \
 	data/validate.cc \
-	data/threads.cc
+	data/threads.cc \
+	data/underpass.cc
 libhotosm_la_LDFLAGS = -avoid-version
 SWIGdir = swig
 
@@ -66,8 +69,7 @@ SWIG_FLAGS = -Wall -outcurrentdir -c++ -cppext cc -module hotosm
 EXTRA_DIST = swig/hotosm.py swig/hotosm.java
 
 bin_PROGRAMS = replicator
-replicator_SOURCES = replicator.cc \
-	osmstats/replication.cc
+replicator_SOURCES = replicator.cc
 replicator_LDADD = libhotosm.la $(BOOST_LIBS)
 
 SWIG_INTERFACE = $(libhotosm_la_SOURCES:.cc=.i)
@@ -133,6 +135,7 @@ PCHHEADERS = \
         $(top_srcdir)/data/osmobjects.hh \
         $(top_srcdir)/data/geoutil.hh \
         $(top_srcdir)/data/threads.hh \
+        $(top_srcdir)/data/underpass.hh \
         $(top_srcdir)/hottm/tmusers.hh \
         $(top_srcdir)/hottm/tmteams.hh \
         $(top_srcdir)/hottm/tmprojects.hh
