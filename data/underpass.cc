@@ -79,7 +79,7 @@ Underpass::Underpass(void)
 Underpass::~Underpass(void)
 {
     // db->disconnect();        // close the database connection
-    db->close();            // close the database connection
+    sdb->close();            // close the database connection
 }
 
 // Dump internal data to the terminal, used only for debugging
@@ -102,9 +102,8 @@ Underpass::connect(const std::string &dbname)
 	args = "dbname = " + dbname;
     }
     try {
-        db = new pqxx::connection(args);
 	sdb = std::make_shared<pqxx::connection>(args);
-	if (db->is_open()) {
+	if (sdb->is_open()) {
             // pqxx::work worker(db);
             // pqxx::nontransaction(db);
 	    return true;
@@ -129,14 +128,18 @@ Underpass::updateCreator(long user_id, long change_id, const std::string &editor
 std::shared_ptr<replication::StateFile>
 Underpass::getState(const std::string &path)
 {
+    auto state = std::make_shared<replication::StateFile>();
+    if (!sdb->is_open()) {
+        std::cerr << "ERROR: database not connected!" << std::endl;
+        return state;
+    }
     //db_mutex.lock();
     std::string query = "SELECT timestamp,path,sequence,frequency FROM states WHERE path=\'";
     query += path + "\';";
     // std::cout << "QUERY: " << query << std::endl;
-    pqxx::work worker(*db);
+    pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     worker.commit();
-    auto state = std::make_shared<replication::StateFile>();
     if (result.size() > 0) {
         state->timestamp = time_from_string(pqxx::to_string(result[0][0]));
         state->path = pqxx::to_string(result[0][1]);
@@ -144,6 +147,7 @@ Underpass::getState(const std::string &path)
         state->frequency =  pqxx::to_string(result[0][3]);
     }
     //db_mutex.unlock();
+    return state;
 }
 
 // Get the state.txt date by timestamp
@@ -151,13 +155,17 @@ std::shared_ptr<replication::StateFile>
 Underpass::getState(replication::frequency_t freq, ptime &tstamp)
 {
     auto state = std::make_shared<replication::StateFile>();
+    if (!sdb->is_open()) {
+        std::cerr << "ERROR: database not connected!" << std::endl;
+        return state;
+    }
 
     std::string query = "SELECT * FROM states WHERE timestamp>=";
     query += "\'" + to_simple_string(tstamp) + "\' ";
     query += " AND frequency=\'" + frequency_tags[freq] + "\'";
     query += " ORDER BY timestamp ASC LIMIT 1;";
     std::cout << "QUERY: " << query << std::endl;
-    pqxx::work worker(*db);
+    pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     worker.commit();
     if (result.size() > 0) {
@@ -191,7 +199,7 @@ Underpass::writeState(replication::StateFile &state)
     query += ") ON CONFLICT DO NOTHING;";
     // std::cout << "QUERY: " << query << std::endl;
     //db_mutex.lock();
-    pqxx::work worker(*db);
+    pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     worker.commit();
     // db_mutex.unlock();
@@ -203,7 +211,7 @@ Underpass::writeState(replication::StateFile &state)
 std::shared_ptr<replication::StateFile>
 Underpass::getLastState(replication::frequency_t freq)
 {
-    pqxx::work worker(*db);
+    pqxx::work worker(*sdb);
     std::string query = "SELECT timestamp,sequence,path,frequency FROM states ORDER BY timestamp DESC LIMIT 1;";
     // std::cout << "QUERY: " << query << std::endl;
     pqxx::result result = worker.exec(query);
@@ -222,7 +230,7 @@ Underpass::getLastState(replication::frequency_t freq)
 std::shared_ptr<replication::StateFile>
 Underpass::getFirstState(replication::frequency_t freq)
 {
-    pqxx::work worker(*db);
+    pqxx::work worker(*sdb);
     std::string query = "SELECT timestamp,sequence,path,frequency FROM states ORDER BY timestamp ASC LIMIT 1;";
     // std::cout << "QUERY: " << query << std::endl;
     pqxx::result result = worker.exec(query);

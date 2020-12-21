@@ -118,7 +118,7 @@ public:
     std::shared_ptr<replication::StateFile> getFirstState(replication::frequency_t freq);
     
 // protected:
-    pqxx::connection *db;
+    // pqxx::connection *db;
     std::shared_ptr<pqxx::connection> sdb;
     std::map<replication::frequency_t, std::string> frequency_tags;
     //pqxx::work worker;
