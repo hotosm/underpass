@@ -192,8 +192,8 @@ class QueryOSMStats : public apidb::QueryStats
     QueryOSMStats(void);
     QueryOSMStats(const std::string &dbname) { connect(dbname); };
     /// close the database connection
-    ~QueryOSMStats(void) { db->close(); };
-    void disconnect(void) { db->close(); };
+    ~QueryOSMStats(void) { disconnect(); };
+    void disconnect(void) { sdb->close(); };
 
     bool readGeoBoundaries(const std::string &rawfile) {
         return false;
@@ -285,7 +285,7 @@ class QueryOSMStats : public apidb::QueryStats
         std::string query = "SELECT " + column + " FROM raw_changesets";
         query += " WHERE id=" + std::to_string(cid);
         std::cout << "QUERY: " << query << std::endl;
-        pqxx::work worker(*db);
+        pqxx::work worker(*sdb);
         pqxx::result result = worker.exec(query);
         worker.commit();
 
@@ -297,7 +297,7 @@ class QueryOSMStats : public apidb::QueryStats
         std::string query = "UPDATE raw_changesets SET " + column + "=";
         query += std::to_string(value) + " WHERE id=" + std::to_string(uid);
         std::cout << "QUERY: " << query << std::endl;
-        pqxx::work worker(*db);
+        pqxx::work worker(*sdb);
         pqxx::result result = worker.exec(query);
         worker.commit();
 
@@ -305,9 +305,7 @@ class QueryOSMStats : public apidb::QueryStats
         return 0;
     }
 
-    pqxx::connection *db;
-    // pqxx::work *worker;
-
+    std::shared_ptr<pqxx::connection> sdb;
     std::vector<RawChangeset> ostats;  ///< All the raw changset data
     std::vector<RawCountry> countries; ///< All the raw country data
     std::vector<RawUser> users;        ///< All the raw user data

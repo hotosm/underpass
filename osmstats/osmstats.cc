@@ -70,9 +70,8 @@ QueryOSMStats::connect(const std::string &dbname)
     }
     
     try {
-	db = new pqxx::connection(args);
-	if (db->is_open()) {
-            // worker = new pqxx::work(*db);
+	sdb = std::make_shared<pqxx::connection>(args);
+	if (sdb->is_open()) {
 	    return true;
 	} else {
 	    return false;
@@ -95,7 +94,7 @@ QueryOSMStats::lookupHashtag(const std::string &hashtag)
 {
     std::string query = "SELECT id FROM taw_hashtags WHERE hashtag=\'";
     query += hashtag + "\';";
-    pqxx::work worker(*db);
+    pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     worker.commit();
 
@@ -114,8 +113,8 @@ QueryOSMStats::applyChange(osmchange::OsmChange &change)
     // query += std::to_string(change.uid) + ",\'" + change.user;
     query += "\') ON CONFLICT DO NOTHING;";
     std::cout << "QUERY: " << query << std::endl;
-    pqxx::work worker(*db);
-    // pqxx::result result = worker->exec(query);
+    pqxx::work worker(*sdb);
+    // pqxx::result result = worker.exec(query);
     worker.commit();
 }
 
@@ -132,9 +131,9 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     query += std::to_string(change.uid) + ",\'" + change.user;
     query += "\') ON CONFLICT DO NOTHING;";
     std::cout << "QUERY: " << query << std::endl;
-    pqxx::work *worker = new pqxx::work(*db);
-    pqxx::result result = worker->exec(query);
-    //worker->commit();
+    pqxx::work worker(*sdb);
+    pqxx::result result = worker.exec(query);
+    //worker.commit();
 
     for (auto it = std::begin(change.hashtags); it != std::end(change.hashtags); ++it) {
 //        bool key_exists = hashtags.find(*it) != hashtags.end();
@@ -154,7 +153,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
         // }
     }
     // Add changeset data
-    // road_km_added | road_km_modified | waterway_km_added | waterway_km_modified | roads_added | roads_modified | waterways_added | waterways_modified | buildings_added | buildings_modified | pois_added | pois_modified | verified | ugmented_diffs | updated_at
+    // road_km_added | road_km_modified | waterway_km_added | waterway_km_modified | roads_added | roads_modified | waterways_added | waterways_modified | buildings_added | buildings_modified | pois_added | pois_modified | verified | augmented_diffs | updated_at
     if (!change.open) {
         query = "INSERT INTO raw_changesets (id, editor, user_id, created_at, closed_at) VALUES(";
     } else {
@@ -172,12 +171,11 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     query += " ON CONFLICT DO NOTHING;";
     std::cout << "QUERY: " << query << std::endl;
     //auto worker3 = std::make_shared<pqxx::work>(*db);
-    result = worker->exec(query);
+    result = worker.exec(query);
 
     // Commit the results to the database
-    worker->commit();
+    worker.commit();
 
-    delete worker;
     return true;
 }
 
@@ -265,10 +263,9 @@ QueryOSMStats::getLastUpdate(void)
     std::string query = "SELECT MAX(updated_at) FROM raw_changesets;";
     std::cout << "QUERY: " << query << std::endl;
     // auto worker = std::make_shared<pqxx::work>(*db);
-    pqxx::work *worker = new pqxx::work(*db);
-    pqxx::result result = worker->exec(query);
-    worker->commit();
-    delete worker;
+    pqxx::work worker(*sdb);
+    pqxx::result result = worker.exec(query);
+    worker.commit();
 
     ptime last;
     if (result[0][0].size() > 0) {
