@@ -9,7 +9,14 @@ CREATE TABLE public.states (
     sequence integer NOT NULL,
     frequency text NOT NULL
 );
-ALTER TABLE states ADD PRIMARY KEY (path);
+ALTER TABLE states ADD PRIMARY KEY (path, sequence);
+
+CREATE TABLE public.creators (
+    user_id bigint NOT NULL,
+    change_id bigint NOT NULL,
+    editor text NOT NULL,
+    hashtags text[] NOT NULL
+);
 
 CREATE TABLE public.way_nodes (
     way_id bigint NOT NULL,
