@@ -96,7 +96,6 @@ startMonitor(const std::string &url)
         // Look for the statefile first
         //std::shared_ptr<replication::StateFile> state = threadStateFile(planet->stream, path);
         bool subloop = true;
-#if 0
         while (subloop) {
             std::shared_ptr<replication::StateFile> exists = under.getState(path);
             if (!exists->path.empty()) {
@@ -109,11 +108,10 @@ startMonitor(const std::string &url)
                 if (state->timestamp != boost::posix_time::not_a_date_time && (state->sequence != 0 && state->path.size() != 0)) {
                     state->dump();
                     under.writeState(*state);
-                    subloop = false;
+                    break;
                 }
             }
         }
-#endif
         if (path.find("changeset") != std::string::npos) {
             std::string file = path + ".osm.gz";
             // std::promise<bool> exists;
@@ -136,12 +134,13 @@ startMonitor(const std::string &url)
             } else {
                 std::cout << "Processed ChangeSet: " << path << std::endl;
             }
-            timer.endTimer("changeset");
-        // planet->db->deactivate();
+            timer.endTimer("changeSet");
         } else {
             std::string file = path + ".osc.gz";
             // std::thread osm(threads::threadOsmChange, std::ref(file));
             // osm.detach();
+            Timer timer;
+            timer.startTimer();
             bool found = threadOsmChange(file);
             if (!found) {
                 planet->disconnectServer();
@@ -156,6 +155,7 @@ startMonitor(const std::string &url)
             } else {
                 std::cout << "Processed OsmChange: " << path << std::endl;
             }
+            timer.endTimer("osmChange");
         }
         std::vector<std::string> result;
         // The path is always something like this:
@@ -472,7 +472,7 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
 {
     std::string server = "planet.openstreetmap.org";
     // See if the data exists in the database already
-    // std::shared_ptr<replication::StateFile> exists = under.getState(subpath);
+    // auto  exists = under.getState(subpath);
 
     // This buffer is used for reading and must be persistant
     boost::beast::flat_buffer buffer;
@@ -498,8 +498,10 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
     boost::beast::http::read(stream, buffer, parser, ec);
     if (ec == http::error::partial_message) {
         std::cerr << "ERROR: partial read" << ": " << ec.message() << std::endl;
-        // Give the network a chance to recover
         std::this_thread::yield();
+        http::write(stream, req);
+        boost::beast::http::read(stream, buffer, parser, ec);
+        // Give the network a chance to recover
         // std::this_thread::sleep_for(std::chrono::seconds{1});
         //return std::make_shared<replication::StateFile>();
     }
