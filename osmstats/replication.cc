@@ -59,6 +59,7 @@
 #include <osmium/visitor.hpp>
 #include <osmium/io/any_output.hpp>
 
+#include <boost/format.hpp>
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
@@ -83,6 +84,7 @@ using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 #include "hotosm.hh"
 #include "osmstats/replication.hh"
 #include "osmstats/changeset.hh"
+#include "data/underpass.hh"
 
 /// Control access to the database connection
 std::mutex db_mutex;
@@ -512,51 +514,63 @@ Planet::scanDirectory(const std::string &dir)
     return links;
 }
 
-// Find the path to download the right file
+// Since the data files don't have a consistent time interval, this
+// attempts to do a rough calculation of the probably data file,
+// and downloads *.state.txt files till the right data file is found.
+// Note that this can be slow as it has to download multiple files.
 std::string
-Planet::findData(frequency_t freq, ptime starttime)
+Planet::findData(frequency_t freq, ptime tstamp)
 {
-    boost::posix_time::time_duration delta;
-    // Look for the top level directory
-    if (freq == minutely) {
-        for (auto it = std::rbegin(minute); it != std::rend(minute); ++it) {
-            delta = it->first - starttime;
-            // delta = starttime - it->first;
-            std::cout << "Delta: " << delta.hours() << ":"
-                      <<  delta.minutes()
-                      << " : " << it->first
-                      << " = " << it->second
-                      << std::endl;
-            // There are a thousand minutely updates in each low level directory
-            // if (delta.hours() < 16600) {
-            if (delta.minutes() < 0) {
-                std::cout << "Found minutely top path " << it->second << " for "
-                          << starttime << std::endl;
-                // delta = it->first + delta; 
-                ptime diff = it->first - boost::posix_time::hours(delta.hours())
-                                       - boost::posix_time::minutes(delta.minutes());
-                std::cout << "Found minutely full path " << diff
-                          << " for " << " start: "
-                          << starttime << std::endl;
-                return it->second;
-            }
-        }
-    } else if (freq == hourly) {
-        for (auto it = std::begin(hour); it != std::end(hour); ++it) {
-            delta = starttime - it->first;
-            if (delta.hours() <= 1) {
-                std::cout << "Found hourly path " << it->second << " for "
-                          << starttime << std::endl;
-                return it->second;
-            }
-        }
-    } else if (freq == daily) {
-        for (auto it = std::begin(day); it != std::end(day); ++it) {
-            delta =  starttime - it->first;
-            if (delta.hours() <= 24) {
-                std::cout << "Found daily path " << it->second << " for "
-                          << starttime << std::endl;
-                return it->second;
+    underpass::Underpass under("underpass");
+    auto last = std::make_shared<replication::StateFile>();
+    last = under.getLastState(freq);
+    last->dump();
+    bool loop = true;
+    boost::posix_time::time_duration delta = tstamp - last->timestamp;
+    std::vector<std::string> result;
+    boost::split(result, last->path, boost::is_any_of("/"));
+    int major = std::stoi(result[5]);
+    int minor = std::stoi(result[6]);
+    int index = std::stoi(result[7]);
+    int minutes = (delta.hours() * 60) + delta.minutes();
+    std::string base = last->path.substr(0, last->path.find("/0"));
+    int quotient =  minutes / 1000;
+    int remainder = minutes % 1000;
+    boost::format fmt1("%03d");
+    fmt1 % (major);
+    std::string newpath = base + "/" + fmt1.str();
+    boost::format fmt2("%03d");
+    int next = (index + remainder)/1000;
+    fmt2 % (minor + next + quotient);
+    newpath += "/" + fmt2.str();
+    boost::format fmt3("%03d");
+    next = (index + remainder)%1000;
+    fmt3 % (next);
+    newpath += "/" + fmt3.str();
+    std::cout << "FOUND: " << newpath << std::endl;
+
+    while (loop) {
+        auto data = downloadFile(newpath + ".state.txt");
+        if (data->size() == 0) {
+            std::cerr << "ERROR: StateFile not found: " << newpath << std::endl;
+            return std::string();
+        } else {
+            std::string tmp(reinterpret_cast<const char *>(data->data()));
+            auto state = std::make_shared<replication::StateFile>(tmp, true);
+            state->path = newpath;
+            under.writeState(*state);
+            state->dump();
+            // see if it's within range
+            delta = state->timestamp - tstamp;
+            // std::cerr << "DELTA: " << delta.seconds() << std::endl;
+            if (delta.seconds() > 0) {
+                std::cout << "StateFile in range: " << newpath << std::endl;
+                return state->path;
+            } else {
+                std::cerr << "ERROR: StateFile not in range: " << newpath << std::endl;
+                fmt3 % (++next);
+                newpath = newpath.substr(0, newpath.rfind('/')) + "/" + fmt3.str();
+                continue;
             }
         }
     }

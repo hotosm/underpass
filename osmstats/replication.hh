@@ -111,7 +111,8 @@ class StateFile
 {
 public:
     StateFile(void) {
-        timestamp = boost::posix_time::second_clock::local_time();
+        //timestamp = boost::posix_time::second_clock::local_time();
+        timestamp == boost::posix_time::not_a_date_time;
         sequence = 0;
     };
 
@@ -122,6 +123,23 @@ public:
 
     /// Dump internal data to the terminal, used only for debugging
     void dump(void);
+
+    /// Get the first numerical directory
+    long getMajor(void) {
+        std::vector<std::string> result;
+        boost::split(result, path, boost::is_any_of("/"));
+        return std::stol(result[4]);
+    };
+    long getMinor(void) {
+        std::vector<std::string> result;
+        boost::split(result, path, boost::is_any_of("/"));
+        return std::stol(result[5]);
+    };
+    long getIndex(void) {
+        std::vector<std::string> result;
+        boost::split(result, path, boost::is_any_of("/"));
+        return std::stol(result[6]);
+    };
 
     // protected so testcases can access private data
 //protected:
@@ -154,7 +172,10 @@ public:
 
     std::shared_ptr<std::vector<unsigned char>> downloadFile(const std::string &file);
 
-    /// Find the path to download a replication file
+    /// Since the data files don't have a consistent time interval, this
+    /// attempts to do a rough calculation of the probably data file,
+    /// and downloads *.state.txt files till the right data file is found.
+    /// Note that this can be slow as it has to download multiple files.
     std::string findData(frequency_t freq, ptime starttime);
     std::string findData(frequency_t freq, int sequence) {
         boost::posix_time::time_duration delta;
