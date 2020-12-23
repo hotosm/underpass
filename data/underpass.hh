@@ -116,6 +116,7 @@ public:
 
     /// Get the minimum timestamp for the state.txt data
     std::shared_ptr<replication::StateFile> getFirstState(replication::frequency_t freq);
+
     
 // protected:
     // pqxx::connection *db;

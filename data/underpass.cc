@@ -43,6 +43,7 @@
 #include <algorithm>
 #include <utility>
 
+#include <boost/format.hpp>
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
@@ -212,7 +213,18 @@ std::shared_ptr<replication::StateFile>
 Underpass::getLastState(replication::frequency_t freq)
 {
     pqxx::work worker(*sdb);
-    std::string query = "SELECT timestamp,sequence,path,frequency FROM states ORDER BY timestamp DESC LIMIT 1;";
+    std::string query = "SELECT timestamp,sequence,path,frequency FROM states";
+    query += " WHERE frequency=";
+    if (freq == replication::changeset) {
+        query += "\'changeset\'";
+    } else if (freq == replication::minutely) {
+        query += "\'minute\'";
+    } else if (freq == replication::hourly) {
+        query += "\'hour\'";
+    } else if (freq == replication::daily) {
+        query += "\'day\'";
+    }
+    query +="ORDER BY timestamp DESC LIMIT 1;";
     // std::cout << "QUERY: " << query << std::endl;
     pqxx::result result = worker.exec(query);
     auto last = std::make_shared<replication::StateFile>();
