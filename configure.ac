@@ -217,10 +217,15 @@ AM_CONDITIONAL(ENABLE_DOXYGEN, [ test x"$DOXYGEN" != x ])
 AC_ARG_ENABLE([pch],
   AS_HELP_STRING([--enable-pch],[Enable precompiled header support]), [], [enable_pch=no])
 
-AC_ARG_ENABLE([disk],
-  AS_HELP_STRING([--enable-disk],[Enable storing downloaded filea to disk]), [], [enable_disk=yes])
-if test x"${enable_disk}" = x"yes"; then
-  AC_DEFINE(USE_DISK, [1], [Store downloaded files to disk])
+AC_ARG_ENABLE([cache],
+  AS_HELP_STRING([--enable-cache],[Enable storing downloaded filea to disk]), [], [enable_cache=yes])
+if test x"${enable_cache}" = x"yes"; then
+  AC_DEFINE(USE_CACHE, [1], [Store downloaded files to disk])
+fi
+AC_ARG_ENABLE([tmp],
+  AS_HELP_STRING([--enable-tmp],[Enable using a tmp file instead of memory]), [], [enable_tmp=no])
+if test x"${enable_tmp}" = x"yes"; then
+  AC_DEFINE(USE_TMPFILE, [1], [Use tmp file for downloaded files])
 fi
 
 AM_CONDITIONAL([ENABLE_PCH], [test x"$enable_pch" != x"no"])
