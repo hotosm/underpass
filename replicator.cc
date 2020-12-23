@@ -240,23 +240,34 @@ main(int argc, char *argv[])
          std::cout << "Sequence is " << vm["sequence"].as<int>() << std::endl;
      }
 
-     osmstats::QueryOSMStats ostats;                    ///< OSM Stats database access
      replication::Planet planet;
+     osmstats::QueryOSMStats ostats("osmstats");
      underpass::Underpass under("underpass");
      if (vm.count("monitor")) {
          std::string url = vm["monitor"].as<std::string>();
-         //std::string last = ostats.getLastUpdate();
-         std::string last = replicator.getLastPath(replication::minutely);
+         ptime tstamp = ostats.getLastUpdate();
+         auto state = under.getState(replication::minutely, tstamp);
+         std::string last;
+         if (state->sequence == 0) {
+             last = planet.findData(replication::minutely, tstamp);
+         } else {
+             last = state->path;
+         }
          std::cout << "Last minutely is " << last  << std::endl;
-         // url = "https://planet.openstreetmap.org/replication/minute/004/308/210";
          std::thread mstate (threads::startMonitor, std::ref(last));
          //threads::startMonitor(std::ref(last));
          //url = "https://planet.openstreetmap.org/replication/hour/004/308/210";
          // std::string last = replicator::getLastPath(replication::hourly);
          // std::thread hstate (threads::startMonitor, std::ref(url));
-         last = replicator.getLastPath(replication::changeset);
-         std::cout << "Last changeset is " << last  << std::endl;
-         std::thread cstate (threads::startMonitor, std::ref(last));
+         auto state2 = under.getState(replication::changeset, tstamp);
+         std::string clast;
+         if (state2->sequence == 0 || state2->timestamp.is_not_a_date_time()) {
+             clast = planet.findData(replication::changeset, tstamp);
+         } else {
+             clast = state2->path;
+         }
+         std::cout << "Last changeset is " << clast  << std::endl;
+         std::thread cstate (threads::startMonitor, std::ref(clast));
          // threads::startMonitor(url);
          std::cout << "Waiting..." << std::endl;
          cstate.join();
@@ -357,6 +368,7 @@ main(int argc, char *argv[])
      if (vm.count("timestamp")) {
          std::cout << "Timestamp is: " << vm["timestamp"].as<std::string> () << "\n";
          timestamp = time_from_string(vm["timestamp"].as<std::string>());
+#if 0
          std::string foo = planet.findData(replication::minutely, timestamp);
          std::cout << "Full path: " << foo << std::endl;
          data = replicator.downloadFiles("https://planet.openstreetmap.org/replication/minute" + foo + "/000/000.state.txt", true);
@@ -367,6 +379,7 @@ main(int argc, char *argv[])
          std::string tmp(reinterpret_cast<const char *>(data->data()));
          replication::StateFile state(tmp, true);
          state.dump();
+#endif
      }
 
      std::string statistics;
