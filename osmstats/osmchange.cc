@@ -132,12 +132,6 @@ OsmChangeFile::readXML(std::istream &xml)
 {
     // std::cout << "OsmChangeFile::readXML(): " << xml.rdbuf();
     std::ofstream myfile;
-#if 1 // def USE_TMPFILE
-    myfile.open ("tmp.xml");
-    myfile << xml.rdbuf();
-    myfile << std::endl;
-    myfile.close();
-#endif
 #ifdef LIBXML
     // libxml calls on_element_start for each node, using a SAX parser,
     // and works well for large files.
@@ -145,15 +139,12 @@ OsmChangeFile::readXML(std::istream &xml)
     try {
         set_substitute_entities(true);
         timer.startTimer();
-#if 1 //def USE_TMPFILE
-        parse_file("tmp.xml");
-#else
         parse_stream(xml);
-#endif
         timer.endTimer("libxml++");
     }
     catch(const xmlpp::exception& ex) {
         std::cerr << "libxml++ exception: " << ex.what() << std::endl;
+        std::cerr << xml.rdbuf() << std::endl;
         int return_code = EXIT_FAILURE;
     }
 #else
@@ -164,7 +155,7 @@ OsmChangeFile::readXML(std::istream &xml)
     boost::property_tree::ptree pt;
     Timer timer;
     timer.startTimer();
-#if 1 //def USE_TMPFILE
+#ifdef USE_TMPFILE
     boost::property_tree::read_xml("tmp.xml", pt);
 #else
     boost::property_tree::read_xml(xml, pt);
@@ -253,32 +244,31 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
     // There are 3 change states to handle, each one contains possibly multiple
     // nodes and ways.
     if (name == "create") {
-        change = std::make_shared<OsmChange>();
-        change->action = create;
+        change = std::make_shared<OsmChange>(osmobjects::create);
         changes.push_back(change);
         return;
     } else if (name == "modify") {
-        change = std::make_shared<OsmChange>();
-        change->action = modify;
+        change = std::make_shared<OsmChange>(osmobjects::modify);
         changes.push_back(change);
         return;
     } else if (name == "delete") {
-        change = std::make_shared<OsmChange>();
-        change->action = remove;
+        change = std::make_shared<OsmChange>(osmobjects::remove);
         changes.push_back(change);
         return;
     } else if (name == "node") {
-        changes.back()->newNode();
-        // changes.back()->setAction(changes.back()->action);
+        auto node = changes.back()->newNode();
+        node->action = changes.back()->action;
     } else if (name == "tag") {
         // static_cast<std::shared_ptr<OsmWay>>(object)->tags.clear();
         // A tag element has only has 1 attribute, and numbers are stored as
         // strings
         // static_cast<OsmNode *>(object)->addTag(attributes[0].name, attributes[0].value);
     } else if (name == "way") {
-        changes.back()->newWay();
+        auto way = changes.back()->newWay();
+        way->action = changes.back()->action;
     } else if (name == "relation") {
-        changes.back()->newRelation();
+        auto relation = changes.back()->newRelation();
+        relation->action = changes.back()->action;
     } else if (name == "member") {
         // It's a member of a relation
     } else if (name == "nd") {
@@ -338,13 +328,13 @@ OsmChange::dump(void)
 {
     std::cout << "------------" << std::endl;
     std::cout << "Dumping OsmChange()" << std::endl;
-    if (action == create) {
+    if (action == osmobjects::create) {
         std::cout << "\tAction: create" << std::endl;
-    } else if(action == modify) {
+    } else if(action == osmobjects::modify) {
         std::cout << "\tAction: modify" << std::endl;
-    } else if(action == remove) {
+    } else if(action == osmobjects::remove) {
         std::cout << "\tAction: delete" << std::endl;
-    } else if(action == none) {
+    } else if(action == osmobjects::none) {
         std::cout << "\tAction: data element" << std::endl;
     }
 
@@ -377,7 +367,7 @@ OsmChangeFile::dump(void)
     std::cout << "Dumping OsmChangeFile()" << std::endl;
     std::cout << "There are " << changes.size() << " changes" << std::endl;
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
-        std::shared_ptr<OsmChange> change = *it;
+        OsmChange *change = it->get();
         change->dump();
     }
     if (userstats.size() > 0) {
@@ -388,15 +378,18 @@ OsmChangeFile::dump(void)
     }
 }
 
-void
+// std::shared_ptr<std::map<long, osmstats::OsmStats>>
+bool
 OsmChangeFile::collectStats(void)
 {
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
+        std::cout << "Test" << std::endl;
         auto stats = std::make_shared<ChangeStats>();
-        std::shared_ptr<OsmChange> change = *it;
+        OsmChange *change = it->get();
+        change->dump();
         if (change->action == create) {
             for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
-                std::shared_ptr<OsmNode> node = *it;
+                OsmNode *node = it->get();
                 if (node->tags.size() > 0) {
                     std::cout << "New Node ID " << node->id << " has tags!" << std::endl;
                 } else {
@@ -404,7 +397,7 @@ OsmChangeFile::collectStats(void)
                 }
             }
             for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
-                std::shared_ptr<OsmWay> way = *it;
+                OsmWay *way = it->get();
                 if (way->tags.size() == 0) {
                     std::cerr << "New Way ID " << way->id << " has no tags!" << std::endl;
                     if (way->isClosed() && way->numPoints() == 5) {
@@ -426,7 +419,7 @@ OsmChangeFile::collectStats(void)
             }
         } else if (change->action == modify) {   
             for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
-                std::shared_ptr<OsmNode> node = *it;
+                OsmNode *node = it->get();
                 if (node->tags.size() > 0) {
                     std::cout << "Modified Node ID " << node->id << " has tags!" << std::endl;
                 } else {
@@ -434,7 +427,7 @@ OsmChangeFile::collectStats(void)
                 }
             }
             for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
-                std::shared_ptr<OsmWay> way = *it;
+                OsmWay *way = it->get();
                 if (way->tags.size() == 0) {
                     std::cerr << "Modified Way ID " << way->id << " has no tags!" << std::endl;
                     continue;

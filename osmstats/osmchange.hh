@@ -64,7 +64,15 @@ typedef boost::geometry::model::multi_linestring<linestring_t> mlinestring_t;
 
 #include "hotosm.hh"
 #include "data/osmobjects.hh"
+#include "osmstats/osmchange.hh"
+#include "osmstats/osmstats.hh"
 using namespace osmobjects;
+namespace osmstats {
+class OsmStats;
+};
+namespace osmschange {
+class OsmChange;
+};
 
 /// \namespace osmchange
 namespace osmchange {
@@ -78,7 +86,7 @@ namespace osmchange {
 
 /// \enum action_t
 /// The actions supported by OsmChange files
-typedef enum {none, create, modify, remove} action_t; // delete is a reserved word
+//typedef enum {none, create, modify, remove} action_t; // delete is a reserved word
 /// \enum osmtype_t
 /// The object types used by an OsmChange file
 typedef enum {empty, node, way, relation, member} osmtype_t;
@@ -91,21 +99,23 @@ typedef enum {empty, node, way, relation, member} osmtype_t;
 class ChangeStats
 {
 public:
-    long pois_added;            ///< The total number of POIs added
-    long buildings_added;       ///< The total number of buildings added
-    long waterways_added;       ///< The total number of waterways added
-    long roads_added;           ///< The total number of roads added
-    long roads_modified;        ///< The total number of roads modified
-    long waterways_modified;    ///< The total number of waterways modified
-    long buildings_modified;    ///< The total number of buildings modified
-    long roads_km_added;        ///< The length of the roads added in KM
-    long waterways_km_added;    ///< The length of the waterways added in KM
-    long roads_km_modified;     ///< The length of the roads modified in KM
-    long waterways_km_modified; ///< The length of the waterways added in KM
-    long pois_modified;         ///< The total number of POIs modified
+    long id = 0;
+    long pois_added = 0;            ///< The total number of POIs added
+    long buildings_added = 0;       ///< The total number of buildings added
+    long waterways_added= 0;       ///< The total number of waterways added
+    long roads_added= 0;           ///< The total number of roads added
+    long roads_modified = 0;        ///< The total number of roads modified
+    long waterways_modified = 0;    ///< The total number of waterways modified
+    long buildings_modified = 0;    ///< The total number of buildings modified
+    long pois_modified = 0;         ///< The total number of POIs modified
+    long roads_km_added = 0.0;        ///< The length of the roads added in KM
+    long waterways_km_added = 0.0;    ///< The length of the waterways added in KM
+    long roads_km_modified = 0.0;     ///< The length of the roads modified in KM
+    long waterways_km_modified = 0.0; ///< The length of the waterways added in KM
 
     /// Dump internal data to the terminal, only for debugging
     void dump(void) {
+        std::cout << "Stats for change: \t " << id << std::endl;
         std::cout << "Roads Added (km): \t " << roads_km_added << std::endl;
         std::cout << "Roads Modified (km):\t " << roads_km_modified << std::endl;
         std::cout << "Waterways Added (km): \t " << waterways_km_added << std::endl;
@@ -129,6 +139,8 @@ public:
 class OsmChange
 {
 public:
+    OsmChange(osmobjects::action_t act) { action = act; };
+    
     ///< dump internal data, for debugging only
     void dump(void);
     
@@ -206,7 +218,7 @@ public:
     /// Get a specific relation in this change
     std::shared_ptr<OsmRelation> getRelation(int index) { return relations[index]; };
 
-    action_t action = none;                              ///< The change action
+    osmobjects::action_t action = osmobjects::none;      ///< The change action
     osmtype_t type;                                      ///< The OSM object type
     std::vector<std::shared_ptr<OsmNode>> nodes;         ///< The nodes in this change
     std::vector<std::shared_ptr<OsmWay>> ways;           ///< The ways in this change
@@ -246,7 +258,7 @@ public:
     std::vector<std::shared_ptr<OsmChange>> changes; ///< All the changes in this file
 
     /// Collect statistics for each user
-    void collectStats(void);
+    bool collectStats(void);
     
     /// dump internal data, for debugging only
     void dump(void);
