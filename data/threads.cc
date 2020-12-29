@@ -248,7 +248,7 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
     // 144, 160, 176, 192, 208, 224
     auto rng  = files | ranges::views::chunk(200);
 
-    underpass::Underpass under;
+    underpass::Underpass under("underpass");
     Timer timer;
     timer.startTimer();
     for (auto cit = std::begin(rng); cit != std::end(rng); ++cit) {
@@ -330,8 +330,6 @@ threadOsmChange(const std::string &file)
         std::cout << "osmChange file not found: " << file << std::endl;
         return false;
     } else {
-        // XML parsers expect every line to have a newline, including the end of file
-        // data->push_back('\n');
 #ifdef USE_CACHE
         if (!boost::filesystem::exists(dir)) {
             std::ofstream myfile;
@@ -365,6 +363,9 @@ threadOsmChange(const std::string &file)
             // return false;
         }
     }
+
+    // These stats are for the entire file
+    osmchanges.collectStats();
 
     // Apply the changes to the database
     osmstats::QueryOSMStats ostats("osmstats");

@@ -84,7 +84,14 @@ class StateFile;
 /// \namespace threads
 namespace threads {
 
+/// This handler downloads state.txt files from planet, newest first, and then
+/// goes backwards in time. This is used to populate database tables with only
+/// newer data.
 extern void startStateThreads(const std::string &base, std::vector<std::string> &files);
+
+/// This monitors the planet server for new files of the specified type.
+/// It does a bulk download to catch up the database, then checks for the
+/// minutely change files and processes them.
 extern void startMonitor(const std::string &url);
 
 /// Updates the states table in the Underpass database
