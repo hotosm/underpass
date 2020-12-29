@@ -98,8 +98,7 @@ public:
     void dump(void);
 
     /// Update the creator table to track editor statistics
-    bool updateCreator(long user_id, long change_id, const std::string &editor,
-                       const std::string &hashtags);
+    bool updateCreator(long user_id, long change_id, const std::string &editor);
 
     /// Write the stored data on the directories and timestamps
     /// on the planet server.

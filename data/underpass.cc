@@ -118,12 +118,24 @@ Underpass::connect(const std::string &dbname)
     }
 }
 
-/// Update the creator table to track editor statistics
+// Update the creator table to track editor statistics
 bool
-Underpass::updateCreator(long user_id, long change_id, const std::string &editor,
-                   const std::string &hashtags)
+Underpass::updateCreator(long user_id, long change_id, const std::string &editor)
 {
+    std::string query = "INSERT INTO creators(user_id, change_id, editor) VALUES(";
+    query += std::to_string(user_id) + "," + std::to_string(change_id);
+    std::string tmp = editor;
+    boost::algorithm::replace_all(tmp, ")", "&#41;");
+    boost::algorithm::replace_all(tmp, "(", "&#40;");
+    boost::algorithm::replace_all(tmp, "\'", "&quot;");
+    query += ",\'" + tmp;
+    query += "\') ON CONFLICT DO NOTHING;";
+    std::cout << "QUERY: " << query << std::endl;
+    pqxx::work worker(*sdb);
+    pqxx::result result = worker.exec(query);
+    worker.commit();
 
+    return false;
 }
 
 std::shared_ptr<replication::StateFile>
@@ -170,8 +182,16 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
     pqxx::result result = worker.exec(query);
     worker.commit();
     if (result.size() > 0) {
-        state->timestamp = time_from_string(pqxx::to_string(result[0][0]));
-        state->path = pqxx::to_string(result[0][1]);
+        // Sometimes these two fields are reversed
+        try {
+            state->timestamp = time_from_string(result[0][0].c_str());
+            state->path = pqxx::to_string(result[0][1]);
+        } catch (std::exception& e) {
+            std::cerr << "ERROR: Couldn't parse StateFile " << std::endl;
+            std::cerr << e.what() << std::endl;
+            state->timestamp = time_from_string(result[0][1].c_str());
+            state->path = pqxx::to_string(result[0][0]);
+        }
         state->sequence = result[0][2].as(int(0));
         state->frequency =  pqxx::to_string(result[0][3]);
     }
