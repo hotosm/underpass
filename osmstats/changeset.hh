@@ -161,9 +161,6 @@ public:
     /// Import a changeset file from disk and initialize the database
     bool importChanges(const std::string &file);
 
-    // Parse the XML data
-    // bool readXML(const std::string xml);
-
 #ifdef LIBXML
     /// Called by libxml++ for each element of the XML file
     void on_start_element(const Glib::ustring& name,
