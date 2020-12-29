@@ -61,6 +61,9 @@ using namespace apidb;
 namespace changeset {
   class ChangeSet;
 };
+namespace osmchange {
+class OsmChange;
+};
 namespace geoutil {
   class GeoUtil;
 };
@@ -253,6 +256,7 @@ class QueryOSMStats : public apidb::QueryStats
 
     int lookupHashtag(const std::string &hashtag);
 
+    bool hasHashtag(long changeid);
     RawChangeset &operator[](int index){ return ostats[index]; }
 
     /// Dump internal data, debugging usage only!
@@ -312,7 +316,23 @@ class QueryOSMStats : public apidb::QueryStats
     std::map<std::string, RawHashtag> hashtags;
 };
 
-    
+class OsmStats
+{
+public:
+    double road_km_added = 0;
+    double road_km_modified = 0;
+    double waterway_km_added = 0;
+    double waterway_km_modified = 0;
+    long roads_added = 0;
+    long roads_modified = 0;
+    long waterways_added  = 0;
+    long waterways_modified  = 0;
+    long buildings_added  = 0;
+    long buildings_modified = 0;
+    long pois_added = 0;
+    long pois_modified = 0;
+};
+
 }       // EOF osmstatsdb
 
 #endif  // EOF __OSMSTATS_HH__

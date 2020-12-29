@@ -49,6 +49,7 @@ using namespace boost::gregorian;
 #include "osmstats/osmstats.hh"
 #include "osmstats/changeset.hh"
 #include "data/geoutil.hh"
+#include "data/underpass.hh"
 
 using namespace apidb;
 
@@ -105,8 +106,14 @@ QueryOSMStats::lookupHashtag(const std::string &hashtag)
 bool
 QueryOSMStats::applyChange(osmchange::OsmChange &change)
 {
-    std::cout << "Applying OsmChange data" << std::endl;
+    // std::cout << "Applying OsmChange data" << std::endl;
 
+    // osmchange::OsmChange *change = it->get();
+    // if (ostats.hasHashtag(change->id)) {
+    //     std::cout << "Has hashtag for id: " << change->id << std::endl;
+    // } else {
+    //     std::cerr << "No hashtag for id: " << change->id << std::endl;
+    // }
     // change.dump();
     std::string query = "INSERT INTO raw_users VALUES(";
     // boost::algorithm::replace_all(change.user, "\'", "&quot;");
@@ -135,25 +142,32 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     pqxx::result result = worker.exec(query);
     //worker.commit();
 
+    // If there are no hashtags in this changset, then it isn't part
+    // of an organized map campaign, so we don't need to store those
+    // statistics except for editor usage.
+    if (change.hashtags.size() == 0) {
+        std::cout << "No hashtags in change id: " << change.id << std::endl;
+        underpass::Underpass under("underpass");
+        under.updateCreator(change.uid, change.id, change.editor);
+        worker.commit();
+        return true;
+    } else {
+        std::cout << "Found hashtags for change id: " << change.id << std::endl;
+    }
+    //pqxx::work worker2(*sdb);
     for (auto it = std::begin(change.hashtags); it != std::end(change.hashtags); ++it) {
-//        bool key_exists = hashtags.find(*it) != hashtags.end();
-//        if (!key_exists) {
-//            std::cout << *it << " doesn't exist " << std::endl;
-        //addHashtag(0, *it);
         query = "INSERT INTO raw_hashtags (hashtag) VALUES(\'";
         query += *it + "\') ON CONFLICT DO NOTHING;";
         std::cout << "QUERY: " << query << std::endl;
-        //pqxx::work worker2(*db);
-        //auto worker2 = std::make_shared<pqxx::work>(*db);
-        //pqxx::result result = worker->exec(query);
-        //worker2->commit();
-//        addHashtag(0, *it);
-        // } else {
-        //     std::cout << *it << " does exist " << std::endl;
-        // }
+        pqxx::result result = worker.exec(query);
     }
+    //worker2.commit();
     // Add changeset data
     // road_km_added | road_km_modified | waterway_km_added | waterway_km_modified | roads_added | roads_modified | waterways_added | waterways_modified | buildings_added | buildings_modified | pois_added | pois_modified | verified | augmented_diffs | updated_at
+    // the updated_at timestamp is set after the change data has been processed
+
+    // osmstats=# UPDATE raw_changesets SET road_km_added = (SELECT road_km_added + 10.0 FROM raw_changesets WHERE road_km_added>0 AND user_id=649260 LIMIT 1) WHERE user_id=649260;
+
     if (!change.open) {
         query = "INSERT INTO raw_changesets (id, editor, user_id, created_at, closed_at) VALUES(";
     } else {
@@ -256,11 +270,27 @@ QueryOSMStats::getRawChangeSets(std::vector<long> &changeset_ids)
     return true;
 }
 
+bool
+QueryOSMStats::hasHashtag(long changeid)
+{
+    std::string query = "SELECT COUNT(hashtag_id) FROM raw_changesets_hashtags WHERE changeset_id=" + std::to_string(changeid) + ";";
+    std::cout << "QUERY: " << query << std::endl;
+    pqxx::work worker(*sdb);
+    pqxx::result result = worker.exec(query);
+    worker.commit();
+
+    if (result[0][0].as(int(0)) > 0 ) {
+        return true;
+    }
+
+    return false;
+}
+
 // Get the timestamp of the last update in the database
 ptime
 QueryOSMStats::getLastUpdate(void)
 {
-    std::string query = "SELECT MAX(updated_at) FROM raw_changesets;";
+    std::string query = "SELECT MAX(created_at) FROM raw_changesets;";
     std::cout << "QUERY: " << query << std::endl;
     // auto worker = std::make_shared<pqxx::work>(*db);
     pqxx::work worker(*sdb);
