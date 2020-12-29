@@ -14,9 +14,9 @@ ALTER TABLE states ADD PRIMARY KEY (path, sequence);
 CREATE TABLE public.creators (
     user_id bigint NOT NULL,
     change_id bigint NOT NULL,
-    editor text NOT NULL,
-    hashtags text[] NOT NULL
+    editor text NOT NULL
 );
+ALTER TABLE creators ADD PRIMARY KEY (change_id);
 
 CREATE TABLE public.way_nodes (
     way_id bigint NOT NULL,
