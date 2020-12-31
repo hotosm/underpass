@@ -27,13 +27,13 @@ jobs:
       uses: mattnotmitt/doxygen-action@v1.1.0
       with:
         # Path to Doxyfile
-        doxyfile-path: "doc/Doxyfile" # default is ./Doxyfile
+        doxyfile-path: "doc/Doxyfile"
         # Working directory
-        working-directory: "doc/" # default is .
+        working-directory: "."
     
-    - name: Deploy
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: doc/html
-        
+#    - name: Deploy
+#      uses: robsavoye/actions-gh-pages@v3
+#      with:
+#        github_token: ${{ secrets.GITHUB_TOKEN }}
+#        publish_dir: doc/html
+
