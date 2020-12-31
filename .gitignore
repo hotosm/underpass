@@ -24,3 +24,4 @@ libtool
 Makefile.in
 po/*.gmo
 py-compile
+doc/html
