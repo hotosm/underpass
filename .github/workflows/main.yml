@@ -22,7 +22,6 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your
     # job can access it
     - uses: actions/checkout@v2
-        
     - name: Run Doxygen
       uses: mattnotmitt/doxygen-action@v1.1.0
       with:
@@ -30,7 +29,6 @@ jobs:
         doxyfile-path: "doc/Doxyfile"
         # Working directory
         working-directory: "."
-    
    - name: Deploy HTML
      uses: peaceiris/actions-gh-pages@v3
      with:
