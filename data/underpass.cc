@@ -292,11 +292,13 @@ Underpass::getCountry(double max_lat, double max_lon, double min_lat, double min
     pqxx::result result = worker.exec(query);
     worker.commit();
 
-    auto country = std::make_shared<osmstats::RawCountry>(result[0][0].as(int(0)),
-                                                          result[0][1].c_str(),
-                                                          result[0][2].c_str());
-
-    return country;
+    if (result.size() > 0) {
+        return std::make_shared<osmstats::RawCountry>(result[0][0].as(int(0)),
+                                                      result[0][1].c_str(),
+                                                      result[0][2].c_str());
+    } else {
+        return std::make_shared<osmstats::RawCountry>();
+    }
 }
 
 } // EOF replication namespace
