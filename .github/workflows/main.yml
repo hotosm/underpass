@@ -23,7 +23,7 @@ jobs:
     # job can access it
     - uses: actions/checkout@v2
         
-    - name: Doxygen Action
+    - name: Run Doxygen
       uses: mattnotmitt/doxygen-action@v1.1.0
       with:
         # Path to Doxyfile
@@ -31,9 +31,9 @@ jobs:
         # Working directory
         working-directory: "."
     
-#    - name: Deploy
-#      uses: robsavoye/actions-gh-pages@v3
-#      with:
-#        github_token: ${{ secrets.GITHUB_TOKEN }}
-#        publish_dir: doc/html
+   - name: Deploy HTML
+     uses: peaceiris/actions-gh-pages@v3
+     with:
+       github_token: ${{ secrets.GITHUB_TOKEN }}
+       publish_dir: doc/html
 
