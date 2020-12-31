@@ -132,6 +132,11 @@ class RawCountry
         abbrev = code;
     }
 
+    void dump(void) {
+        std::cout << "County ID:\t" << id << std::endl;
+        std::cout << "Name:\t" << name << std::endl;
+        std::cout << "Abbreviation:\t" << abbrev << std::endl;
+    };
     int id;                     ///< The Country ID column
     std::string name;           ///< The Country name column
     std::string abbrev;         ///< The 3 letter ISO abbreviation for the country
