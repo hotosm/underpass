@@ -276,5 +276,28 @@ Underpass::getFirstState(replication::frequency_t freq)
     return first;
 }
 
+std::shared_ptr<osmstats::RawCountry>
+Underpass::getCountry(double max_lat, double max_lon, double min_lat, double min_lon)
+{
+    std::string query = "SELECT cid,name,other_tags->\'name:iso_w2\' FROM geoboundaries WHERE ST_WITHIN(";
+    query += "ST_MakePolygon(ST_GeomFromText(\'LINESTRING(";
+    query += std::to_string(min_lon) + " " + std::to_string(max_lat);
+    query += "," + std::to_string(max_lon) + " " + std::to_string(max_lat);
+    query += "," + std::to_string(max_lon) + " " + std::to_string(min_lat);
+    query += "," + std::to_string(min_lon) + " " + std::to_string(min_lat);
+    query += "," + std::to_string(min_lon) + " " + std::to_string(max_lat);
+    query += ")\', 4326)), wkb)";
+    std::cout << "QUERY: " << query << std::endl;
+    pqxx::work worker(*sdb);
+    pqxx::result result = worker.exec(query);
+    worker.commit();
+
+    auto country = std::make_shared<osmstats::RawCountry>(result[0][0].as(int(0)),
+                                                          result[0][1].c_str(),
+                                                          result[0][2].c_str());
+
+    return country;
+}
+
 } // EOF replication namespace
 

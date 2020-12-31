@@ -116,12 +116,11 @@ public:
     /// Get the minimum timestamp for the state.txt data
     std::shared_ptr<replication::StateFile> getFirstState(replication::frequency_t freq);
 
+    std::shared_ptr<osmstats::RawCountry> getCountry(double max_lat, double max_lon, double min_lat, double min_lon);
     
 // protected:
-    // pqxx::connection *db;
     std::shared_ptr<pqxx::connection> sdb;
     std::map<replication::frequency_t, std::string> frequency_tags;
-    //pqxx::work worker;
     std::string database = "underpass"; ///< The database to use
     std::string dbserver = "localhost"; ///< The database server to use
     int port = 443;             ///< Network port on the server, note SSL only allowed    
