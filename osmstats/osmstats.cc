@@ -106,22 +106,28 @@ QueryOSMStats::lookupHashtag(const std::string &hashtag)
 bool
 QueryOSMStats::applyChange(osmchange::OsmChange &change)
 {
-    // std::cout << "Applying OsmChange data" << std::endl;
+    std::cout << "Applying OsmChange data" << std::endl;
 
+    pqxx::work worker(*sdb);
     // osmchange::OsmChange *change = it->get();
-    // if (ostats.hasHashtag(change->id)) {
-    //     std::cout << "Has hashtag for id: " << change->id << std::endl;
+    // if (hasHashtag(change.id)) {
+    //     std::cout << "Has hashtag for id: " << change.id << std::endl;
     // } else {
-    //     std::cerr << "No hashtag for id: " << change->id << std::endl;
+    //     std::cerr << "No hashtag for id: " << change.id << std::endl;
     // }
     // change.dump();
-    std::string query = "INSERT INTO raw_users VALUES(";
+    // std::string query = "INSERT INTO raw_users VALUES(";
+    // // boost::algorithm::replace_all(change.user, "\'", "&quot;");
+    // // query += std::to_string(change.uid) + ",\'" + change.user;
+    // query += "\') ON CONFLICT DO NOTHING;";
+    // std::cout << "QUERY: " << query << std::endl;
+    // pqxx::result result = worker.exec(query);
+
+    std::string query = "INSERT INTO raw_changesets(editor, user_id, created_at) VALUES(";
     // boost::algorithm::replace_all(change.user, "\'", "&quot;");
     // query += std::to_string(change.uid) + ",\'" + change.user;
     query += "\') ON CONFLICT DO NOTHING;";
     std::cout << "QUERY: " << query << std::endl;
-    pqxx::work worker(*sdb);
-    // pqxx::result result = worker.exec(query);
     worker.commit();
 }
 
@@ -145,9 +151,9 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     // If there are no hashtags in this changset, then it isn't part
     // of an organized map campaign, so we don't need to store those
     // statistics except for editor usage.
+    underpass::Underpass under("underpass");
     if (change.hashtags.size() == 0) {
         std::cout << "No hashtags in change id: " << change.id << std::endl;
-        underpass::Underpass under("underpass");
         under.updateCreator(change.uid, change.id, change.editor);
         worker.commit();
         return true;
@@ -160,6 +166,27 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
         query += *it + "\') ON CONFLICT DO NOTHING;";
         std::cout << "QUERY: " << query << std::endl;
         pqxx::result result = worker.exec(query);
+        std::string query = "SELECT id FROM raw_hashtags WHERE hashtag=\'" + *it + "\';";
+        std::cout << "QUERY: " << query << std::endl;
+        result = worker.exec(query);
+        std::string id = result[0][0].c_str();
+        query = "INSERT INTO raw_changesets_hashtags(changeset_id,hashtag_id) VALUES(";
+        query += std::to_string(change.id) + ", " + id + ") ON CONFLICT DO NOTHING;";
+        std::cout << "QUERY: " << query << std::endl;
+        result = worker.exec(query);
+    }
+
+    // Update the raw_changesets_countries table
+    auto country = under.getCountry(change.max_lat, change.max_lon,
+                                                    change.min_lat, change.min_lon);
+    if (country->id > 0) {
+        query = "INSERT INTO raw_changesets_countries(changeset_id, country_id) VALUES(";
+        query += std::to_string(change.id) + ", " + std::to_string(country->id);
+        query += ") ON CONFLICT DO NOTHING;";
+        std::cout << "QUERY: " << query << std::endl;
+        result = worker.exec(query);
+    } else {
+        std::cerr << "ERROR: Can't find country for change ID: " << change.id << std::endl;
     }
     //worker2.commit();
     // Add changeset data
