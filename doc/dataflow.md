@@ -73,8 +73,8 @@ validator can look into the issue later. If it passes validation, then
 statistics are calculated, and written to the **OSM Stats**
 database. Some data also comes from the Tasking Manager.
 
-In the near future, Changes will alsobe applied to a standard OSM
-database so it can be queired for data extracts.
+In the near future, Changes will also be applied to a standard OSM
+database so it can be quered for data extracts.
 
 &nbsp;
-![](dataflow.png)
+![Chart](dataflow.png)
