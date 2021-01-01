@@ -27,9 +27,9 @@ jobs:
       with:
           doxyfile-path: ./doc/Doxyfile
           working-directory: .
-    # - name: Deploy HTML
-    #  uses: peaceiris/actions-gh-pages@v3
-    #  with:
-    #    github_token: ${{ secrets.GITHUB_TOKEN }}
-    #    publish_dir: ./doc/html
-    #    publish_branch: gh-pages
+    - name: Deploy HTML
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./doc/html
+        publish_branch: gh-pages
