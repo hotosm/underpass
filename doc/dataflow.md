@@ -1,5 +1,26 @@
 # Underpass Data Flow
 
+The Overpass data storage contains information from several
+sources. Underpass has to duplicate this collection of data and
+aggregate it into a similar structure. The primary data is the map
+data itself, which contains no history or change data.  All the
+necessary data is available from planet.openstreetmap.org, but is not
+all in the same format, and is in different places on the planet
+server. There appear to be no open-source projects that aggregate all
+this data together other than Overpass.
+
+There are two different change file formats. One includes the hashtags
+and comments from the change. The other is the changed data
+itself. Both of these data files can be downloaded from the planet
+server, and can also be updated with minutely changes. There is
+currently no open source software that I can find to process the
+changeset file, nor to merge it with the other change data. This is
+one of the tasks Underpass needs to handle. To support the Missing
+Maps leaderboard, and OSM Stats. the changes are used to calculate the
+totals of highways, waterways, and buildings added or edited in that
+change. A change it the data at uploading to OSM time. Underpass will
+recreate the history as it processes the change files.
+
 ## Source Data
 
 Underpass collects data from multiple sources, primarily the 
