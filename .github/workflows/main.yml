@@ -24,7 +24,7 @@ jobs:
     - name: Run Doxygen
       uses: mattnotmitt/doxygen-action@v1.1.0
       with:
-        doxyfile-path: doc/Doxyfile
+        doxyfile-path: ./doc/Doxyfile
         working-directory: .
    - name: Deploy HTML
      uses: peaceiris/actions-gh-pages@v3
