@@ -21,14 +21,15 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your
     # job can access it
     - uses: actions/checkout@v2
-    - name: Run Doxygen
+
+    - name: Doxygen Action
       uses: mattnotmitt/doxygen-action@v1.1.0
       with:
-        doxyfile-path: ./doc/Doxyfile
-        working-directory: .
-   - name: Deploy HTML
-     uses: peaceiris/actions-gh-pages@v3
-     with:
-       github_token: ${{ secrets.GITHUB_TOKEN }}
-       publish_dir: ./doc/html
-       publish_branch: gh-pages
+          doxyfile-path: ./doc/Doxyfile
+          working-directory: .
+    # - name: Deploy HTML
+    #  uses: peaceiris/actions-gh-pages@v3
+    #  with:
+    #    github_token: ${{ secrets.GITHUB_TOKEN }}
+    #    publish_dir: ./doc/html
+    #    publish_branch: gh-pages
