@@ -1,4 +1,4 @@
-# Overview
+# mainpage
 
 Underpass is a C++ API and utility programs for mainipulating
 OpenStreetMap data at the database and raw data file level. It can
