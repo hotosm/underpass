@@ -21,6 +21,34 @@ totals of highways, waterways, and buildings added or edited in that
 change. A change it the data at uploading to OSM time. Underpass will
 recreate the history as it processes the change files.
 
+For producing statistics, the process initially starts by downloading
+the large data file of all changes made since 2005. As hashtags didn’t
+exist until late 2014, data prior to then is ignored. Starting in
+2014, hashtags were stored in the comments field of the map data, till
+the hashtag field was added in late 2017. This data file has some of
+the fields we want, which is [documented here](changefile.md).
+
+Briefly, Underpass extracts the hashtag (if there are any) and
+changeset timestamp. The next task is to download the changed data
+itself. This is available at planet.openstreetmap.org as well. The
+[osmium](https://wiki.openstreetmap.org/wiki/Osmium) program can do
+this, but does not support importing it into a database. It only
+works with disk files. The [Replicator program](replicator.md) will do
+a similar task, namely download the changes, but will apply them to
+the statistics database. While Replicator processes the changes, it
+will also update the statistics database by adding the totals for the
+new data to the existing amounts. For statistics collection, the
+core OSM database isn't needed.
+
+However the changes do need to be applied to the OSM map database, so
+when processing exports, or later doing validation, it’s up to
+date. The entire update process of both databases has to happen within
+one minute if we want to update that frequently, which is the
+goal. When updating the map database, any node or way that is changed
+will be stored in the database in a new table. This will create the
+history needed for augmented diffs. Only the previous version is
+stored, any older entries will be deleted from the history database.
+
 ## Source Data
 
 Underpass collects data from multiple sources, primarily the 
