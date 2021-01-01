@@ -16,7 +16,13 @@ CREATE TABLE public.creators (
     change_id bigint NOT NULL,
     editor text NOT NULL
 );
-ALTER TABLE creators ADD PRIMARY KEY (change_id);
+
+CREATE TABLE public.geoboundaries (
+    cid text,
+    name character varying,
+    other_tags public.hstore,
+    wkb public.geometry(GeometryCollection,4326)
+);
 
 CREATE TABLE public.way_nodes (
     way_id bigint NOT NULL,
