@@ -40,7 +40,8 @@ are used by multiple other core OSM projects are these:
 * Uses [Boost](https://www.boost.org/) for additional C++ libraries
 * Uses [GDAL](https://www.gdal.org) for reading Geospatial files
 * Uses [PQXX](http://www.pqxx.org/development/libpqxx/) for accessing Postgres
-* Uses [Libxml++](http://libxmlplusplus.sourceforge.net/) For parsing XML files
+* Uses [Libxml++](http://libxmlplusplus.sourceforge.net/) for parsing XML files
+* Uses [Doxygen](https://www.doxygen.nl/index.html) for producing code documentation
 
 Ideally Underpass can be used by other projects needing to do similar
 tasks without Overpass. It should be able to support collecting more
