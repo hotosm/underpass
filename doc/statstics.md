@@ -149,4 +149,3 @@ humanitarian purposes, the tags are standardized.
   most of the tags are ignored as what's counted is the highway
   itself. Highways are counted whether they are a foot trail, jeep
   track, or major highway.
-
