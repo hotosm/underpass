@@ -16,6 +16,76 @@ an import can consume upwards of a terabyte.
 Underpass can import a data file into the *pgsnapshot* schema without
 *osmosis*. It can use replication files to update the database. 
 
+## osm2pgsql
+
+[Osm2pgsql](https://osm2pgsql.org/) is the primary tool for importing
+OSM files. The *osm2pgsql* program can import a data file into
+postgres, but it doesn’t support updating the data. As it contains
+geospatial data, it’s a compact and easily queried schema. It lacks
+any knowledge of relations, which isn’t usually a problem unless you
+want to do deeper analysis of the data.
+
+&nbsp;
+
+Table | Description |
+--------|------------ |
+planet_osm_line | All of the ways that aren't a polygon
+planet_osm_point | All of the nodes
+planet_osm_polygon | All of the polygons
+planet_osm_roads | Unused currently
+spatial_ref_sys | Geospatial data for postgis
+
+All of these tables have the same columns in the database. Any tag
+that doesn't fit one of these columns is stored in the *tags"
+column. The tags column uses
+hstore(https://www.postgresqltutorial.com/postgresql-hstore/), which
+can store additional keyword/value pairs. The columns are:
+ osm_id, access, addr:housename, addr:housenumber, addr:interpolation,
+ admin_level, aerialway, aeroway, amenity,  area, barrier, bicycle,
+ brand, bridge, boundary, building, construction, covered, culvert,
+ cutting, denomination, disused, embankment, foot, generator:source,
+ harbour, highway, historic, horse, intermittent, junction, landuse,
+ layer, leisure, lock, man_made, military, motorcar, name, natural,
+ office, oneway, operator, place, population, power, power_source,
+ public_transport, railway, ref, religion, route, service, shop
+, sport, surface, toll, tourism, tower:type, tracktype, tunnel
+, water, waterway, wetland, width, wood, z_order, way_area, tags, way
+
+## ogr2ogr
+
+[Ogr and GDAL])https://www.osgeo.org/projects/gdal/) are the basis for
+many GIS projects, but has [minimal
+OSM](https://gdal.org/drivers/vector/osm.html) support. It can read 
+the OSM XML and PBF formats, and can import into a database. It uses a
+different schema for each table.
+
+&nbsp;
+
+Table | Description |
+--------|------------ |
+lines | All of the single lines
+multilinestrings | All of the multiple lines
+multipolygons | All of the polygons
+other_relations | More of the tags
+points | All of the nodes
+spatial_ref_sys | Geospatial data for postgis
+
+[ogr2ogr](https://gdal.org/programs/ogr2ogr.html) uses a config file
+(*osmconf.ini*) to determine which fields in the OSM file get imported
+into which column. Any data not in one of these columns get put in the
+*other_tags* column. Other_tags is an hstore column, so contains
+multiple pairs of data. It is possible to modify the osmconf.ini file
+to have data that was going into the other_tags column go into it's
+own column.
+
+The data columns of an ogr2ogr created database are:
+
+Table | Columns |
+--------|------------ |
+multipolygons | ogc_fid, osm_id, osm_way_id, name, type, aeroway, amenity, admin_level, barrier, boundary, building, craft, geological, historic, land_area, landuse, leisure, man_made, military, natural, office, place, shop, sport, tourism, other_tags, wkb_geometry
+multilinestrings | ogc_fid, osm_id, name, type, other_tags, wkb_geometry
+lines | ogc_fid, osm_id, name, highway, waterway, aerialway, barrier, man_made, z_order, other_tags, wkb_geometry
+
 ## pgsnapshot
 
 The *pgsnapshot* schema is a more compact version of the main
@@ -105,42 +175,3 @@ way_nodes | tbd
 way_tags | tbd
 ways | tbd
 
-&nbsp;
-## osm2pgsql
-
-Osm2pgsql is the primary tool for importing OSM files. The *osm2pgsql*
-program can import a data file into postgres, but it doesn’t support
-updating the data. As it contains geospatial data, it’s a compact and
-easily queried schema. It lacks any knowledge of relations, which
-isn’t usually a problem unless you want to do deeper analysis of the
-data.
-
-&nbsp;
-
-Keyword | Description |
---------|------------ |
-planet_osm_line | All of the ways that aren't a polygon
-planet_osm_point | All of the nodes
-planet_osm_polygon | All of the polygons
-planet_osm_roads | Unused currently
-spatial_ref_sys | Geospatial data for postgis
-
-&nbsp;
-## ogr2ogr
-
-Ogr and GDAL are the basis for many GIS projects, but has minimal OSM
-data file support. It can read any of the file formats, and can import
-into a database. It does have one big improvement over the osm2pgsql
-format, namely better relation support. This schema can be used to
-calculate user statistics. 
-
-&nbsp;
-
-Keyword | Description |
---------|------------ |
-lines | All of the single lines
-multilinestrings | All of the multiple lines
-multipolygons | All of the polygons
-other_relations | All of the tags
-points | All of the nodes
-spatial_ref_sys | Geospatial data for postgis
