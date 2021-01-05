@@ -133,19 +133,19 @@ humanitarian purposes, the tags are standardized.
 * Buildings, usually tagged as *building=yes*. There can be additional
   tags like name or function and [other
   tags](https://wiki.openstreetmap.org/wiki/Buildings)
-  that describe the building in more detail. For statistc collection,
+  that describe the building in more detail. For statistics collection,
   most of the tags are ignored as what's counted is the building
   itself.
 * Waterway, There can be additional
   tags like name or function and [other
   tags](https://wiki.openstreetmap.org/wiki/Waterways)
-  that describe the waterway in more detail. For statistc collection,
+  that describe the waterway in more detail. For statistics collection,
   most of the tags are ignored as what's counted is the waterway
   itself.
 * Highway, There can be additional
   tags like name or function and [other
   tags](https://wiki.openstreetmap.org/wiki/Highways)
-  that describe the highway in more detail. For statistc collection,
+  that describe the highway in more detail. For statistics collection,
   most of the tags are ignored as what's counted is the highway
   itself. Highways are counted whether they are a foot trail, jeep
   track, or major highway.
