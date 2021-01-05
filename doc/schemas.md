@@ -1,20 +1,14 @@
 # Database Schemas
 
 There are several database schemas used for OpenStreetMap data. The
-primary one that operates the core servers uses **apidb**. There is a
-simplified version called **pgsnapshot**, which is more suited towards
-running ones own database. Both of these schemas are the only ones
-that can be updated with replication files. A replication file is the
-data of the actual change, and available with minutely, hourly, or
-daily updates.
-
-Osmosis is commonly used for manipulating and importing data into
-these schemas. Although it has been unmaintained for several
-years. It’s written in Java, and as it uses temporary files on disk,
-an import can consume upwards of a terabyte.
-
-Underpass can import a data file into the *pgsnapshot* schema without
-*osmosis*. It can use replication files to update the database. 
+primary two used by most people working with OSM files are created by
+the two utility programs, *osm2pgsql* and *ogr2ogr*. Both work the
+same, and contain the same data, it's just organized
+differently. Underpass doesn't import into these database, as there
+are actively maintained tools for this already. These schemas are
+well-suited towards data extracts, and
+[conflation](https://wiki.openstreetmap.org/wiki/Conflation) and
+[validation](https://labs.mapbox.com/mapping/validating-osm/).
 
 ## osm2pgsql
 
@@ -53,7 +47,7 @@ can store additional keyword/value pairs. The columns are:
 
 ## ogr2ogr
 
-[Ogr and GDAL])https://www.osgeo.org/projects/gdal/) are the basis for
+[Ogr and GDAL](https://www.osgeo.org/projects/gdal/) are the basis for
 many GIS projects, but has [minimal
 OSM](https://gdal.org/drivers/vector/osm.html) support. It can read 
 the OSM XML and PBF formats, and can import into a database. It uses a
@@ -86,6 +80,24 @@ multipolygons | ogc_fid, osm_id, osm_way_id, name, type, aeroway, amenity, admin
 multilinestrings | ogc_fid, osm_id, name, type, other_tags, wkb_geometry
 lines | ogc_fid, osm_id, name, highway, waterway, aerialway, barrier, man_made, z_order, other_tags, wkb_geometry
 
+# Core Database Schemas
+
+The primary one that operates the core servers uses **apidb**. There
+is a simplified version called **pgsnapshot**, which is more suited
+towards running ones own database. Both of these schemas are the only
+ones that can be updated with replication files. A replication file is
+the data of the actual change, and available with minutely, hourly, or
+daily updates.
+
+Osmosis is commonly used for manipulating and importing data into
+these schemas. Although it has been unmaintained for several
+years. It’s written in Java, and as it uses temporary files on disk,
+an import can consume upwards of a terabyte.
+
+Underpass can import a data file into the *pgsnapshot* schema without
+*osmosis*. It can also use [replication files](changefile.md) to
+update the database.
+
 ## pgsnapshot
 
 The *pgsnapshot* schema is a more compact version of the main
@@ -95,8 +107,6 @@ extracts in OSM format. By default, it is not well suited to any data
 analysis that uses geospatial calculations since the nodes are stored
 separately from the ways. Underpass extends this schema by by adding a
 geometry column to the ways table.
-
-schema.
 
 &nbsp;
 
