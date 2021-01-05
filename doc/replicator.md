@@ -19,7 +19,7 @@ sources, they are analyzed, and applied to the appropriate
 database. Most of the work is done by the Underpass
 library. *Replicator* is the utility program that a uses the library. 
 
-	./replicator -m
+	./replicator -h
 	-h [ --help ]         display help
 	-s [ --server arg]    database server (defaults to localhost)
 	-m [ --monitor]       Start monitoring planet
@@ -28,5 +28,6 @@ library. *Replicator* is the utility program that a uses the library.
 
 By default, *replicator* uses the last date entered into the OSM Stats
 datavase as the starting point. A different timestamp can also be
-specified. All data files downloaded can optionally be cached to disk,
-so furthur processing can use those and save on network time.
+specified using *--timestamp*. All data files downloaded can
+optionally be cached to disk, so furthur processing can use those and
+save on network time.
