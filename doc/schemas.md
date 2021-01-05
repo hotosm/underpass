@@ -32,7 +32,7 @@ spatial_ref_sys | Geospatial data for postgis
 All of these tables have the same columns in the database. Any tag
 that doesn't fit one of these columns is stored in the *tags"
 column. The tags column uses
-hstore(https://www.postgresqltutorial.com/postgresql-hstore/), which
+[hstore](https://www.postgresqltutorial.com/postgresql-hstore/), which
 can store additional keyword/value pairs. The columns are:
  osm_id, access, addr:housename, addr:housenumber, addr:interpolation,
  admin_level, aerialway, aeroway, amenity,  area, barrier, bicycle,
