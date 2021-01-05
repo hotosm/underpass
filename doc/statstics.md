@@ -116,7 +116,7 @@ The Object ID | The ID of the OSM object
 The User ID | The OSM user ID who edited this object
 The Username | The OSM username who edited this object
 The type | Node, way, or relation
-The location | GPS coordinates for a node
+The location | GPS coordinates for the object
 Nodes | List of node IDs for a way
 Members | List of member objects IDs in a relation
 Version of the change | Incremented on each upload
