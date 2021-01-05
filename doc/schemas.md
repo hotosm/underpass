@@ -80,6 +80,20 @@ multipolygons | ogc_fid, osm_id, osm_way_id, name, type, aeroway, amenity, admin
 multilinestrings | ogc_fid, osm_id, name, type, other_tags, wkb_geometry
 lines | ogc_fid, osm_id, name, highway, waterway, aerialway, barrier, man_made, z_order, other_tags, wkb_geometry
 
+# Example Queries
+
+[SQL](https://en.wikipedia.org/wiki/SQL) is a powerful language for
+manipulating database data.
+
+	# Select all buildings
+	SELECT name,wkb_geometry FROM multipolygons WHERE building='yes';
+
+	# Count highways
+	SELECT COUNT(wkb_geometry) FROM multilinestrings WHERE highway is NOT NULL;
+
+	# Find bad highways
+    # SELECT * FROM multilinestrings WHERE other_tags->'surface'='bad';
+
 # Core Database Schemas
 
 The primary one that operates the core servers uses **apidb**. There
