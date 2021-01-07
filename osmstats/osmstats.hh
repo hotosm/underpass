@@ -63,6 +63,7 @@ namespace changeset {
 };
 namespace osmchange {
 class OsmChange;
+class ChangeStats;
 };
 namespace geoutil {
   class GeoUtil;
@@ -257,7 +258,7 @@ class QueryOSMStats : public apidb::QueryStats
 
     /// Apply a change to the database
     bool applyChange(changeset::ChangeSet &change);
-    bool applyChange(osmchange::OsmChange &change);
+    bool applyChange(osmchange::ChangeStats &change);
 
     int lookupHashtag(const std::string &hashtag);
 
@@ -319,23 +320,6 @@ class QueryOSMStats : public apidb::QueryStats
     std::vector<RawCountry> countries; ///< All the raw country data
     std::vector<RawUser> users;        ///< All the raw user data
     std::map<std::string, RawHashtag> hashtags;
-};
-
-class OsmStats
-{
-public:
-    double road_km_added = 0;
-    double road_km_modified = 0;
-    double waterway_km_added = 0;
-    double waterway_km_modified = 0;
-    long roads_added = 0;
-    long roads_modified = 0;
-    long waterways_added  = 0;
-    long waterways_modified  = 0;
-    long buildings_added  = 0;
-    long buildings_modified = 0;
-    long pois_added = 0;
-    long pois_modified = 0;
 };
 
 }       // EOF osmstatsdb

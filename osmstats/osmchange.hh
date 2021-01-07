@@ -99,7 +99,8 @@ typedef enum {empty, node, way, relation, member} osmtype_t;
 class ChangeStats
 {
 public:
-    long id = 0;
+    long change_id = 0;             ///< The ID of this change
+    long user_id = 0;               ///< The User ID
     long pois_added = 0;            ///< The total number of POIs added
     long buildings_added = 0;       ///< The total number of buildings added
     long waterways_added= 0;       ///< The total number of waterways added
@@ -114,21 +115,7 @@ public:
     long waterways_km_modified = 0.0; ///< The length of the waterways added in KM
 
     /// Dump internal data to the terminal, only for debugging
-    void dump(void) {
-        std::cout << "Stats for change: \t " << id << std::endl;
-        std::cout << "Roads Added (km): \t " << roads_km_added << std::endl;
-        std::cout << "Roads Modified (km):\t " << roads_km_modified << std::endl;
-        std::cout << "Waterways Added (km): \t " << waterways_km_added << std::endl;
-        std::cout << "Waterways Modified (km): " << waterways_km_modified << std::endl;
-        std::cout << "Roads Added: \t\t " << roads_added << std::endl;
-        std::cout << "Roads Modified: \t " << roads_modified << std::endl;
-        std::cout << "Waterways Added: \t " << waterways_added << std::endl;
-        std::cout << "Waterways Modified: \t " << waterways_modified << std::endl;
-        std::cout << "Buildings added: \t " << buildings_added << std::endl;
-        std::cout << "Buildings Modified: \t " << buildings_modified << std::endl;
-        std::cout << "POIs added: \t\t " << pois_added << std::endl;
-        std::cout << "POIs Modified: \t\t " << pois_modified << std::endl;
-    };
+    void dump(void);
 };
 
 /// \class OsmChange
@@ -258,7 +245,7 @@ public:
     std::vector<std::shared_ptr<OsmChange>> changes; ///< All the changes in this file
 
     /// Collect statistics for each user
-    bool collectStats(void);
+    std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>> collectStats(void);
     
     /// dump internal data, for debugging only
     void dump(void);

@@ -104,7 +104,7 @@ QueryOSMStats::lookupHashtag(const std::string &hashtag)
 }
 
 bool
-QueryOSMStats::applyChange(osmchange::OsmChange &change)
+QueryOSMStats::applyChange(osmchange::ChangeStats &change)
 {
     std::cout << "Applying OsmChange data" << std::endl;
 
@@ -115,18 +115,12 @@ QueryOSMStats::applyChange(osmchange::OsmChange &change)
     // } else {
     //     std::cerr << "No hashtag for id: " << change.id << std::endl;
     // }
-    // change.dump();
-    // std::string query = "INSERT INTO raw_users VALUES(";
-    // // boost::algorithm::replace_all(change.user, "\'", "&quot;");
-    // // query += std::to_string(change.uid) + ",\'" + change.user;
-    // query += "\') ON CONFLICT DO NOTHING;";
-    // std::cout << "QUERY: " << query << std::endl;
-    // pqxx::result result = worker.exec(query);
 
-    std::string query = "INSERT INTO raw_changesets(editor, user_id, created_at) VALUES(";
+    std::string query = "INSERT INTO raw_changesets(id,road_km_added,road_km_modified,waterway_km_added,waterway_km_modified,roads_added,roads_modified,waterways_added,waterways_modified,buildings_added,buildings_modified,pois_added,pois_modified,editor,user_id,created_at,closed_at,verified,augmented_diffs,updated_at) VALUES(";
+    query += change.change_id;
     // boost::algorithm::replace_all(change.user, "\'", "&quot;");
     // query += std::to_string(change.uid) + ",\'" + change.user;
-    query += "\') ON CONFLICT DO NOTHING;";
+    //query += "\') ON CONFLICT DO NOTHING;";
     std::cout << "QUERY: " << query << std::endl;
     worker.commit();
 }
