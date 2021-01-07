@@ -364,13 +364,18 @@ threadOsmChange(const std::string &file)
         }
     }
 
-    // These stats are for the entire file
-    osmchanges.collectStats();
-
     // Apply the changes to the database
     osmstats::QueryOSMStats ostats("osmstats");
-    for (auto it = std::begin(osmchanges.changes); it != std::end(osmchanges.changes); ++it) {
-        ostats.applyChange(*(*it));
+
+    // These stats are for the entire file
+    auto stats = osmchanges.collectStats();
+    for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
+        it->second->dump();
+    // }
+
+    // for (auto it = std::begin(osmchanges.changes); it != std::end(osmchanges.changes); ++it) {
+        // ostats.applyChange(*(*it));
+        // ostats.applyChange(it);
     }
     osmchanges.dump();
     return true;

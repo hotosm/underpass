@@ -82,7 +82,9 @@ class OsmObject
         tags[key] = value;
     };
 
+    void setAction(action_t act) { action = act; };
     void setUID(long val) { uid = val; };
+    void setChangeID(long val) { change_id = val; };
     
     action_t action = none;     ///< the action that contains this object
     osmtype_t type = empty;     ///< The type of this object, node, way, or relation

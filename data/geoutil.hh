@@ -185,7 +185,7 @@ public:
     std::vector<osmstats::RawCountry> exportCountries(void);
 
     /// Get parsed country data by name 
-    GeoCountry &getCountry(const std::string country) {
+    GeoCountry &getCountry(const std::string &country) {
         // return countries[country];
     }
     /// Dump internal data storage for debugging purposes
