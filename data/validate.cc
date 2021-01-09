@@ -43,6 +43,7 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "data/osmobjects.hh"
+#include "osmstats/osmchange.hh"
 #include "data/validate.hh"
 
 // JOSM validator
@@ -72,6 +73,11 @@ using namespace boost::gregorian;
 
 /// \namespace validate
 namespace validate {
+
+Validate::Validate(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
+{
+
+}
 
 // Check a POI for tags. A node that is part of a way shouldn't have any
 // tags, this is to check actual POIs, like a school.

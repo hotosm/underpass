@@ -45,6 +45,7 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
+#include "osmstats/osmchange.hh"
 #include "data/osmobjects.hh"
 #include "timer.hh"
 
@@ -88,7 +89,7 @@ typedef enum {notags, isbuilding } errortype_t;
 class Validate
 {
 public:
-    Validate() {};
+    Validate(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes);
 
     /// Check a POI for tags. A node that is part of a way shouldn't have any
     /// tags, this is to check actual POIs, like a school.
