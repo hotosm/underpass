@@ -93,11 +93,11 @@ public:
 
     /// Check a POI for tags. A node that is part of a way shouldn't have any
     /// tags, this is to check actual POIs, like a school.
-    bool checkPOI(osmobjects::OsmNode &node);
+    bool checkPOI(osmobjects::OsmNode *node);
 
     /// This checks a way. A way should always have some tags. Often a polygon
     /// is a building 
-    bool checkWay(osmobjects::OsmWay &way);
+    bool checkWay(osmobjects::OsmWay *way);
 
     bool checkTags (std::map<std::string, std::string> tags) {
         bool result;

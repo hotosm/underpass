@@ -76,17 +76,40 @@ namespace validate {
 
 Validate::Validate(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
 {
-
+    for (auto it = std::begin(changes); it != std::end(changes); ++it) {
+        osmchange::OsmChange *change = it->get();
+        change->dump();
+        if (change->action == create) {
+            for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
+                osmobjects::OsmNode *node = it->get();
+                if (node->tags.size() > 0) {
+                    std::cout << "Validating New Node ID " << node->id << " has tags!" << std::endl;
+                    checkPOI(node);
+                } else {
+                    continue;
+                }
+            // for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
+            //     OsmWay *way = it->get();
+            //     if (way->tags.size() == 0) {
+            //         std::cerr << "Validating New Way ID " << way->id << " has no tags!" << std::endl;
+            //         checkWay(way);
+            //     } else {
+            //         continue;
+            //     }
+            // }
+            }       
+        }
+    }
 }
 
 // Check a POI for tags. A node that is part of a way shouldn't have any
 // tags, this is to check actual POIs, like a school.
 bool
-Validate::checkPOI(osmobjects::OsmNode &node)
+Validate::checkPOI(osmobjects::OsmNode *node)
 {
-    if (node.tags.size() == 0) {
-        std::cerr << "WARNING: POI " << node.id << " has no tags!" << std::endl;
-        node_errors.push_back(node.id);
+    if (node->tags.size() == 0) {
+        std::cerr << "WARNING: POI " << node->id << " has no tags!" << std::endl;
+        node_errors.push_back(node->id);
         return false;
     }
 
@@ -96,19 +119,19 @@ Validate::checkPOI(osmobjects::OsmNode &node)
 // This checks a way. A way should always have some tags. Often a polygon
 // with no tags is a building.
 bool
-Validate::checkWay(osmobjects::OsmWay &way)
+Validate::checkWay(osmobjects::OsmWay *way)
 {
     bool result = true;
-    for (auto it = std::begin(way.tags); it != std::end(way.tags); ++it) {
+    for (auto it = std::begin(way->tags); it != std::end(way->tags); ++it) {
         result = checkTag(it->first, it->second);
         if (!result) {
             return result;
         }
     }
 
-    if (way.numPoints() == 5 && way.isClosed() && way.tags.size() == 0) {
-        std::cerr << "WARNING: " << way.id << " might be a building!" << std::endl;
-        buildings.push_back(way.id);
+    if (way->numPoints() == 5 && way->isClosed() && way->tags.size() == 0) {
+        std::cerr << "WARNING: " << way->id << " might be a building!" << std::endl;
+        buildings.push_back(way->id);
         return false;
     }
     
