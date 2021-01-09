@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -75,6 +75,7 @@ using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 #include "osmstats/changeset.hh"
 #include "osmstats/replication.hh"
 #include "data/underpass.hh"
+#include "data/validate.hh"
 
 std::mutex stream_mutex;
 
@@ -371,13 +372,11 @@ threadOsmChange(const std::string &file)
     auto stats = osmchanges.collectStats();
     for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
         it->second->dump();
-    // }
-
-    // for (auto it = std::begin(osmchanges.changes); it != std::end(osmchanges.changes); ++it) {
-        // ostats.applyChange(*(*it));
-        // ostats.applyChange(it);
+        ostats.applyChange(*it->second);
     }
-    osmchanges.dump();
+
+    validate::Validate validator(osmchanges.changes);
+
     return true;
 }
 
