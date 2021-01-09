@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -108,20 +108,35 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
 {
     std::cout << "Applying OsmChange data" << std::endl;
 
-    pqxx::work worker(*sdb);
-    // osmchange::OsmChange *change = it->get();
-    // if (hasHashtag(change.id)) {
-    //     std::cout << "Has hashtag for id: " << change.id << std::endl;
-    // } else {
-    //     std::cerr << "No hashtag for id: " << change.id << std::endl;
-    // }
-
-    std::string query = "INSERT INTO raw_changesets(id,road_km_added,road_km_modified,waterway_km_added,waterway_km_modified,roads_added,roads_modified,waterways_added,waterways_modified,buildings_added,buildings_modified,pois_added,pois_modified,editor,user_id,created_at,closed_at,verified,augmented_diffs,updated_at) VALUES(";
-    query += change.change_id;
+    if (hasHashtag(change.change_id)) {
+        std::cout << "Has hashtag for id: " << change.change_id << std::endl;
+    } else {
+        std::cerr << "No hashtag for id: " << change.change_id << std::endl;
+    }
+    std::string query = "UPDATE raw_changesets SET id=";
+    query += std::to_string(change.change_id);
+    query += ", road_km_added=" + std::to_string(change.roads_km_added);
+    query += ", road_km_modified=" + std::to_string(change.roads_km_modified);
+    query += ", waterway_km_added=" + std::to_string(change.waterways_km_added);
+    query += ", waterway_km_modified=" + std::to_string(change.waterways_km_modified);
+    query += ", roads_added=" + std::to_string(change.roads_added);
+    query += ", roads_modified=" + std::to_string(change.roads_modified);
+    query += ", waterways_added=" + std::to_string(change.waterways_added);
+    query += ", waterways_modified=" + std::to_string(change.waterways_modified);
+    query += ", buildings_added=" + std::to_string(change.buildings_added);
+    query += ", buildings_modified=" + std::to_string(change.buildings_modified);
+    query += ", pois_added=" + std::to_string(change.pois_added);
+    query += ", pois_modified=" + std::to_string(change.pois_modified);
+    ptime now = boost::posix_time::microsec_clock::local_time();
+    query += ", updated_at=\'" + to_simple_string(now) + "\'";
+    query += " WHERE id=" + std::to_string(change.change_id) + ";";
     // boost::algorithm::replace_all(change.user, "\'", "&quot;");
     // query += std::to_string(change.uid) + ",\'" + change.user;
     //query += "\') ON CONFLICT DO NOTHING;";
     std::cout << "QUERY: " << query << std::endl;
+    pqxx::work worker(*sdb);
+    pqxx::result result = worker.exec(query);
+
     worker.commit();
 }
 
