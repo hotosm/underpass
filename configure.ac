@@ -134,11 +134,9 @@ AC_ARG_ENABLE(parser,
 dnl range-v3
 CPPFLAGS=$(pkg-config --cflags python)
 CPPFLAGS+=" $(pkg-config --cflags libpqxx)"
-CPPFLAGS+=" $(pkg-config --cflags glibmm-2.4)"
 CPPFLAGS+=" $(pkg-config --cflags gumbo)"
 CPPFLAGS+=" $(pkg-config --cflags gdal)"
 CPPFLAGS+=" $(pkg-config --cflags ompi)"
-CPPFLAGS+=" $(pkg-config --cflags webkit2gtk-4.0)"
 
 dnl This is a C++ project only
 AC_LANG_PUSH(C++)
@@ -165,13 +163,11 @@ LIBS+=" $(pkg-config --libs expat)"
 LIBS+=" $(pkg-config --libs zlib)"
 LIBS+=" $(pkg-config --libs bzip2)"
 LIBS+=" $(pkg-config --libs libpqxx)"
-LIBS+=" $(pkg-config --libs webkit2gtk-4.0)"
 LIBS+=" $(pkg-config --libs openssl)"
 LIBS+=" $(pkg-config --libs gumbo)"
 LIBS+=" $(pkg-config --libs zlib)"
 LIBS+=" $(pkg-config --libs gdal)"
 LIBS+=" $(pkg-config --libs ompi)"
-LIBS+=" $(pkg-config --libs glibmm-2.4)"
 if test x"${build_libxml}" = x"yes"; then
 dnl Debian Buster and Ubuntu Focal ship 2.6, Fedora ships 3,.0
 dnl The version in Focal is broken, so either build libxml++-3.0
@@ -213,6 +209,13 @@ AC_LANG_POP(C++)
 
 AC_PATH_PROG(DOXYGEN, doxygen)
 AM_CONDITIONAL(ENABLE_DOXYGEN, [ test x"$DOXYGEN" != x ])
+if test x"$DOXYGEN" != x; then
+  CPPFLAGS+=" $(pkg-config --cflags webkit2gtk-4.0)"
+  CPPFLAGS+=" $(pkg-config --cflags glibmm-2.4)"
+
+  LIBS+=" $(pkg-config --libs webkit2gtk-4.0)"
+  LIBS+=" $(pkg-config --libs glibmm-2.4)"
+fi
 
 AC_ARG_ENABLE([pch],
   AS_HELP_STRING([--enable-pch],[Enable precompiled header support]), [], [enable_pch=no])
