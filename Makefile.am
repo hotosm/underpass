@@ -29,6 +29,9 @@
 
 AUTOMAKE_OPTIONS = dejagnu
 
+# All of these are generated files
+CLEANFILES = all-includes.h.gch all-includes.h
+
 SUBDIRS = testsuite
 
 lib_LTLIBRARIES = libhotosm.la
@@ -62,15 +65,17 @@ libhotosm_la_SOURCES = \
 	data/threads.cc \
 	data/underpass.cc
 libhotosm_la_LDFLAGS = -avoid-version
+
+bin_PROGRAMS = replicator
+replicator_SOURCES = replicator.cc
+replicator_LDADD = libhotosm.la $(BOOST_LIBS)
+
+if ENABLE_SWIG
 SWIGdir = swig
 
 SWIG_LANGS = -python -javascript
 SWIG_FLAGS = -Wall -outcurrentdir -c++ -cppext cc -module hotosm
 EXTRA_DIST = swig/hotosm.py swig/hotosm.java
-
-bin_PROGRAMS = replicator
-replicator_SOURCES = replicator.cc
-replicator_LDADD = libhotosm.la $(BOOST_LIBS)
 
 SWIG_INTERFACE = $(libhotosm_la_SOURCES:.cc=.i)
 SWIG_OBJECTS = $(libhotosm_la_SOURCES:.cc=.o)
@@ -99,6 +104,10 @@ SUFFIXES = .py .cc .java .js .hh
 .cc.js:
 	$(SWIG) $(SWIG_FLAGS) -javascript -node -o swig/$*_wrap_js.cc $(top_srcdir)/$*.i
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -I.. -I/usr/include/python3.8 -fPIC -shared swig/hotosm_wrap_js.cc -lpqxx -L.libs .libs/hotosm.o -o swig/_hotosmjs.so
+
+CLEANFILES += swig/* swig/*/*.class
+
+endif
 
 if ENABLE_DOXYGEN
 apidoc:
@@ -167,6 +176,3 @@ all-includes.h.gch: all-includes.h
 
 # $(PCHHEADERS): all-includes.h.gch
 endif
-
-# All of these are generated files
-CLEANFILES = swig/* swig/*/*.class all-includes.h.gch all-includes.h

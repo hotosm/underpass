@@ -132,7 +132,6 @@ AC_ARG_ENABLE(parser,
 ])
 
 dnl range-v3
-CPPFLAGS=$(pkg-config --cflags python)
 CPPFLAGS+=" $(pkg-config --cflags libpqxx)"
 CPPFLAGS+=" $(pkg-config --cflags gumbo)"
 CPPFLAGS+=" $(pkg-config --cflags gdal)"
@@ -147,18 +146,6 @@ CXXFLAGS="-std=c++17 -g -O2"
 dnl Osmium headers
 AC_CHECK_HEADERS([osmium/osm/node.hpp])
 
-AM_PATH_PYTHON
-
-dnl Swig is used to generate API bindings for other languages
-AC_PATH_PROG(SWIG, swig)
-if test ! -e swig; then
-   mkdir -p swig
-fi
-
-AX_JNI_INCLUDE_DIR
-CPPFLAGS+=$(echo ${JNI_INCLUDE_DIRS} | sed -e 's/^/-I/' -e 's/ / -I/')
-
-LIBS=$(pkg-config --libs python)
 LIBS+=" $(pkg-config --libs expat)"
 LIBS+=" $(pkg-config --libs zlib)"
 LIBS+=" $(pkg-config --libs bzip2)"
@@ -206,6 +193,20 @@ LIBS+=" -lboost_regex"
 
 dnl LIBS += "${BOOST_DATE_TIME} ${BOOST_SYSTEM} ${BOOST_FILESYSTEM} ${BOOST_LOG_LIB}"
 AC_LANG_POP(C++)
+
+dnl Swig is used to generate API bindings for other languages
+AC_PATH_PROG(SWIG, swig)
+AM_CONDITIONAL(ENABLE_SWIG, [ test x"$SWIG" != x ])
+if test x"$SWIG" != x; then
+  mkdir -p swig
+  AM_PATH_PYTHON
+
+  AX_JNI_INCLUDE_DIR
+
+  LIBS+=$(pkg-config --libs python)
+  CPPFLAGS=$(pkg-config --cflags python)
+  CPPFLAGS+=$(echo ${JNI_INCLUDE_DIRS} | sed -e 's/^/-I/' -e 's/ / -I/')
+fi
 
 AC_PATH_PROG(DOXYGEN, doxygen)
 AM_CONDITIONAL(ENABLE_DOXYGEN, [ test x"$DOXYGEN" != x ])
