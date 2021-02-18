@@ -160,7 +160,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     // If there are no hashtags in this changset, then it isn't part
     // of an organized map campaign, so we don't need to store those
     // statistics except for editor usage.
-    underpass::Underpass under("underpass");
+    underpass::Underpass under;
     if (change.hashtags.size() == 0) {
         std::cout << "No hashtags in change id: " << change.id << std::endl;
         under.updateCreator(change.uid, change.id, change.editor);

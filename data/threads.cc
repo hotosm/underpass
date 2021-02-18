@@ -90,7 +90,7 @@ startMonitor(const std::string &url)
     bool mainloop = true;
     std::string path = url;
     std::string base = url.substr(0, url.size() - 7);
-    underpass::Underpass under("underpass");
+    underpass::Underpass under;
 
     while (mainloop) {
         auto planet = std::make_shared<replication::Planet>();
@@ -249,7 +249,7 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
     // 144, 160, 176, 192, 208, 224
     auto rng  = files | ranges::views::chunk(200);
 
-    underpass::Underpass under("underpass");
+    underpass::Underpass under;
     Timer timer;
     timer.startTimer();
     for (auto cit = std::begin(rng); cit != std::end(rng); ++cit) {

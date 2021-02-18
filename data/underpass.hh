@@ -93,7 +93,7 @@ public:
     ~Underpass(void);
 
     /// Connect ti the Underpass database
-    bool connect(const std::string &database);
+    bool connect();
 
     void dump(void);
 
@@ -121,9 +121,8 @@ public:
 // protected:
     std::shared_ptr<pqxx::connection> sdb;
     std::map<replication::frequency_t, std::string> frequency_tags;
-    std::string database = "underpass"; ///< The database to use
-    std::string dbserver = "localhost"; ///< The database server to use
-    int port = 443;             ///< Network port on the server, note SSL only allowed    
+
+    char* db_url;
 };
 
     

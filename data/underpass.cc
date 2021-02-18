@@ -58,23 +58,20 @@ using namespace boost::gregorian;
 
 namespace underpass {
 
-Underpass::Underpass(const std::string &dbname) 
-{
-    frequency_tags[replication::minutely] = "minute";
-    frequency_tags[replication::hourly] = "hour";
-    frequency_tags[replication::daily] = "day";
-    frequency_tags[replication::changeset] = "changeset";
-    database = dbname;
-    connect(dbname);
-}
-
 Underpass::Underpass(void)
 {
     frequency_tags[replication::minutely] = "minute";
     frequency_tags[replication::hourly] = "hour";
     frequency_tags[replication::daily] = "day";
     frequency_tags[replication::changeset] = "changeset";
-    connect(database);
+
+    // Validate environment variable is defined.
+    db_url = std::getenv("DB_URL");
+    if (db_url == NULL) {
+	std::cerr << "Underfined environment variable DB_URL" << std::endl;
+	exit(EXIT_FAILURE);
+    }
+    connect();
 };
 
 Underpass::~Underpass(void)
@@ -87,23 +84,14 @@ Underpass::~Underpass(void)
 void
 Underpass::dump(void)
 {
-    std::cout << "Database: " << database << std::endl;
-    std::cout << "DB Server: " << dbserver << std::endl;
-    std::cout << "DB Port: " << port << std::endl;
+    std::cout << "Database url: " << db_url << std::endl;
 }
 
 bool
-Underpass::connect(const std::string &dbname)
+Underpass::connect(void)
 {
-    // Connect to the database
-    std::string args;
-    if (dbname.empty()) {
-	args = "dbname = " + database;
-    } else {
-	args = "dbname = " + dbname;
-    }
     try {
-	sdb = std::make_shared<pqxx::connection>(args);
+	sdb = std::make_shared<pqxx::connection>(db_url);
 	if (sdb->is_open()) {
             // pqxx::work worker(db);
             // pqxx::nontransaction(db);
@@ -112,7 +100,7 @@ Underpass::connect(const std::string &dbname)
 	    return false;
 	}
     } catch (const std::exception &e) {
-	std::cerr << "ERROR: Couldn't open database connection to " << dbname << std::endl;
+	std::cerr << "ERROR: Couldn't open database connection to" << db_url  << std::endl;
 	std::cerr << e.what() << std::endl;
 	return false;
     }
