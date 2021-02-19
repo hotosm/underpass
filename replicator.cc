@@ -107,7 +107,7 @@ public:
         changes = std::make_shared<changeset::ChangeSetFile>();
         changes->setupBoundaries(geou);
 
-        under.connect("underpass");
+        under.connect();
 
         // Connect to the OSM Stats database
         ostats.connect("mystats");
@@ -145,7 +145,7 @@ public:
 
     std::string getLastPath(replication::frequency_t interval) {
         ptime last = ostats.getLastUpdate();
-        under.connect("underpass");
+        under.connect();
         auto state = under.getState(interval, last);
         return state->path;
     };
@@ -242,7 +242,7 @@ main(int argc, char *argv[])
 
      replication::Planet planet;
      osmstats::QueryOSMStats ostats("osmstats");
-     underpass::Underpass under("underpass");
+     underpass::Underpass under;
      if (vm.count("monitor")) {
          std::string url = vm["monitor"].as<std::string>();
          ptime tstamp = ostats.getLastUpdate();

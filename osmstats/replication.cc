@@ -521,7 +521,7 @@ Planet::scanDirectory(const std::string &dir)
 std::string
 Planet::findData(frequency_t freq, ptime tstamp)
 {
-    underpass::Underpass under("underpass");
+    underpass::Underpass under;
     auto last = std::make_shared<replication::StateFile>();
     last = under.getLastState(freq);
     last->dump();
