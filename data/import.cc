@@ -180,7 +180,7 @@ OSMHandler::way(const osmium::Way& way)
     query += ",\'" + way.timestamp().to_iso() + "\'";
     query += "," + std::to_string(way.changeset());
     query += ",\'" + tags + "\', ";
-    query += "ARRAY[" + refs += "], ";
+    query += "ARRAY[" + refs += "]::bigint[], ";
     // FIXME: this whole method should probably use ostringstream
     boost::geometry::model::box<point_t> box;
     boost::geometry::envelope(lines, box);
