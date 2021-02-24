@@ -41,6 +41,7 @@
 #include "boost/date_time/gregorian/gregorian.hpp"
 
 #include "osmstats/osmstats.hh"
+#include "timer.hh"
 
 using namespace boost::posix_time;
 using namespace boost::gregorian;
@@ -58,6 +59,7 @@ main(int argc, char *argv[])
     std::string database = "osmstats";
 
     TestStats testos;
+    Timer timer;
     if (testos.connect(database)) {
         runtest.pass("taskingManager::connect()");
     } else {
@@ -72,9 +74,9 @@ main(int argc, char *argv[])
     cids.push_back(69365434);
     cids.push_back(69365911);
 
-    testos.startTimer();
+    timer.startTimer();
     testos.getRawChangeSets(cids);
-    std::cout << "Operation took " << testos.endTimer() << " milliseconds" << std::endl;
+    std::cout << "Operation took " << timer.endTimer() << " milliseconds" << std::endl;
 
     // modify a counter
     // osmstats::OsmStats os = testos[2];
@@ -92,9 +94,9 @@ main(int argc, char *argv[])
 
     // extract some data from the database to store in memory for
     // better performance
-    testos.startTimer();
+    timer.startTimer();
     testos.populate();
-    testos.endTimer();
+    timer.endTimer();
 
     // Test if the Country data works
     RawCountry rc = testos.getCountryData(73);
