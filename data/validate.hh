@@ -89,6 +89,7 @@ typedef enum {notags, isbuilding } errortype_t;
 class Validate
 {
 public:
+    Validate(void) {};
     Validate(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes);
 
     /// Check a POI for tags. A node that is part of a way shouldn't have any
