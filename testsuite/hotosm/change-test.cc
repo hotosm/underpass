@@ -37,7 +37,7 @@
 #include "osmstats/osmstats.hh"
 #include "osmstats/changeset.hh"
 #include "osmstats/osmchange.hh"
-#include "osmstats/geoutil.hh"
+#include "osmstats/replication.hh"
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -65,10 +65,10 @@ class TestCO : public osmchange::OsmChangeFile
     bool testMem(const std::string &data);
 };
 
-class TestStateFile : public changeset::StateFile
+class TestStateFile : public replication::StateFile
 {
 public:
-    TestStateFile(const std::string &file, bool memory) : changeset::StateFile(file, memory) {
+    TestStateFile(const std::string &file, bool memory) : replication::StateFile(file, memory) {
     };
     // Accessors for the private data
     ptime getTimestamp(void) { return timestamp; };
@@ -104,7 +104,7 @@ main(int argc, char* argv[])
         runtest.fail("Change file state file from disk");
     }
 
-    osmstats::QueryOSMStats os;
+    Timer timer;
     TestCS tests;
     // auto geou = std::make_shared<geoutil::GeoUtil>();
 
@@ -112,19 +112,19 @@ main(int argc, char* argv[])
     // tests.setupBoundaries(geou);            
 
     // tests.importChanges(basedir + "/foo.osm");
-    std::cout << "Operation took " << os.endTimer() << " milliseconds" << std::endl;
+    std::cout << "Operation took " << timer.endTimer() << " milliseconds" << std::endl;
 
-    os.startTimer();
+    timer.startTimer();
     tests.readChanges(basedir + "/changeset-data.osm");
-    std::cout << "Operation readChanges(uncompressed) took " << os.endTimer() << " milliseconds" << std::endl;
+    std::cout << "Operation readChanges(uncompressed) took " << timer.endTimer() << " milliseconds" << std::endl;
     if (tests[3].id > 0) {
         runtest.pass("ChangeSetFile::readChanges(uncompressed)");
     } else {
         runtest.fail("ChangeSetFile::readChanges(uncompressed)");
     }
-    os.startTimer();
+    timer.startTimer();
     tests.readChanges(basedir + "/changeset-data2.osm.gz");
-    std::cout << "Operation readChanges(compressed) took " << os.endTimer() << " milliseconds" << std::endl;
+    std::cout << "Operation readChanges(compressed) took " << timer.endTimer() << " milliseconds" << std::endl;
     if (tests[3].id > 0) {
         runtest.pass("ChangeSetFile::readChanges(compressed)");
     } else {
@@ -132,16 +132,16 @@ main(int argc, char* argv[])
     }
 
     TestCO testco;
-    os.startTimer();
+    timer.startTimer();
     // testco.readChanges("/tmp/y");
     testco.readChanges(basedir + "/294.osc.gz");
-    std::cout << "Operation read osc took " << os.endTimer() << " milliseconds" << std::endl;
+    std::cout << "Operation read osc took " << timer.endTimer() << " milliseconds" << std::endl;
     testco.dump();
-    os.startTimer();
+    timer.startTimer();
     testco.collectStats();
-    std::cout << "Operation collect stats took " << os.endTimer() << " milliseconds" << std::endl;
+    std::cout << "Operation collect stats took " << timer.endTimer() << " milliseconds" << std::endl;
 
-    // if (os.connect("mystats")) {
+    // if (timer.connect("mystats")) {
     //     runtest.pass("QueryOsmStats::connect()");
     // } else {
     //     runtest.fail("QueryOsmStats::connect()");

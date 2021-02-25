@@ -42,6 +42,7 @@
 
 #include "data/validate.hh"
 #include "data/osmobjects.hh"
+#include "timer.hh"
 
 using namespace boost::posix_time;
 using namespace boost::gregorian;
@@ -52,7 +53,7 @@ TestState runtest;
 class TestVal : public validate::Validate
 {
 public:
-    TestVal(void) { };
+    TestVal(void) {};
 };
 
 int
@@ -60,6 +61,7 @@ main(int argc, char *argv[])
 {
 
     TestVal tv;
+    Timer timer;
     
     if (tv.checkTag("building", "yes") == true) {
         runtest.pass("Validate::checkTag(good tag)");
@@ -81,7 +83,7 @@ main(int argc, char *argv[])
 
     osmobjects::OsmNode node;
     node.addTag("traffic-light", "yes");
-    if (tv.checkPOI(node)) {
+    if (tv.checkPOI(&node)) {
         runtest.pass("Validate::checkNode(tag)");
     } else {
         runtest.fail("Validate::checkNode(tag)");
@@ -89,7 +91,7 @@ main(int argc, char *argv[])
 
     osmobjects::OsmWay way(11111);
     way.addTag("building", "yes");
-    if (tv.checkWay(way)) {
+    if (tv.checkWay(&way)) {
         runtest.pass("Validate::checkWay(empty way)");
     } else {
         runtest.fail("Validate::checkWay(empty way)");
@@ -100,36 +102,36 @@ main(int argc, char *argv[])
     way.addRef(345);
     way.addRef(456);
     way.addRef(1234);
-    tv.startTimer();
-    if (tv.checkWay(way)) {
+    timer.startTimer();
+    if (tv.checkWay(&way)) {
         runtest.pass("Validate::checkWay(building with tags)");
     } else {
         runtest.fail("Validate::checkWay(building with tags)");
     }
-    tv.endTimer();
+    timer.endTimer();
     way.tags.clear();
-    tv.startTimer();
-    if (tv.checkWay(way) == false) {
+    timer.startTimer();
+    if (tv.checkWay(&way) == false) {
         runtest.pass("Validate::checkWay(not building)");
     } else {
         runtest.fail("Validate::checkWay(not building)");
     }
-    tv.endTimer();
+    timer.endTimer();
     
-    if (tv.checkWay(way) == false) {
+    if (tv.checkWay(&way) == false) {
         runtest.pass("Validate::checkWay(no tags)");
     } else {
         runtest.fail("Validate::checkWay(no tags)");
     }
 
     way.addTag("building", "");
-    if (tv.checkWay(way) == false) {
+    if (tv.checkWay(&way) == false) {
         runtest.pass("Validate::checkWay(empty value)");
     } else {
         runtest.fail("Validate::checkWay(empty value)");
     }
     way.addTag("foo bar", "yes");
-    if (tv.checkWay(way) == false) {
+    if (tv.checkWay(&way) == false) {
         runtest.pass("Validate::checkWay(space)");
     } else {
         runtest.fail("Validate::checkWay(space)");

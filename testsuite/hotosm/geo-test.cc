@@ -37,13 +37,12 @@
 #include "hottm.hh"
 #include "osmstats/osmstats.hh"
 #include "osmstats/changeset.hh"
-#include "osmstats/changefile.hh"
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/date_time/gregorian/gregorian.hpp"
 
-#include "osmstats/geoutil.hh"
+#include "data/geoutil.hh"
 using namespace geoutil;
 using namespace boost::posix_time;
 using namespace boost::gregorian;
