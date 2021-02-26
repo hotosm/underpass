@@ -46,6 +46,7 @@
 #include <deque>
 #include <list>
 #include <thread>
+#include <tuple>
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -151,6 +152,20 @@ public:
     };
     // osmstats::RawCountry & findCountry() {
     //     geou.inCountry();
+
+
+    std::tuple<bool, bool, bool> matchUrl(const std::string &url) {
+        boost::regex highPath{"https.*/[0-9][0-9][0-9][/]*"};
+        bool highMatch = boost::regex_match(url, highPath);
+
+        boost::regex midPath{"https.*/[0-9][0-9][0-9]/[0-9][0-9][0-9][/]*"};
+        bool midMatch = boost::regex_match(url, midPath);
+
+        boost::regex lowPath{"https.*/[0-9][0-9][0-9]/[0-9][0-9][0-9]/[0-9][0-9][0-9][/]*"};
+        bool lowMatch = boost::regex_match(url, lowPath);
+
+        return std::tuple<bool, bool, bool>{lowMatch, midMatch, highMatch};
+    }
 
 private:
     underpass::Underpass under;
@@ -277,15 +292,11 @@ main(int argc, char *argv[])
 
      Timer timer;
      if (vm.count("url")) {
-         auto first = under.getFirstState(replication::minutely);
-         std::string url = vm["url"].as<std::string>();
-         // patterns used to figure out directory depth
-         boost::regex lowpat{"https.*/[0-9][0-9][0-9]/[0-9][0-9][0-9]/[0-9][0-9][0-9][/]*"};
-         boost::regex midpat{"https.*/[0-9][0-9][0-9]/[0-9][0-9][0-9][/]*"};
-         boost::regex highpat{"https.*/[0-9][0-9][0-9][/]*"};
-         bool lowest = boost::regex_match(url, lowpat);
-         bool middle = boost::regex_match(url, midpat);
-         bool highest = boost::regex_match(url, highpat);
+        std::string url = vm["url"].as<std::string>();
+
+        auto [lowest, middle, highest] = replicator.matchUrl(url);
+        std::cout << lowest << " " << middle << " " << highest;
+
          if (lowest && middle && highest) {
              timer.startTimer();
              std::cout << "Lowest matches" << std::endl;
