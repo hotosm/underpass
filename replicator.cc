@@ -78,6 +78,8 @@ namespace opts = boost::program_options;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
+enum pathMatches{ROOT, DIRECTORY, SUBDIRECTORY, FILEPATH};
+
 // Forward declarations
 namespace changeset {
   class ChangeSet;
@@ -154,17 +156,35 @@ public:
     //     geou.inCountry();
 
 
-    std::tuple<bool, bool, bool> matchUrl(const std::string &url) {
-        boost::regex highPath{"https.*/[0-9][0-9][0-9][/]*"};
-        bool highMatch = boost::regex_match(url, highPath);
+    enum pathMatches matchUrl(const std::string &url) {
+        boost::regex test{"([0-9]{3})"};
 
-        boost::regex midPath{"https.*/[0-9][0-9][0-9]/[0-9][0-9][0-9][/]*"};
-        bool midMatch = boost::regex_match(url, midPath);
+        boost::sregex_token_iterator iter(url.begin(), url.end(), test, 0);
+        boost::sregex_token_iterator end;
 
-        boost::regex lowPath{"https.*/[0-9][0-9][0-9]/[0-9][0-9][0-9]/[0-9][0-9][0-9][/]*"};
-        bool lowMatch = boost::regex_match(url, lowPath);
+        std::vector<std::string> dirs;
 
-        return std::tuple<bool, bool, bool>{lowMatch, midMatch, highMatch};
+        for( ; iter != end; ++iter ) {
+            dirs.push_back(*iter);
+        }
+
+        pathMatches match;
+        switch(dirs.size()) {
+            default:
+                match = pathMatches::ROOT;
+                break;
+            case 1:
+                match = pathMatches::DIRECTORY;
+                break;
+            case 2:
+                match = pathMatches::SUBDIRECTORY;
+                break;
+            case 3:
+                match = pathMatches::FILEPATH;
+                break;
+        }
+
+        return match;
     }
 
 private:
@@ -290,90 +310,74 @@ main(int argc, char *argv[])
          // hstate.join();
      }
 
-     Timer timer;
-     if (vm.count("url")) {
+    if (vm.count("url")) {
         std::string url = vm["url"].as<std::string>();
+        int match = replicator.matchUrl(url);
 
-        auto [lowest, middle, highest] = replicator.matchUrl(url);
-        std::cout << lowest << " " << middle << " " << highest;
+        // Trailing slash check.
+        if (url.back() != '/' && match != pathMatches::FILEPATH) {
+          url += "/";
+        }
+        auto links = planet.scanDirectory(url);
 
-         if (lowest && middle && highest) {
-             timer.startTimer();
-             std::cout << "Lowest matches" << std::endl;
-             auto llinks = planet.scanDirectory(url);
-             // std::thread tstate (threads::startStateThreads, std::ref(url),
-             //                     std::ref(*llinks));
-             threads::startStateThreads(std::ref(url), std::ref(*llinks));
-             std::cout << "Waiting for startStateThreads()..." << std::endl;
-             //tstate.join();
-             timer.endTimer("sub directory");
-         }
-         if (middle && !lowest) {
-             std::cout << "Middle matches" << std::endl;
-             timer.startTimer();
-             auto mlinks = planet.scanDirectory(url);
-             // threads::startStateThreads(std::ref(url), std::ref(*mlinks));
-             std::thread tstate (threads::startStateThreads, std::ref(url),
-                                 std::ref(*mlinks));
-             std::cout << "Waiting for startStateThreads()..." << std::endl;
-             tstate.join();
-             timer.endTimer("sub directory");
-         }
-         if (!highest && !middle && !lowest) {
-             std::cout << "Base URL matches" << std::endl;
-             auto links =  std::make_shared<std::vector<std::string>>();
-             links = planet.scanDirectory(url);
-             for (auto it = std::begin(*links); it != std::end(*links); ++it) {
-                 // if (*it == "000/" || *it == "001/") {
-                 //     continue;
-                 // }
-                 if (it->empty()) {
-                     continue;
-                 }
-                 std::string suffix = boost::filesystem::extension(*it);
-                 if (suffix == ".txt") {
-                     std::thread tstate (threads::startStateThreads, std::ref(url),
-                                         std::ref(*links));
-                     // threads::startStateThreads(subdir, *flinks) ;
-                     std::cout << "Waiting..." << std::endl;
-                     tstate.join();
-                     continue;
-                 } else if (suffix == ".gz") {
-                     // FIXME: start thread to process file
-                     std::cout << "Ignoring for now..." << std::endl;
-                     // tstate.join();
-                     continue;
-                 }
-             
-                 if (it->at(0) >= 48 &&  it->at(0) <= 57) {
-                     std::cout << "Directory: " << url + *it << std::endl;
-                 }
-                 if (*it != "state.yaml") {
-                     auto slinks =  std::make_shared<std::vector<std::string>>();
-                     slinks = planet.scanDirectory(url + *it);
-                     // Looping backwards means we start with 000, and end with 999. Oldest data
-                     // first.
-                     for (auto sit = std::begin(*slinks); sit != std::end(*slinks); ++sit) {
-                         if (sit->empty()) {
-                             continue;
-                         }
-                         timer.startTimer();
-                         std::string subdir = url + *it + *sit;
-                         std::cout << "Sub Directory: " << subdir << std::endl;
-                         auto flinks = planet.scanDirectory(subdir);
-                         std::thread tstate (threads::startStateThreads, std::ref(subdir),
-                                             std::ref(*flinks));
-                         // threads::startStateThreads(subdir, *flinks) ;
-                         std::cout << "Waiting..." << std::endl;
-                         tstate.join();
-                         timer.endTimer("sub directory");
-                         continue;
-                     }
-                 }
-             }
-         }
-         // links->clear();
-     }
+        Timer timer;
+        switch (match) {
+            default: // Root
+            {
+                for (auto it = std::begin(*links); it != std::end(*links); ++it) {
+                    if (it->empty()) {
+                        continue;
+                    }
+
+                    std::cout << *it << std::endl;
+                    std::string subUrl = url + *it;
+                    auto sublinks = planet.scanDirectory(subUrl);
+                    std::thread tstate (threads::startStateThreads, std::ref(subUrl),
+                                        std::ref(*sublinks));
+                    std::cout << "Waiting..." << std::endl;
+                    tstate.join();
+                    timer.endTimer();
+               }
+            }
+            break;
+            case pathMatches::DIRECTORY:
+            {
+                for (auto sit = std::begin(*links); sit != std::end(*links); ++sit) {
+                    if (sit->empty()) {
+                        continue;
+                    }
+                    timer.startTimer();
+                    std::string subdir = url + *sit;
+                    
+                    std::cout << "Sub Directory: " << subdir << std::endl;
+                    auto flinks = planet.scanDirectory(subdir);
+                    std::thread tstate (threads::startStateThreads, std::ref(subdir),
+                                         std::ref(*flinks));
+
+                    std::cout << "Waiting..." << std::endl;
+                    tstate.join();
+                    timer.endTimer();
+                    continue;
+                }
+            }
+            break;
+
+            case pathMatches::SUBDIRECTORY:
+            {
+                std::thread tstate (threads::startStateThreads, std::ref(url),
+                    std::ref(*links));
+                std::cout << "Waiting for startStateThreads()..." << std::endl;
+                tstate.join();
+                timer.endTimer();
+            }
+            break;
+
+            case pathMatches::FILEPATH:
+                threads::startStateThreads(std::ref(url), std::ref(*links));
+                timer.endTimer();
+            break;
+        }
+    }
 
      //replicator.startTimer();
      if (vm.count("timestamp")) {
