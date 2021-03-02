@@ -276,11 +276,23 @@ main(int argc, char *argv[])
      }
 
      replication::Planet planet;
-     osmstats::QueryOSMStats ostats("osmstats");
      underpass::Underpass under;
      if (vm.count("monitor")) {
-         std::string url = vm["monitor"].as<std::string>();
-         ptime tstamp = ostats.getLastUpdate();
+        ptime tstamp(not_a_date_time);
+
+        if (vm.count("timestamp")) {
+            std::string timestamp = vm["timestamp"].as<std::string>();
+            try {
+                tstamp = time_from_string(timestamp);
+            } catch (const std::exception& e) {
+                std::cerr << "Invalid timestamp" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            osmstats::QueryOSMStats ostats("osmstats");
+            tstamp = ostats.getLastUpdate();
+        }
+
          auto state = under.getState(replication::minutely, tstamp);
          std::string last;
          if (state->sequence == 0) {
