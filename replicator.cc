@@ -216,7 +216,7 @@ main(int argc, char *argv[])
             ("server,s", "database server (defaults to localhost)")
             ("statistics,s", "OSM Stats database name (defaults to osmstats)")
             ("url,u", opts::value<std::string>(), "Starting URL")
-            ("monitor,m", opts::value<std::string>(), "Starting URL to monitor")
+            ("monitor,m", opts::value<std::string>() -> default_value("db"), "Starting monitor")
             ("frequency,f", opts::value<std::string>(), "Update frequency (hour, daily), default minute)")
             ("timestamp,t", opts::value<std::string>(), "Starting timestamp")
             ("changeset,c", opts::value<std::vector<std::string>>(), "Initialize OSM Stats with changeset")
@@ -278,16 +278,16 @@ main(int argc, char *argv[])
      replication::Planet planet;
      underpass::Underpass under;
      if (vm.count("monitor")) {
-        ptime tstamp(not_a_date_time);
+        std::string monitor = vm["monitor"].as<std::string>();
 
-        if (vm.count("timestamp")) {
-            std::string timestamp = vm["timestamp"].as<std::string>();
+        ptime tstamp;
+        if (monitor != "db") {
             try {
-                tstamp = time_from_string(timestamp);
+                tstamp = time_from_string(monitor);
             } catch (const std::exception& e) {
                 std::cerr << "Invalid timestamp" << std::endl;
                 exit(EXIT_FAILURE);
-            }
+            }            
         } else {
             osmstats::QueryOSMStats ostats("osmstats");
             tstamp = ostats.getLastUpdate();
