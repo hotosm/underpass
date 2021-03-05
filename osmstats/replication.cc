@@ -167,24 +167,30 @@ StateFile::StateFile(const std::string &file, bool memory)
     } else {
         for (std::string line; std::getline(ss, line, '\n'); ) {
             std::size_t pos = line.find("=");
-            if (line.substr(0, pos) == "sequenceNumber") {
-                sequence= std::stol(line.substr(pos+1));
-            } else if (line.substr(0, pos) == "txnMaxQueried") {
-            } else if (line.substr(0, pos) == "txnActiveList") {
-            } else if (line.substr(0, pos) == "txnReadyList") {
-            } else if (line.substr(0, pos) == "txnMax") {
-            } else if (line.substr(0, pos) == "timestamp") {
-                // The time stamp is in ISO format, ie... 2020-10-09T10\:03\:02
-                // But we have to unescape the colon or boost chokes.
-                std::string tmp = line.substr(pos+1);
-                pos = tmp.find('\\', pos+1);
-                std::string tstamp = tmp.substr(0, pos); // get the date and the hour
-                tstamp += tmp.substr(pos+1, 3); // get minutes
-                pos = tmp.find('\\', pos+1);
-                tstamp += tmp.substr(pos+1, 3); // get seconds
-                timestamp = from_iso_extended_string(tstamp);
+
+            // Not a key=value line. So we skip it.
+            if (pos == std::string::npos) {
+                continue;
             }
-        }
+
+            std::string key = line.substr(0, pos);
+            std::string value = line.substr(pos + 1);
+
+            std::vector<std::string> skipKeys{"txnMaxQueried", "txnActiveList", "txnReadyList", "txnMax"};
+            if (key == "sequenceNumber") {
+                sequence = std::stol(value);
+            } else if (std::find(skipKeys.begin(), skipKeys.end(), key) == skipKeys.end()) {
+            } else if (key == "timestamp") {
+                pos = value.find('\\', pos + 1);
+                std::string tstamp = value.substr(0, pos); // get the date and the hour
+                tstamp += value.substr(pos + 1, 3); // get minutes
+                pos = value.find('\\', pos + 1);
+                tstamp += value.substr(pos + 1, 3); // get seconds
+                timestamp = from_iso_extended_string(tstamp);
+            } else {
+                std::cerr << "Invalid Key found: " << key << std::endl;
+                exit(EXIT_FAILURE);            }
+            }
     }
 
     state.close();
@@ -270,7 +276,8 @@ Planet::downloadFile(const std::string &file)
     // read_header(stream, buffer, parser);
     read(stream, buffer, parser);
     if (parser.get().result() == boost::beast::http::status::not_found) {
-        // continue;
+        std::cerr << "FIle not found: " << file << std::endl;
+        exit(EXIT_FAILURE);
     }
 
     // Check the magic number of the file
