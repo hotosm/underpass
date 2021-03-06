@@ -204,7 +204,7 @@ if test x"$SWIG" != x; then
   AX_JNI_INCLUDE_DIR
 
   LIBS+=$(pkg-config --libs python)
-  CPPFLAGS=$(pkg-config --cflags python)
+  CPPFLAGS+=$(pkg-config --cflags python)
   CPPFLAGS+=$(echo ${JNI_INCLUDE_DIRS} | sed -e 's/^/-I/' -e 's/ / -I/')
 fi
 
