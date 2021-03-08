@@ -65,12 +65,9 @@ Underpass::Underpass(void)
     frequency_tags[replication::daily] = "day";
     frequency_tags[replication::changeset] = "changeset";
 
-    // Validate environment variable is defined.
-    db_url = std::getenv("DB_URL");
-    if (db_url == NULL) {
-	std::cerr << "Underfined environment variable DB_URL" << std::endl;
-	exit(EXIT_FAILURE);
-    }
+    char* value = std::getenv("UNDERPASS_DB_URL");
+    db_url = value ? value : "dbname=underpass";
+
     connect();
 };
 

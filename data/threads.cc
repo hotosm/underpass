@@ -366,7 +366,7 @@ threadOsmChange(const std::string &file)
     }
 
     // Apply the changes to the database
-    osmstats::QueryOSMStats ostats("osmstats");
+    osmstats::QueryOSMStats ostats;
 
     // These stats are for the entire file
     auto stats = osmchanges.collectStats();
@@ -453,7 +453,7 @@ threadChangeSet(const std::string &file)
         }
     }
 
-    osmstats::QueryOSMStats ostats("osmstats");
+    osmstats::QueryOSMStats ostats;
     // Apply the changes to the database
     for (auto it = std::begin(changeset.changes); it != std::end(changeset.changes); ++it) {
         ostats.applyChange(*it);

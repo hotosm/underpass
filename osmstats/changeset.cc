@@ -116,7 +116,7 @@ ChangeSetFile::importChanges(const std::string &file)
 #endif
 
     osmstats::QueryOSMStats ostats;
-    ostats.connect("mystats");  // FIXME: debugging hack!
+    ostats.connect();
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         ostats.applyChange(*it);
     }

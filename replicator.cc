@@ -113,7 +113,7 @@ public:
         under.connect();
 
         // Connect to the OSM Stats database
-        ostats.connect("mystats");
+        ostats.connect();
 
         // FIXME: should return a real value
         return false;
@@ -289,7 +289,7 @@ main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }            
         } else {
-            osmstats::QueryOSMStats ostats("osmstats");
+            osmstats::QueryOSMStats ostats;
             tstamp = ostats.getLastUpdate();
         }
 

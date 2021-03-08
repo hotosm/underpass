@@ -56,19 +56,11 @@ using namespace apidb;
 /// \namespace osmstats
 namespace osmstats {
 
-QueryOSMStats::QueryOSMStats(void)
-{
-}
-
 bool
-QueryOSMStats::connect(const std::string &dbname)
+QueryOSMStats::connect()
 {
-    std::string args;
-    if (dbname.empty()) {
-	args = "dbname = osmstats";
-    } else {
-	args = "dbname = " + dbname;
-    }
+    char* value = std::getenv("OSMSTATS_DB_URL");
+    std::string args = value ? value : "dbname=mystats";
     
     try {
 	sdb = std::make_shared<pqxx::connection>(args);
