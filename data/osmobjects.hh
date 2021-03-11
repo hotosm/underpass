@@ -37,6 +37,7 @@
 #endif
 
 #include <string>
+#include <pqxx/pqxx>
 #include <vector>
 #include <iostream>
 #include <boost/date_time.hpp>
@@ -98,6 +99,7 @@ class OsmObject
 
     /// Dump internal data to the terminal, only for debugging
     void dump(void);
+    std::string serializeTags(std::map<std::string, std::string> &tags);
 };
 
 /// \class OsmNode
@@ -133,6 +135,8 @@ public:
         std::cout << "\tLocation: " << point.get<0>() << ", " << point.get<1>() << std::endl;
         OsmObject::dump();
     };
+
+    bool insert(std::shared_ptr<pqxx::connection> db);
 };
 
 /// \class OsmWay

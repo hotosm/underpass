@@ -73,6 +73,7 @@ using namespace boost::gregorian;
 #include "osmstats/osmchange.hh"
 // #include "osmstats/geoutil.hh"
 #include "data/osmobjects.hh"
+#include "data/underpass.hh"
 using namespace osmobjects;
 
 typedef boost::geometry::model::d2::point_xy<double> point_t;
@@ -395,12 +396,18 @@ OsmChangeFile::collectStats(void)
     //         tag<change_id>,  BOOST_MULTI_INDEX_MEMBER(ChangeStats,long,change_id)>>> stats;
 
     auto mstats = std::make_shared<std::map<long, std::shared_ptr<ChangeStats>>>();
+
+    underpass::Underpass under;
+    under.connect();
+
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
         change->dump();
         if (change->action == create) {
             for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
                 OsmNode *node = it->get();
+                node->insert(under.sdb);
+
                 if (node->tags.size() > 0) {
                     std::cout << "New Node ID " << node->id << " has tags!" << std::endl;
                     auto cit = mstats->find(node->change_id);

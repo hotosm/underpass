@@ -53,6 +53,9 @@ using namespace boost::gregorian;
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
 #include <boost/geometry/geometries/geometries.hpp>
+
+#include <pqxx/pqxx>
+
 typedef boost::geometry::model::d2::point_xy<double> point_t;
 typedef boost::geometry::model::polygon<point_t> polygon_t;
 typedef boost::geometry::model::multi_point<point_t> mpoint_t;
@@ -63,6 +66,55 @@ typedef boost::geometry::model::multi_linestring<linestring_t> mlinestring_t;
 #include <data/osmobjects.hh>
 
 namespace osmobjects {
+
+std::string
+OsmObject::serializeTags(std::map<std::string, std::string> &tags) {
+    std::string output;
+    output += "\'";
+
+    for (auto it = tags.begin(); it != tags.end(); it++) {
+        output += "\"" + it->first + "\" => \"" + it->second + "\" ";
+
+        // Check that is not last element to add comma.   
+        if (std::next(it) != tags.end()) {
+            output += ",";
+        }
+    }
+
+    output += "\'";
+
+    return output;
+}
+
+bool 
+OsmNode::insert(std::shared_ptr<pqxx::connection> db) {
+    std::string query = "INSERT INTO nodes(id, version, user_id, tstamp, changeset_id, tags, geom) VALUES(";
+    query += std::to_string(id) + ",";
+    query += std::to_string(version) + ",";
+    query += std::to_string(uid) + ",";
+
+    // Fix timestamp format.
+    std::string ts = to_iso_extended_string(timestamp);
+
+    query += "\'" + ts + "\'" + ",";
+    query += std::to_string(change_id )+ ",";
+
+    std::string tags_value = "null";
+
+    if (!tags.empty()) {
+        tags_value = serializeTags(tags);
+    }
+
+    query += tags_value + ",";
+    query += "ST_GeomFromText('POINT(" + std::to_string(point.x()) + " " + std::to_string(point.y()) + ")\', 4326))";
+
+    pqxx::work worker = pqxx::work(*db);
+    pqxx::result result = worker.exec(query);
+    worker.commit();
+
+    return false;
+}
+
 
 void
 OsmObject::dump(void)
