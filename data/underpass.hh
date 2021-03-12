@@ -122,7 +122,7 @@ public:
     std::shared_ptr<pqxx::connection> sdb;
     std::map<replication::frequency_t, std::string> frequency_tags;
 
-    char* db_url;
+    std::string db_url;
 };
 
     

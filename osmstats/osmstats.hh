@@ -198,8 +198,7 @@ class RawHashtag
 class QueryOSMStats : public apidb::QueryStats
 {
   public:
-    QueryOSMStats(void);
-    QueryOSMStats(const std::string &dbname) { connect(dbname); };
+    QueryOSMStats(void) { connect(); };
     /// close the database connection
     ~QueryOSMStats(void) { disconnect(); };
     void disconnect(void) { sdb->close(); };
@@ -209,7 +208,7 @@ class QueryOSMStats : public apidb::QueryStats
     };
 
     /// Connect to the database
-    bool connect(const std::string &database);
+    bool connect();
 
     /// Populate internal storage of a few heavily used data, namely
     /// the indexes for each user, country, or hashtag.
