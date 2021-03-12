@@ -179,7 +179,7 @@ StateFile::StateFile(const std::string &file, bool memory)
             std::vector<std::string> skipKeys{"txnMaxQueried", "txnActiveList", "txnReadyList", "txnMax"};
             if (key == "sequenceNumber") {
                 sequence = std::stol(value);
-            } else if (std::find(skipKeys.begin(), skipKeys.end(), key) == skipKeys.end()) {
+            } else if (std::count(skipKeys.begin(), skipKeys.end(), key)) {
             } else if (key == "timestamp") {
                 pos = value.find('\\', pos + 1);
                 std::string tstamp = value.substr(0, pos); // get the date and the hour
