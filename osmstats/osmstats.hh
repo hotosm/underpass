@@ -199,7 +199,7 @@ class QueryOSMStats : public apidb::QueryStats
 {
   public:
     QueryOSMStats(void);
-    QueryOSMStats(const std::string &dbname) { connect(dbname); };
+    QueryOSMStats(const std::string &dbname);
     /// close the database connection
     ~QueryOSMStats(void) { disconnect(); };
     void disconnect(void) { sdb->close(); };
@@ -209,6 +209,7 @@ class QueryOSMStats : public apidb::QueryStats
     };
 
     /// Connect to the database
+    bool connect(void);
     bool connect(const std::string &database);
 
     /// Populate internal storage of a few heavily used data, namely
@@ -315,6 +316,7 @@ class QueryOSMStats : public apidb::QueryStats
         return 0;
     }
 
+    std::string db_url;
     std::shared_ptr<pqxx::connection> sdb;
     std::vector<RawChangeset> ostats;  ///< All the raw changset data
     std::vector<RawCountry> countries; ///< All the raw country data

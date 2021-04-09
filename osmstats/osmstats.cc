@@ -60,24 +60,42 @@ QueryOSMStats::QueryOSMStats(void)
 {
 }
 
+QueryOSMStats::QueryOSMStats(const std::string &dbname)
+{
+    if (dbname.empty()) {
+        // Validate environment variable is defined.
+        char *tmp = std::getenv("STATS_DB_URL");
+        db_url = tmp;
+    } else {
+        db_url = "dbname = " + dbname;
+    }
+    connect(dbname);
+};
+
+bool
+QueryOSMStats::connect(void)
+{
+    return connect("osmstats");
+}
+
 bool
 QueryOSMStats::connect(const std::string &dbname)
 {
-    std::string args;
     if (dbname.empty()) {
-	args = "dbname = osmstats";
-    } else {
-	args = "dbname = " + dbname;
+	std::cerr << "ERROR: need to specify database name!" << std::endl;
     }
     
     try {
+        std::string args = "dbname = " + dbname;
 	sdb = std::make_shared<pqxx::connection>(args);
 	if (sdb->is_open()) {
+            std::cout << "Opened database connection to " << dbname  << std::endl;
 	    return true;
 	} else {
 	    return false;
 	}
     } catch (const std::exception &e) {
+	std::cerr << "ERROR: Couldn't open database connection to " << dbname  << std::endl;
 	std::cerr << e.what() << std::endl;
 	return false;
    }    

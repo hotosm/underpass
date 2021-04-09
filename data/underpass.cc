@@ -64,20 +64,28 @@ Underpass::Underpass(void)
     frequency_tags[replication::hourly] = "hour";
     frequency_tags[replication::daily] = "day";
     frequency_tags[replication::changeset] = "changeset";
+}
 
-    // Validate environment variable is defined.
-    db_url = std::getenv("DB_URL");
-    if (db_url == NULL) {
-	std::cerr << "Underfined environment variable DB_URL" << std::endl;
-	exit(EXIT_FAILURE);
+Underpass::Underpass(const std::string &dbname)
+{
+    if (dbname.empty()) {
+        // Validate environment variable is defined.
+        char *tmp = std::getenv("UNDERPASS_DB_URL");
+        db_url = tmp;
+    } else {
+        db_url = "dbname = " + dbname;
     }
-    connect();
+    connect(dbname);
 };
 
 Underpass::~Underpass(void)
 {
     // db->disconnect();        // close the database connection
-    sdb->close();            // close the database connection
+    if (sdb) {
+        if (sdb->is_open()) {
+            sdb->close();            // close the database connection
+        }
+    }
 }
 
 // Dump internal data to the terminal, used only for debugging
@@ -90,17 +98,32 @@ Underpass::dump(void)
 bool
 Underpass::connect(void)
 {
+    return connect("underpass");
+}
+
+bool
+Underpass::connect(const std::string &dbname)
+{
+    if (dbname.empty()) {
+	std::cerr << "ERROR: need to specify database name!" << std::endl;
+    }
     try {
-	sdb = std::make_shared<pqxx::connection>(db_url);
-	if (sdb->is_open()) {
-            // pqxx::work worker(db);
-            // pqxx::nontransaction(db);
-	    return true;
-	} else {
-	    return false;
-	}
+        if (sdb) {
+            if (sdb->is_open()) {
+                std::cerr << "WARNING: database" << dbname << " already open." << std::endl;
+                return true;
+            }
+            std::string args = "dbname = " + dbname;
+            sdb = std::make_shared<pqxx::connection>(args);
+            if (sdb->is_open()) {
+                std::cout << "Opened database connection to " << dbname  << std::endl;
+                return true;
+            } else {
+                return false;
+            }
+        }
     } catch (const std::exception &e) {
-	std::cerr << "ERROR: Couldn't open database connection to" << db_url  << std::endl;
+	std::cerr << "ERROR: Couldn't open database connection to " << dbname  << std::endl;
 	std::cerr << e.what() << std::endl;
 	return false;
     }
@@ -156,7 +179,12 @@ std::shared_ptr<replication::StateFile>
 Underpass::getState(replication::frequency_t freq, ptime &tstamp)
 {
     auto state = std::make_shared<replication::StateFile>();
-    if (!sdb->is_open()) {
+    if (sdb > 0) {
+        if (!sdb->is_open()) {
+            std::cerr << "ERROR: database not connected!" << std::endl;
+            return state;
+        }
+    } else {
         std::cerr << "ERROR: database not connected!" << std::endl;
         return state;
     }

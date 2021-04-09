@@ -92,8 +92,9 @@ public:
     Underpass(const std::string &dbname);
     ~Underpass(void);
 
-    /// Connect ti the Underpass database
-    bool connect();
+    /// Connect to the Underpass database
+    bool connect(void);
+    bool connect(const std::string &dbname);
 
     void dump(void);
 
@@ -122,7 +123,7 @@ public:
     std::shared_ptr<pqxx::connection> sdb;
     std::map<replication::frequency_t, std::string> frequency_tags;
 
-    char* db_url;
+    std::string db_url;
 };
 
     
