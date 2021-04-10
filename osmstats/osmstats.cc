@@ -56,20 +56,46 @@ using namespace apidb;
 /// \namespace osmstats
 namespace osmstats {
 
-bool
-QueryOSMStats::connect()
+QueryOSMStats::QueryOSMStats(void)
 {
-    char* value = std::getenv("OSMSTATS_DB_URL");
-    std::string args = value ? value : "dbname=mystats";
+}
+
+QueryOSMStats::QueryOSMStats(const std::string &dbname)
+{
+    if (dbname.empty()) {
+        // Validate environment variable is defined.
+        char *tmp = std::getenv("STATS_DB_URL");
+        db_url = tmp;
+    } else {
+        db_url = "dbname = " + dbname;
+    }
+    connect(dbname);
+};
+
+bool
+QueryOSMStats::connect(void)
+{
+    return connect("osmstats");
+}
+
+bool
+QueryOSMStats::connect(const std::string &dbname)
+{
+    if (dbname.empty()) {
+	std::cerr << "ERROR: need to specify database name!" << std::endl;
+    }
     
     try {
+        std::string args = "dbname = " + dbname;
 	sdb = std::make_shared<pqxx::connection>(args);
 	if (sdb->is_open()) {
+            std::cout << "Opened database connection to " << dbname  << std::endl;
 	    return true;
 	} else {
 	    return false;
 	}
     } catch (const std::exception &e) {
+	std::cerr << "ERROR: Couldn't open database connection to " << dbname  << std::endl;
 	std::cerr << e.what() << std::endl;
 	return false;
    }    

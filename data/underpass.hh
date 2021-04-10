@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -92,8 +92,9 @@ public:
     Underpass(const std::string &dbname);
     ~Underpass(void);
 
-    /// Connect ti the Underpass database
-    bool connect();
+    /// Connect to the Underpass database
+    bool connect(void);
+    bool connect(const std::string &dbname);
 
     void dump(void);
 
