@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -104,18 +104,13 @@ class ImportOSM
 {
 public:
     /// Import a raw OSM file using libosmium
-    ImportOSM(const std::string &file, const std::string &db) {
-        osmium::io::Reader reader{file};
-        database = db;
-        handler.connect(db, "localhost");
-        osmium::apply(reader, handler);
-    };
+    ImportOSM(const std::string &file, const std::string &db);
 
     // ~ImportOSM(void) { reader.close(); };
 private:
     std::string database;       ///< The name of the database
     std::string server;         ///< The database server hostname
-    OSMHandler handler;         ///< Handle for Osmium
+    OSMHandler handler;         ///< Handler for Osmium
 };
 
 

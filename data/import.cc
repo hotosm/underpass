@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -85,7 +85,7 @@ OSMHandler::connect(const std::string &dbname, const std::string &server)
 {
     std::string args;
     if (dbname.empty()) {
-	args = "dbname = pgsnap";
+	args = "dbname = pgsnapshot";
     } else {
 	args = "dbname = " + dbname;
     }
@@ -137,10 +137,13 @@ OSMHandler::way(const osmium::Way& way)
     for (const osmium::Tag& t : way.tags()) {
         std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
         tags += "\"";
-        tags += t.key();
+        std::string tmp = t.key();
+        boost::algorithm::replace_all(tmp, "\'", "&quot;");
+        boost::algorithm::replace_all(tmp, "\"", "&quot;");
+        tags += tmp;        
         tags += "\"=>\"";
         // Replace single quotes, as they screw up the query
-        std::string tmp = t.value();
+        tmp = t.value();
         boost::algorithm::replace_all(tmp, "\'", "&quot;");
         // Some values have a double quote, which is unnecesary, and
         // screws up XML parsing.
@@ -173,13 +176,20 @@ OSMHandler::way(const osmium::Way& way)
     // pgsnapshot.ways
     // id | version | user_id | tstamp | changeset_id | tags | nodes | bbox | linestring
     std::string query;
-    query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes,bbox,linestring) VALUES(";
+    if (tags.empty()) {
+        query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,nodes,bbox,linestring) VALUES(";
+    } else {
+        query = "INSERT INTO ways(id,version,user_id,tstamp,changeset_id,tags,nodes,bbox,linestring) VALUES(";
+    }
+        
     query += std::to_string(way.id()) + ",";
     query += std::to_string(way.version());
     query += "," + std::to_string(way.uid());
     query += ",\'" + way.timestamp().to_iso() + "\'";
     query += "," + std::to_string(way.changeset());
-    query += ",\'" + tags + "\', ";
+    if (!tags.empty()) {
+        query += ",\'" + tags + "\', ";
+    }
     query += "ARRAY[" + refs += "]::bigint[], ";
     // FIXME: this whole method should probably use ostringstream
     boost::geometry::model::box<point_t> box;
@@ -243,10 +253,13 @@ OSMHandler::node(const osmium::Node& node) {
     for (const osmium::Tag& t : node.tags()) {
         std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
         tags += "\"";
-        tags += t.key();
+        std::string tmp = t.key();
+        boost::algorithm::replace_all(tmp, "\'", "&quot;");
+        boost::algorithm::replace_all(tmp, "\"", "&quot;");
+        tags += tmp;
         tags += "\"=>\"";
         // Replace single quotes, as they screw up the query
-        std::string tmp = t.value();
+        tmp = t.value();
         boost::algorithm::replace_all(tmp, "\'", "&quot;");
         boost::algorithm::replace_all(tmp, "\"", "&quot;");
         // "&apos;" is not a supported HTML 4 entity
@@ -260,13 +273,22 @@ OSMHandler::node(const osmium::Node& node) {
 
     // pgsnapshot.nodes
     // id | version | user_id | tstamp | changeset_id | tags | geom
-    std::string query = "INSERT INTO nodes(id, version, user_id, tstamp, changeset_id, tags, geom) VALUES(";
+    std::string query;
+    if (!tags.empty()) {
+        query = "INSERT INTO nodes(id, version, user_id, tstamp, changeset_id, tags, geom) VALUES(";
+    } else {
+        query = "INSERT INTO nodes(id, version, user_id, tstamp, changeset_id, geom) VALUES(";
+    }
+    
     query += std::to_string(node.id()) + ",";
     query += std::to_string(node.version());
     query += "," + std::to_string(node.uid());
     query += ",\'" + node.timestamp().to_iso() + "\'";
     query += "," + std::to_string(node.changeset());
-    query += ",\'" + tags + "\', ";
+    if (!tags.empty()) {
+        query += ",\'" + tags + "\'";
+    }
+    query += ", ";
     query += "ST_GeomFromText('POINT(" + std::to_string(node.location().lon()) + " ";
     query += std::to_string(node.location().lat()) + ")\'";
     query += ", 4326)) ON CONFLICT DO NOTHING;";
@@ -286,12 +308,27 @@ OSMHandler::relation(const osmium::Relation& rel)
     for (const osmium::Tag& t : rel.tags()) {
         std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
     }
+
+    std::cerr << "FIXME: implement relations!!!" << std::endl;
+    
     // pgsnapshot.relations
     // id | version | user_id | tstamp | changeset_id | tags
     //
     // pgsnapshot.relation_members
     // relation_id | member_id | member_type | member_role | sequence_id
 
+}
+
+ImportOSM::ImportOSM(const std::string &file, const std::string &db)
+{
+    osmium::io::Reader reader{file};
+    database = db;
+    int cores = std::thread::hardware_concurrency();
+    for (unsigned int i = 0; i <= cores; ++i) {
+        OSMHandler foo;
+        foo.connect(db, "localhost");
+        osmium::apply(reader, foo);
+    }
 }
 
 }       // EOF namespace import
