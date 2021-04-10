@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -69,7 +69,7 @@ namespace opts = boost::program_options;
 // #include "hotosm.hh"
 #include "osmstats/changeset.hh"
 // #include "osmstats/osmstats.hh"
-#include "data/geoutil.hh"
+// #include "data/geoutil.hh"
 // #include "osmstats/replication.hh"
 #include "data/import.hh"
 #include "data/threads.hh"
@@ -102,21 +102,18 @@ class Replicator : public replication::Replication
 {
 public:
     /// Create a new instance, and read in the geoboundaries file.
-    bool initializeData(void) {
+    Replicator(void) {
         auto hashes = std::make_shared<std::map<std::string, int>>();
+#if 0
         auto geou = std::make_shared<geoutil::GeoUtil>();
         // FIXME: this shouldn't be hardcoded
         geou->readFile("../underpass.git/data/geoboundaries.osm", true);
         changes = std::make_shared<changeset::ChangeSetFile>();
         changes->setupBoundaries(geou);
 
-        under.connect();
-
-        // Connect to the OSM Stats database
-        ostats.connect();
-
         // FIXME: should return a real value
         return false;
+#endif
     };
     
     /// Initialize the raw_user, raw_hashtags, and raw_changeset tables
@@ -129,29 +126,35 @@ public:
         return false;
     };
 
+#if 0
     /// Get the value for a hashtag
     int lookupHashID(const std::string &hash) {
         auto found = hashes->find(hash);
         if (found != hashes->end()) {
             return (*hashes)[hash];
         } else {
+            // Connect to the OSM Stats database
+            // ostats.connect("mystats");
             int id = ostats.lookupHashtag(hash);
             return id;
         }
-
         return 0;
     };
+
     /// Get the numeric ID of the country by name
     long lookupCountryID(const std::string &country) {
-        return geou->getCountry(country).getID();
+        // return geou->getCountry(country).getID();
     };
+#endif
 
+#if 0
     std::string getLastPath(replication::frequency_t interval) {
         ptime last = ostats.getLastUpdate();
-        under.connect();
+        underpass::Underpass under;
         auto state = under.getState(interval, last);
         return state->path;
     };
+#endif
     // osmstats::RawCountry & findCountry() {
     //     geou.inCountry();
 
@@ -188,10 +191,9 @@ public:
     }
 
 private:
-    underpass::Underpass under;
-    osmstats::QueryOSMStats ostats;                    ///< OSM Stats database access
+    // osmstats::QueryOSMStats ostats;                    ///< OSM Stats database access
     std::shared_ptr<changeset::ChangeSetFile> changes; ///< All the changes in the file
-    std::shared_ptr<geoutil::GeoUtil> geou;             ///< Country boundaries
+    // std::shared_ptr<geoutil::GeoUtil> geou;             ///< Country boundaries
     std::shared_ptr<std::map<std::string, int>> hashes; ///< Existing hashtags
 };
 
@@ -216,7 +218,7 @@ main(int argc, char *argv[])
             ("server,s", "database server (defaults to localhost)")
             ("statistics,s", "OSM Stats database name (defaults to osmstats)")
             ("url,u", opts::value<std::string>(), "Starting URL")
-            ("monitor,m", opts::value<std::string>() -> default_value("db"), "Starting monitor")
+            ("monitor,m", opts::value<std::string>(), "Starting monitor")
             ("frequency,f", opts::value<std::string>(), "Update frequency (hour, daily), default minute)")
             ("timestamp,t", opts::value<std::string>(), "Starting timestamp")
             ("changeset,c", opts::value<std::vector<std::string>>(), "Initialize OSM Stats with changeset")
@@ -244,7 +246,7 @@ main(int argc, char *argv[])
      }
 
      Replicator replicator;
-     replicator.initializeData();
+     // replicator.initializeData();
      std::vector<std::string> rawfile;
      std::shared_ptr<std::vector<unsigned char>> data;
 
@@ -275,8 +277,11 @@ main(int argc, char *argv[])
          std::cout << "Sequence is " << vm["sequence"].as<int>() << std::endl;
      }
 
-     replication::Planet planet;
+     osmstats::QueryOSMStats ostats;
+     ostats.connect();
      underpass::Underpass under;
+     under.connect();
+     replication::Planet planet;
      if (vm.count("monitor")) {
         std::string monitor = vm["monitor"].as<std::string>();
 
@@ -287,9 +292,8 @@ main(int argc, char *argv[])
             } catch (const std::exception& e) {
                 std::cerr << "Invalid timestamp" << std::endl;
                 exit(EXIT_FAILURE);
-            }            
+            }
         } else {
-            osmstats::QueryOSMStats ostats;
             tstamp = ostats.getLastUpdate();
         }
 
