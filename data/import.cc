@@ -112,7 +112,8 @@ OSMHandler::addUser(long uid, const std::string &user)
     std::string query = "INSERT INTO users VALUES(";
     std::string tmp = user;
     // some user names have an embeded quote
-    boost::algorithm::replace_all(tmp, "\'", "&quot;");
+    boost::algorithm::replace_all(tmp, "\'", "&apos;");
+    boost::algorithm::replace_all(tmp, "\"", "&quot;");
     query += std::to_string(uid) + ",\'" + tmp;
     query += "\') ON CONFLICT DO NOTHING;";
     worker = new pqxx::work(*db);
@@ -138,13 +139,14 @@ OSMHandler::way(const osmium::Way& way)
         std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
         tags += "\"";
         std::string tmp = t.key();
-        boost::algorithm::replace_all(tmp, "\'", "&quot;");
+        boost::algorithm::replace_all(tmp, "\'", "&apos;");
         boost::algorithm::replace_all(tmp, "\"", "&quot;");
         tags += tmp;        
         tags += "\"=>\"";
         // Replace single quotes, as they screw up the query
         tmp = t.value();
-        boost::algorithm::replace_all(tmp, "\'", "&quot;");
+        boost::algorithm::replace_all(tmp, "\'", "&apos;");
+        boost::algorithm::replace_all(tmp, "\"", "&quot;");
         // Some values have a double quote, which is unnecesary, and
         // screws up XML parsing.
         boost::algorithm::replace_all(tmp, "\"", "");
@@ -254,13 +256,13 @@ OSMHandler::node(const osmium::Node& node) {
         std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
         tags += "\"";
         std::string tmp = t.key();
-        boost::algorithm::replace_all(tmp, "\'", "&quot;");
+        boost::algorithm::replace_all(tmp, "\'", "&apos;");
         boost::algorithm::replace_all(tmp, "\"", "&quot;");
         tags += tmp;
         tags += "\"=>\"";
         // Replace single quotes, as they screw up the query
         tmp = t.value();
-        boost::algorithm::replace_all(tmp, "\'", "&quot;");
+        boost::algorithm::replace_all(tmp, "\'", "&apos;");
         boost::algorithm::replace_all(tmp, "\"", "&quot;");
         // "&apos;" is not a supported HTML 4 entity
         boost::algorithm::replace_all(tmp, "&apos;", "&rsquo;");
