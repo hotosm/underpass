@@ -1,5 +1,5 @@
 dnl
-dnl Copyright (c) 2015-2020, Humanitarian OpenStreetMap Team
+dnl Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
 dnl All rights reserved.
 dnl
 dnl Redistribution and use in source and binary forms, with or without
@@ -29,11 +29,11 @@ dnl OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 AC_PREREQ(2.59c)
-AC_INIT(hotosm, 0.1-dev)
+AC_INIT(underpass, 0.2-dev)
 LT_INIT
 AM_INIT_AUTOMAKE
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_HEADERS([hotconfig.h])
+AC_CONFIG_HEADERS([unconfig.h])
 
 AC_PROG_CC
 AC_PROG_CXX
@@ -41,6 +41,9 @@ AC_EXEEXT
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_CHECK_HEADER_STDBOOL
+
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
 
 build_single=no
 build_multi=yes
