@@ -22,38 +22,6 @@ SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
-CREATE TABLE public.augmented_diff_status (
-    id integer,
-    updated_at timestamp with time zone
-);
-
-CREATE TABLE public.badge_updater_status (
-    last_run timestamp with time zone
-);
-
-CREATE TABLE public.badges (
-    id integer NOT NULL,
-    category integer,
-    name text,
-    level integer
-);
-
-CREATE SEQUENCE public.badges_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE public.badges_id_seq OWNED BY public.badges.id;
-
-CREATE TABLE public.badges_users (
-    user_id integer NOT NULL,
-    badge_id integer NOT NULL,
-    updated_at timestamp with time zone DEFAULT now()
-);
-
 CREATE TABLE public.raw_changesets (
     id bigint NOT NULL,
     road_km_added double precision,
@@ -72,69 +40,17 @@ CREATE TABLE public.raw_changesets (
     user_id integer,
     created_at timestamp with time zone,
     closed_at timestamp with time zone,
-    verified boolean DEFAULT false,
-    augmented_diffs integer[],
-    updated_at timestamp with time zone
-);
-
-CREATE VIEW public.changesets AS
- SELECT raw_changesets.id,
-    raw_changesets.roads_added AS road_count_add,
-    raw_changesets.roads_modified AS road_count_mod,
-    raw_changesets.buildings_added AS building_count_add,
-    raw_changesets.buildings_modified AS building_count_mod,
-    raw_changesets.waterways_added AS waterway_count_add,
-    raw_changesets.pois_added AS poi_count_add,
-    0 AS gpstrace_count_add,
-    raw_changesets.road_km_added AS road_km_add,
-    raw_changesets.road_km_modified AS road_km_mod,
-    raw_changesets.waterway_km_added AS waterway_km_add,
-    0 AS gpstrace_km_add,
-    raw_changesets.editor,
-    raw_changesets.user_id,
-    raw_changesets.created_at
-   FROM public.raw_changesets;
-
-CREATE TABLE public.raw_changesets_countries (
-    changeset_id integer NOT NULL,
-    country_id integer NOT NULL
-);
-
-CREATE VIEW public.changesets_countries AS
- SELECT raw_changesets_countries.changeset_id,
-    raw_changesets_countries.country_id
-   FROM public.raw_changesets_countries;
-
-CREATE TABLE public.raw_changesets_hashtags (
-    changeset_id integer NOT NULL,
-    hashtag_id integer NOT NULL
-);
-
-CREATE VIEW public.changesets_hashtags AS
- SELECT raw_changesets_hashtags.changeset_id,
-    raw_changesets_hashtags.hashtag_id
-   FROM public.raw_changesets_hashtags;
-
-CREATE TABLE public.changesets_status (
-    id integer,
-    updated_at timestamp with time zone
+    updated_at timestamp with time zone,
+    hashtags text[],
+    source text,
+    geom public.geometry(Geometry,4326)
 );
 
 CREATE TABLE public.raw_countries (
     id integer NOT NULL,
     name text,
-    code text NOT NULL
-);
-
-CREATE VIEW public.countries AS
- SELECT raw_countries.id,
-    raw_countries.name,
-    raw_countries.code
-   FROM public.raw_countries;
-
-CREATE TABLE public.raw_hashtags (
-    id integer NOT NULL,
-    hashtag text NOT NULL
+    code text NOT NULL,
+    boundary geometry(MultiPolygon,4326)
 );
 
 CREATE MATERIALIZED VIEW public.hashtag_stats AS
@@ -222,12 +138,20 @@ CREATE MATERIALIZED VIEW public.raw_hashtags_users AS
             max(COALESCE(raw_changesets.closed_at, raw_changesets.created_at)) AS updated_at
            FROM (public.raw_changesets
              JOIN public.raw_changesets_hashtags ON ((raw_changesets_hashtags.changeset_id = raw_changesets.id)))
-          GROUP BY raw_changesets_hashtags.hashtag_id, raw_changesets.user_id) _
+          GROUP BY raw_changesets_hashtags.hashtag_id, raw_changesets.user_id)
   WITH NO DATA;
 
 CREATE TABLE public.raw_users (
     id integer NOT NULL,
-    name text
+    name text,
+    tm_registration timestamp with time zone,
+    osm_registration timestamp with time zone,
+    tasks_mapped integer,
+    tasks_validated integer,
+    tasks_invalidated integer,
+    projects_mapped integer[],
+    gender text,
+    home geometry(Point,4326)
 );
 
 CREATE MATERIALIZED VIEW public.user_stats AS
@@ -287,17 +211,9 @@ CREATE VIEW public.users AS
    FROM (public.raw_users u
      JOIN public.user_stats us ON ((us.user_id = u.id)));
 
-ALTER TABLE ONLY public.badges ALTER COLUMN id SET DEFAULT nextval('public.badges_id_seq'::regclass);
-
 ALTER TABLE ONLY public.raw_countries ALTER COLUMN id SET DEFAULT nextval('public.raw_countries_id_seq'::regclass);
 
 ALTER TABLE ONLY public.raw_hashtags ALTER COLUMN id SET DEFAULT nextval('public.raw_hashtags_id_seq'::regclass);
-
-ALTER TABLE ONLY public.badges
-    ADD CONSTRAINT badges_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.badges_users
-    ADD CONSTRAINT badges_users_pkey PRIMARY KEY (user_id, badge_id);
 
 ALTER TABLE ONLY public.raw_changesets_countries
     ADD CONSTRAINT raw_changesets_countries_pkey PRIMARY KEY (changeset_id, country_id);
