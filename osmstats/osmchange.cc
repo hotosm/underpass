@@ -386,14 +386,10 @@ OsmChangeFile::dump(void)
 std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>>
 OsmChangeFile::collectStats(void)
 {
-    // struct user_id{};
-    // struct change_id{};
-    // typedef multi_index_container<ChangeStats, indexed_by<
-    //     ordered_unique<
-    //         tag<user_id>,  BOOST_MULTI_INDEX_MEMBER(ChangeStats,long,user_id)>,
-    //     ordered_unique<
-    //         tag<change_id>,  BOOST_MULTI_INDEX_MEMBER(ChangeStats,long,change_id)>>> stats;
-
+    // FIXME: stuff to extract for MERL
+    // names added to villages, neigborhood, or citys
+    // facilities added (aggregated by schools, clinics, water points, bridges,
+    // airports and administrative boundaries)
     auto mstats = std::make_shared<std::map<long, std::shared_ptr<ChangeStats>>>();
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
@@ -417,7 +413,6 @@ OsmChangeFile::collectStats(void)
                     continue;
                 }
             }
-#if 0
             for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
                 OsmWay *way = it->get();
                 if (way->tags.size() == 0) {
@@ -455,7 +450,7 @@ OsmChangeFile::collectStats(void)
                     }
                 }
             }
-#endif
+
 #if 0
         } else if (change->action == modify) {   
             for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
@@ -463,7 +458,7 @@ OsmChangeFile::collectStats(void)
                 if (node->tags.size() > 0) {
                     std::cout << "Modified Node ID " << node->id << " has tags!" << std::endl;
                 } else {
-                    ostats.pois_modified++;
+                    ostats->pois_modified++;
                 }
             }
             for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
@@ -473,15 +468,15 @@ OsmChangeFile::collectStats(void)
                     continue;
                 }
                 if (way->tags.find("building") != way->tags.end()) {
-                    ostats.buildings_modified++;
+                    ostats->buildings_modified++;
                 }
                 if (way->tags.find("highway") != way->tags.end()) {
-                    ostats.roads_km_modified += way->getLength();
-                    ostats.roads_modified++;
+                    ostats->roads_km_modified += way->getLength();
+                    ostats->roads_modified++;
                 }
                 if (way->tags.find("waterway") != way->tags.end()) {
-                    ostats.waterways_km_modified += way->getLength();
-                    ostats.waterways_modified++;
+                    ostats->waterways_km_modified += way->getLength();
+                    ostats->waterways_modified++;
                 }
             }
 #endif
@@ -509,7 +504,12 @@ ChangeStats::dump(void)
     std::cout << "\tBuildings Modified: \t " << buildings_modified << std::endl;
     std::cout << "\tPOIs added: \t\t " << pois_added << std::endl;
     std::cout << "\tPOIs Modified: \t\t " << pois_modified << std::endl;
+    // std::cout << "\tSource Imagery: \t\t " << source << std::endl;
 };
 
 } // EOF namespace osmchange
 
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

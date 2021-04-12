@@ -74,6 +74,9 @@ using namespace boost::gregorian;
 /// \namespace validate
 namespace validate {
 
+// FIXME: things to look for
+// Villages, hamlets, neigborhoods, towns, or cities added without a name
+
 Validate::Validate(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
 {
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {

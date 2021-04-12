@@ -254,3 +254,8 @@ public:
 }       // EOF osmchange
 
 #endif  // EOF __OSMCHANGE_HH__
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

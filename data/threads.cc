@@ -552,3 +552,7 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
 
 }       // EOF namespace threads
 
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

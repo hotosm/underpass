@@ -32,45 +32,63 @@
 #include <iostream>
 #include <string>
 #include <pqxx/pqxx>
-#include <libxml++/libxml++.h>
 
-#include "hottm.hh"
-#include "osmstats/osmstats.hh"
+// #include "hotosm.hh"
 #include "osmstats/changeset.hh"
+// #include "osmstats/osmstats.hh"
+#include "data/geoutil.hh"
+// #include "osmstats/replication.hh"
+#include "data/import.hh"
+#include "data/threads.hh"
+#include "data/underpass.hh"
+#include "timer.hh"
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/date_time/gregorian/gregorian.hpp"
 
-#include "data/geoutil.hh"
-using namespace geoutil;
+using namespace underpass;
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
-TestState runtest;
-
-class TestGU : public GeoUtil
-{
-    bool testFile(const std::string &filespec) {
-        // std::string basedir="DATADIR";
-    };
+namespace replication {
+class StateFile;
 };
+
+TestState runtest;
 
 int
 main(int argc, char* argv[])
 {
-    TestGU tgu;
     std::string basedir = DATADIR;
+    Timer timer;
+    
+    Underpass under("underpass");
+    
+    if (under.sdb->is_open()) {
+        runtest.pass("Underpass::connect");
+    } else {
+        runtest.fail("Underpass::connect");
+    }
 
-    // Read a single polygon
-    // tgu.readFile(basedir + "/include.osm", false);
-    // Read a multipolygon
-    tgu.startTimer();
-    tgu.readFile(basedir + "/data/geoboundaries.osm", true);
-    tgu.endTimer();
+    ptime tstamp = time_from_string("2020-09-18 12:03:29.891418-06");
+    auto state = under.getState(replication::minutely, tstamp);
+    if (state->path.empty()) {
+        runtest.fail("Underpass::getState(minutely)");
+    } else {
+        runtest.pass("Underpass::getState(minutely)");
+    }
 
-    // See if it worked, which it needs to if any other tests will work
-    tgu.dump();
+    osmstats::QueryOSMStats ostats;                    ///< OSM Stats database access
+    ostats.connect("osmstats");
+    ptime last = ostats.getLastUpdate();
+    
+    under.connect("underpass");
+    state = under.getState(replication::changeset, last);
+    std::cout << "Last minutely is " << last  << std::endl;
+    // url = "https://planet.openstreetmap.org/replication/minute/004/308/210";
+    // std::thread mstate (threads::startMonitor, state->path);
+    // threads::startMonitor(state->path);
 
     // Changesets have a bounding box, so we want to find the
     // country the changes were made in.
@@ -79,14 +97,16 @@ main(int argc, char* argv[])
     double max_lat = -2.7699398;
     double max_lon = 29.6012844;
 
-    tgu.startTimer();
-    GeoCountry &country = tgu.inCountry(max_lat, max_lon, min_lat, min_lon);
-    tgu.endTimer();
-    if (country.getName() == "Rwanda" || country.getAbbreviation(2) == "RW") {
-        runtest.pass("GeoUtil::inCountry()");
+    timer.startTimer();
+    auto country = under.getCountry(max_lat, max_lon, min_lat, min_lon);
+    // country->dump();
+    if (country->id == 191 && country->name == "Rwanda" && country->abbrev == "RW") {
+        runtest.pass("Underpass::getCountry()");
     } else {
-        runtest.fail("GeoUtil::inCountry()");
+        runtest.fail("Underpass::getCountry()");
     }
-    country.dump();
+    timer.endTimer();
+    
+    std::cout << "Done..." << std::endl;
 };
 
