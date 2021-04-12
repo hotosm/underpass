@@ -41,6 +41,7 @@
 #include <pqxx/pqxx>
 #include "pqxx/nontransaction"
 
+#include <boost/algorithm/string.hpp>
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
@@ -151,6 +152,7 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
     // boost::algorithm::replace_all(change.user, "\'", "&quot;");
     // query += std::to_string(change.uid) + ",\'" + change.user;
     //query += "\') ON CONFLICT DO NOTHING;";
+    // FIXME: add source, hashtags, and geom
     std::cout << "QUERY: " << query << std::endl;
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
@@ -180,14 +182,16 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     // statistics except for editor usage.
     underpass::Underpass under;
     under.connect();
+#if 0
     if (change.hashtags.size() == 0) {
         std::cout << "No hashtags in change id: " << change.id << std::endl;
         under.updateCreator(change.uid, change.id, change.editor);
         worker.commit();
-        return true;
+        // return true;
     } else {
         std::cout << "Found hashtags for change id: " << change.id << std::endl;
     }
+    
     //pqxx::work worker2(*sdb);
     for (auto it = std::begin(change.hashtags); it != std::end(change.hashtags); ++it) {
         query = "INSERT INTO raw_hashtags (hashtag) VALUES(\'";
@@ -195,14 +199,15 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
         std::cout << "QUERY: " << query << std::endl;
         pqxx::result result = worker.exec(query);
         std::string query = "SELECT id FROM raw_hashtags WHERE hashtag=\'" + *it + "\';";
-        std::cout << "QUERY: " << query << std::endl;
-        result = worker.exec(query);
-        std::string id = result[0][0].c_str();
+        // std::cout << "QUERY: " << query << std::endl;
+        // result = worker.exec(query);
+        // std::string id = result[0][0].c_str();
         query = "INSERT INTO raw_changesets_hashtags(changeset_id,hashtag_id) VALUES(";
         query += std::to_string(change.id) + ", " + id + ") ON CONFLICT DO NOTHING;";
         std::cout << "QUERY: " << query << std::endl;
         result = worker.exec(query);
     }
+#endif
 
 #if 0
     // Update the raw_changesets_countries table
@@ -229,33 +234,39 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     } else {
         query = "INSERT INTO raw_changesets (id, editor, user_id, created_at";
     }
+    if (change.hashtags.size() > 0) {
+        query += ", hashtags ";        
+    }
     if (!change.source.empty()) {
         query += ", source ";
     }
-    query += ") VALUES(";
+    query += ", geom) VALUES(";
     boost::algorithm::replace_all(change.editor, "\'", "&quot;");
     query += std::to_string(change.id) + ",\'" + change.editor + "\',\'";\
     query += std::to_string(change.uid) + "\',\'";
     query += to_simple_string(change.created_at) + "\'";
+    if (!change.open) {
+        query += ",\'" + to_simple_string(change.closed_at) + "\'";
+    }
     // Hashtags are only used in mapping campaigns using Tasking Manager
-    if (hashtags.size() > 0) {
-        query += "{ ";
-        for (auto it = std::begin(hashtags); it != std::end(hashtags); ++it) {
-            // query += it + " ";
+    if (change.hashtags.size() > 0) {
+        query += ", \'{ ";
+        for (auto it = std::begin(change.hashtags); it != std::end(change.hashtags); ++it) {
+            query += "\"" + *it + "\"" + ", ";
         }
-        query += " }";
+        // drop the last comma
+        query.erase(query.size() - 2);
+        query += " }\'";
     }
     // The source field is not always present
     if (!change.source.empty()) {
         query += ",\'" + change.source += "\'";
     }
-    // FIXME: Add the bounding box of the changeset here next
-    if (!change.open) {
-        query += ",\'" + to_simple_string(change.closed_at) + "\')";
-    } else {
-        query += ")";
-    }
-    query += " ON CONFLICT DO NOTHING;";
+    // Add the bounding box of the changeset here next
+    query += ", ST_ENVELOPE(\'SRID=4326;LINESTRING(" + std::to_string(change.min_lat) + "  ";
+    query += std::to_string(change.max_lon) + "," + std::to_string(change.max_lat) + " " + std::to_string(change.min_lon);
+    query += ")\')";
+    query += ") ON CONFLICT DO NOTHING;";
     std::cout << "QUERY: " << query << std::endl;
     result = worker.exec(query);
 
@@ -289,13 +300,14 @@ QueryOSMStats::populate(void)
         users.push_back(ru);
     };
 
+#if 0
     query = "SELECT id,hashtag FROM raw_hashtags;";
     result = worker.exec(query);
     for (auto it = std::begin(result); it != std::end(result); ++it) {
         RawHashtag rh(it);
         hashtags[rh.name] = rh;
     };
-
+#endif
     // ptime start = time_from_string("2010-07-08 13:29:46");
     // ptime end = second_clock::local_time();
     // long roadsAdded = QueryStats::getCount(QueryStats::highway, 0,
@@ -345,6 +357,7 @@ QueryOSMStats::getRawChangeSets(std::vector<long> &changeset_ids)
 bool
 QueryOSMStats::hasHashtag(long changeid)
 {
+#if 0
     std::string query = "SELECT COUNT(hashtag_id) FROM raw_changesets_hashtags WHERE changeset_id=" + std::to_string(changeid) + ";";
     std::cout << "QUERY: " << query << std::endl;
     pqxx::work worker(*sdb);
@@ -354,7 +367,7 @@ QueryOSMStats::hasHashtag(long changeid)
     if (result[0][0].as(int(0)) > 0 ) {
         return true;
     }
-
+#endif
     return false;
 }
 
@@ -402,6 +415,7 @@ QueryOSMStats::updateRawHashtags(void)
 {
 //    INSERT INTO keys(name, value) SELECT 'blah', 'true' WHERE NOT EXISTS (SELECT 1 FROM keys WHERE name='blah');
 
+#if 0
     std::string query = "INSERT INTO raw_hashtags(hashtag) VALUES(";
     // query += "nextval('raw_hashtags_id_seq'), \'" + tag;
     // query += "\'" + tag;
@@ -411,6 +425,7 @@ QueryOSMStats::updateRawHashtags(void)
     pqxx::result result = worker.exec(query);
     worker.commit();
     return result.size();
+#endif
 }
 
 int
@@ -478,3 +493,7 @@ RawChangeset::dump(void)
 
 }       // EOF osmstatsdb
 
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:
