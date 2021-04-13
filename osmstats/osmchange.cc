@@ -391,6 +391,7 @@ OsmChangeFile::collectStats(void)
     // facilities added (aggregated by schools, clinics, water points, bridges,
     // airports and administrative boundaries)
     auto mstats = std::make_shared<std::map<long, std::shared_ptr<ChangeStats>>>();
+    auto ostats = std::make_shared<ChangeStats>();
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
         change->dump();
@@ -401,12 +402,11 @@ OsmChangeFile::collectStats(void)
                     std::cout << "New Node ID " << node->id << " has tags!" << std::endl;
                     auto cit = mstats->find(node->change_id);
                     if (cit != mstats->end()) {
-                        cit->second->pois_added++;
+                        cit->second->added["pois"]++;
                     } else {
-                        auto ostats = std::make_shared<ChangeStats>();
-                        ostats->pois_added++;
-                        ostats->change_id = node->change_id;
-                        ostats->user_id = node->uid;
+                        ostats->added["pois"]++;
+                        ostats->added["change_id"] = node->change_id;
+                        ostats->added["user_id"] = node->uid;
                         mstats->insert(cit, std::pair(node->change_id, ostats));
                     }
                 } else {
@@ -425,28 +425,28 @@ OsmChangeFile::collectStats(void)
                 auto cit = mstats->find(way->change_id);
                 if (cit != mstats->end()) {
                     if (way->tags.find("building") != way->tags.end()) {
-                        cit->second->buildings_added++;
+                        cit->second->added["building"]++;
                     }
                     if (way->tags.find("highway") != way->tags.end()) {
-                        cit->second->roads_km_added += way->getLength();
-                        cit->second->roads_added++;
+                        cit->second->added["highway_km"] += way->getLength();
+                        cit->second->added["highway"]++;
                     }
-                    if (way->tags.find("waterway") != way->tags.end()) {
-                        cit->second->waterways_km_added += way->getLength();
-                        cit->second->waterways_added++;
-                    }
+                    // if (way->tags.find("waterway") != way->tags.end()) {
+                    //     cit->second->waterways_km_added += way->getLength();
+                    //     cit->second->waterways_added++;
+                    // }
                 } else {
                     auto ostats = std::make_shared<ChangeStats>();
                     if (way->tags.find("building") != way->tags.end()) {
-                        ostats->buildings_added++;
+                        ostats->added["building"]++;
                     }
                     if (way->tags.find("highway") != way->tags.end()) {
-                        ostats->roads_km_added += way->getLength();
-                        ostats->roads_added++;
+                        ostats->added["highway_km"] += way->getLength();
+                        ostats->added["highway"]++;
                     }
                     if (way->tags.find("waterway") != way->tags.end()) {
-                        ostats->waterways_km_added += way->getLength();
-                        ostats->waterways_added++;
+                        ostats->added["waterways_km"] += way->getLength();
+                        ostats->added["waterways"]++;
                     }
                 }
             }
@@ -458,7 +458,7 @@ OsmChangeFile::collectStats(void)
                 if (node->tags.size() > 0) {
                     std::cout << "Modified Node ID " << node->id << " has tags!" << std::endl;
                 } else {
-                    ostats->pois_modified++;
+                    ostats->added["pois"]++;
                 }
             }
             for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
@@ -475,8 +475,8 @@ OsmChangeFile::collectStats(void)
                     ostats->roads_modified++;
                 }
                 if (way->tags.find("waterway") != way->tags.end()) {
-                    ostats->waterways_km_modified += way->getLength();
-                    ostats->waterways_modified++;
+                    ostats->modified["waterways_km"] += way->getLength();
+                    ostats->modified["waterways"]++;
                 }
             }
 #endif
@@ -492,6 +492,7 @@ ChangeStats::dump(void)
 {
     std::cout << "Dumping ChangeStats for: \t " << change_id << std::endl;
     std::cout << "\tUser ID: \t\t " << user_id << std::endl;
+#if 0
     std::cout << "\tRoads Added (km): \t " << roads_km_added << std::endl;
     std::cout << "\tRoads Modified (km):\t " << roads_km_modified << std::endl;
     std::cout << "\tWaterways Added (km): \t " << waterways_km_added << std::endl;
@@ -504,6 +505,7 @@ ChangeStats::dump(void)
     std::cout << "\tBuildings Modified: \t " << buildings_modified << std::endl;
     std::cout << "\tPOIs added: \t\t " << pois_added << std::endl;
     std::cout << "\tPOIs Modified: \t\t " << pois_modified << std::endl;
+#endif
     // std::cout << "\tSource Imagery: \t\t " << source << std::endl;
 };
 

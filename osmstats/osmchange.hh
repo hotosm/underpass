@@ -101,19 +101,9 @@ class ChangeStats
 public:
     long change_id = 0;             ///< The ID of this change
     long user_id = 0;               ///< The User ID
-    long pois_added = 0;            ///< The total number of POIs added
-    long pois_modified = 0;         ///< The total number of POIs modified
-    long roads_km_added = 0.0;      ///< The length of the roads added in KM
-    long roads_km_modified = 0.0;   ///< The length of the roads modified in KM
-    long roads_added = 0;           ///< The total number of roads added
-    long roads_modified = 0;        ///< The total number of roads modified
-    long waterways_km_added = 0.0;    ///< The length of the waterways added in KM
-    long waterways_km_modified = 0.0; ///< The length of the waterways added in KM
-    long waterways_added = 0;       ///< The total number of waterways added
-    long waterways_modified = 0;    ///< The total number of waterways modified
-    long buildings_added = 0;       ///< The total number of buildings added
-    long buildings_modified = 0;    ///< The total number of buildings modified
-
+    std::map<std::string, double> added;
+    std::map<std::string, double> modified;
+    std::map<std::string, double> deleted;
     /// Dump internal data to the terminal, only for debugging
     void dump(void);
 };
