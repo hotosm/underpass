@@ -451,14 +451,13 @@ OsmChangeFile::collectStats(void)
                 }
             }
 
-#if 0
         } else if (change->action == modify) {   
             for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
                 OsmNode *node = it->get();
                 if (node->tags.size() > 0) {
                     std::cout << "Modified Node ID " << node->id << " has tags!" << std::endl;
                 } else {
-                    ostats->added["pois"]++;
+                    ostats->modified["pois"]++;
                 }
             }
             for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
@@ -468,18 +467,17 @@ OsmChangeFile::collectStats(void)
                     continue;
                 }
                 if (way->tags.find("building") != way->tags.end()) {
-                    ostats->buildings_modified++;
+                    ostats->modified["buildings"]++;
                 }
                 if (way->tags.find("highway") != way->tags.end()) {
-                    ostats->roads_km_modified += way->getLength();
-                    ostats->roads_modified++;
+                    ostats->modified["highway_km"] += way->getLength();
+                    ostats->modified["highway"]++;
                 }
                 if (way->tags.find("waterway") != way->tags.end()) {
                     ostats->modified["waterways_km"] += way->getLength();
                     ostats->modified["waterways"]++;
                 }
             }
-#endif
         }
     }
 
