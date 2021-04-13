@@ -137,19 +137,21 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
     if (change.added.size() > 0) {
         for (auto it = std::begin(change.added); it != std::end(change.added); ++it) {
             if (it->second > 0) {
-                query += " ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'], ";
+                query += " ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'],";
             }
         }
-        query += "]";
+        query.erase(query.size() - 1);
+        query += "])";
     }
     // query.erase(query.size() - 2);
     if (change.modified.size() > 0) {
         query += ", modified = HSTORE(ARRAY[";
         for (auto it = std::begin(change.modified); it != std::end(change.modified); ++it) {
             if (it->second > 0) {
-                query += " ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'], ";
+                query += " ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'],";
             }
         }
+        query.erase(query.size() - 1);
         query += "] ";
     }
     if (change.deleted.size() > 0) {
@@ -158,6 +160,7 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
                 query += ", ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'], ";
             }
         }
+        query += "])";
     }
     query += ")";
     boost::algorithm::replace_all(query, ", ])", "])");
@@ -438,18 +441,6 @@ RawChangeset::dump(void)
 {
     std::cout << "-----------------------------------" << std::endl;
     std::cout << "changeset id: \t\t " << id << std::endl;
-    std::cout << "Roads Added (km): \t " << counters["road_km_added"] << std::endl;
-    std::cout << "Roads Modified (km):\t " << counters["road_km_modified"] << std::endl;
-    std::cout << "Waterways Added (km): \t " << counters["waterway_km_added"] << std::endl;
-    std::cout << "Waterways Modified (km): " << counters["waterway_km_modified"] << std::endl;
-    std::cout << "Roads Added: \t\t " << counters["roads_added"] << std::endl;
-    std::cout << "Roads Modified: \t " << counters["roads_modified"] << std::endl;
-    std::cout << "Waterways Added: \t " << counters["waterways_added"] << std::endl;
-    std::cout << "Waterways Modified: \t " << counters["waterways_modified"] << std::endl;
-    std::cout << "Buildings added: \t " << counters["buildings_added"] << std::endl;
-    std::cout << "Buildings Modified: \t " << counters["buildings_modified"] << std::endl;
-    std::cout << "POIs added: \t\t " << counters["pois_added"] << std::endl;
-    std::cout << "POIs Modified: \t\t " << counters["pois_modified"] << std::endl;
     std::cout << "Editor: \t\t " << editor << std::endl;
     std::cout << "User ID: \t\t "  << user_id << std::endl;
     std::cout << "Created At: \t\t " << created_at << std::endl;
