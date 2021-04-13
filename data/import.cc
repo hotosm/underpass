@@ -110,11 +110,8 @@ bool
 OSMHandler::addUser(long uid, const std::string &user)
 {
     std::string query = "INSERT INTO users VALUES(";
-    std::string tmp = user;
     // some user names have an embeded quote
-    boost::algorithm::replace_all(tmp, "\'", "&apos;");
-    boost::algorithm::replace_all(tmp, "\"", "&quot;");
-    query += std::to_string(uid) + ",\'" + tmp;
+    query += std::to_string(uid) + ",\'" + db->esc(user);
     query += "\') ON CONFLICT DO NOTHING;";
     worker = new pqxx::work(*db);
     pqxx::result result = worker->exec(query);
@@ -138,19 +135,11 @@ OSMHandler::way(const osmium::Way& way)
     for (const osmium::Tag& t : way.tags()) {
         std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
         tags += "\"";
-        std::string tmp = t.key();
-        boost::algorithm::replace_all(tmp, "\'", "&apos;");
-        boost::algorithm::replace_all(tmp, "\"", "&quot;");
-        tags += tmp;        
+        tags += db->esc(t.key());
         tags += "\"=>\"";
-        // Replace single quotes, as they screw up the query
-        tmp = t.value();
-        boost::algorithm::replace_all(tmp, "\'", "&apos;");
-        boost::algorithm::replace_all(tmp, "\"", "&quot;");
+        tags += db->esc(t.value());
         // Some values have a double quote, which is unnecesary, and
         // screws up XML parsing.
-        boost::algorithm::replace_all(tmp, "\"", "");
-        tags += tmp;
         tags += "\", ";
     }
     tags = tags.substr(0, tags.size()-2);
@@ -214,7 +203,7 @@ OSMHandler::way(const osmium::Way& way)
     std::cout << "Query: " << query << std::endl;
 
     worker = new pqxx::work(*db);
-    pqxx::result result = worker->exec(query);
+    pqxx::result result = worker->exec(worker->esc(query));
     // pgsnapshot.way_nodes
     // way_id | node_id | sequence_id
     int i = 0;
@@ -254,21 +243,7 @@ OSMHandler::node(const osmium::Node& node) {
     std::string tags;
     for (const osmium::Tag& t : node.tags()) {
         std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
-        tags += "\"";
-        std::string tmp = t.key();
-        boost::algorithm::replace_all(tmp, "\'", "&apos;");
-        boost::algorithm::replace_all(tmp, "\"", "&quot;");
-        tags += tmp;
-        tags += "\"=>\"";
-        // Replace single quotes, as they screw up the query
-        tmp = t.value();
-        boost::algorithm::replace_all(tmp, "\'", "&apos;");
-        boost::algorithm::replace_all(tmp, "\"", "&quot;");
-        // "&apos;" is not a supported HTML 4 entity
-        boost::algorithm::replace_all(tmp, "&apos;", "&rsquo;");
-        // boost::algorithm::replace_all(tmp, "&apos;", "&#39;;");
-        ss << "\"" << t.key() << "\"=>\"" << tmp << "\", ";
-        tags += "\", ";
+        ss << "\"" << db->esc(t.key()) << "\"=>\"" << db->esc(t.value()) << "\", ";
         tags = ss.str();
     }
     tags = tags.substr(0, tags.size()-2);
