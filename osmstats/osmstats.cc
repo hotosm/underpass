@@ -185,8 +185,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     // Add user data
     // addUser(change.uid, change.user);
     std::string query = "INSERT INTO users VALUES(";
-    boost::algorithm::replace_all(change.user, "\'", "&quot;");
-    query += std::to_string(change.uid) + ",\'" + change.user;
+    query += std::to_string(change.uid) + ",\'" + sdb->esc(change.user);
     query += "\') ON CONFLICT DO NOTHING;";
     std::cout << "QUERY: " << query << std::endl;
     pqxx::work worker(*sdb);
@@ -226,7 +225,6 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
         query += ", source ";
     }
     query += ", geom) VALUES(";
-    boost::algorithm::replace_all(change.editor, "\'", "&quot;");
     query += std::to_string(change.id) + ",\'" + change.editor + "\',\'";\
     query += std::to_string(change.uid) + "\',\'";
     query += to_simple_string(change.created_at) + "\'";
