@@ -22,124 +22,46 @@ SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
-CREATE TABLE public.raw_changesets (
+CREATE TABLE public.changesets (
     id bigint NOT NULL,
-    road_km_added double precision,
-    road_km_modified double precision,
-    waterway_km_added double precision,
-    waterway_km_modified double precision,
-    roads_added integer,
-    roads_modified integer,
-    waterways_added integer,
-    waterways_modified integer,
-    buildings_added integer,
-    buildings_modified integer,
-    pois_added integer,
-    pois_modified integer,
     editor text,
-    user_id integer,
+    user_id integer NOT NULL,
     created_at timestamp with time zone,
     closed_at timestamp with time zone,
     updated_at timestamp with time zone,
+    added public.hstore,
+    modified public.hstore,
+    deleted public.hstore,
     hashtags text[],
     source text,
+    changes public.hstore,
     geom public.geometry(Geometry,4326)
 );
 
-CREATE TABLE public.raw_countries (
-    id integer NOT NULL,
-    name text,
-    code text NOT NULL,
-    boundary geometry(MultiPolygon,4326)
+--
+-- Name: geoboundaries; Type: TABLE; Schema: public;
+--
+
+CREATE TABLE public.geoboundaries (
+    cid integer NOT NULL,
+    name character varying NOT NULL,
+    admin_level integer,
+    other_tags public.hstore,
+    boundary public.geometry
 );
 
-CREATE MATERIALIZED VIEW public.hashtag_stats AS
- SELECT h.hashtag,
-    count(c.id) AS changesets,
-    count(DISTINCT c.user_id) AS users,
-    sum(c.road_km_added) AS road_km_added,
-    sum(c.road_km_modified) AS road_km_modified,
-    sum(c.waterway_km_added) AS waterway_km_added,
-    sum(c.waterway_km_modified) AS waterway_km_modified,
-    sum(c.roads_added) AS roads_added,
-    sum(c.roads_modified) AS roads_modified,
-    sum(c.waterways_added) AS waterways_added,
-    sum(c.waterways_modified) AS waterways_modified,
-    sum(c.buildings_added) AS buildings_added,
-    sum(c.buildings_modified) AS buildings_modified,
-    sum(c.pois_added) AS pois_added,
-    sum(c.pois_modified) AS pois_modified,
-    sum(
-        CASE
-            WHEN ("position"(lower(c.editor), 'josm'::text) > 0) THEN 1
-            ELSE 0
-        END) AS josm_edits,
-    max(COALESCE(c.closed_at, c.created_at)) AS updated_at
-   FROM ((public.raw_changesets_hashtags ch
-     JOIN public.raw_changesets c ON ((c.id = ch.changeset_id)))
-     JOIN public.raw_hashtags h ON ((h.id = ch.hashtag_id)))
-  GROUP BY h.hashtag
-  WITH NO DATA;
+--
+-- Name: raw_ground; Type: TABLE; Schema: public;
+--
 
-CREATE VIEW public.hashtags AS
- SELECT raw_hashtags.id,
-    raw_hashtags.hashtag
-   FROM public.raw_hashtags;
+CREATE TABLE public.ground_data (
+    starttime timestamp with time zone NOT NULL,
+    endtime timestamp with time zone NOT NULL,
+    username text NOT NULL,
+    changeset_id integer,
+    location public.geometry
+);
 
-CREATE SEQUENCE public.raw_countries_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE public.raw_countries_id_seq OWNED BY public.raw_countries.id;
-
-CREATE MATERIALIZED VIEW public.raw_countries_users AS
- SELECT raw_changesets_countries.country_id,
-    raw_changesets.user_id,
-    count(raw_changesets.id) AS changesets
-   FROM (public.raw_changesets_countries
-     JOIN public.raw_changesets ON ((raw_changesets.id = raw_changesets_countries.changeset_id)))
-  GROUP BY raw_changesets_countries.country_id, raw_changesets.user_id
-  WITH NO DATA;
-
-CREATE SEQUENCE public.raw_hashtags_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE public.raw_hashtags_id_seq OWNED BY public.raw_hashtags.id;
-
-CREATE MATERIALIZED VIEW public.raw_hashtags_users AS
- SELECT _.hashtag_id,
-    _.user_id,
-    _.changesets,
-    _.edits,
-    _.buildings,
-    _.roads,
-    _.road_km,
-    _.updated_at,
-    rank() OVER (ORDER BY _.edits DESC) AS edits_rank,
-    rank() OVER (ORDER BY _.buildings DESC) AS buildings_rank,
-    rank() OVER (ORDER BY _.road_km DESC) AS road_km_rank,
-    rank() OVER (ORDER BY _.updated_at DESC) AS updated_at_rank
-   FROM ( SELECT raw_changesets_hashtags.hashtag_id,
-            raw_changesets.user_id,
-            count(raw_changesets.id) AS changesets,
-            sum((((((((raw_changesets.buildings_added + raw_changesets.buildings_modified) + raw_changesets.roads_added) + raw_changesets.roads_modified) + raw_changesets.waterways_added) + raw_changesets.waterways_modified) + raw_changesets.pois_added) + raw_changesets.pois_modified)) AS edits,
-            sum((raw_changesets.buildings_added + raw_changesets.buildings_modified)) AS buildings,
-            sum((raw_changesets.roads_added + raw_changesets.roads_modified)) AS roads,
-            sum((raw_changesets.road_km_added + raw_changesets.road_km_modified)) AS road_km,
-            max(COALESCE(raw_changesets.closed_at, raw_changesets.created_at)) AS updated_at
-           FROM (public.raw_changesets
-             JOIN public.raw_changesets_hashtags ON ((raw_changesets_hashtags.changeset_id = raw_changesets.id)))
-          GROUP BY raw_changesets_hashtags.hashtag_id, raw_changesets.user_id)
-  WITH NO DATA;
 
 CREATE TABLE public.raw_users (
     id integer NOT NULL,
@@ -211,56 +133,11 @@ CREATE VIEW public.users AS
    FROM (public.raw_users u
      JOIN public.user_stats us ON ((us.user_id = u.id)));
 
-ALTER TABLE ONLY public.raw_countries ALTER COLUMN id SET DEFAULT nextval('public.raw_countries_id_seq'::regclass);
-
-ALTER TABLE ONLY public.raw_hashtags ALTER COLUMN id SET DEFAULT nextval('public.raw_hashtags_id_seq'::regclass);
-
-ALTER TABLE ONLY public.raw_changesets_countries
-    ADD CONSTRAINT raw_changesets_countries_pkey PRIMARY KEY (changeset_id, country_id);
-
-ALTER TABLE ONLY public.raw_changesets_hashtags
-    ADD CONSTRAINT raw_changesets_hashtags_pkey PRIMARY KEY (changeset_id, hashtag_id);
-
 ALTER TABLE ONLY public.raw_changesets
     ADD CONSTRAINT raw_changesets_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.raw_countries
-    ADD CONSTRAINT raw_countries_code_key UNIQUE (code);
-
-ALTER TABLE ONLY public.raw_countries
-    ADD CONSTRAINT raw_countries_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.raw_hashtags
-    ADD CONSTRAINT raw_hashtags_hashtag_key UNIQUE (hashtag);
-
-ALTER TABLE ONLY public.raw_hashtags
-    ADD CONSTRAINT raw_hashtags_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY public.raw_users
     ADD CONSTRAINT raw_users_pkey PRIMARY KEY (id);
 
-CREATE UNIQUE INDEX hashtag_stats_hashtag ON public.hashtag_stats USING btree (hashtag);
-
-CREATE INDEX raw_changesets_user_id ON public.raw_changesets USING btree (user_id);
-
-CREATE INDEX raw_countries_users_country_id ON public.raw_countries_users USING btree (country_id);
-
-CREATE UNIQUE INDEX raw_countries_users_country_id_user_id ON public.raw_countries_users USING btree (country_id, user_id);
-
-CREATE INDEX raw_countries_users_user_id ON public.raw_countries_users USING btree (user_id);
-
-CREATE UNIQUE INDEX raw_hashtags_hashtag_idx ON public.raw_hashtags USING btree (hashtag);
-
-CREATE UNIQUE INDEX raw_hashtags_hashtag_idx1 ON public.raw_hashtags USING btree (hashtag);
-
-CREATE INDEX raw_hashtags_users_hashtag_id ON public.raw_hashtags_users USING btree (hashtag_id);
-
-CREATE UNIQUE INDEX raw_hashtags_users_hashtag_id_user_id ON public.raw_hashtags_users USING btree (hashtag_id, user_id);
-
-CREATE INDEX raw_hashtags_users_user_id ON public.raw_hashtags_users USING btree (user_id);
-
-CREATE INDEX user_stats_updated_at ON public.user_stats USING btree (updated_at);
-
-
-CREATE UNIQUE INDEX user_stats_user_id ON public.user_stats USING btree (user_id);
-
+ALTER TABLE ONLY public.geoboundaries
+    ADD CONSTRAINT geoboundaries_pkey PRIMARY KEY (cid);
