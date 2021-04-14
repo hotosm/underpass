@@ -399,6 +399,8 @@ OsmChangeFile::collectStats(void)
             for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
                 OsmNode *node = it->get();
                 if (node->tags.size() > 0) {
+                    // FIXME: Some node have only the created_at field, which
+                    // doesn't mean it's a POI, so shouldn't be counted.
                     std::cout << "New Node ID " << node->id << " has tags!" << std::endl;
                     auto cit = mstats->find(node->change_id);
                     if (cit != mstats->end()) {
