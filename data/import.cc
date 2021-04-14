@@ -136,6 +136,7 @@ OSMHandler::way(const osmium::Way& way)
     for (const osmium::Tag& t : way.tags()) {
         std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
         std::string tmp = t.value();
+        boost::algorithm::replace_all(tmp, "\'", "&apos;");
         boost::algorithm::replace_all(tmp, "\"", "&quot;");
         ss << "\"" << db->esc(t.key()) << "\"=>\"" << db->esc(tmp) << "\", ";
         tags = ss.str();
@@ -242,6 +243,7 @@ OSMHandler::node(const osmium::Node& node) {
     for (const osmium::Tag& t : node.tags()) {
         std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
         std::string tmp = t.value();
+        boost::algorithm::replace_all(tmp, "\'", "&apos;");
         boost::algorithm::replace_all(tmp, "\"", "&quot;");
         ss << "\"" << db->esc(t.key()) << "\"=>\"" << db->esc(tmp) << "\", ";
         tags = ss.str();
