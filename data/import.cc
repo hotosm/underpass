@@ -132,15 +132,13 @@ OSMHandler::way(const osmium::Way& way)
               << ", Timestamp: " << way.timestamp() << std::endl;
     // Setup the tags
     std::string tags;
+    std::stringstream ss;
     for (const osmium::Tag& t : way.tags()) {
         std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
-        tags += "\"";
-        tags += db->esc(t.key());
-        tags += "\"=>\"";
-        tags += db->esc(t.value());
-        // Some values have a double quote, which is unnecesary, and
-        // screws up XML parsing.
-        tags += "\", ";
+        std::string tmp = t.value();
+        boost::algorithm::replace_all(tmp, "\"", "&quot;");
+        ss << "\"" << db->esc(t.key()) << "\"=>\"" << db->esc(tmp) << "\", ";
+        tags = ss.str();
     }
     tags = tags.substr(0, tags.size()-2);
 
@@ -243,7 +241,9 @@ OSMHandler::node(const osmium::Node& node) {
     std::string tags;
     for (const osmium::Tag& t : node.tags()) {
         std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
-        ss << "\"" << db->esc(t.key()) << "\"=>\"" << db->esc(t.value()) << "\", ";
+        std::string tmp = t.value();
+        boost::algorithm::replace_all(tmp, "\"", "&quot;");
+        ss << "\"" << db->esc(t.key()) << "\"=>\"" << db->esc(tmp) << "\", ";
         tags = ss.str();
     }
     tags = tags.substr(0, tags.size()-2);
