@@ -200,6 +200,7 @@ public:
     std::vector<std::shared_ptr<OsmNode>> nodes;         ///< The nodes in this change
     std::vector<std::shared_ptr<OsmWay>> ways;           ///< The ways in this change
     std::vector<std::shared_ptr<OsmRelation>> relations; ///< The relations in this change
+    std::shared_ptr<OsmObject> obj;
 };
 
 /// \class OsmChangeFile

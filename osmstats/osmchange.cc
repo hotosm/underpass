@@ -217,13 +217,13 @@ OsmChangeFile::readXML(std::istream &xml)
            }
            
            // Process the attributes, which do exist in every element
-           // change.id = value.second.get("<xmlattr>.id", 0);
-           // change.version = value.second.get("<xmlattr>.version", 0);
-           // change.timestamp = value.second.get("<xmlattr>.timestamp",
-           //                   boost::posix_time::second_clock::local_time());
-           // change.user = value.second.get("<xmlattr>.user", "");
-           // change.uid = value.second.get("<xmlattr>.uid", 0);
-           // changes.push_back(change);
+           change.id = value.second.get("<xmlattr>.id", 0);
+           change.version = value.second.get("<xmlattr>.version", 0);
+           change.timestamp = value.second.get("<xmlattr>.timestamp",
+                                  boost::posix_time::second_clock::local_time());
+           change.user = value.second.get("<xmlattr>.user", "");
+           change.uid = value.second.get("<xmlattr>.uid", 0);
+           //changes.push_back(change);
            change.dump();
         }
 //        ++show_progress;
@@ -241,7 +241,7 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
 {
     // If a change is in progress, apply to to that instance
     std::shared_ptr<OsmChange> change;
-    // std::cout << "NAME: " << name << std::endl;
+    std::cout << "NAME: " << name << std::endl;
     // Top level element can be ignored
     if (name == "osmChange") {
         return;
@@ -260,33 +260,38 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
         change = std::make_shared<OsmChange>(osmobjects::remove);
         changes.push_back(change);
         return;
-    } else if (name == "node") {
-        auto node = changes.back()->newNode();
-        node->action = changes.back()->action;
+    } else {
+        change = changes.back();
+    }
+
+    // std::shared_ptr<OsmObject> obj;
+    if (name == "node") {
+        change->obj.reset();
+        change->obj = changes.back()->newNode();
+        change->obj->action = changes.back()->action;
     } else if (name == "tag") {
-        // static_cast<std::shared_ptr<OsmWay>>(object)->tags.clear();
         // A tag element has only has 1 attribute, and numbers are stored as
         // strings
-        // static_cast<OsmNode *>(object)->addTag(attributes[0].name, attributes[0].value);
+        change->obj->tags[attributes[0].value] = attributes[1].value;
+        return;
     } else if (name == "way") {
-        auto way = changes.back()->newWay();
-        way->action = changes.back()->action;
+        change->obj.reset();
+        change->obj = changes.back()->newWay();
+        change->obj->action = changes.back()->action;
     } else if (name == "relation") {
-        auto relation = changes.back()->newRelation();
-        relation->action = changes.back()->action;
+        change->obj  = changes.back()->newRelation();
+        change->obj->action = changes.back()->action;
     } else if (name == "member") {
         // It's a member of a relation
     } else if (name == "nd") {
         changes.back()->addRef(std::stol(attributes[0].value));
     }
 
-    change = changes.back();
-
     // process the attributes
     std::string cache;
     for (const auto& attr_pair : attributes) {
         // Sometimes the data string is unicode
-        // std::wcout << "\tPAIR: " << attr_pair.name << " = " << attr_pair.value << std::endl;
+        std::wcout << "\tPAIR: " << attr_pair.name << " = " << attr_pair.value << std::endl;
         // tags use a 'k' for the key, and 'v' for the value
         if (attr_pair.name == "ref") {
             //static_cast<OsmWay *>(object)->refs.push_back(std::stol(attr_pair.value));
@@ -298,9 +303,10 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
                 std::string tmp = attr_pair.value;
                 tmp[10] = ' ';      // Drop the 'T' in the middle
                 tmp.erase(19);      // Drop the final 'Z'
-                change->setTimestamp(tmp);
+                // change->setTimestamp(tmp);
+                change->obj->timestamp = time_from_string(tmp);
             } else {
-                change->addTag(cache, attr_pair.value);
+                // obj->tags[cache] = attr_pair.value;
                 cache.clear();
             }
          } else if (attr_pair.name == "timestamp") {
@@ -308,22 +314,33 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
             std::string tmp = attr_pair.value;
             tmp[10] = ' ';      // Drop the 'T' in the middle
             tmp.erase(19);      // Drop the final 'Z'
-            change->setTimestamp(tmp);
+            change->obj->timestamp = time_from_string(tmp);
+            // change->setTimestamp(tmp);
         } else if (attr_pair.name == "id") {
-            change->setChangeID(std::stol(attr_pair.value));
+            // change->setChangeID(std::stol(attr_pair.value));
+            change->obj->id = std::stol(attr_pair.value);
         } else if (attr_pair.name == "uid") {
-            change->setUID(std::stol(attr_pair.value));
+            // change->setUID(std::stol(attr_pair.value));
+            change->obj->uid = std::stol(attr_pair.value);
         } else if (attr_pair.name == "version") {
-            change->setVersion(std::stod(attr_pair.value));
+            // change->setVersion(std::stod(attr_pair.value));
+            change->obj->version = std::stod(attr_pair.value);
         } else if (attr_pair.name == "user") {
-            change->setUser(attr_pair.value);
+            // change->setUser(attr_pair.value);
+            change->obj->user = attr_pair.value;
         } else if (attr_pair.name == "changeset") {
-            change->setChangeID(std::stol(attr_pair.value));
+            // change->setChangeID(std::stol(attr_pair.value));
+            change->obj->change_id = std::stol(attr_pair.value);
         } else if (attr_pair.name == "lat") {
-            change->setLatitude(std::stod(attr_pair.value));
+            // static_cast<OsmNode>(*obj).setLatitude(std::stod(attr_pair.value));
+            OsmNode *foo = reinterpret_cast<OsmNode *>(change->obj.get());
+            foo->setLatitude(std::stod(attr_pair.value));
         } else if (attr_pair.name == "lon") {
-            change->setLongitude(std::stod(attr_pair.value));
+            // obj->setLongitude(std::stod(attr_pair.value));
+            OsmNode *foo = reinterpret_cast<OsmNode *>(change->obj.get());
+            foo->setLongitude(std::stod(attr_pair.value));
         }
+        // obj->dump();
     }
 }
 #endif  // EOF LIBXML
@@ -395,26 +412,31 @@ OsmChangeFile::collectStats(void)
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
         change->dump();
-        if (change->action == create) {
-            for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
-                OsmNode *node = it->get();
-                if (node->tags.size() > 0) {
-                    // FIXME: Some node have only the created_at field, which
+        for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
+            OsmNode *node = it->get();
+            if (node->tags.size() > 0) {
+                if (node->action == osmobjects::create) {
+                    // Some nodes have only the created_at field, which
                     // doesn't mean it's a POI, so shouldn't be counted.
+                    // This appears to be from a bug in some of the older data
+                    if (node->tags.size() == 1 && node->tags.find("created_at") != node->tags.end()) {
+                        continue;
+                    }
                     std::cout << "New Node ID " << node->id << " has tags!" << std::endl;
                     auto cit = mstats->find(node->change_id);
                     if (cit != mstats->end()) {
                         cit->second->added["pois"]++;
                     } else {
                         ostats->added["pois"]++;
-                        ostats->added["change_id"] = node->change_id;
-                        ostats->added["user_id"] = node->uid;
                         mstats->insert(cit, std::pair(node->change_id, ostats));
                     }
-                } else {
-                    continue;
                 }
             }
+            ostats->change_id = node->change_id;
+            ostats->user_id = node->uid;
+        }
+    }
+#if 0
             for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
                 OsmWay *way = it->get();
                 if (way->tags.size() == 0) {
@@ -482,6 +504,7 @@ OsmChangeFile::collectStats(void)
             }
         }
     }
+#endif
 
     return mstats;
 }
