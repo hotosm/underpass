@@ -369,7 +369,8 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
             }
 
             if (hashit && attr_pair.name == "v") {
-                hashit = false;                std::size_t pos = attr_pair.value.find('#', 0);
+                hashit = false;
+                std::size_t pos = attr_pair.value.find('#', 0);
                 if (pos != std::string::npos) {
                     char *token = std::strtok((char *)attr_pair.value.c_str(), "#;");
                     while (token != NULL) {
@@ -390,11 +391,13 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
                 std::string tmp = attr_pair.value;
                 boost::algorithm::replace_all(tmp, "\'", "&quot;");
                 changes.back().addComment(tmp);
-                std::vector<std::string> result;
-                boost::split(result, tmp, boost::is_any_of(" "));
-                for (auto it=std::begin(result); it != std::end(result); ++it){
-                    if (it[0] == "#") {
-                        changes.back().addHashtags(it->substr(1));
+                if (tmp.find('#') != std::string::npos) {
+                    std::vector<std::string> result;
+                    boost::split(result, tmp, boost::is_any_of(" "));
+                    for (auto it=std::begin(result); it != std::end(result); ++it){
+                        if (it->c_str()[0] == '#') {
+                            changes.back().addHashtags(it->substr(1));
+                        }
                     }
                 }
             }
