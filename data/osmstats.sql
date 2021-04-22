@@ -34,9 +34,20 @@ CREATE TABLE public.changesets (
     deleted public.hstore,
     hashtags text[],
     source text,
-    changes public.hstore,
-    geom public.geometry(Geometry,4326)
+    validated boolean,
+    bbox public.geometry(Geometry,4326)
 );
+ALTER TABLE ONLY public.changesets
+    ADD CONSTRAINT changesets_pkey PRIMARY KEY (id);
+
+CREATE TABLE public.validation (
+    osm_id integer,
+    issue text,
+    found timestamp with time zone,
+    location public.geometry(Geometry,4326)
+);
+ALTER TABLE ONLY public.validation
+    ADD CONSTRAINT validation_pkey PRIMARY KEY (osm_id);
 
 --
 -- Name: geoboundaries; Type: TABLE; Schema: public;
@@ -46,12 +57,12 @@ CREATE TABLE public.geoboundaries (
     cid integer NOT NULL,
     name character varying NOT NULL,
     admin_level integer,
-    other_tags public.hstore,
+    tags public.hstore,
     boundary public.geometry
 );
 
 --
--- Name: raw_ground; Type: TABLE; Schema: public;
+-- Name: ground_data; Type: TABLE; Schema: public;
 --
 
 CREATE TABLE public.ground_data (
@@ -62,8 +73,7 @@ CREATE TABLE public.ground_data (
     location public.geometry
 );
 
-
-CREATE TABLE public.raw_users (
+CREATE TABLE public.users (
     id integer NOT NULL,
     name text,
     tm_registration timestamp with time zone,
@@ -75,6 +85,9 @@ CREATE TABLE public.raw_users (
     gender text,
     home geometry(Point,4326)
 );
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
 
 CREATE MATERIALIZED VIEW public.user_stats AS
  SELECT raw_changesets.user_id,
@@ -110,34 +123,3 @@ CREATE MATERIALIZED VIEW public.user_stats AS
   GROUP BY raw_changesets.user_id, raw_users.name
   WITH NO DATA;
 
-CREATE VIEW public.users AS
- SELECT u.id,
-    u.name,
-    us.changesets,
-    NULL::public.geometry AS geo_extent,
-    us.buildings_added AS total_building_count_add,
-    us.buildings_modified AS total_building_count_mod,
-    us.waterways_added AS total_waterway_count_add,
-    us.pois_added AS total_poi_count_add,
-    us.road_km_added AS total_road_km_add,
-    us.road_km_modified AS total_road_km_mod,
-    us.waterway_km_added AS total_waterway_km_add,
-    us.josm_edits AS total_josm_edit_count,
-    0 AS total_gps_trace_count_add,
-    0 AS total_gps_trace_updated_from_osm,
-    us.roads_added AS total_road_count_add,
-    us.roads_modified AS total_road_count_mod,
-    0 AS total_tm_done_count,
-    0 AS total_tm_val_count,
-    0 AS total_tm_inval_count
-   FROM (public.raw_users u
-     JOIN public.user_stats us ON ((us.user_id = u.id)));
-
-ALTER TABLE ONLY public.raw_changesets
-    ADD CONSTRAINT raw_changesets_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.raw_users
-    ADD CONSTRAINT raw_users_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.geoboundaries
-    ADD CONSTRAINT geoboundaries_pkey PRIMARY KEY (cid);

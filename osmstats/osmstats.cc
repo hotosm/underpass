@@ -137,11 +137,14 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
     if (change.added.size() > 0) {
         for (auto it = std::begin(change.added); it != std::end(change.added); ++it) {
             if (it->second > 0) {
-                ahstore += " ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'],";
+//                ahstore += " ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'],";
+                ahstore += " ARRAY[\'" + it->first + "\',\'" + std::to_string((int)it->second) +"\'],";
             }
         }
         ahstore.erase(ahstore.size() - 1);
         ahstore += "])";
+    } else {
+        ahstore.clear();
     }
     std::string mhstore = "HSTORE(ARRAY[";
     if (change.modified.size() > 0) {
@@ -169,16 +172,24 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
     // Some of the data field in the changset come from a different file,
     // which may not be downloaded yet.
     ptime now = boost::posix_time::microsec_clock::local_time();
-    std::string aquery = "INSERT INTO changesets (id, user_id, updated_at, added)";
+    std::string aquery;
+    if (change.added.size() > 0) {
+        aquery = "INSERT INTO changesets (id, user_id, updated_at, added)";
+    } else {
+        aquery = "INSERT INTO changesets (id, user_id, updated_at)";
+    }
     aquery += " VALUES(" + std::to_string(change.change_id) + ", ";
     aquery += std::to_string(change.user_id) + ", ";
     aquery += "\'" + to_simple_string(now) + "\', ";
-    aquery += ahstore + ")";
     if (change.added.size() > 0) {
-        aquery += " ON CONFLICT (id) DO UPDATE SET added = " + ahstore;
+        aquery += ahstore + ")";
+        aquery += " ON CONFLICT (id) DO UPDATE SET added = " + ahstore + ",";
+    } else {
+        aquery.erase(aquery.size() - 2);
+        aquery += ") ON CONFLICT (id) DO UPDATE SET ";
     }
 
-    aquery += ", updated_at = \'" + to_simple_string(now) + "\'";
+    aquery += " updated_at = \'" + to_simple_string(now) + "\'";
     aquery += " WHERE changesets.id=" + std::to_string(change.change_id);
 
     // FIXME: add source, hashtags, and bbox

@@ -101,9 +101,9 @@ class ChangeStats
 public:
     long change_id = 0;             ///< The ID of this change
     long user_id = 0;               ///< The User ID
-    std::map<std::string, double> added;
-    std::map<std::string, double> modified;
-    std::map<std::string, double> deleted;
+    std::map<std::string, int> added;
+    std::map<std::string, int> modified;
+    std::map<std::string, int> deleted;
     /// Dump internal data to the terminal, only for debugging
     void dump(void);
 };

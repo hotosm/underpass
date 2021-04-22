@@ -409,6 +409,11 @@ OsmChangeFile::collectStats(void)
     // airports and administrative boundaries)
     auto mstats = std::make_shared<std::map<long, std::shared_ptr<ChangeStats>>>();
     auto ostats = std::make_shared<ChangeStats>();
+    // FIXME: it should be possible to load these values from a config file
+    std::vector<std::string> places = {"village", "hamlet", "neigborhood", "city", "town"};
+    std::vector<std::string> amenities = {"hospital", "school", "clinic", "kindergarten", "drinking_water"};
+    std::vector<std::string> highways = {"tertiary", "secondary", "unclassified", "track"};
+    std::vector<std::string> features = {"bridge", "highway", "waterway", "boundary", "place"};
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
         change->dump();
@@ -428,84 +433,72 @@ OsmChangeFile::collectStats(void)
                         cit->second->added["pois"]++;
                     } else {
                         ostats->added["pois"]++;
-                        mstats->insert(cit, std::pair(node->change_id, ostats));
                     }
+                    // Scan amenities
+                    if (node->tags.find("amenity") != node->tags.end() || node->tags.find("building") != node->tags.end()) {
+                        for (auto ait = std::begin(amenities); ait != std::end(amenities); ++ait) {
+                            if (node->tags["building"] != "yes") {
+                                ostats->added[*ait]++;
+                            }
+                            if (node->tags["amenity"] == *ait) {
+                                ostats->added[*ait]++;
+                            }
+                        }
+                    }
+		    // Scan features
+                    for (auto fit = std::begin(features); fit != std::end(features); ++fit) {
+                        if (node->tags.find(*fit) != node->tags.end()) {
+                            ostats->added[*fit]++;
+                        }
+                    }
+		    // Scan places
+		    if (node->tags.find("place") != node->tags.end()) {
+			for (auto pit = std::begin(places); pit != std::end(places); ++pit) {
+			    if (node->tags.find(*pit) != node->tags.end()) {
+				if (node->tags["place"] == *pit) {
+				    ostats->added[*pit]++;
+				}
+			    }
+			}
+                    }
+                    mstats->insert(cit, std::pair(node->change_id, ostats));
                 }
             }
             ostats->change_id = node->change_id;
             ostats->user_id = node->uid;
         }
-    }
-#if 0
-            for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
-                OsmWay *way = it->get();
-                if (way->tags.size() == 0) {
-                    std::cerr << "New Way ID " << way->id << " has no tags!" << std::endl;
-                    if (way->isClosed() && way->numPoints() == 5) {
-                        std::cerr << "WARNING: " << way->id << " might be a building!" << std::endl;
-                    }
-                    continue;
-                }
-                auto cit = mstats->find(way->change_id);
-                if (cit != mstats->end()) {
-                    if (way->tags.find("building") != way->tags.end()) {
-                        cit->second->added["building"]++;
-                    }
-                    if (way->tags.find("highway") != way->tags.end()) {
-                        cit->second->added["highway_km"] += way->getLength();
-                        cit->second->added["highway"]++;
-                    }
-                    // if (way->tags.find("waterway") != way->tags.end()) {
-                    //     cit->second->waterways_km_added += way->getLength();
-                    //     cit->second->waterways_added++;
-                    // }
-                } else {
-                    auto ostats = std::make_shared<ChangeStats>();
-                    if (way->tags.find("building") != way->tags.end()) {
-                        ostats->added["building"]++;
-                    }
-                    if (way->tags.find("highway") != way->tags.end()) {
-                        ostats->added["highway_km"] += way->getLength();
-                        ostats->added["highway"]++;
-                    }
-                    if (way->tags.find("waterway") != way->tags.end()) {
-                        ostats->added["waterways_km"] += way->getLength();
-                        ostats->added["waterways"]++;
-                    }
-                }
-            }
+        for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
+            OsmWay *way = it->get();
+            if (way->tags.size() == 0) {
+                std::cerr << "New Way ID " << way->id << " has no tags!" << std::endl;
+		auto cit = mstats->find(way->change_id);
 
-        } else if (change->action == modify) {   
-            for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
-                OsmNode *node = it->get();
-                if (node->tags.size() > 0) {
-                    std::cout << "Modified Node ID " << node->id << " has tags!" << std::endl;
-                } else {
-                    ostats->modified["pois"]++;
-                }
-            }
-            for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
-                OsmWay *way = it->get();
-                if (way->tags.size() == 0) {
-                    std::cerr << "Modified Way ID " << way->id << " has no tags!" << std::endl;
-                    continue;
-                }
-                if (way->tags.find("building") != way->tags.end()) {
-                    ostats->modified["buildings"]++;
-                }
-                if (way->tags.find("highway") != way->tags.end()) {
-                    ostats->modified["highway_km"] += way->getLength();
-                    ostats->modified["highway"]++;
-                }
-                if (way->tags.find("waterway") != way->tags.end()) {
-                    ostats->modified["waterways_km"] += way->getLength();
-                    ostats->modified["waterways"]++;
-                }
-            }
-        }
+		if (way->action == osmobjects::create) {
+		    auto cit = mstats->find(way->change_id);
+		    // Scan amenities
+		    if (way->tags.find("amenity") != way->tags.end() || way->tags.find("building") != way->tags.end()) {
+			for (auto ait = std::begin(amenities); ait != std::end(amenities); ++ait) {
+			    if (way->tags["building"] != "yes") {
+				ostats->added[*ait]++;
+			    }
+			    if (way->tags["amenity"] == *ait) {
+				ostats->added[*ait]++;
+			    }
+			}
+			// Scan features
+			for (auto fit = std::begin(features); fit != std::end(features); ++fit) {
+			    if (way->tags.find(*fit) != way->tags.end()) {
+				ostats->added[*fit]++;
+			    }
+			}
+		    }
+		    ostats->change_id = way->change_id;
+		    ostats->user_id = way->uid;
+		}
+		mstats->insert(cit, std::pair(way->change_id, ostats));
+	    }
+	}
     }
-#endif
-
     return mstats;
 }
 
