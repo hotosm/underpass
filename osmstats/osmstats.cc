@@ -132,46 +132,65 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
     } else {
         std::cerr << "No hashtag for id: " << change.change_id << std::endl;
     }
-    std::string query = "UPDATE changesets SET added = HSTORE(ARRAY[";
-    // query += std::to_string(change.change_id);
+
+    std::string ahstore = "HSTORE(ARRAY[";
     if (change.added.size() > 0) {
         for (auto it = std::begin(change.added); it != std::end(change.added); ++it) {
             if (it->second > 0) {
-                query += " ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'],";
+                ahstore += " ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'],";
             }
         }
-        query.erase(query.size() - 1);
-        query += "])";
+        ahstore.erase(ahstore.size() - 1);
+        ahstore += "])";
     }
-    // query.erase(query.size() - 2);
+    std::string mhstore = "HSTORE(ARRAY[";
     if (change.modified.size() > 0) {
-        query += ", modified = HSTORE(ARRAY[";
-        for (auto it = std::begin(change.modified); it != std::end(change.modified); ++it) {
+        for (auto it = std::begin(change.added); it != std::end(change.added); ++it) {
             if (it->second > 0) {
-                query += " ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'],";
+                mhstore += " ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'],";
             }
         }
-        query.erase(query.size() - 1);
-        query += "] ";
+        mhstore.erase(mhstore.size() - 1);
+        mhstore += "])";
     }
-    if (change.deleted.size() > 0) {
-        for (auto it = std::begin(change.deleted); it != std::end(change.deleted); ++it) {
+#if 0
+    std::string dhstore = "HSTORE(ARRAY[";
+    if (change.added.size() > 0) {
+        for (auto it = std::begin(change.added); it != std::end(change.added); ++it) {
             if (it->second > 0) {
-                query += ", ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'], ";
+                dhstore += " ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'],";
             }
         }
-        query += "])";
+        dhstore.erase(dhstore.size() - 1);
+        dhstore += "])";
     }
-    query += ")";
-    boost::algorithm::replace_all(query, ", ])", "])");
-    ptime now = boost::posix_time::microsec_clock::local_time();
-//    query += ", updated_at=\'" + to_simple_string(now) + "\'";
-//    query += " WHERE id=" + std::to_string(change.change_id) + ";";
+#endif
 
-    // FIXME: add source, hashtags, and geom
-    std::cout << "QUERY: " << query << std::endl;
+    // Some of the data field in the changset come from a different file,
+    // which may not be downloaded yet.
+    ptime now = boost::posix_time::microsec_clock::local_time();
+    std::string aquery = "INSERT INTO changesets (id, user_id, updated_at)";
+    aquery += " VALUES(" + std::to_string(change.change_id) + ", ";
+    aquery += std::to_string(change.user_id) + ", ";
+    aquery += "\'" + to_simple_string(now) + "\')";
+    // aquery += hstore + ")";
+    if (change.added.size() > 0) {
+        aquery += " ON CONFLICT (id) DO UPDATE SET added = " + ahstore;
+    }
+
+    aquery += ", updated_at = \'" + to_simple_string(now) + "\'";
+    aquery += " WHERE changesets.id=" + std::to_string(change.change_id);
+
+    // FIXME: add source, hashtags, and bbox
+    std::cout << "QUERY added: " << aquery << std::endl;
+    // std::cout << "QUERY modify: " << mquery << std::endl;
+    // std::cout << "QUERY delete: " << dquery << std::endl;
     pqxx::work worker(*sdb);
-    pqxx::result result = worker.exec(query);
+    pqxx::result result = worker.exec(aquery);
+    // result = worker.exec(mquery);
+    // FIXME: check for errors
+    // result = worker.exec(dquery);
+    // FIXME: check for errors
 
     worker.commit();
 }
@@ -224,7 +243,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     if (!change.source.empty()) {
         query += ", source ";
     }
-    query += ", geom) VALUES(";
+    query += ", bbox) VALUES(";
     query += std::to_string(change.id) + ",\'" + change.editor + "\',\'";\
     query += std::to_string(change.uid) + "\',\'";
     query += to_simple_string(change.created_at) + "\'";
@@ -371,17 +390,6 @@ QueryOSMStats::getLastUpdate(void)
         return last;
     }
     return not_a_date_time;
-}
-
-bool
-QueryOSMStats::updateCounters(long cid, std::map<std::string, long> data)
-{
-    std::string query = "UPDATE changeset SET ";
-    for (auto it = std::begin(data); it != std::end(data); ++it) {
-        query += "," + it->first + "=" + std::to_string(it->second);
-    }
-    query += " WHERE id=" + std::to_string(cid);
-    std::cout << "QUERY: " << query << std::endl;
 }
 
 void

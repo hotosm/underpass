@@ -107,7 +107,6 @@ public:
         // FIXME: this should return a real value
         return 0;
     };
-    long updateCounters(std::map<const std::string &, long> data);
     long operator[](const std::string &key) { return counters[key]; };
 };
 
