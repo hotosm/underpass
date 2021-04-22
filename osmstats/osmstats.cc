@@ -169,11 +169,11 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
     // Some of the data field in the changset come from a different file,
     // which may not be downloaded yet.
     ptime now = boost::posix_time::microsec_clock::local_time();
-    std::string aquery = "INSERT INTO changesets (id, user_id, updated_at)";
+    std::string aquery = "INSERT INTO changesets (id, user_id, updated_at, added)";
     aquery += " VALUES(" + std::to_string(change.change_id) + ", ";
     aquery += std::to_string(change.user_id) + ", ";
-    aquery += "\'" + to_simple_string(now) + "\')";
-    // aquery += hstore + ")";
+    aquery += "\'" + to_simple_string(now) + "\', ";
+    aquery += ahstore + ")";
     if (change.added.size() > 0) {
         aquery += " ON CONFLICT (id) DO UPDATE SET added = " + ahstore;
     }
