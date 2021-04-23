@@ -58,6 +58,7 @@ CREATE TABLE public.geoboundaries (
     name character varying NOT NULL,
     admin_level integer,
     tags public.hstore,
+    audacious boolean,
     boundary public.geometry
 );
 
