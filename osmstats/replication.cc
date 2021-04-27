@@ -62,6 +62,7 @@
 #include <boost/format.hpp>
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
+#include "boost/date_time/local_time/local_time.hpp"
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 //#include <boost/tokenizer.hpp>
@@ -204,6 +205,8 @@ StateFile::dump(void)
     std::cout << "\tTimestamp: " << timestamp << std::endl;
     std::cout << "\tSequence: " << sequence << std::endl;
     std::cout << "\tPath: " << path << std::endl;
+    std::cout << "\tcreated_at: " << created_at << std::endl;
+    std::cout << "\tclosed_at: " << closed_at << std::endl;
 }
 
 // parse a replication file containing changesets
@@ -528,9 +531,55 @@ Planet::scanDirectory(const std::string &dir)
 std::string
 Planet::findData(frequency_t freq, ptime tstamp)
 {
+    std::vector<ptime> states = {
+        time_from_string("2012-10-28 19:36"),
+        time_from_string("2014-10-07 07:58"),
+        time_from_string("2016-09-01 20:43"),
+        time_from_string("2018-07-30 09:12"),
+    };
+
+    // Changeset files don't have an associated state.txt till
+    // this first one: .../replication/changesets/002/007/990.state.txt
     underpass::Underpass under;
+    under.connect();
+    replication::StateFile state;
+#if 0
+    ptime startdate = time_from_string("2016-09-07 10:45");
+    // boost::local_time::local_time_period lp(states[0]);
+    if (freq == replication::changeset && tstamp <= startdate) {
+        boost::posix_time::time_duration delta1, delta2, delta3;
+        state.path = "https://planet.openstreetmap.org/replication/changesets/";
+        delta1 = tstamp - states[0];
+        delta2 = tstamp - states[1];
+        delta3 = tstamp - states[2];
+        if (delta1.hours() <= 999) {
+            state.path += "000/";
+            int nextdir = 998 - ((delta1.hours() * 60)/1000);
+            boost::format fmt("%03d");
+            fmt % (nextdir);
+            state.path += fmt.str() + "/";
+            int lastdir = (delta1.hours() + delta1.minutes())/60;
+            fmt % (998 - lastdir);
+            state.path += fmt.str() + ".osm.gz";
+        } else if (delta1.hours() > 999) {
+            boost::format fmt("%03d");
+            state.path += "001/";
+        } else if (delta2.hours() > 999) {
+            boost::format fmt("%03d");
+            state.path += "002/";
+        }
+        state.timestamp = tstamp;
+        under.writeState(state);
+        state.dump();
+        return state.path;
+    }
+#endif
+
     auto last = std::make_shared<replication::StateFile>();
     last = under.getLastState(freq);
+    if (last->path.empty()) {
+        return state.path;
+    }
     last->dump();
     bool loop = true;
     boost::posix_time::time_duration delta = tstamp - last->timestamp;
@@ -555,7 +604,6 @@ Planet::findData(frequency_t freq, ptime tstamp)
     fmt3 % (next);
     newpath += "/" + fmt3.str();
     std::cout << "FOUND: " << newpath << std::endl;
-
     while (loop) {
         auto data = downloadFile(newpath + ".state.txt");
         if (data->size() == 0) {

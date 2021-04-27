@@ -113,6 +113,8 @@ public:
     StateFile(void) {
         //timestamp = boost::posix_time::second_clock::local_time();
         timestamp == boost::posix_time::not_a_date_time;
+        created_at == boost::posix_time::not_a_date_time;
+        closed_at == boost::posix_time::not_a_date_time;
         sequence = 0;
     };
 
@@ -147,6 +149,9 @@ public:
     ptime timestamp;            ///< The timestamp of the associated changeset file
     long sequence;              ///< The sequence number of the associated changeset file
     std::string frequency;      ///< The time interval of this change file
+    /// These two values are updated after the changset is parsed
+    ptime created_at;           ///< The first timestamp in the changefile
+    ptime closed_at;            ///< The last timestamp in the changefile
 };
 
 /// \class Planet
