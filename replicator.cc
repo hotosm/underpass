@@ -208,6 +208,7 @@ main(int argc, char *argv[])
     //bool encrypted = false;
     long sequence = 0;
     ptime timestamp(not_a_date_time);
+    std::string url;
 
     opts::positional_options_description p;
     opts::variables_map vm;
@@ -216,17 +217,15 @@ main(int argc, char *argv[])
         desc.add_options()
             ("help,h", "display help")
             ("server,s", "database server (defaults to localhost)")
-            ("statistics,s", "OSM Stats database name (defaults to osmstats)")
+//            ("statistics,s", "OSM Stats database name (defaults to osmstats)")
             ("url,u", opts::value<std::string>(), "Starting URL")
             ("monitor,m", "Starting monitor")
             ("frequency,f", opts::value<std::string>(), "Update frequency (hour, daily), default minute)")
             ("timestamp,t", opts::value<std::string>(), "Starting timestamp")
-            ("changeset,c", opts::value<std::vector<std::string>>(), "Initialize OSM Stats with changeset")
-            ("osmchange,o", opts::value<std::vector<std::string>>(), "Apply osmchange to OSM Stats")
+//            ("changeset,c", opts::value<std::vector<std::string>>(), "Initialize OSM Stats with changeset")
+//            ("osmchange,o", opts::value<std::vector<std::string>>(), "Apply osmchange to OSM Stats")
             ("import,i", opts::value<std::string>(), "Initialize pgsnapshot database with datafile")
 //            ("osm,o", "OSM database name (defaults to pgsnapshot)")
-//            ("url,u", opts::value<std::string>(), "Replication File URL")
-//            ("encrypted,e", "enable HTTPS (the default)")
 //            ("format,f", "database format (defaults to pgsnapshot)")
 //            ("verbose,v", "enable verbosity")
             ;
@@ -250,6 +249,7 @@ main(int argc, char *argv[])
      std::vector<std::string> rawfile;
      std::shared_ptr<std::vector<unsigned char>> data;
 
+#if 0
      // A changeset has the hashtags and comments we need. Multiple URLS
      // or filename may be specified on the command line, common when
      // catching up on changes.
@@ -276,7 +276,10 @@ main(int argc, char *argv[])
      if (vm.count("sequence")) {
          std::cout << "Sequence is " << vm["sequence"].as<int>() << std::endl;
      }
-
+#endif
+     if (vm.count("url")) {
+         url = vm["url"].as<std::string>();
+     }
      // Specify a timestamp used by other options
      if (vm.count("timestamp")) {
          std::cout << "Timestamp is: " << vm["timestamp"].as<std::string> () << "\n";
@@ -288,40 +291,55 @@ main(int argc, char *argv[])
      underpass::Underpass under;
      under.connect();
      replication::Planet planet;
+     std::string last;
+     std::string clast;
      if (vm.count("monitor")) {
          std::string monitor = vm["monitor"].as<std::string>();
 
-         if (timestamp.is_not_a_date_time()) {
-             timestamp = ostats.getLastUpdate();
-         }
-         
-         auto state = under.getState(replication::minutely, timestamp);
-         std::string last;
-         if (state->sequence == 0) {
-             last = planet.findData(replication::minutely, timestamp);
-         } else {
-             last = state->path;
-         }
-         std::cout << "Last minutely is " << last  << std::endl;
-         std::thread mstate (threads::startMonitor, std::ref(last));
-         //threads::startMonitor(std::ref(last));
-         //url = "https://planet.openstreetmap.org/replication/hour/004/308/210";
-         // std::string last = replicator::getLastPath(replication::hourly);
-         // std::thread hstate (threads::startMonitor, std::ref(url));
-         auto state2 = under.getState(replication::changeset, timestamp);
-         std::string clast;
-         if (state2->sequence == 0 || state2->timestamp.is_not_a_date_time()) {
-             clast = planet.findData(replication::changeset, timestamp);
-         } else {
+//         if (timestamp.is_not_a_date_time()) {
+//             timestamp = ostats.getLastUpdate();
+//         }
+
+         std::thread mthread;
+         std::thread cthread;
+         if (!url.empty()) {
+             if (url.find("minute") == std::string::npos) {
+                 auto state = under.getState(replication::minutely, timestamp);
+                 if (state->path.empty()) {
+                     last = planet.findData(replication::minutely, timestamp);
+                     if (last.empty()) {
+                         std::cerr << "ERROR: No last path!" << std::endl;
+                         exit(-1);
+                     }
+                 } else {
+                     last = state->path;
+                 }
+                 std::cout << "Last minutely is " << last  << std::endl;
+                 mthread = std::thread(threads::startMonitor, std::ref(last));
+             } else {
+                 auto state = under.getState(replication::minutely, url);
+                 mthread = std::thread(threads::startMonitor, std::ref(url));
+                 timestamp = state->timestamp;
+             }
+             auto state2 = under.getState(replication::changeset, timestamp);
              clast = state2->path;
+#if 0
+             if (state2->path.empty() || state2->timestamp.is_not_a_date_time()) {
+                 clast = planet.findData(replication::changeset, timestamp);
+             } else {
+                 clast = state2->path;
+             }
+#endif
+             std::cout << "Last changeset is " << clast  << std::endl;
+             cthread = std::thread(threads::startMonitor, std::ref(clast));
          }
-         std::cout << "Last changeset is " << clast  << std::endl;
-         std::thread cstate (threads::startMonitor, std::ref(clast));
-         // threads::startMonitor(url);
          std::cout << "Waiting..." << std::endl;
-         cstate.join();
-         mstate.join();
-         // hstate.join();
+         if (cthread.joinable()) {
+             cthread.join();
+         }
+         if (mthread.joinable()) {
+                 mthread.join();
+         }
      }
 
     if (vm.count("url")) {
