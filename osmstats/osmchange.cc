@@ -241,7 +241,7 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
 {
     // If a change is in progress, apply to to that instance
     std::shared_ptr<OsmChange> change;
-    std::cout << "NAME: " << name << std::endl;
+    // std::cout << "NAME: " << name << std::endl;
     // Top level element can be ignored
     if (name == "osmChange") {
         return;
@@ -291,7 +291,7 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
     std::string cache;
     for (const auto& attr_pair : attributes) {
         // Sometimes the data string is unicode
-        std::wcout << "\tPAIR: " << attr_pair.name << " = " << attr_pair.value << std::endl;
+        // std::wcout << "\tPAIR: " << attr_pair.name << " = " << attr_pair.value << std::endl;
         // tags use a 'k' for the key, and 'v' for the value
         if (attr_pair.name == "ref") {
             //static_cast<OsmWay *>(object)->refs.push_back(std::stol(attr_pair.value));
