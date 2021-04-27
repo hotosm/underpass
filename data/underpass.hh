@@ -88,7 +88,12 @@ class Underpass
 {
 public:
     /// Connect to the Underpass database
-    Underpass(void);
+    Underpass(void) {
+        frequency_tags[replication::minutely] = "minute";
+        frequency_tags[replication::hourly] = "hour";
+        frequency_tags[replication::daily] = "day";
+        frequency_tags[replication::changeset] = "changeset";
+    };
     Underpass(const std::string &dbname);
     ~Underpass(void);
 
@@ -106,7 +111,7 @@ public:
     bool writeState(replication::StateFile &state);
 
     /// Get the state.txt file data by it's path
-    std::shared_ptr<replication::StateFile> getState(const std::string &path);
+    std::shared_ptr<replication::StateFile> getState(replication::frequency_t freq, const std::string &path);
 
     /// Get the state.txt date by timestamp
     std::shared_ptr<replication::StateFile> getState(replication::frequency_t freq, ptime &tstamp);
