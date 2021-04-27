@@ -58,13 +58,13 @@ using namespace boost::gregorian;
 
 namespace underpass {
 
-Underpass::Underpass(void)
-{
-    frequency_tags[replication::minutely] = "minute";
-    frequency_tags[replication::hourly] = "hour";
-    frequency_tags[replication::daily] = "day";
-    frequency_tags[replication::changeset] = "changeset";
-}
+// Underpass::Underpass(void)
+// {
+//     frequency_tags[replication::minutely] = "minute";
+//     frequency_tags[replication::hourly] = "hour";
+//     frequency_tags[replication::daily] = "day";
+//     frequency_tags[replication::changeset] = "changeset";
+// }
 
 Underpass::Underpass(const std::string &dbname)
 {
@@ -145,7 +145,7 @@ Underpass::updateCreator(long user_id, long change_id, const std::string &editor
 }
 
 std::shared_ptr<replication::StateFile>
-Underpass::getState(const std::string &path)
+Underpass::getState(replication::frequency_t freq, const std::string &path)
 {
     auto state = std::make_shared<replication::StateFile>();
     if (!sdb->is_open()) {
@@ -154,7 +154,7 @@ Underpass::getState(const std::string &path)
     }
     //db_mutex.lock();
     std::string query = "SELECT timestamp,path,sequence,frequency FROM states WHERE path=\'";
-    query += path + "\';";
+    query += path + "\' AND frequency=\'" + frequency_tags[freq] + "\'";
     // std::cout << "QUERY: " << query << std::endl;
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
@@ -173,12 +173,6 @@ Underpass::getState(const std::string &path)
 std::shared_ptr<replication::StateFile>
 Underpass::getState(replication::frequency_t freq, ptime &tstamp)
 {
-    std::map<replication::frequency_t, std::string> freqs;
-    freqs[replication::minutely] = "minute";
-    freqs[replication::hourly] = "hour";
-    freqs[replication::daily] = "day";
-    freqs[replication::changeset] = "changeset";
-
     auto state = std::make_shared<replication::StateFile>();
     if (sdb > 0) {
         if (!sdb->is_open()) {
@@ -195,7 +189,7 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
     query += "\'" + to_simple_string(tstamp) + "\' AND ";
     query += "\'" + to_simple_string(other) + "\' ";
     query += " AND frequency=";
-    query += "\'" + freqs[freq] + "\'";
+    query += "\'" + frequency_tags[freq] + "\'";
     query += " ORDER BY timestamp ASC LIMIT 1;";
     std::cout << "QUERY: " << query << std::endl;
     pqxx::work worker(*sdb);
@@ -217,16 +211,21 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
         state->sequence = result[0][2].as(int(0));
         state->frequency = freq;
     } else {
+#if 0
+        // FIXME: this does not work yet
         ptime start = time_from_string("2012-09-12 13:22");
         boost::posix_time::time_duration delta = tstamp - start;
         state->timestamp = tstamp;
         state->sequence = 0;
         state->path = "https://planet.openstreetmap.org/replication";
-        state->path += "\'" + freqs[freq] + "\'";
+        state->path += "\'" + frequency_tags[freq] + "\'";
         boost::format fmt("%03d");
         int next;
         fmt % (next);
         state->path += fmt.str();
+#else
+        std::cerr << "ERROR: FIXME!!!!!" << std::endl;
+#endif
     }
     return state;
 }
@@ -237,6 +236,7 @@ bool
 Underpass::writeState(replication::StateFile &state)
 {
     std::string query;
+
     if (state.created_at != boost::posix_time::not_a_date_time) {
         query = "INSERT INTO states(timestamp, sequence, path, frequency, created_at, closed_at) VALUES(";
     } else {
