@@ -40,7 +40,8 @@ check_PROGRAMS =  \
 	change-test \
 	geo-test \
 	val-test \
-	rep-test
+	rep-test \
+	under-test
 
 BOOST_LIBS = $(BOOST_DATE_TIME_LIB) $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_LOG_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_IOSTREAMS_LIB) $(BOOST_THREAD_LIB)
 
@@ -58,6 +59,11 @@ rep_test_SOURCES = rep-test.cc
 rep_test_LDFLAGS = -L../..
 rep_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
 rep_test_LDADD = -lpqxx -lhotosm $(BOOST_LIBS)
+
+under_test_SOURCES = under-test.cc
+under_test_LDFLAGS = -L../..
+under_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
+under_test_LDADD = -lpqxx -lhotosm $(BOOST_LIBS)
 
 # Test the OSM DB classes
 hotosm_test_SOURCES = hotosm-test.cc
