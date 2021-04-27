@@ -137,4 +137,21 @@ main(int argc, char *argv[])
     } else {
         runtest.fail("Hashtag ID");
     }
+
+    // Changesets have a bounding box, so we want to find the
+    // country the changes were made in.
+    double min_lat = -2.8042325
+    double min_lon = 29.5842812;
+    double max_lat = -2.7699398;
+    double max_lon = 29.6012844;
+
+    timer.startTimer();
+    auto country = under.getCountry(max_lat, max_lon, min_lat, min_lon);
+    // country->dump();
+    if (country->id == 191 && country->name == "Rwanda" && country->abbrev == "RW") {
+        runtest.pass("Underpass::getCountry()");
+    } else {
+        runtest.fail("Underpass::getCountry()");
+    }
+    timer.endTimer();
 }
