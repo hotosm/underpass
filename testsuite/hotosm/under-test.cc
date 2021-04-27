@@ -46,10 +46,12 @@
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/date_time/gregorian/gregorian.hpp"
+// #include <boost/timer/timer.hpp>
 
 using namespace underpass;
 using namespace boost::posix_time;
 using namespace boost::gregorian;
+
 
 namespace replication {
 class StateFile;
@@ -71,42 +73,24 @@ main(int argc, char* argv[])
         runtest.fail("Underpass::connect");
     }
 
-    ptime tstamp = time_from_string("2020-09-18 12:03:29.891418-06");
-    auto state = under.getState(replication::minutely, tstamp);
-    if (state->path.empty()) {
+    ptime tstamp = time_from_string("2014-09-18 12:03:29");
+    auto state = under.getState(replication::changeset, tstamp);
+    state->dump();
+    if (state->path.compare("https://planet.openstreetmap.org/replication/changesets/000/972/927")) {
+        runtest.fail("Underpass::getState(changeset)");
+    } else {
+        runtest.pass("Underpass::getState(changeset)");
+    }
+
+    tstamp = time_from_string("2014-09-18 14:03:29");
+    state = under.getState(replication::minutely, tstamp);
+    state->dump();
+    if (state->path.compare("https://planet.openstreetmap.org/replication/minute/001/053/674")) {
         runtest.fail("Underpass::getState(minutely)");
     } else {
         runtest.pass("Underpass::getState(minutely)");
     }
 
-    osmstats::QueryOSMStats ostats;                    ///< OSM Stats database access
-    ostats.connect("osmstats");
-    ptime last = ostats.getLastUpdate();
-    
-    under.connect("underpass");
-    state = under.getState(replication::changeset, last);
-    std::cout << "Last minutely is " << last  << std::endl;
-    // url = "https://planet.openstreetmap.org/replication/minute/004/308/210";
-    // std::thread mstate (threads::startMonitor, state->path);
-    // threads::startMonitor(state->path);
-
-    // Changesets have a bounding box, so we want to find the
-    // country the changes were made in.
-    double min_lat = -2.8042325;
-    double min_lon = 29.5842812;
-    double max_lat = -2.7699398;
-    double max_lon = 29.6012844;
-
-    timer.startTimer();
-    auto country = under.getCountry(max_lat, max_lon, min_lat, min_lon);
-    // country->dump();
-    if (country->id == 191 && country->name == "Rwanda" && country->abbrev == "RW") {
-        runtest.pass("Underpass::getCountry()");
-    } else {
-        runtest.fail("Underpass::getCountry()");
-    }
-    timer.endTimer();
-    
     std::cout << "Done..." << std::endl;
 };
 
