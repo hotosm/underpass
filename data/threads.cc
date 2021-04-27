@@ -69,6 +69,7 @@ namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
 namespace http = beast::http;       // from <boost/beast/http.hpp>
 using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 
+#include "timer.hh"
 #include "data/threads.hh"
 #include "osmstats/osmstats.hh"
 #include "osmstats/osmchange.hh"
@@ -81,32 +82,38 @@ std::mutex stream_mutex;
 
 namespace threads {
 
-// Starting with this URL, download the file, incrmenting
+// Starting with this URL, download the file, incrementing
 void
 startMonitor(const std::string &url)
 {
     // auto planet = std::make_shared<replication::Planet>();
     replication::Replication server;
     bool mainloop = true;
-    std::string path = url;
-    std::string base = url.substr(0, url.size() - 7);
     underpass::Underpass under;
     under.connect();
+    std::string path = url;
+    std::string base = url.substr(0, url.size() - 7);
+    std::shared_ptr<replication::StateFile> state;
 
     while (mainloop) {
         auto planet = std::make_shared<replication::Planet>();
         // Look for the statefile first
-        //std::shared_ptr<replication::StateFile> state = threadStateFile(planet->stream, path);
         bool subloop = true;
         while (subloop) {
-            std::shared_ptr<replication::StateFile> exists = under.getState(path);
+            std::shared_ptr<replication::StateFile> exists;
+            if (url.find("changeset") != std::string::npos) {
+                exists = under.getState(replication::changeset, path);
+            }
+            if (url.find("minute") != std::string::npos) {
+                exists = under.getState(replication::minutely, path);
+            }
             if (!exists->path.empty()) {
                 std::cout << "Already stored: " << path << std::endl;
                 subloop = true;
                 break;
             } else {
                 std::cout << "Downloading StateFile: " << path << std::endl;
-                auto state = threadStateFile(planet->stream, path + ".state.txt");
+                state = threadStateFile(planet->stream, path + ".state.txt");
                 if (state->timestamp != boost::posix_time::not_a_date_time && (state->sequence != 0 && state->path.size() != 0)) {
                     state->dump();
                     under.writeState(*state);
@@ -122,7 +129,9 @@ startMonitor(const std::string &url)
             // auto found = exists.get_future();
             Timer timer;
             timer.startTimer();
-            bool found = threadChangeSet(file);
+            auto found = threadChangeSet(file);
+            //state->dump();
+            // under.writeState(*state);
             if (!found) {
                 planet->disconnectServer();
                 if (url.find("minute") != std::string::npos) {
@@ -159,6 +168,7 @@ startMonitor(const std::string &url)
             }
             timer.endTimer("osmChange");
         }
+        state.reset();
         std::vector<std::string> result;
         // The path is always something like this:
         // https://planet.openstreetmap.org/replication/minute/004/304/997.osm.gz
@@ -212,34 +222,39 @@ void
 startStateThreads(const std::string &base, std::vector<std::string> &files)
 {
     // std::map<std::string, std::thread> thread_pool;
-     auto planet = std::make_shared<replication::Planet>();
+
+    //return;                     // FIXME:
     
     boost::system::error_code ec;
-    // This lambda gets creates inline code for each thread in the pool
-    auto state = [planet](const std::string &path)->bool {
-        std::shared_ptr<replication::StateFile> state = threadStateFile(planet->stream,
-                                                                        path + ".state.txt");
+    underpass::Underpass under;
+    under.connect();
+    auto planet = std::make_shared<replication::Planet>();
+    planet->connectServer();
+
+#if 1
+    for (auto it = std::begin(files); it != std::end(files); ++it) {
+        // There are no state,txt file before this directory
+        // https://planet.openstreetmap.org/replication/changesets/002/008
+
+        //  state = [planet](const std::string &path)->bool {
+        std::string path = base + it->substr(0, 3);
+        std::shared_ptr<replication::StateFile> state = threadStateFile(planet->stream, path + ".state.txt");
         if (!state->path.empty()) {
-            // under.writeState(*state);
+            under.writeState(*state);
             state->dump();
-            return true;
         } else {
             std::cerr << "ERROR: No StateFile returned: " << path << std::endl;
             // planet.reset(new replication::Planet);
             // planet.reset(new replication::Planet());
-
-            // planet.connectServer();
-            // std::this_thread::sleep_for(std::chrono::seconds{1});
-            // state = threadStateFile(planet.stream, path + ".state.txt");
-            // if (!state->path.empty()) {
-            //     under.writeState(*state);
-            //     state->dump();
-            //     return true;
-            // }
-            return false;
+            std::this_thread::sleep_for(std::chrono::seconds{1});
+            state = threadStateFile(planet->stream, path + ".state.txt");
+            if (!state->path.empty()) {
+                under.writeState(*state);
+                state->dump();
+            }
         }
-    };
-
+    }
+#else
     // boost::asio::thread_pool pool(20);
     boost::asio::thread_pool pool(/* std::thread::hardware_concurrency() */ );
 
@@ -250,18 +265,20 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
     // 144, 160, 176, 192, 208, 224
     auto rng  = files | ranges::views::chunk(200);
 
-    underpass::Underpass under;
-    under.connect();
-    Timer timer;
-    timer.startTimer();
+    // underpass::Underpass under;
+    // under.connect();
+    //Timer timer;
+    //timer.startTimer();
     for (auto cit = std::begin(rng); cit != std::end(rng); ++cit) {
-        // std::cout << "Chunk data: " << *cit << std::endl;
+        std::cout << "Chunk data: " << *cit << std::endl;
         for (auto it = std::begin(*cit); it != std::end(*cit); ++it) {
+            // There are no state,txt file before this directory
+            // https://planet.openstreetmap.org/replication/changesets/002/008
             if (boost::filesystem::extension(*it) != ".txt") {
                 continue;
             }
             std::string subpath = base + it->substr(0, it->size() - 10);
-            std::shared_ptr<replication::StateFile> exists = under.getState(subpath);
+            auto exists = under.getState(subpath);
             if (!exists->path.empty()) {
                 std::cout << "Already stored: " << subpath << std::endl;
                 continue;
@@ -271,7 +288,7 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
 #ifdef USE_MULTI_LOADER
                 boost::asio::post(pool, [subpath, state]{state(subpath);});
 #else
-                std::shared_ptr<replication::StateFile> state = threadStateFile(planet->stream,
+                auto state = threadStateFile(planet->stream,
                                                                 base + *it);
                 if (!state->path.empty()) {
                     // under.writeState(*state);
@@ -293,8 +310,9 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
     pool.join();
 #endif
     planet->ioc.reset();
+#endif
     // planet->stream.socket().shutdown(tcp::socket::shutdown_both, ec);
-    timer.endTimer("directory ");
+    //timer.endTimer("directory ");
 }
 
 // This thread get started for every osmChange file
@@ -370,6 +388,15 @@ threadOsmChange(const std::string &file)
     // Apply the changes to the database
     osmstats::QueryOSMStats ostats;
     ostats.connect();
+#if 0
+    underpass::Underpass under;
+    under.connect();
+    replication::StateFile state;
+    // state.timestamp = osmchanges.changes[0].created_at;
+    state.frequency = replication::changeset;
+    state.path = file;
+    under.writeState(state);
+#endif
     // These stats are for the entire file
     auto stats = osmchanges.collectStats();
     for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
@@ -382,14 +409,14 @@ threadOsmChange(const std::string &file)
     return true;
 }
 
-// This updates several fields in the raw_changesets table, which are part of
+// This updates several fields in the changesets table, which are part of
 // the changeset file, and don't need to be calculated.
 //void threadChangeSet(const std::string &file, std::promise<bool> &&result)
-bool
+std::shared_ptr<replication::StateFile>
 threadChangeSet(const std::string &file)
 {
     changeset::ChangeSetFile changeset;
-
+    auto state = std::make_shared<replication::StateFile>();
     auto data = std::make_shared<std::vector<unsigned char>>();
     std::string dir = file.substr(file.find("changesets"));
     if (boost::filesystem::exists(dir)) {
@@ -415,7 +442,7 @@ threadChangeSet(const std::string &file)
     if (data->size() == 0) {
         std::cout << "ChangeSet file not found: " << file << std::endl;
         //result.set_value(false);
-        return false;
+        return state;
     } else {
         //result.set_value(true);
         // XML parsers expect every line to have a newline, including the end of file
@@ -462,7 +489,14 @@ threadChangeSet(const std::string &file)
         ostats.applyChange(*it);
     }
     changeset.dump();
-    return true;
+
+    // Create a stubbed state file to update the underpass database with more
+    // accurate timestamps, also used if there is no state.txt file.
+    state->timestamp = changeset.changes.begin()->created_at;
+    state->created_at = changeset.changes.begin()->created_at;
+    state->closed_at = changeset.changes.end()->created_at;
+    return state;
+    // return true;
 }
 
 // This updates the calculated fields in the raw_changesets table, based on
