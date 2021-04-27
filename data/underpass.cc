@@ -173,6 +173,12 @@ Underpass::getState(const std::string &path)
 std::shared_ptr<replication::StateFile>
 Underpass::getState(replication::frequency_t freq, ptime &tstamp)
 {
+    std::map<replication::frequency_t, std::string> freqs;
+    freqs[replication::minutely] = "minute";
+    freqs[replication::hourly] = "hour";
+    freqs[replication::daily] = "day";
+    freqs[replication::changeset] = "changeset";
+
     auto state = std::make_shared<replication::StateFile>();
     if (sdb > 0) {
         if (!sdb->is_open()) {
@@ -184,9 +190,12 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
         return state;
     }
 
-    std::string query = "SELECT * FROM states WHERE timestamp>=";
-    query += "\'" + to_simple_string(tstamp) + "\' ";
-    query += " AND frequency=\'" + frequency_tags[freq] + "\'";
+    ptime other = tstamp + minutes(1);
+    std::string query = "SELECT timestamp,path,created_at,closed_at FROM states WHERE timestamp BETWEEN ";
+    query += "\'" + to_simple_string(tstamp) + "\' AND ";
+    query += "\'" + to_simple_string(other) + "\' ";
+    query += " AND frequency=";
+    query += "\'" + freqs[freq] + "\'";
     query += " ORDER BY timestamp ASC LIMIT 1;";
     std::cout << "QUERY: " << query << std::endl;
     pqxx::work worker(*sdb);
@@ -200,11 +209,24 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
         } catch (std::exception& e) {
             std::cerr << "ERROR: Couldn't parse StateFile " << std::endl;
             std::cerr << e.what() << std::endl;
-            state->timestamp = time_from_string(result[0][1].c_str());
             state->path = pqxx::to_string(result[0][0]);
+            state->timestamp = time_from_string(result[0][1].c_str());
+            state->created_at = time_from_string(pqxx::to_string(result[0][2]));
+            state->closed_at = time_from_string(pqxx::to_string(result[0][3]));
         }
         state->sequence = result[0][2].as(int(0));
-        state->frequency =  pqxx::to_string(result[0][3]);
+        state->frequency = freq;
+    } else {
+        ptime start = time_from_string("2012-09-12 13:22");
+        boost::posix_time::time_duration delta = tstamp - start;
+        state->timestamp = tstamp;
+        state->sequence = 0;
+        state->path = "https://planet.openstreetmap.org/replication";
+        state->path += "\'" + freqs[freq] + "\'";
+        boost::format fmt("%03d");
+        int next;
+        fmt % (next);
+        state->path += fmt.str();
     }
     return state;
 }
@@ -214,7 +236,12 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
 bool
 Underpass::writeState(replication::StateFile &state)
 {
-    std::string query = "INSERT INTO states(timestamp, sequence, path, frequency) VALUES(";
+    std::string query;
+    if (state.created_at != boost::posix_time::not_a_date_time) {
+        query = "INSERT INTO states(timestamp, sequence, path, frequency, created_at, closed_at) VALUES(";
+    } else {
+        query = "INSERT INTO states(timestamp, sequence, path, frequency) VALUES(";
+    }
     query += "\'" + to_simple_string(state.timestamp) + "\',";
     query += std::to_string(state.sequence);
     query += ",\'" + state.path + "\'";
@@ -227,15 +254,17 @@ Underpass::writeState(replication::StateFile &state)
     } else if (state.path.find("day") != std::string::npos) {
         query += ", \'day\'";
     }
-
+    if (state.created_at != boost::posix_time::not_a_date_time) {
+        query += ", \'" + to_simple_string(state.created_at) + "\'";
+        query += ", \'" + to_simple_string(state.closed_at) + "\'";
+    }
     query += ") ON CONFLICT DO NOTHING;";
     // std::cout << "QUERY: " << query << std::endl;
     //db_mutex.lock();
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     worker.commit();
-    // db_mutex.unlock();
-    // FIXME: return a real value
+
     return false;
 }
 
@@ -244,7 +273,8 @@ std::shared_ptr<replication::StateFile>
 Underpass::getLastState(replication::frequency_t freq)
 {
     pqxx::work worker(*sdb);
-    std::string query = "SELECT timestamp,sequence,path,frequency FROM states";
+//    std::string query = "SELECT timestamp,sequence,path,frequency,created_at,closed_at FROM states";
+    std::string query = "SELECT timestamp,sequence,path FROM states";
     query += " WHERE frequency=";
     if (freq == replication::changeset) {
         query += "\'changeset\'";
@@ -255,13 +285,18 @@ Underpass::getLastState(replication::frequency_t freq)
     } else if (freq == replication::daily) {
         query += "\'day\'";
     }
-    query +="ORDER BY timestamp DESC LIMIT 1;";
-    // std::cout << "QUERY: " << query << std::endl;
+    query +=" ORDER BY timestamp DESC LIMIT 1;";
+    std::cout << "QUERY: " << query << std::endl;
     pqxx::result result = worker.exec(query);
     auto last = std::make_shared<replication::StateFile>();
-    last->timestamp = time_from_string(pqxx::to_string(result[0][0]));
-    last->sequence = result[0][1].as(int(0));
-    last->path = pqxx::to_string(result[0][2]);
+    if (result.size() > 0) {
+        last->timestamp = time_from_string(pqxx::to_string(result[0][0]));
+        last->sequence = result[0][1].as(int(0));
+        last->path = pqxx::to_string(result[0][2]);
+        last->frequency = freq;
+        //last->created_at = time_from_string(pqxx::to_string(result[0][3]));
+        //last->closed_at = time_from_string(pqxx::to_string(result[0][4]));
+    }
 
     worker.commit();
 
@@ -274,13 +309,16 @@ std::shared_ptr<replication::StateFile>
 Underpass::getFirstState(replication::frequency_t freq)
 {
     pqxx::work worker(*sdb);
-    std::string query = "SELECT timestamp,sequence,path,frequency FROM states ORDER BY timestamp ASC LIMIT 1;";
+    std::string query = "SELECT timestamp,sequence,path FROM states ORDER BY timestamp ASC LIMIT 1;";
     // std::cout << "QUERY: " << query << std::endl;
     pqxx::result result = worker.exec(query);
     auto first = std::make_shared<replication::StateFile>();
     first->timestamp = time_from_string(pqxx::to_string(result[0][0]));
     first->sequence = result[0][1].as(int(0));
     first->path = pqxx::to_string(result[0][2]);
+    first->frequency = freq;
+    // first->created_at = time_from_string(pqxx::to_string(result[0][3]));
+    // first->closed_at = time_from_string(pqxx::to_string(result[0][4]));
 
     worker.commit();
 
