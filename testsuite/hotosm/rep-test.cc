@@ -64,14 +64,32 @@ main(int argc, char *argv[])
     TestRep tr;
     Timer timer;
 
+    // 000 tests
     std::string result = tr.findData(replication::changeset, time_from_string("2014-09-07 10:23"));
     std::cout << result << std::endl;
     if (result == "https://planet.openstreetmap.org/replication/changesets/000/956/986.osm.gz") {
-        runtest.pass("Planet::findData(no state)");
+        runtest.pass("Planet::findData(no state 000)");
     } else {
-        runtest.fail("Planet::findData(no state)");
+        runtest.fail("Planet::findData(no state 000)");
     }
-    
+    auto foo = tr.getState(replication::changeset, time_from_string("2014-11-07 10:23"));
+    std::cout << result << std::endl;
+    if (result == "https://planet.openstreetmap.org/replication/changesets/000/962/746.osm.gz") {
+        runtest.pass("Planet::findData(no state 000)");
+    } else {
+        runtest.fail("Planet::findData(no state 000)");
+    }
+
+    // 001 tests
+    result = tr.findData(replication::changeset, time_from_string("2016-08-04 09:03"));
+    std::cout << result << std::endl;
+    if (result == "https://planet.openstreetmap.org/replication/changesets/001/958/981.osm.gz") {
+        runtest.pass("Planet::findData(no state 001)");
+    } else {
+        runtest.fail("Planet::findData(no state 001)");
+    }
+
+    // 002 tests
     result = tr.findData(replication::changeset, time_from_string("2017-09-07 18:22"));
     std::cout << result << std::endl;
     if (result == "https://planet.openstreetmap.org/replication/changesets/002/532/990.osm.gz") {
