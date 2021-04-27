@@ -5,11 +5,13 @@ CREATE TYPE interval AS ENUM('minute', 'hour', 'day', 'changeset');
 
 CREATE TABLE public.states (
     timestamp timestamp without time zone DEFAULT now() NOT NULL,
+    created_at timestamp without time zone,
+    closed_at timestamp without time zone,
     path text NOT NULL,
     sequence integer NOT NULL,
     frequency text NOT NULL
 );
-ALTER TABLE states ADD PRIMARY KEY (path, sequence);
+ALTER TABLE states ADD PRIMARY KEY (path, timestamp);
 
 CREATE TABLE public.creators (
     user_id bigint NOT NULL,
@@ -21,6 +23,7 @@ CREATE TABLE public.geoboundaries (
     cid text,
     name character varying,
     other_tags public.hstore,
+    focus boolean,
     wkb public.geometry(GeometryCollection,4326)
 );
 
