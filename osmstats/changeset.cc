@@ -166,12 +166,13 @@ ChangeSetFile::readChanges(const std::string &file)
         readXML(change);
     }
 
+#if 0
     // magic number: 0x8b1f or 0x1f8b for gzipped
     // <?xml for text
     std::string foo = "Hello World";
     boost::iostreams::array_source(foo.c_str(), foo.size());
     // boost::iostreams::filtering_streambuf<boost::iostreams::input> fooby(foo, 10);
-    
+#endif
     change.close();
 }
 
@@ -180,8 +181,8 @@ ChangeSet::dump(void)
 {
     std::cout << "-------------------------" << std::endl;
     std::cout << "Change ID: " << id << std::endl;
-    std::cout << "Created:     " << to_simple_string(created_at)  << std::endl;
-    std::cout << "Closed:      " << to_simple_string(closed_at) << std::endl;
+    std::cout << "Created At:  " << to_simple_string(created_at)  << std::endl;
+    std::cout << "Closed At:   " << to_simple_string(closed_at) << std::endl;
     if (open) {
         std::cout << "Open change: true" << std::endl;
     } else {
@@ -233,10 +234,16 @@ ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes)
                 source = attr_pair.value;
             } else if (attr_pair.name == "uid") {
                 uid = std::stol(attr_pair.value);
+            } else if (attr_pair.name == "lat") {
+                min_lat = std::stod(attr_pair.value);
+                max_lat = std::stod(attr_pair.value);
             } else if (attr_pair.name == "min_lat") {
                 min_lat = std::stod(attr_pair.value);
             } else if (attr_pair.name == "max_lat") {
                 max_lat = std::stod(attr_pair.value);
+            } else if (attr_pair.name == "lon") {
+                min_lon = std::stod(attr_pair.value);
+                max_lon = std::stod(attr_pair.value);
             } else if (attr_pair.name == "min_lon") {
                 min_lon = std::stod(attr_pair.value);
             } else if (attr_pair.name == "max_lon") {
@@ -333,7 +340,7 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
         changes.push_back(change);
         // changes.back().dump();
     } else if (name == "tag") {
-        // We ignore most of the tags, as they're not used for OSM stats.
+        // We ignore most of the attributes, as they're not used for OSM stats.
         // Processing a tag requires multiple passes through the loop. The
         // tho tags to look for are 'k' (keyword) and 'v' (value). So when
         // we see a key we want, we have to wait for the next iteration of
@@ -356,9 +363,13 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
                 max_lathit = true;
             } else if (attr_pair.name == "k" && attr_pair.value == "min_lat") {
                 min_lathit = true;
+            } else if (attr_pair.name == "k" && attr_pair.value == "lat") {
+                min_lathit = true;
             } else if (attr_pair.name == "k" && attr_pair.value == "max_lon") {
                 max_lonhit = true;
             } else if (attr_pair.name == "k" && attr_pair.value == "min_lon") {
+                min_lonhit = true;
+            } else if (attr_pair.name == "k" && attr_pair.value == "lon") {
                 min_lonhit = true;
             } else if (attr_pair.name == "k" && attr_pair.value == "hashtags") {
                 hashit = true;
