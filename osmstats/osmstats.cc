@@ -43,7 +43,11 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time.hpp>
-#include "boost/date_time/posix_time/posix_time.hpp"
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/date_time/time_facet.hpp>
+#include <boost/math/special_functions/relative_difference.hpp>
+
+using namespace boost::math;
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
@@ -188,7 +192,6 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
         aquery.erase(aquery.size() - 2);
         aquery += ") ON CONFLICT (id) DO UPDATE SET ";
     }
-
     aquery += " updated_at = \'" + to_simple_string(now) + "\'";
     aquery += " WHERE changesets.id=" + std::to_string(change.change_id);
 
@@ -210,16 +213,31 @@ bool
 QueryOSMStats::applyChange(changeset::ChangeSet &change)
 {
     std::cout << "Applying ChangeSet data" << std::endl;
-
     change.dump();
-    // Add user data
-    // addUser(change.uid, change.user);
-    std::string query = "INSERT INTO users VALUES(";
+
+    // See if the change is in one of the focus countries
+    std::string query = "SELECT COUNT(changesets.id) FROM geoboundaries,changesets WHERE (ST_CONTAINS(ST_SetSRID(geoboundaries.boundary, 4326),";
+    query += " ST_PointFromText(\'POINT(";
+    query += std::to_string(change.min_lon) + " " + std::to_string(change.min_lat);
+    query += ")\', 4326))) AND geoboundaries.audacious=\'t\';";
+    std::cout << "QUERY X: " << query << std::endl;
+    pqxx::work worker1(*sdb);
+    pqxx::result result = worker1.exec(query);
+    worker1.commit();
+    int ids = std::stol(result[0][0].c_str());
+    if (ids == 0) {
+	std::cout << "Changeset " << change.id << " is not in a focus country" << std::endl;
+	return true;
+    } else {
+	std::cout << "Changeset " << change.id << " is in a focus country" << std::endl;
+    }
+
+    query = "INSERT INTO users VALUES(";
     query += std::to_string(change.uid) + ",\'" + sdb->esc(change.user);
     query += "\') ON CONFLICT DO NOTHING;";
     std::cout << "QUERY: " << query << std::endl;
     pqxx::work worker(*sdb);
-    pqxx::result result = worker.exec(query);
+    result = worker.exec(query);
     //worker.commit();
 
     // If there are no hashtags in this changset, then it isn't part
@@ -265,6 +283,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     if (change.hashtags.size() > 0) {
         query += ", \'{ ";
         for (auto it = std::begin(change.hashtags); it != std::end(change.hashtags); ++it) {
+            boost::algorithm::replace_all(*it, "\"", "&quot;");
             query += "\"" + *it + "\"" + ", ";
         }
         // drop the last comma
@@ -275,11 +294,58 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     if (!change.source.empty()) {
         query += ",\'" + change.source += "\'";
     }
+
+    if (change.max_lon < 0 && change.min_lat < 0) {
+        std::cout << "ERROR: single point! " << change.id << std::endl;
+        return false;
+    }
+    // FIXME: There are bugs in the bounding box coordinates in some of the older
+    // changeset files, but for now ignore these.
+    double fff = relative_difference(change.max_lon, change.min_lon);
+    //std::cout << "FIXME: Float diff " << fff << std::endl;
+    if (fff < 0.0001) {
+        std::cout << "FIXME: line too short! " << fff << std::endl;
+        return false;
+    }
+
+    // a changeset with a single node in it doesn't draw a line
+    if ((change.max_lon) == (change.min_lon) || (change.max_lat) == (change.min_lat)) {
+        std::cout << "ERROR: not a line! " << change.id << std::endl;
+        return false;
+    }
+    if (change.max_lon < 0 && change.min_lat < 0) {
+        std::cout << "ERROR: single point! " << change.id << std::endl;
+        return false;
+    }
+    if (change.num_changes == 0) {
+        std::cout << "ERROR: no changes! " << change.id << std::endl;
+        return false;
+    }
     // Add the bounding box of the changeset here next
-    query += ", ST_ENVELOPE(\'SRID=4326;LINESTRING(" + std::to_string(change.min_lat) + "  ";
-    query += std::to_string(change.max_lon) + "," + std::to_string(change.max_lat) + " " + std::to_string(change.min_lon);
+        // long_high,lat_high,
+	// long_low,lat_high,
+	// long_low,lat_low,
+	// long_high,lat_low,
+	// long_high,lat_high
+    query += ", ST_MULTI(ST_GeomFromText(\'SRID=4326;POLYGON((";
+    // Upper left
+    query += std::to_string(change.max_lon) + "  ";
+    query += std::to_string(change.max_lat) + ",";
+    // Upper right
+    query += std::to_string(change.min_lon) + "  ";
+    query += std::to_string(change.max_lat) + ",";
+    // Lower right
+    query += std::to_string(change.min_lon) + "  ";
+    query += std::to_string(change.min_lat) + ",";
+    // Lower left
+    query += std::to_string(change.max_lon) + "  ";
+    query += std::to_string(change.min_lat) + ",";
+    // Close the polygon
+    query += std::to_string(change.max_lon) + "  ";
+    query += std::to_string(change.max_lat) + ")";
+
     query += ")\')";
-    query += ") ON CONFLICT DO NOTHING;";
+    query += ")) ON CONFLICT DO NOTHING;";
     std::cout << "QUERY: " << query << std::endl;
     result = worker.exec(query);
 
