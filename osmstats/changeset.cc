@@ -214,10 +214,7 @@ ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes)
     for(const auto& attr_pair : attributes) {
         try {
             if (attr_pair.name == "id") {
-                id = std::stol(attr_pair.value);   // id
-                if (id == 232) {
-                    int a = 0;
-                }
+                id = std::stol(attr_pair.value);   // change id
             } else if (attr_pair.name == "created_at") {
                 created_at = from_iso_extended_string(attr_pair.value.substr(0,18));
             } else if (attr_pair.name == "closed_at") {
@@ -249,6 +246,8 @@ ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes)
             } else if (attr_pair.name == "max_lon") {
                 max_lon = std::stod(attr_pair.value);
             } else if (attr_pair.name == "num_changes") {
+                num_changes = std::stoi(attr_pair.value);
+            } else if (attr_pair.name == "changes_count") {
                 num_changes = std::stoi(attr_pair.value);
             } else if (attr_pair.name == "comments_count") {
             }
@@ -332,9 +331,24 @@ ChangeSetFile::readXML(std::istream &xml)
 
 #ifdef LIBXML
 void
+ChangeSetFile::on_end_element(const Glib::ustring& name)
+{
+    // std::cout << "Element \'" << name << "\' ending" << std::endl;
+    if (name == "changeset") {
+        // FIXME: it'd be better to not redo the database connection
+        //for every changeset
+        osmstats::QueryOSMStats ostats;
+        ostats.connect();
+        ostats.applyChange(changes.back());
+    }
+}
+
+void
 ChangeSetFile::on_start_element(const Glib::ustring& name,
                                 const AttributeList& attributes)
 {
+    // std::cout << "Element \'" << name << "\' starting" << std::endl;
+
     if (name == "changeset") {
         changeset::ChangeSet change(attributes);
         changes.push_back(change);
@@ -358,6 +372,7 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
         double max_lon = 0.0;
 
         for (const auto& attr_pair : attributes) {
+            // std::wcout << "\tPAIR: " << attr_pair.name << " = " << attr_pair.value << std::endl;
             if (attr_pair.name == "k" && attr_pair.value == "max_lat") {
                 max_lat = std::stod(attr_pair.value);
                 max_lathit = true;

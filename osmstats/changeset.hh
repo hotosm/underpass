@@ -62,6 +62,7 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
+#include "timer.hh"
 #include "hotosm.hh"
 #include "osmstats/osmstats.hh"
 #include "data/geoutil.hh"
@@ -124,10 +125,10 @@ public:
     bool open = false;          ///< Whether this changeset is still in progress
     std::string user;           ///< The OSM user name making this change
     long uid = 0;               ///< The OSM user ID making this change
-    double min_lat;             ///< The minimum latitude for the bounding box of this change
-    double min_lon;             ///< The minimum longitude for the bounding box of this change
-    double max_lat;             ///< The maximum latitude for the bounding box of this change
-    double max_lon;             ///< The maximum longitude for the bounding box of this change
+    double min_lat = 0.0;       ///< The minimum latitude for the bounding box of this change
+    double min_lon = 0.0;       ///< The minimum longitude for the bounding box of this change
+    double max_lat = 0.0;       ///< The maximum latitude for the bounding box of this change
+    double max_lon = 0.0;       ///< The maximum longitude for the bounding box of this change
     int num_changes = 0;        ///< The number of changes in this changeset, which apears to be unused
     int comments_count = 0;     ///< The number of comments in this changeset, which apears to be unused
     std::vector<std::string> hashtags; ///< Internal aray of hashtags in this changeset
@@ -163,9 +164,11 @@ public:
     bool importChanges(const std::string &file);
 
 #ifdef LIBXML
-    /// Called by libxml++ for each element of the XML file
+    /// Called by libxml++ for the start of each element in the XML file
     void on_start_element(const Glib::ustring& name,
                           const AttributeList& properties) override;
+    /// Called by libxml++ for the end of each element in the XML file
+    void on_end_element(const Glib::ustring& name) override;
 #endif
 
     /// Read an istream of the data and parse the XML
@@ -186,7 +189,7 @@ public:
 //     bool store;
     std::string filename;       ///< The filename of this changeset for disk files
     std::vector<ChangeSet> changes; ///< Storage of all the changes in this data
-    std::shared_ptr<geoutil::GeoUtil> boundaries; ///< A pointer to the geoboundary data
+    // std::shared_ptr<geoutil::GeoUtil> boundaries; ///< A pointer to the geoboundary data
 };
 }       // EOF changeset
 
