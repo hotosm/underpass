@@ -222,11 +222,8 @@ main(int argc, char *argv[])
             ("monitor,m", "Starting monitor")
             ("frequency,f", opts::value<std::string>(), "Update frequency (hour, daily), default minute)")
             ("timestamp,t", opts::value<std::string>(), "Starting timestamp")
-//            ("changeset,c", opts::value<std::vector<std::string>>(), "Initialize OSM Stats with changeset")
-//            ("osmchange,o", opts::value<std::vector<std::string>>(), "Apply osmchange to OSM Stats")
-            ("import,i", opts::value<std::string>(), "Initialize pgsnapshot database with datafile")
-//            ("osm,o", "OSM database name (defaults to pgsnapshot)")
-//            ("format,f", "database format (defaults to pgsnapshot)")
+            ("import,i", opts::value<std::string>(), "Initialize OSM database with datafile")
+            ("changefile,c", opts::value<std::string>(), "Import change file")
 //            ("verbose,v", "enable verbosity")
             ;
         
@@ -249,20 +246,15 @@ main(int argc, char *argv[])
      std::vector<std::string> rawfile;
      std::shared_ptr<std::vector<unsigned char>> data;
 
-#if 0
      // A changeset has the hashtags and comments we need. Multiple URLS
      // or filename may be specified on the command line, common when
      // catching up on changes.
-     if (vm.count("changeset")) {
-         std::vector<std::string> files = vm["changeset"].as<std::vector<std::string>>();
-         if (files[0].substr(0, 4) == "http") {
-             data = replicator.downloadFiles(files, true);
-         } else {
-             for (auto it = std::begin(files); it != std::end(files); ++it) {
-                 replicator.readChanges(*it);
-             }
-         }
+     if (vm.count("changefile")) {
+         std::string file = vm["changefile"].as<std::string>();
+         std::cout << "Importing change file " << file << std::endl;
+         replicator.readChanges(file);
      }
+#if 0
      if (vm.count("osmchange")) {
          std::vector<std::string> files = vm["osmchange"].as<std::vector<std::string>>();
          if (files[0].substr(0, 4) == "http") {
@@ -315,6 +307,19 @@ main(int argc, char *argv[])
                      last = state->path;
                  }
                  std::cout << "Last minutely is " << last  << std::endl;
+                 mthread = std::thread(threads::startMonitor, std::ref(last));
+             } else if (url.find("day") == std::string::npos) {
+                 auto state = under.getState(replication::daily, timestamp);
+                 if (state->path.empty()) {
+                     last = planet.findData(replication::daily, timestamp);
+                     if (last.empty()) {
+                         std::cerr << "ERROR: No last path!" << std::endl;
+                         exit(-1);
+                     }
+                 } else {
+                     last = state->path;
+                 }
+                 std::cout << "Last daily is " << last  << std::endl;
                  mthread = std::thread(threads::startMonitor, std::ref(last));
              } else {
                  auto state = under.getState(replication::minutely, url);
