@@ -107,6 +107,12 @@ startMonitor(const std::string &url)
             if (url.find("minute") != std::string::npos) {
                 exists = under.getState(replication::minutely, path);
             }
+            if (url.find("day") != std::string::npos) {
+                exists = under.getState(replication::daily, path);
+            }
+            if (url.find("hour") != std::string::npos) {
+                exists = under.getState(replication::hourly, path);
+            }
             if (!exists->path.empty()) {
                 std::cout << "Already stored: " << path << std::endl;
                 subloop = true;
@@ -484,17 +490,22 @@ threadChangeSet(const std::string &file)
 
     osmstats::QueryOSMStats ostats;
     ostats.connect();
+#if 0
+    // FIXME: should now be handled by on_end_element()
     // Apply the changes to the database
     for (auto it = std::begin(changeset.changes); it != std::end(changeset.changes); ++it) {
         ostats.applyChange(*it);
     }
     changeset.dump();
-
+#endif
     // Create a stubbed state file to update the underpass database with more
     // accurate timestamps, also used if there is no state.txt file.
-    state->timestamp = changeset.changes.begin()->created_at;
-    state->created_at = changeset.changes.begin()->created_at;
-    state->closed_at = changeset.changes.end()->created_at;
+    if (changeset.changes.size() > 0) {
+        state->timestamp = changeset.changes.begin()->created_at;
+        state->created_at = changeset.changes.begin()->created_at;
+        state->closed_at = changeset.changes.end()->created_at;
+    }
+    
     return state;
     // return true;
 }

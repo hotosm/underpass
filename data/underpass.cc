@@ -211,7 +211,7 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
         state->sequence = result[0][2].as(int(0));
         state->frequency = freq;
     } else {
-#if 0
+#if 1
         // FIXME: this does not work yet
         ptime start = time_from_string("2012-09-12 13:22");
         boost::posix_time::time_duration delta = tstamp - start;
@@ -223,6 +223,7 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
         int next;
         fmt % (next);
         state->path += fmt.str();
+        std::cerr << "ERROR: FIXME!!!!!" << state->path << std::endl;
 #else
         std::cerr << "ERROR: FIXME!!!!!" << std::endl;
 #endif

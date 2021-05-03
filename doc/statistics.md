@@ -54,9 +54,10 @@ backend and the frontend, without having modify the database schema.
 
 An example query to count the total number of buildings added by the
 user **4321** for a Tasking Manager project **1234** would be this:
-
 > SELECT SUM(CAST(added::hstore->'building' AS DOUBLE precision)) FROM
 changesets WHERE 'hotosm-project1234' = ANY(hashtags) AND user_id=4321;
+
+The source is the satellite imagery used for remote mapping.
 
 &nbsp;
 
@@ -73,7 +74,7 @@ modified | An array of the modified map features
 deleted | An array of the deleted map features
 hashtags | An array of the hashtags used for this changeset
 source | The imagery source used for this changeset
-validated | Where this changeset has been validated in the tasking manager
+validated | Where this changeset has been validated in the Tasking Manager
 bbox | The bounding box of this changeset
 
 ## users table

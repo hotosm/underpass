@@ -35,7 +35,7 @@ CREATE TABLE public.changesets (
     hashtags text[],
     source text,
     validated boolean,
-    bbox public.geometry(Geometry,4326)
+    bbox public.geometry(MultiPolygon,4326)
 );
 ALTER TABLE ONLY public.changesets
     ADD CONSTRAINT changesets_pkey PRIMARY KEY (id);
@@ -59,7 +59,7 @@ CREATE TABLE public.geoboundaries (
     admin_level integer,
     tags public.hstore,
     audacious boolean,
-    boundary public.geometry
+    boundary public.geometry(MultiPolygon,4326)
 );
 
 --
