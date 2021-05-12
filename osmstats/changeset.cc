@@ -398,6 +398,10 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
                 hashit = false;
                 std::size_t pos = attr_pair.value.find('#', 0);
                 if (pos != std::string::npos) {
+                    // Don't allow really short hashtags, they're usually a typo
+                    if (attr_pair.value.length() < 3) {
+                        continue;
+                    }
                     char *token = std::strtok((char *)attr_pair.value.c_str(), "#;");
                     while (token != NULL) {
                         token = std::strtok(NULL, "#;");
