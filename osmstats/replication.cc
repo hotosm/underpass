@@ -342,7 +342,7 @@ Replication::downloadFiles(std::vector<std::string> files, bool disk)
     } catch (const std::exception &e) {
         std::cerr << "Couldn't shutdown stream" << e.what() << std::endl;
     }
-    //stream.expires_after (std::chrono::seconds(30));
+    // stream.expires_after (std::chrono::seconds(30));
     auto data = std::make_shared<std::vector<unsigned char>>();
     auto links =  std::make_shared<std::vector<std::string>>();
     for (auto it = std::begin(files); it != std::end(files); ++it) {
@@ -428,7 +428,7 @@ Planet::Planet(void)
     frequency_tags[replication::hourly] = "hour";
     frequency_tags[replication::daily] = "day";
     frequency_tags[replication::changeset] = "changeset";
-    
+    baseurl = "https://planet.openstreetmap.org/replication";
     connectServer();
 };
 

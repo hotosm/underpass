@@ -215,6 +215,7 @@ public:
     ssl::context ctx{ssl::context::sslv23_client};
     tcp::resolver resolver{ioc};
     boost::asio::ssl::stream<tcp::socket> stream{ioc, ctx};
+    std::string baseurl;        ///< URL for the planet server
 };
 
 // These are the columns in the pgsnapshot.replication_changes table
