@@ -219,7 +219,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     std::string query = "SELECT COUNT(changesets.id) FROM geoboundaries,changesets WHERE (ST_CONTAINS(ST_SetSRID(geoboundaries.boundary, 4326),";
     query += " ST_PointFromText(\'POINT(";
     query += std::to_string(change.min_lon) + " " + std::to_string(change.min_lat);
-    query += ")\', 4326))) AND geoboundaries.audacious=\'t\';";
+    query += ")\', 4326))) AND geoboundaries.priority=\'t\';";
     std::cout << "QUERY X: " << query << std::endl;
     pqxx::work worker1(*sdb);
     pqxx::result result = worker1.exec(query);
@@ -232,6 +232,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
 	std::cout << "Changeset " << change.id << " is in a focus country" << std::endl;
     }
 
+    // Some old changefiles have no user information
     query = "INSERT INTO users VALUES(";
     query += std::to_string(change.uid) + ",\'" + sdb->esc(change.user);
     query += "\') ON CONFLICT DO NOTHING;";
@@ -295,30 +296,48 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
         query += ",\'" + change.source += "\'";
     }
 
-    if (change.max_lon < 0 && change.min_lat < 0) {
-        std::cout << "ERROR: single point! " << change.id << std::endl;
-        return false;
-    }
+    // Store the current values as they may get changed to expand very short
+    // lines or POIs so they have a bounding box big enough for postgis to use.
+    double min_lat = change.min_lat;
+    double max_lat = change.max_lat;
+    double min_lon = change.min_lon;
+    double max_lon = change.max_lon;
     // FIXME: There are bugs in the bounding box coordinates in some of the older
     // changeset files, but for now ignore these.
-    double fff = relative_difference(change.max_lon, change.min_lon);
+    double fff = relative_difference(max_lon, min_lon);
     //std::cout << "FIXME: Float diff " << fff << std::endl;
-    if (fff < 0.0001) {
+    int fudge = 0.0001;
+    if (fff < fudge) {
         std::cout << "FIXME: line too short! " << fff << std::endl;
         return false;
     }
-
     // a changeset with a single node in it doesn't draw a line
-    if ((change.max_lon) == (change.min_lon) || (change.max_lat) == (change.min_lat)) {
-        std::cout << "ERROR: not a line! " << change.id << std::endl;
-        return false;
-    }
     if (change.max_lon < 0 && change.min_lat < 0) {
-        std::cout << "ERROR: single point! " << change.id << std::endl;
-        return false;
+        std::cerr << "WARNING: single point! " << change.id << std::endl;
+	min_lat = change.min_lat + (fudge/2);
+	max_lat = change.max_lat + (fudge/2);
+	min_lon = change.min_lon - (fudge/2);
+	max_lon = change.max_lon - (fudge/2);
+        //return false;
+    }
+    if (max_lon == min_lon || max_lat == min_lat) {
+        std::cerr << "WARNING: not a line! " << change.id << std::endl;
+	min_lat = change.min_lat + (fudge/2);
+	max_lat = change.max_lat + (fudge/2);
+	min_lon = change.min_lon - (fudge/2);
+	max_lon = change.max_lon - (fudge/2);
+	// return false;
+    }
+    if (max_lon < 0 && min_lat < 0) {
+        std::cerr << "WARNING: single point! " << change.id << std::endl;
+	min_lat = change.min_lat + (fudge/2);
+	max_lat = change.max_lat + (fudge/2);
+	min_lon = change.min_lon - (fudge/2);
+	max_lon = change.max_lon - (fudge/2);
+        // return false;
     }
     if (change.num_changes == 0) {
-        std::cout << "ERROR: no changes! " << change.id << std::endl;
+        std::cerr << "WARNING: no changes! " << change.id << std::endl;
         return false;
     }
     // Add the bounding box of the changeset here next
@@ -329,20 +348,20 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
 	// long_high,lat_high
     query += ", ST_MULTI(ST_GeomFromText(\'SRID=4326;POLYGON((";
     // Upper left
-    query += std::to_string(change.max_lon) + "  ";
-    query += std::to_string(change.max_lat) + ",";
+    query += std::to_string(max_lon) + "  ";
+    query += std::to_string(max_lat) + ",";
     // Upper right
-    query += std::to_string(change.min_lon) + "  ";
-    query += std::to_string(change.max_lat) + ",";
+    query += std::to_string(min_lon) + "  ";
+    query += std::to_string(max_lat) + ",";
     // Lower right
-    query += std::to_string(change.min_lon) + "  ";
-    query += std::to_string(change.min_lat) + ",";
+    query += std::to_string(min_lon) + "  ";
+    query += std::to_string(min_lat) + ",";
     // Lower left
-    query += std::to_string(change.max_lon) + "  ";
-    query += std::to_string(change.min_lat) + ",";
+    query += std::to_string(max_lon) + "  ";
+    query += std::to_string(min_lat) + ",";
     // Close the polygon
-    query += std::to_string(change.max_lon) + "  ";
-    query += std::to_string(change.max_lat) + ")";
+    query += std::to_string(max_lon) + "  ";
+    query += std::to_string(max_lat) + ")";
 
     query += ")\')";
     query += ")) ON CONFLICT DO NOTHING;";
