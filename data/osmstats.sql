@@ -35,6 +35,7 @@ CREATE TABLE public.changesets (
     hashtags text[],
     source text,
     validated boolean,
+    quality integer,
     bbox public.geometry(MultiPolygon,4326)
 );
 ALTER TABLE ONLY public.changesets
@@ -58,7 +59,7 @@ CREATE TABLE public.geoboundaries (
     name character varying NOT NULL,
     admin_level integer,
     tags public.hstore,
-    audacious boolean,
+    priority boolean,
     boundary public.geometry(MultiPolygon,4326)
 );
 
@@ -90,37 +91,16 @@ CREATE TABLE public.users (
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
 
-CREATE MATERIALIZED VIEW public.user_stats AS
- SELECT raw_changesets.user_id,
-    raw_users.name,
-    count(raw_changesets.id) AS changesets,
-    sum(raw_changesets.road_km_added) AS road_km_added,
-    sum(raw_changesets.road_km_modified) AS road_km_modified,
-    sum(raw_changesets.waterway_km_added) AS waterway_km_added,
-    sum(raw_changesets.waterway_km_modified) AS waterway_km_modified,
-    sum(raw_changesets.roads_added) AS roads_added,
-    sum(raw_changesets.roads_modified) AS roads_modified,
-    sum(raw_changesets.waterways_added) AS waterways_added,
-    sum(raw_changesets.waterways_modified) AS waterways_modified,
-    sum(raw_changesets.buildings_added) AS buildings_added,
-    sum(raw_changesets.buildings_modified) AS buildings_modified,
-    sum(raw_changesets.pois_added) AS pois_added,
-    sum(raw_changesets.pois_modified) AS pois_modified,
-    sum(
-        CASE
-            WHEN ("position"(lower(raw_changesets.editor), 'josm'::text) > 0) THEN 1
-            ELSE 0
-        END) AS josm_edits,
-    ( SELECT count(raw_countries_users.country_id) AS count
-           FROM public.raw_countries_users
-          WHERE (raw_countries_users.user_id = raw_changesets.user_id)) AS countries,
-    ( SELECT count(raw_hashtags_users.hashtag_id) AS count
-           FROM public.raw_hashtags_users
-          WHERE (raw_hashtags_users.user_id = raw_changesets.user_id)) AS hashtags,
-    max(COALESCE(raw_changesets.closed_at, raw_changesets.created_at)) AS updated_at
-   FROM (public.raw_changesets
-     JOIN public.raw_users ON ((raw_changesets.user_id = raw_users.id)))
-  WHERE (raw_changesets.user_id IS NOT NULL)
-  GROUP BY raw_changesets.user_id, raw_users.name
-  WITH NO DATA;
-
+--
+-- possible table for training data
+--
+CREATE TABLE public.training {
+    name text,
+    local boolean,
+    organization text,
+    tools text[],
+    teams text[],
+    gender text,
+    hours integer,
+    age double
+};

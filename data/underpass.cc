@@ -152,9 +152,17 @@ Underpass::getState(replication::frequency_t freq, const std::string &path)
         std::cerr << "ERROR: database not connected!" << std::endl;
         return state;
     }
+    std::vector<std::string> nodes;
+    boost::split(nodes, path, boost::is_any_of("/"));
+    std::string tmp;
+    if (nodes[0] == "https:") {
+        tmp = nodes[5] + '/' + nodes[6] + '/' + nodes[7];
+    } else {
+        tmp = path;
+    }
     //db_mutex.lock();
     std::string query = "SELECT timestamp,path,sequence,frequency FROM states WHERE path=\'";
-    query += path + "\' AND frequency=\'" + frequency_tags[freq] + "\'";
+    query += tmp + "\' AND frequency=\'" + frequency_tags[freq] + "\'";
     // std::cout << "QUERY: " << query << std::endl;
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
@@ -174,6 +182,11 @@ std::shared_ptr<replication::StateFile>
 Underpass::getState(replication::frequency_t freq, ptime &tstamp)
 {
     auto state = std::make_shared<replication::StateFile>();
+    if (tstamp == boost::posix_time::not_a_date_time) {
+        std::cerr << "ERROR: bad timestamp!" << std::endl;
+        exit(1);
+    }
+    
     if (sdb > 0) {
         if (!sdb->is_open()) {
             std::cerr << "ERROR: database not connected!" << std::endl;
@@ -211,7 +224,7 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
         state->sequence = result[0][2].as(int(0));
         state->frequency = freq;
     } else {
-#if 1
+#if 0
         // FIXME: this does not work yet
         ptime start = time_from_string("2012-09-12 13:22");
         boost::posix_time::time_duration delta = tstamp - start;
@@ -245,7 +258,16 @@ Underpass::writeState(replication::StateFile &state)
     }
     query += "\'" + to_simple_string(state.timestamp) + "\',";
     query += std::to_string(state.sequence);
-    query += ",\'" + state.path + "\'";
+    std::vector<std::string> nodes;
+    boost::split(nodes, state.path, boost::is_any_of("/"));
+    std::string tmp;
+    if (nodes[0] == "https:") {
+        tmp = nodes[5] + '/' + nodes[6] + '/' + nodes[7];
+    } else {
+        tmp = state.path;
+    }
+    
+    query += ",\'" + tmp + "\'";
     if (state.path.find("changeset") != std::string::npos) {
         query += ", \'changeset\'";
     } else if (state.path.find("minute") != std::string::npos) {

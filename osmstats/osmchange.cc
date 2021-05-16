@@ -127,9 +127,17 @@ OsmChangeFile::readChanges(const std::string &file)
         change.open(file, std::ifstream::in);
         readXML(change);
     }
-
+#if 0
+    for (auto it = std::begin(osmchanges.changes); it != std::end(osmchanges.changes); ++it) {
+	//state.created_at = it->created_at;
+	//state.closed_at = it->closed_at;
+	state.frequency = replication::changeset;
+	state.path = file;
+	under.writeState(state);
+    }
+#endif
     // FIXME: return a real value
-    return false;
+    return true;
 }
 
 bool

@@ -123,11 +123,19 @@ public:
     std::shared_ptr<replication::StateFile> getFirstState(replication::frequency_t freq);
 
     std::shared_ptr<osmstats::RawCountry> getCountry(double max_lat, double max_lon, double min_lat, double min_lon);
-    
+
+    std::string parsePath(const std::string &url) {
+        // return url.substr();
+        // FIXME: this needs to parse a full URL, and return the file path
+        return url;
+    };
+
+    std::string freq_to_string(replication::frequency_t tag) {
+        return frequency_tags[tag];
+    };
 // protected:
     std::shared_ptr<pqxx::connection> sdb;
     std::map<replication::frequency_t, std::string> frequency_tags;
-
     std::string db_url;
 };
 

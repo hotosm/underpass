@@ -541,70 +541,91 @@ Planet::scanDirectory(const std::string &dir)
 std::string
 Planet::findData(frequency_t freq, ptime tstamp)
 {
-    std::vector<ptime> states = {
-        time_from_string("2012-10-28 19:36"),
-        time_from_string("2014-10-07 07:58"),
-        time_from_string("2016-09-01 20:43"),
-        time_from_string("2018-07-30 09:12"),
+    ptime now = boost::posix_time::microsec_clock::local_time();
+    // start timestamps for the top level minute files
+    std::vector<ptime> mstates = {
+        time_from_string("2012-09-13 02:06"),
+        time_from_string("2014-08-12 22:41"),
+        time_from_string("2016-07-09 14:33"),
+        time_from_string("2018-06-04 23:24"),
+        time_from_string("2020-04-30 23:20"),
+        now
     };
 
+    // start timestamps for the top level changeset files
+    std::vector<ptime> cstates = {
+        time_from_string("2012-10-29 12:15"),
+        time_from_string("2014-10-08 00:37"),
+        time_from_string("2016-09-02 13:22"),
+        time_from_string("2018-07-30 09:12"),
+        time_from_string("2020-06-29 16:05"),
+        now
+    };
+
+    
     // Changeset files don't have an associated state.txt till
     // this first one: .../replication/changesets/002/007/990.state.txt
     underpass::Underpass under;
     under.connect();
     replication::StateFile state;
-#if 0
-    ptime startdate = time_from_string("2016-09-07 10:45");
     // boost::local_time::local_time_period lp(states[0]);
-    if (freq == replication::changeset && tstamp <= startdate) {
-        boost::posix_time::time_duration delta1, delta2, delta3;
-        state.path = "https://planet.openstreetmap.org/replication/changesets/";
-        delta1 = tstamp - states[0];
-        delta2 = tstamp - states[1];
-        delta3 = tstamp - states[2];
-        if (delta1.hours() <= 999) {
-            state.path += "000/";
-            int nextdir = 998 - ((delta1.hours() * 60)/1000);
-            boost::format fmt("%03d");
-            fmt % (nextdir);
-            state.path += fmt.str() + "/";
-            int lastdir = (delta1.hours() + delta1.minutes())/60;
-            fmt % (998 - lastdir);
-            state.path += fmt.str() + ".osm.gz";
-        } else if (delta1.hours() > 999) {
-            boost::format fmt("%03d");
-            state.path += "001/";
-        } else if (delta2.hours() > 999) {
-            boost::format fmt("%03d");
-            state.path += "002/";
+    boost::posix_time::time_duration delta1, delta2;
+    int minutes1 = 0;
+    int minutes2 = 0;
+    std::string major;
+    std::string minor;
+    std::string index;
+    if (freq == replication::minutely) {
+        for (int i = mstates.size(); i >= 0; --i) {
+            if (tstamp > mstates[i-1] && tstamp < mstates[i]) {
+                delta1 = tstamp - mstates[i-1];
+                delta2 = mstates[i] - mstates[i-1];
+                minutes1 = (delta1.hours() * 60) + delta1.minutes();
+                minutes2 = (delta2.hours() * 60) + delta2.minutes();
+                // int interval = minutes2/999.5;
+                int interval = minutes2/1000;
+                boost::format fmt("%03d");
+                fmt % (i-1);
+                major += fmt.str() + "/";
+                fmt % (minutes1/interval);
+                minor += fmt.str() + "/";
+                int total = 1;
+                fmt % (total);
+                index += fmt.str();
+                // state.path = major + minor + index;
+                state.path = major + minor + "000";
+                return state.path;
+                break;
+            }
         }
+#if 0
         state.timestamp = tstamp;
         under.writeState(state);
         state.dump();
         return state.path;
-    }
 #endif
+    }
 
+#if 0
     auto last = std::make_shared<replication::StateFile>();
     last = under.getLastState(freq);
-    if (last->path.empty()) {
+    if (!last->path.empty()) {
         return state.path;
     }
-    last->dump();
+    // last->dump();
     bool loop = true;
-    boost::posix_time::time_duration delta = tstamp - last->timestamp;
+    delta = tstamp - last->timestamp;
     std::vector<std::string> result;
     boost::split(result, last->path, boost::is_any_of("/"));
-    int major = std::stoi(result[5]);
-    int minor = std::stoi(result[6]);
-    int index = std::stoi(result[7]);
+    int major = std::stoi(result[0]);
+    int minor = std::stoi(result[1]);
+    int index = std::stoi(result[2]);
     int minutes = (delta.hours() * 60) + delta.minutes();
-    std::string base = last->path.substr(0, last->path.find("/0"));
     int quotient =  minutes / 1000;
     int remainder = minutes % 1000;
     boost::format fmt1("%03d");
     fmt1 % (major);
-    std::string newpath = base + "/" + fmt1.str();
+    std::string newpath = last->path + "/" + fmt1.str();
     boost::format fmt2("%03d");
     int next = (index + remainder)/1000;
     fmt2 % (minor + next + quotient);
@@ -639,6 +660,7 @@ Planet::findData(frequency_t freq, ptime tstamp)
             }
         }
     }
+#endif
 }
 
 } // EOF replication namespace

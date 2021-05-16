@@ -177,6 +177,7 @@ public:
     /// Setup the boundary data used to determine the country
     bool setupBoundaries(std::shared_ptr<geoutil::GeoUtil> &geou) {
         // boundaries = geou;
+        return false;
     };
 
     /// Get one set of change data from the parsed XML data

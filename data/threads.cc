@@ -101,23 +101,21 @@ startMonitor(const std::string &url)
         bool subloop = true;
         while (subloop) {
             std::shared_ptr<replication::StateFile> exists;
-            if (url.find("changeset") != std::string::npos) {
+	    if (url.find("changeset") != std::string::npos) {
                 exists = under.getState(replication::changeset, path);
-            }
-            if (url.find("minute") != std::string::npos) {
+            } else if (url.find("minute") != std::string::npos) {
                 exists = under.getState(replication::minutely, path);
-            }
-            if (url.find("day") != std::string::npos) {
+            } else if (url.find("day") != std::string::npos) {
                 exists = under.getState(replication::daily, path);
-            }
-            if (url.find("hour") != std::string::npos) {
+            } else if (url.find("hour") != std::string::npos) {
                 exists = under.getState(replication::hourly, path);
-            }
-            if (!exists->path.empty()) {
+	    }
+	    if (exists) {
                 std::cout << "Already stored: " << path << std::endl;
                 subloop = true;
                 break;
             } else {
+		path = planet->baseurl + url;
                 std::cout << "Downloading StateFile: " << path << std::endl;
                 state = threadStateFile(planet->stream, path + ".state.txt");
                 if (state->timestamp != boost::posix_time::not_a_date_time && (state->sequence != 0 && state->path.size() != 0)) {
@@ -136,8 +134,6 @@ startMonitor(const std::string &url)
             Timer timer;
             timer.startTimer();
             auto found = threadChangeSet(file);
-            //state->dump();
-            // under.writeState(*state);
             if (!found) {
                 planet->disconnectServer();
                 if (url.find("minute") != std::string::npos) {
@@ -294,8 +290,7 @@ startStateThreads(const std::string &base, std::vector<std::string> &files)
 #ifdef USE_MULTI_LOADER
                 boost::asio::post(pool, [subpath, state]{state(subpath);});
 #else
-                auto state = threadStateFile(planet->stream,
-                                                                base + *it);
+                auto state = threadStateFile(planet->stream, base + *it);
                 if (!state->path.empty()) {
                     // under.writeState(*state);
                     state->dump();
@@ -398,10 +393,13 @@ threadOsmChange(const std::string &file)
     underpass::Underpass under;
     under.connect();
     replication::StateFile state;
-    // state.timestamp = osmchanges.changes[0].created_at;
-    state.frequency = replication::changeset;
-    state.path = file;
-    under.writeState(state);
+    for (auto it = std::begin(osmchanges.changes); it != std::end(osmchanges.changes); ++it) {
+	//state.created_at = it->created_at;
+	//state.closed_at = it->closed_at;
+	state.frequency = replication::changeset;
+	state.path = file;
+	under.writeState(state);
+    }
 #endif
     // These stats are for the entire file
     auto stats = osmchanges.collectStats();
