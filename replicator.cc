@@ -114,6 +114,7 @@ public:
         // FIXME: should return a real value
         return false;
 #endif
+        baseurl = "https://planet.openstreetmap.org/replication/";
     };
     
     /// Initialize the raw_user, raw_hashtags, and raw_changeset tables
@@ -190,10 +191,9 @@ public:
         return match;
     }
 
+    std::string baseurl;                                ///< base URL for the planet server
 private:
-    // osmstats::QueryOSMStats ostats;                    ///< OSM Stats database access
-    std::shared_ptr<changeset::ChangeSetFile> changes; ///< All the changes in the file
-    // std::shared_ptr<geoutil::GeoUtil> geou;             ///< Country boundaries
+    std::shared_ptr<changeset::ChangeSetFile> changes;  ///< All the changes in the file
     std::shared_ptr<std::map<std::string, int>> hashes; ///< Existing hashtags
 };
 
@@ -204,7 +204,7 @@ main(int argc, char *argv[])
     std::string changeset;
     std::string osmchange;
     // The update frequency between downloads
-    std::string interval = "minutely";
+    std::string frequency = "minutely";
     //bool encrypted = false;
     long sequence = 0;
     ptime timestamp(not_a_date_time);
@@ -224,6 +224,7 @@ main(int argc, char *argv[])
             ("timestamp,t", opts::value<std::string>(), "Starting timestamp")
             ("import,i", opts::value<std::string>(), "Initialize OSM database with datafile")
             ("changefile,c", opts::value<std::string>(), "Import change file")
+            ("datadir,d", opts::value<std::string>(), "Base directory for cached files")
 //            ("verbose,v", "enable verbosity")
             ;
         
@@ -272,6 +273,11 @@ main(int argc, char *argv[])
      if (vm.count("url")) {
          url = vm["url"].as<std::string>();
      }
+
+     if (vm.count("frequency")) {
+         frequency = vm["frequency"].as<std::string>();
+     }
+
      // Specify a timestamp used by other options
      if (vm.count("timestamp")) {
          std::cout << "Timestamp is: " << vm["timestamp"].as<std::string> () << "\n";
@@ -304,7 +310,7 @@ main(int argc, char *argv[])
                          exit(-1);
                      }
                  } else {
-                     last = state->path;
+                     last = replicator.baseurl + under.freq_to_string(replication::minutely) + "/" + state->path;
                  }
                  std::cout << "Last minutely is " << last  << std::endl;
                  mthread = std::thread(threads::startMonitor, std::ref(last));
@@ -317,7 +323,7 @@ main(int argc, char *argv[])
                          exit(-1);
                      }
                  } else {
-                     last = state->path;
+                     last = replicator.baseurl + under.freq_to_string(replication::daily) + "/" + state->path;
                  }
                  std::cout << "Last daily is " << last  << std::endl;
                  mthread = std::thread(threads::startMonitor, std::ref(last));
@@ -327,17 +333,34 @@ main(int argc, char *argv[])
                  timestamp = state->timestamp;
              }
              auto state2 = under.getState(replication::changeset, timestamp);
-             clast = state2->path;
+             clast = replicator.baseurl + under.freq_to_string(replication::changeset) + "/" + state2->path;
 #if 0
              if (state2->path.empty() || state2->timestamp.is_not_a_date_time()) {
                  clast = planet.findData(replication::changeset, timestamp);
              } else {
-                 clast = state2->path;
+                 clast = replicator.baseurl + under.freq_to_string(replication::changeset) + "/" + state2->path;
              }
 #endif
              std::cout << "Last changeset is " << clast  << std::endl;
              cthread = std::thread(threads::startMonitor, std::ref(clast));
+         } else {
+             // No URL, use the timestamp
+             auto state = under.getState(replication::minutely, timestamp);
+             if (state->path.empty()) {
+                 std::string tmp = planet.findData(replication::minutely, timestamp);
+                 if (tmp.empty()) {
+                     std::cerr << "ERROR: No last path!" << std::endl;
+                     exit(-1);
+                 } else {
+                     last = replicator.baseurl + under.freq_to_string(replication::minutely) + "/" + tmp;
+                 }
+             } else {
+                 last = replicator.baseurl + under.freq_to_string(replication::minutely) + "/" + state->path;
+             }
+             std::cout << "Last minutely is " << last  << std::endl;
+             mthread = std::thread(threads::startMonitor, std::ref(last));
          }
+
          std::cout << "Waiting..." << std::endl;
          if (cthread.joinable()) {
              cthread.join();
