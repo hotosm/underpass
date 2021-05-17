@@ -425,6 +425,7 @@ OsmChangeFile::collectStats(void)
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
         change->dump();
+	std::map<std::string, int> counters;
         for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
             OsmNode *node = it->get();
             if (node->tags.size() > 0) {
@@ -440,23 +441,23 @@ OsmChangeFile::collectStats(void)
                     if (cit != mstats->end()) {
                         cit->second->added["pois"]++;
                     } else {
-                        ostats->added["pois"]++;
+                        counters["pois"]++;
                     }
                     // Scan amenities
                     if (node->tags.find("amenity") != node->tags.end() || node->tags.find("building") != node->tags.end()) {
                         for (auto ait = std::begin(amenities); ait != std::end(amenities); ++ait) {
                             if (node->tags["building"] != "yes") {
-                                ostats->added[*ait]++;
+                                counters[*ait]++;
                             }
                             if (node->tags["amenity"] == *ait) {
-                                ostats->added[*ait]++;
+                                counters[*ait]++;
                             }
                         }
                     }
 		    // Scan features
                     for (auto fit = std::begin(features); fit != std::end(features); ++fit) {
                         if (node->tags.find(*fit) != node->tags.end()) {
-                            ostats->added[*fit]++;
+                            counters[*fit]++;
                         }
                     }
 		    // Scan places
@@ -464,11 +465,16 @@ OsmChangeFile::collectStats(void)
 			for (auto pit = std::begin(places); pit != std::end(places); ++pit) {
 			    if (node->tags.find(*pit) != node->tags.end()) {
 				if (node->tags["place"] == *pit) {
-				    ostats->added[*pit]++;
+				    counters[*pit]++;
 				}
 			    }
 			}
                     }
+		    if (node->action == osmobjects::create) {
+			ostats->added = counters;
+		    } else if (node->action == osmobjects::modify) {
+			ostats->modified = counters;
+		    }
                     mstats->insert(cit, std::pair(node->change_id, ostats));
                 }
             }
@@ -487,22 +493,31 @@ OsmChangeFile::collectStats(void)
 		    if (way->tags.find("amenity") != way->tags.end() || way->tags.find("building") != way->tags.end()) {
 			for (auto ait = std::begin(amenities); ait != std::end(amenities); ++ait) {
 			    if (way->tags["building"] != "yes") {
-				ostats->added[*ait]++;
+				counters[*ait]++;
 			    }
 			    if (way->tags["amenity"] == *ait) {
-				ostats->added[*ait]++;
+				counters[*ait]++;
 			    }
 			}
 			// Scan features
 			for (auto fit = std::begin(features); fit != std::end(features); ++fit) {
 			    if (way->tags.find(*fit) != way->tags.end()) {
-				ostats->added[*fit]++;
+				counters[*fit]++;
 			    }
 			}
 		    }
 		    ostats->change_id = way->change_id;
 		    ostats->user_id = way->uid;
 		}
+		if (way->action == osmobjects::create) {
+		    ostats->added = counters;
+		} else if (way->action == osmobjects::modify) {
+		    if (counters.size() == 0) {
+			counters["unknown"] += 1;
+		    }
+		    ostats->modified = counters;
+		}
+
 		mstats->insert(cit, std::pair(way->change_id, ostats));
 	    }
 	}

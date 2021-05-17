@@ -137,11 +137,14 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
         std::cerr << "No hashtag for id: " << change.change_id << std::endl;
     }
 
-    std::string ahstore = "HSTORE(ARRAY[";
+    std::string ahstore;
     if (change.added.size() > 0) {
+	ahstore = "HSTORE(ARRAY[";
         for (auto it = std::begin(change.added); it != std::end(change.added); ++it) {
+	    if (it->first.empty()) {
+		return true;
+	    }
             if (it->second > 0) {
-//                ahstore += " ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'],";
                 ahstore += " ARRAY[\'" + it->first + "\',\'" + std::to_string((int)it->second) +"\'],";
             }
         }
@@ -150,61 +153,53 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
     } else {
         ahstore.clear();
     }
-    std::string mhstore = "HSTORE(ARRAY[";
     if (change.modified.size() > 0) {
-        for (auto it = std::begin(change.added); it != std::end(change.added); ++it) {
+	ahstore = "HSTORE(ARRAY[";
+        for (auto it = std::begin(change.modified); it != std::end(change.modified); ++it) {
+	    if (it->first.empty()) {
+		return true;
+	    }
             if (it->second > 0) {
-                mhstore += " ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'],";
+                ahstore += " ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'],";
             }
         }
-        mhstore.erase(mhstore.size() - 1);
-        mhstore += "])";
+        ahstore.erase(ahstore.size() - 1);
+        ahstore += "])";
     }
-#if 0
-    std::string dhstore = "HSTORE(ARRAY[";
-    if (change.added.size() > 0) {
-        for (auto it = std::begin(change.added); it != std::end(change.added); ++it) {
-            if (it->second > 0) {
-                dhstore += " ARRAY[\'" + it->first + "\',\'" + std::to_string(it->second) +"\'],";
-            }
-        }
-        dhstore.erase(dhstore.size() - 1);
-        dhstore += "])";
-    }
-#endif
 
     // Some of the data field in the changset come from a different file,
     // which may not be downloaded yet.
     ptime now = boost::posix_time::microsec_clock::local_time();
     std::string aquery;
-    if (change.added.size() > 0) {
-        aquery = "INSERT INTO changesets (id, user_id, updated_at, added)";
+    if (ahstore.size() > 0) {
+	if (change.added.size() > 0) {
+	    aquery = "INSERT INTO changesets (id, user_id, updated_at, added)";
+	} else if (change.modified.size() > 0) {
+	    aquery = "INSERT INTO changesets (id, user_id, updated_at, modified)";
+	}
     } else {
-        aquery = "INSERT INTO changesets (id, user_id, updated_at)";
+	aquery = "INSERT INTO changesets (id, user_id, updated_at)";
     }
     aquery += " VALUES(" + std::to_string(change.change_id) + ", ";
     aquery += std::to_string(change.user_id) + ", ";
     aquery += "\'" + to_simple_string(now) + "\', ";
-    if (change.added.size() > 0) {
-        aquery += ahstore + ")";
-        aquery += " ON CONFLICT (id) DO UPDATE SET added = " + ahstore + ",";
+    if (ahstore.size() > 0) {
+	if (change.added.size() > 0) {
+	    aquery += ahstore + ") ON CONFLICT (id) DO UPDATE SET added = " + ahstore + ",";
+	} else {
+	    aquery += ahstore + ") ON CONFLICT (id) DO UPDATE SET modified = " + ahstore + ",";
+	}
     } else {
-        aquery.erase(aquery.size() - 2);
-        aquery += ") ON CONFLICT (id) DO UPDATE SET ";
+	aquery.erase(aquery.size() - 2);
+	aquery += ") ON CONFLICT (id) DO UPDATE SET";
     }
+    
     aquery += " updated_at = \'" + to_simple_string(now) + "\'";
     aquery += " WHERE changesets.id=" + std::to_string(change.change_id);
 
-    // FIXME: add source, hashtags, and bbox
-    std::cout << "QUERY added: " << aquery << std::endl;
-    // std::cout << "QUERY modify: " << mquery << std::endl;
-    // std::cout << "QUERY delete: " << dquery << std::endl;
+    std::cout << "QUERY stats: " << aquery << std::endl;
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(aquery);
-    // result = worker.exec(mquery);
-    // FIXME: check for errors
-    // result = worker.exec(dquery);
-    // FIXME: check for errors
 
     worker.commit();
 }
