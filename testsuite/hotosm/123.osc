@@ -1,0 +1,103 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version="0.6" generator="Osmosis 0.47.4">
+  <create>
+   <!-- create tests for hospitals -->
+   <node id="5776216755" version="2" timestamp="2021-02-11T01:49:51Z" uid="8580445" user="barn_swallow" changeset="99069702" lat="22.9890996" lon="114.4398219"
+>
+      <tag k="amenity" v="hospital"/>
+      <tag k="healthcare" v="hospital"/>
+      <tag k="name" v="演达医院"/>
+    </node>
+    <node id="7414892286" version="2" timestamp="2021-02-11T01:27:01Z" uid="10769993" user="venue_map" changeset="99069319" lat="33.5147731" lon="130.4235881">
+      <tag k="amenity" v="Hospital"/>
+      <tag k="healthcare" v="Hospital"/>
+      <tag k="name" v="諸岡整形外科クリニック"/>
+    </node>
+    <way id="474556695" version="2" timestamp="2021-02-11T01:56:35Z" uid="1041828" user="GOwin" changeset="99069879">
+      <nd ref="4684837925"/>
+      <nd ref="4684837923"/>
+      <nd ref="4425965490"/>
+      <nd ref="4684837924"/>
+      <nd ref="4684837925"/>
+      <tag k="addr:city" v="Villaba"/>
+      <tag k="addr:postcode" v="6537"/>
+      <tag k="addr:province" v="Leyte"/>
+      <tag k="amenity" v="hospital"/>
+      <tag k="building" v="hospital"/>
+      <tag k="name" v="Villaba Community Hospital"/>
+    </way>
+    <!-- create tests for schools -->
+    <node id="2610133632" version="4" timestamp="2021-02-10T20:54:56Z" uid="2008037" user="VictorIE" changeset="99063834" lat="52.5748816" lon="-8.6678706">
+      <tag k="logainm:ref" v="1411740"/>
+      <tag k="logainm:url" v="https://www.logainm.ie/1411740.aspx"/>
+      <tag k="name" v="Crecora"/>
+      <tag k="name:en" v="Crecora"/>
+      <tag k="name:ga" v="Craobh Chomhartha"/>
+      <tag k="place" v="village"/>
+      <tag k="school" v="primary"/>
+      <tag k="wikidata" v="Q4240066"/>
+      <tag k="wikipedia" v="en:Crecora"/>
+    </node>
+    <node id="4366348599" version="3" timestamp="2021-02-10T20:01:10Z" uid="12491759" user="ChromeLotus" changeset="99062100" lat="32.3511542" lon="15.0677211">
+      <tag k="building" v="school"/>
+      <tag k="name" v="كلية الهندسة جامعة مصراتة"/>
+      <tag k="name:ar" v="كلية الهندسة جامعة مصراتة"/>
+      <tag k="name:en" v="Faculty of Engineering"/>
+      <tag k="website" v="http://system.misuratau.edu.ly/"/>
+    </node>
+   <way id="67365141" version="7" timestamp="2021-02-10T20:43:09Z" uid="1137406
+" user="simlio" changeset="99063443">
+      <nd ref="813562905"/>
+      <nd ref="813574435"/>
+      <tag k="building" v="school"/>
+      <tag k="source" v="cadastre-dgi-fr source : Direction Générale des Impôts - Cadastre. Mise à jour : 2010"/>
+    </way>
+    <!-- create place -->
+    <node id="244080146" version="15" timestamp="2021-02-10T17:09:16Z" uid="12638317" user="rcde" changeset="99055952" lat="38.6906807" lon="115.7719484">
+      <tag k="alt_name" v="高阳;Gaoyang County"/>
+      <tag k="name" v="高阳县"/>
+      <tag k="name:de" v="Gaoyang"/>
+      <tag k="name:en" v="Gaoyang"/>
+      <tag k="name:ru" v="Гаоян"/>
+      <tag k="name:vi" v="Cao Dương"/>
+      <tag k="name:zh" v="高阳县"/>
+      <tag k="name:zh_pinyin" v="Gaoyang Xian"/>
+      <tag k="place" v="city"/>
+      <tag k="ref:cadc:2019" v="130628"/>
+      <tag k="wikidata" v="Q1196631"/>
+      <tag k="wikipedia" v="en:Gaoyang County"/>
+    </node>
+  </create>
+  <modify>
+    <!-- modify village -->
+    <node id="150569842" version="6" timestamp="2021-02-08T23:27:22Z" uid="11422
+772" user="Vejoson" changeset="98935384" lat="13.5153962" lon="21.0219331">
+      <tag k="name" v="فرشنا Farchana"/>
+      <tag k="name:en" v="Farchana"/>
+      <tag k="place" v="village"/>
+    </node>
+    <node id="153942037" version="3" timestamp="2021-02-08T23:53:43Z" uid="2716442" user="pete404" changeset="98935857" lat="30.2091197" lon="-82.6373457">
+      <tag k="ele" v="50"/>
+      <tag k="name" v="Five Points"/>
+      <tag k="place" v="hamlet"/>
+    </node>
+    <node id="107355436" version="14" timestamp="2021-02-08T23:01:19Z" uid="96382" user="malta-dinger" changeset="98934881" lat="68.7927301" lon="-81.2439606">
+      <tag k="description" v="Sanirajak  formerly known as Hall Beach until 27 F
+ebruary 2020"/>
+      <tag k="name" v="ᓴᓂᕋᔭᒃ  Sanirajak"/>
+      <tag k="name:en" v="Sanirajak"/>
+      <tag k="name:iu" v="ᓴᓂᕋᔭᒃ"/>
+      <tag k="place" v="town"/>
+      <tag k="population" v="848"/>
+      <tag k="population_date" v="2016"/>
+      <tag k="source:population" v="StatCan 2016 Census"/>
+    </node>
+    <node id="244079402" version="23" timestamp="2021-02-10T17:31:51Z" uid="17497" user="katpatuka" changeset="99056962" lat="23.0247687" lon="113.1146335">
+      <tag k="gns:ADM1" v="30"/>
+      <tag k="place" v="city"/>
+      <tag k="population" v="7197000"/>
+      <tag k="wikidata" v="Q34412"/>
+      <tag k="wikipedia" v="en:Foshan"/>
+    </node>
+  </modify>
+</osmChange>
