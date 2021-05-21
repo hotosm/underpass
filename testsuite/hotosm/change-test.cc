@@ -79,7 +79,9 @@ int
 main(int argc, char* argv[])
 {
     std::string basedir = DATADIR;
+    Timer timer;
 
+#if 0
     // Read the changeset state file
     std::string buf = "---\nlast_run: 2020-10-08 22:30:01.737719000 +00:00\nsequence: 4139993\n";
     TestStateFile statefile(basedir + "/993.state.txt", false);
@@ -104,7 +106,6 @@ main(int argc, char* argv[])
         runtest.fail("Change file state file from disk");
     }
 
-    Timer timer;
     TestCS tests;
     // auto geou = std::make_shared<geoutil::GeoUtil>();
 
@@ -130,23 +131,114 @@ main(int argc, char* argv[])
     } else {
         runtest.fail("ChangeSetFile::readChanges(compressed)");
     }
-
+#endif
     TestCO testco;
     timer.startTimer();
     // testco.readChanges("/tmp/y");
-    testco.readChanges(basedir + "/294.osc.gz");
+    testco.readChanges(basedir + "/123.osc");
     std::cout << "Operation read osc took " << timer.endTimer() << " milliseconds" << std::endl;
+
+    if (testco.changes.size() == 19) {
+        runtest.pass("ChangeSetFile::readChanges()");
+    } else {
+        runtest.fail("ChangeSetFile::readChanges()");
+    }
+    
     testco.dump();
     timer.startTimer();
-    testco.collectStats();
+    // Create 
+    // 2 hospital nodes, 1 hospital way
+    // 2 school nodes, 1 school way
+    // 1 place way
+    //
+    // Modify
+    // 2 place nodes get name added
+    auto stats = testco.collectStats();
     std::cout << "Operation collect stats took " << timer.endTimer() << " milliseconds" << std::endl;
 
-    // if (timer.connect("mystats")) {
-    //     runtest.pass("QueryOsmStats::connect()");
-    // } else {
-    //     runtest.fail("QueryOsmStats::connect()");
-    // }
+#if 0
+    if (stats->added["school"] == 3) {
+        runtest.pass("school added");
+    } else {
+        runtest.fail("schools added");
+    }
+#endif
+    std::map<std::string, int> hits = {
+        {"school", 0}, {"hospital", 0}, {"building", 0}, {"place", 0},
+        {"waterway", 0}, {"highway", 0}
+    };
+    std::map<std::string, int> mods = {
+        {"school", 0}, {"hospital", 0}, {"building", 0}, {"place", 0},
+        {"waterway", 0}, {"highway", 0}
+    };
+    for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
+        it->second->dump();
+        // New feature statistics
+        if (it->second->added["hospital"]) {
+            hits["hospital"]++;
+        }
+        if (it->second->added["school"]) {
+            hits["school"]++;
+        }
+        if (it->second->added["building"]) {
+            hits["building"]++;
+        }
+        if (it->second->added["place"]) {
+            hits["place"]++;
+        }
+        if (it->second->added["waterway"]) {
+            hits["waterway"]++;
+        }
+        if (it->second->added["highway"]) {
+            hits["highway"]++;
+        }
+        // Modified feature statistics
+        if (it->second->modified["place"]) {
+            mods["place"]++;
+        }
+        if (it->second->modified["waterway"]) {
+            mods["waterway"]++;
+        }
+        if (it->second->modified["highway"]) {
+            mods["highway"]++;
+        }
+    }
+    if (hits["school"] == 3) {
+        runtest.pass("ChangeSetFile::collectStats(schools added)");
+    } else {
+        runtest.fail("ChangeSetFile::collectStats(schools added)");
+    }
 
+    if (hits["hospital"] == 3) {
+        runtest.pass("ChangeSetFile::collectStats(hospitals added)");
+    } else {
+        runtest.fail("ChangeSetFile::collectStats(hospitals added)");
+    }
+
+    if (hits["building"] == 3) {
+        runtest.pass("ChangeSetFile::collectStats(buildings added)");
+    } else {
+        runtest.fail("ChangeSetFile::collectStats(buildings added)");
+    }
+
+    if (hits["place"] == 3) {
+        runtest.pass("ChangeSetFile::collectStats(places added)");
+    } else {
+        runtest.fail("ChangeSetFile::collectStats(places added)");
+    }
+    
+    if (mods["highway"] == 4) {
+        runtest.pass("ChangeSetFile::collectStats(highway name added)");
+    } else {
+        runtest.fail("ChangeSetFile::collectStats(highway name added)");
+    }
+    
+    if (mods["waterway"] == 4) {
+        runtest.pass("ChangeSetFile::collectStats(waterway name added)");
+    } else {
+        runtest.fail("ChangeSetFile::collectStats(waterway name added)");
+    }
+    
     std::cout << "Done..." << std::endl;
 };
 
