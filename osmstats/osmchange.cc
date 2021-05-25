@@ -40,6 +40,7 @@
 #include <iostream>
 #include <codecvt>
 #include <locale>
+#include <algorithm>
 #include <pqxx/pqxx>
 #ifdef LIBXML
 # include <libxml++/libxml++.h>
@@ -196,7 +197,6 @@ OsmChangeFile::readXML(std::istream &xml)
         for (auto child: value.second) {
             // Process the tags. These don't exist for every element.
             // Both nodes and ways have tags
-            std::cout << "CHILD: " << child.first << std::endl;
             for (auto tag: value.second) {
                 if (tag.first == "tag") {
                     std::string key = tag.second.get("<xmlattr>.k", "");
@@ -416,109 +416,105 @@ OsmChangeFile::collectStats(void)
     // facilities added (aggregated by schools, clinics, water points, bridges,
     // airports and administrative boundaries)
     auto mstats = std::make_shared<std::map<long, std::shared_ptr<ChangeStats>>>();
-    auto ostats = std::make_shared<ChangeStats>();
+    std::shared_ptr<ChangeStats> ostats;
+
+    std::cerr << "Collecting Statistics for: " << changes.size() << " changes" << std::endl;
     // FIXME: it should be possible to load these values from a config file
     std::vector<std::string> places = {"village", "hamlet", "neigborhood", "city", "town"};
-    std::vector<std::string> amenities = {"hospital", "school", "clinic", "kindergarten", "drinking_water"};
-    std::vector<std::string> highways = {"tertiary", "secondary", "unclassified", "track"};
-    std::vector<std::string> features = {"bridge", "highway", "waterway", "boundary", "place"};
+    std::vector<std::string> amenities = {"hospital", "school", "clinic", "kindergarten", "drinking_water", "health_facility", "health_center", "healthcare"};
+    std::vector<std::string> highways = {"tertiary", "secondary", "unclassified", "track", "residential", "path", "bridge", "waterway"};
+
+    std::vector<std::string> schools = {"primary", "secondary", "kindergarten"};
+    std::vector<std::string> features = {"building", "amenity", "place", "school", "healthcare"};
+
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
-        change->dump();
-	std::map<std::string, int> counters;
+        // change->dump();
         for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
             OsmNode *node = it->get();
-            if (node->tags.size() > 0) {
-                if (node->action == osmobjects::create) {
-                    // Some nodes have only the created_at field, which
-                    // doesn't mean it's a POI, so shouldn't be counted.
-                    // This appears to be from a bug in some of the older data
-                    if (node->tags.size() == 1 && node->tags.find("created_at") != node->tags.end()) {
-                        continue;
-                    }
-                    std::cout << "New Node ID " << node->id << " has tags!" << std::endl;
-                    auto cit = mstats->find(node->change_id);
-                    if (cit != mstats->end()) {
-                        cit->second->added["pois"]++;
-                    } else {
-                        counters["pois"]++;
-                    }
-                    // Scan amenities
-                    if (node->tags.find("amenity") != node->tags.end() || node->tags.find("building") != node->tags.end()) {
-                        for (auto ait = std::begin(amenities); ait != std::end(amenities); ++ait) {
-                            if (node->tags["building"] != "yes") {
-                                counters[*ait]++;
-                            }
-                            if (node->tags["amenity"] == *ait) {
-                                counters[*ait]++;
-                            }
-                        }
-                    }
-		    // Scan features
-                    for (auto fit = std::begin(features); fit != std::end(features); ++fit) {
-                        if (node->tags.find(*fit) != node->tags.end()) {
-                            counters[*fit]++;
-                        }
-                    }
-		    // Scan places
-		    if (node->tags.find("place") != node->tags.end()) {
-			for (auto pit = std::begin(places); pit != std::end(places); ++pit) {
-			    if (node->tags.find(*pit) != node->tags.end()) {
-				if (node->tags["place"] == *pit) {
-				    counters[*pit]++;
-				}
-			    }
+	    // If there are no tags, assume it's part of a way
+            if (node->tags.size() == 0) {
+		continue;
+	    }
+	    // Some older nodes in a way wound up with this one tag, which nobody noticed,
+	    // so ignore it.
+	    if (node->tags.size() == 1 && node->tags.find("created_at") != node->tags.end()) {
+		continue;
+	    }
+	    node->dump();
+	    ostats = (*mstats)[node->change_id];
+	    if (ostats.get() == 0) {
+		ostats = std::make_shared<ChangeStats>();
+		ostats->change_id = node->id;
+		ostats->user_id = node->uid;
+		ostats->username = node->user;
+		(*mstats)[node->change_id] = ostats;
+	    }
+	    for (auto tit = std::begin(node->tags); tit != std::end(node->tags); ++tit) {
+		// Look for nodes tagged
+		if (tit->first == "building" || tit->first == "amenity" || tit->first == "place" || tit->first == "school" ||  tit->first == "healthcare") {
+//		if (std::find(features.begin(), features.end(), tit->second != features.end())) {
+		    if (std::find(amenities.begin(), amenities.end(), boost::algorithm::to_lower_copy(tit->second)) != amenities.end()) {
+			std::cerr << "\tmatched node amenity value: " << tit->second << std::endl;
+			if (node->action == osmobjects::create) {
+			    ostats->added[boost::algorithm::to_lower_copy(tit->second)]++;
+			} else if (node->action == osmobjects::modify) {
+			    ostats->modified[boost::algorithm::to_lower_copy(tit->second)]++;
 			}
-                    }
-		    if (node->action == osmobjects::create) {
-			ostats->added = counters;
-		    } else if (node->action == osmobjects::modify) {
-			ostats->modified = counters;
+		    } else if (tit->first == "building") {
+			if (node->action == osmobjects::create) {
+			    ostats->added["building"]++;
+			} else if (node->action == osmobjects::modify) {
+			    ostats->modified["building"]++;
+			}
 		    }
-                    mstats->insert(cit, std::pair(node->change_id, ostats));
-                }
-            }
-            ostats->change_id = node->change_id;
-            ostats->user_id = node->uid;
-        }
+		    if ( std::find(places.begin(), places.end(), boost::algorithm::to_lower_copy(tit->second)) != places.end() ) {
+			std::cerr << "\tmatched node place value: " << tit->second << std::endl;
+			if (node->action == osmobjects::create) {
+			    ostats->added[boost::algorithm::to_lower_copy(tit->second)]++;
+			} else if (node->action == osmobjects::modify) {
+			    ostats->modified[boost::algorithm::to_lower_copy(tit->second)]++;
+			}
+		    }
+		} else {
+		    continue;
+		}
+	    }
+	}
         for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
             OsmWay *way = it->get();
+	    // If there are no tags, assume it's part of a way
             if (way->tags.size() == 0) {
-                std::cerr << "New Way ID " << way->id << " has no tags!" << std::endl;
-		auto cit = mstats->find(way->change_id);
-
-		if (way->action == osmobjects::create) {
-		    auto cit = mstats->find(way->change_id);
-		    // Scan amenities
-		    if (way->tags.find("amenity") != way->tags.end() || way->tags.find("building") != way->tags.end()) {
-			for (auto ait = std::begin(amenities); ait != std::end(amenities); ++ait) {
-			    if (way->tags["building"] != "yes") {
-				counters[*ait]++;
-			    }
-			    if (way->tags["amenity"] == *ait) {
-				counters[*ait]++;
-			    }
-			}
-			// Scan features
-			for (auto fit = std::begin(features); fit != std::end(features); ++fit) {
-			    if (way->tags.find(*fit) != way->tags.end()) {
-				counters[*fit]++;
-			    }
+		continue;
+	    }
+	    // Some older ways in a way wound up with this one tag, which nobody noticed,
+	    // so ignore it.
+	    if (way->tags.size() == 1 && way->tags.find("created_at") != way->tags.end()) {
+		continue;
+	    }
+	    way->dump();
+	    ostats = (*mstats)[way->change_id];
+	    if (ostats.get() == 0) {
+		ostats = std::make_shared<ChangeStats>();
+		ostats->change_id = way->id;
+		ostats->user_id = way->uid;
+		ostats->username = way->user;
+		(*mstats)[way->change_id] = ostats;
+	    }
+	    for (auto tit = std::begin(way->tags); tit != std::end(way->tags); ++tit) {
+		// Look for ways tagged
+		if (tit->first == "building" || tit->first == "highway" || tit->first == "waterway") {
+		    if ( std::find(highways.begin(), highways.end(), boost::algorithm::to_lower_copy(tit->second)) != highways.end() ) {
+			std::cerr << "\tmatched way highway value: " << tit->second << std::endl;
+			if (way->action == osmobjects::create) {
+			    ostats->added[tit->second]++;
+			} else if (way->action == osmobjects::modify){
+			    ostats->modified[tit->second]++;
 			}
 		    }
-		    ostats->change_id = way->change_id;
-		    ostats->user_id = way->uid;
+		} else {
+		    continue;
 		}
-		if (way->action == osmobjects::create) {
-		    ostats->added = counters;
-		} else if (way->action == osmobjects::modify) {
-		    if (counters.size() == 0) {
-			counters["unknown"] += 1;
-		    }
-		    ostats->modified = counters;
-		}
-
-		mstats->insert(cit, std::pair(way->change_id, ostats));
 	    }
 	}
     }
@@ -531,21 +527,19 @@ ChangeStats::dump(void)
 {
     std::cout << "Dumping ChangeStats for: \t " << change_id << std::endl;
     std::cout << "\tUser ID: \t\t " << user_id << std::endl;
-#if 0
-    std::cout << "\tRoads Added (km): \t " << roads_km_added << std::endl;
-    std::cout << "\tRoads Modified (km):\t " << roads_km_modified << std::endl;
-    std::cout << "\tWaterways Added (km): \t " << waterways_km_added << std::endl;
-    std::cout << "\tWaterways Modified (km): " << waterways_km_modified << std::endl;
-    std::cout << "\tRoads Added: \t\t " << roads_added << std::endl;
-    std::cout << "\tRoads Modified: \t " << roads_modified << std::endl;
-    std::cout << "\tWaterways Added: \t " << waterways_added << std::endl;
-    std::cout << "\tWaterways Modified: \t " << waterways_modified << std::endl;
-    std::cout << "\tBuildings added: \t " << buildings_added << std::endl;
-    std::cout << "\tBuildings Modified: \t " << buildings_modified << std::endl;
-    std::cout << "\tPOIs added: \t\t " << pois_added << std::endl;
-    std::cout << "\tPOIs Modified: \t\t " << pois_modified << std::endl;
-#endif
-    // std::cout << "\tSource Imagery: \t\t " << source << std::endl;
+    std::cout << "\tUser Name: \t\t " << username << std::endl;
+    std::cout << "\tAdded features: " << added.size() << std::endl;
+    for (auto it = std::begin(added); it != std::end(added); ++it) {
+	std::cout << "\t\t" << it->first << " = " << it->second << std::endl;
+    }
+    std::cout << "\tModified features: " << added.size() << std::endl;
+    for (auto it = std::begin(modified); it != std::end(modified); ++it) {
+	std::cout << "\t\t" << it->first << " = " << it->second << std::endl;
+    }
+    // std::cout << "\tDeleted features: " << added.size() << std::endl;
+    // for (auto it = std::begin(deleted); it != std::end(deleted); ++it) {
+    // 	std::cout << "\t\t" << it->first << " = " << it->second << std::endl;
+    // }
 };
 
 } // EOF namespace osmchange

@@ -8,7 +8,7 @@
       <tag k="healthcare" v="hospital"/>
       <tag k="name" v="演达医院"/>
     </node>
-    <node id="7414892286" version="2" timestamp="2021-02-11T01:27:01Z" uid="10769993" user="venue_map" changeset="99069319" lat="33.5147731" lon="130.4235881">
+    <node id="7414892286" version="2" timestamp="2021-02-11T01:27:01Z" uid="10769993" user="venue_map" changeset="99069702" lat="33.5147731" lon="130.4235881">
       <tag k="amenity" v="Hospital"/>
       <tag k="healthcare" v="Hospital"/>
       <tag k="name" v="諸岡整形外科クリニック"/>
@@ -27,7 +27,7 @@
       <tag k="name" v="Villaba Community Hospital"/>
     </way>
     <!-- create tests for schools -->
-    <node id="2610133632" version="4" timestamp="2021-02-10T20:54:56Z" uid="2008037" user="VictorIE" changeset="99063834" lat="52.5748816" lon="-8.6678706">
+    <node id="2610133632" version="4" timestamp="2021-02-10T20:54:56Z" uid="2008037" user="VictorIE" changeset="99069702" lat="52.5748816" lon="-8.6678706">
       <tag k="logainm:ref" v="1411740"/>
       <tag k="logainm:url" v="https://www.logainm.ie/1411740.aspx"/>
       <tag k="name" v="Crecora"/>
@@ -45,31 +45,23 @@
       <tag k="name:en" v="Faculty of Engineering"/>
       <tag k="website" v="http://system.misuratau.edu.ly/"/>
     </node>
-   <way id="67365141" version="7" timestamp="2021-02-10T20:43:09Z" uid="1137406
-" user="simlio" changeset="99063443">
+    <node id="289112823" version="7" timestamp="2020-11-25T23:45:16Z" uid="9535554
+" user="مصطفى بلقاسم" changeset="94802322" lat="30.0809171" lon="31.4092505">
+      <tag k="addr:street" v="شارع السويس"/>
+      <tag k="amenity" v="fuel"/>
+      <tag k="building" v="yes"/>
+      <tag k="name:ar" v="وطنية"/>
+      <tag k="name:en" v="Watanya"/>
+    </node>
+    <way id="67365141" version="7" timestamp="2021-02-10T20:43:09Z" uid="1137406" user="simlio" changeset="99063443">
       <nd ref="813562905"/>
       <nd ref="813574435"/>
       <tag k="building" v="school"/>
       <tag k="source" v="cadastre-dgi-fr source : Direction Générale des Impôts - Cadastre. Mise à jour : 2010"/>
     </way>
-    <!-- create place -->
-    <node id="244080146" version="15" timestamp="2021-02-10T17:09:16Z" uid="12638317" user="rcde" changeset="99055952" lat="38.6906807" lon="115.7719484">
-      <tag k="alt_name" v="高阳;Gaoyang County"/>
-      <tag k="name" v="高阳县"/>
-      <tag k="name:de" v="Gaoyang"/>
-      <tag k="name:en" v="Gaoyang"/>
-      <tag k="name:ru" v="Гаоян"/>
-      <tag k="name:vi" v="Cao Dương"/>
-      <tag k="name:zh" v="高阳县"/>
-      <tag k="name:zh_pinyin" v="Gaoyang Xian"/>
-      <tag k="place" v="city"/>
-      <tag k="ref:cadc:2019" v="130628"/>
-      <tag k="wikidata" v="Q1196631"/>
-      <tag k="wikipedia" v="en:Gaoyang County"/>
-    </node>
   </create>
   <modify>
-    <!-- modify village -->
+    <!-- modify tests for places -->
     <node id="150569842" version="6" timestamp="2021-02-08T23:27:22Z" uid="11422
 772" user="Vejoson" changeset="98935384" lat="13.5153962" lon="21.0219331">
       <tag k="name" v="فرشنا Farchana"/>
@@ -100,4 +92,21 @@ ebruary 2020"/>
       <tag k="wikipedia" v="en:Foshan"/>
     </node>
   </modify>
+  <create>
+    <!-- create tests for place -->
+    <node id="244080146" version="15" timestamp="2021-02-10T17:09:16Z" uid="12638317" user="rcde" changeset="99055952" lat="38.6906807" lon="115.7719484">
+      <tag k="alt_name" v="高阳;Gaoyang County"/>
+      <tag k="name" v="高阳县"/>
+      <tag k="name:de" v="Gaoyang"/>
+      <tag k="name:en" v="Gaoyang"/>
+      <tag k="name:ru" v="Гаоян"/>
+      <tag k="name:vi" v="Cao Dương"/>
+      <tag k="name:zh" v="高阳县"/>
+      <tag k="name:zh_pinyin" v="Gaoyang Xian"/>
+      <tag k="place" v="city"/>
+      <tag k="ref:cadc:2019" v="130628"/>
+      <tag k="wikidata" v="Q1196631"/>
+      <tag k="wikipedia" v="en:Gaoyang County"/>
+    </node>
+  </create>
 </osmChange>
