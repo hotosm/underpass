@@ -85,7 +85,7 @@ CREATE TABLE public.users (
     tasks_invalidated integer,
     projects_mapped integer[],
     gender text,
-    home geometry(Point,4326)
+    home public.geometry(Point,4326)
 );
 
 ALTER TABLE ONLY public.users
@@ -94,7 +94,7 @@ ALTER TABLE ONLY public.users
 --
 -- possible table for training data
 --
-CREATE TABLE public.training {
+CREATE TABLE public.training (
     name text,
     local boolean,
     organization text,
@@ -102,5 +102,5 @@ CREATE TABLE public.training {
     teams text[],
     gender text,
     hours integer,
-    age double
-};
+    age real
+);
