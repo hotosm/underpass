@@ -238,7 +238,9 @@ public:
 
     /// Collect statistics for each user
     std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>> collectStats(void);
-    
+
+    std::shared_ptr<std::vector<std::string>> scanTags(std::map<std::string, std::string> tags);
+
     /// dump internal data, for debugging only
     void dump(void);
 };

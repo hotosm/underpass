@@ -419,13 +419,14 @@ OsmChangeFile::collectStats(void)
     std::shared_ptr<ChangeStats> ostats;
 
     std::cerr << "Collecting Statistics for: " << changes.size() << " changes" << std::endl;
-    // FIXME: it should be possible to load these values from a config file
-    std::vector<std::string> places = {"village", "hamlet", "neigborhood", "city", "town"};
-    std::vector<std::string> amenities = {"hospital", "school", "clinic", "kindergarten", "drinking_water", "health_facility", "health_center", "healthcare"};
-    std::vector<std::string> highways = {"tertiary", "secondary", "unclassified", "track", "residential", "path", "bridge", "waterway"};
 
-    std::vector<std::string> schools = {"primary", "secondary", "kindergarten"};
-    std::vector<std::string> features = {"building", "amenity", "place", "school", "healthcare"};
+    // FIXME: it should be possible to load these values from a config file
+    // std::vector<std::string> places = {"village", "hamlet", "neigborhood", "city", "town"};
+    // std::vector<std::string> amenities = {"hospital", "school", "clinic", "kindergarten", "drinking_water", "health_facility", "health_center", "healthcare"};
+    // std::vector<std::string> highways = {"tertiary", "secondary", "unclassified", "track", "residential", "path", "bridge", "waterway"};
+
+    // std::vector<std::string> schools = {"primary", "secondary", "kindergarten"};
+    // std::vector<std::string> features = {"building", "amenity", "place", "school", "healthcare"};
 
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
@@ -450,34 +451,12 @@ OsmChangeFile::collectStats(void)
 		ostats->username = node->user;
 		(*mstats)[node->change_id] = ostats;
 	    }
-	    for (auto tit = std::begin(node->tags); tit != std::end(node->tags); ++tit) {
-		// Look for nodes tagged
-		if (tit->first == "building" || tit->first == "amenity" || tit->first == "place" || tit->first == "school" ||  tit->first == "healthcare") {
-//		if (std::find(features.begin(), features.end(), tit->second != features.end())) {
-		    if (std::find(amenities.begin(), amenities.end(), boost::algorithm::to_lower_copy(tit->second)) != amenities.end()) {
-			std::cerr << "\tmatched node amenity value: " << tit->second << std::endl;
-			if (node->action == osmobjects::create) {
-			    ostats->added[boost::algorithm::to_lower_copy(tit->second)]++;
-			} else if (node->action == osmobjects::modify) {
-			    ostats->modified[boost::algorithm::to_lower_copy(tit->second)]++;
-			}
-		    } else if (tit->first == "building") {
-			if (node->action == osmobjects::create) {
-			    ostats->added["building"]++;
-			} else if (node->action == osmobjects::modify) {
-			    ostats->modified["building"]++;
-			}
-		    }
-		    if ( std::find(places.begin(), places.end(), boost::algorithm::to_lower_copy(tit->second)) != places.end() ) {
-			std::cerr << "\tmatched node place value: " << tit->second << std::endl;
-			if (node->action == osmobjects::create) {
-			    ostats->added[boost::algorithm::to_lower_copy(tit->second)]++;
-			} else if (node->action == osmobjects::modify) {
-			    ostats->modified[boost::algorithm::to_lower_copy(tit->second)]++;
-			}
-		    }
-		} else {
-		    continue;
+	    auto hits = scanTags(node->tags);
+	    for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
+		if (node->action == osmobjects::create) {
+		    ostats->added[*hit]++;
+		} else if (node->action == osmobjects::modify){
+		    ostats->modified[*hit]++;
 		}
 	    }
 	}
@@ -501,24 +480,128 @@ OsmChangeFile::collectStats(void)
 		ostats->username = way->user;
 		(*mstats)[way->change_id] = ostats;
 	    }
-	    for (auto tit = std::begin(way->tags); tit != std::end(way->tags); ++tit) {
-		// Look for ways tagged
-		if (tit->first == "building" || tit->first == "highway" || tit->first == "waterway") {
-		    if ( std::find(highways.begin(), highways.end(), boost::algorithm::to_lower_copy(tit->second)) != highways.end() ) {
-			std::cerr << "\tmatched way highway value: " << tit->second << std::endl;
-			if (way->action == osmobjects::create) {
-			    ostats->added[tit->second]++;
-			} else if (way->action == osmobjects::modify){
-			    ostats->modified[tit->second]++;
-			}
-		    }
-		} else {
-		    continue;
+	    auto hits = scanTags(way->tags);
+	    for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
+		if (way->action == osmobjects::create) {
+		    ostats->added[*hit]++;
+		} else if (way->action == osmobjects::modify){
+		    ostats->modified[*hit]++;
 		}
+#if 0
+		if (tit->first == "highway" || tit->first == "waterway") {
+		    auto std::find(highways.begin(), highways.end(), boost::algorithm::to_lower_copy(tit->second));
+		    std::cerr << "\tmatched way highway value: " << it->second << std::endl;
+		    if (way->action == osmobjects::create) {
+			ostats->added[tit->second]++;
+		    } else if (way->action == osmobjects::modify){
+			ostats->modified[tit->second]++;
+		    }
+		}
+#endif
 	    }
 	}
     }
     return mstats;
+}
+
+std::shared_ptr<std::vector<std::string>>
+OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
+{
+    auto hits = std::make_shared<std::vector<std::string>>();
+
+    // These are values for the place tag
+    std::vector<std::string> places = {
+	"village",
+	"hamlet",
+	"neigborhood",
+	"city",
+	"town"
+    };
+    // These are values for the amenities tag
+    std::vector<std::string> amenities = {
+	"hospital",
+	"school",
+	"clinic",
+	"kindergarten",
+	"drinking_water",
+	"health_facility",
+	"health_center",
+	"healthcare"
+    };
+    // These are valyues for the highway tag
+    std::vector<std::string> highways = {
+	"highway",
+	"tertiary",
+	"secondary",
+	"unclassified",
+	"track",
+	"residential",
+	"path",
+	"bridge",
+	"waterway"
+    };
+
+    std::vector<std::string> schools = {
+	"primary",
+	"secondary",
+	"kindergarten"
+    };
+    std::vector<std::string> features = {
+	"building",
+	"amenity",
+	"place",
+	"school",
+	"healthcare"
+    };
+    // Some older nodes in a way wound up with this one tag, which nobody noticed,
+    // so ignore it.
+    if (tags.size() == 1 && tags.find("created_at") != tags.end()) {
+	return hits;
+    }
+    std::map<std::string, bool> cache;
+    for (auto it = std::begin(tags); it != std::end(tags); ++it) {
+	// Look for nodes tagged
+	if (it->first == "building" || it->first == "amenity" || it->first == "place" || it->first == "school" ||  it->first == "healthcare") {
+	    auto match = std::find(amenities.begin(), amenities.end(), boost::algorithm::to_lower_copy(it->second));
+	    if (match != amenities.end()) {
+		if (!cache[it->second]) {
+		    std::cerr << "\tmatched amenity value: " << it->second << std::endl;
+		    hits->push_back(boost::algorithm::to_lower_copy(it->second));
+		    cache[it->second] = true;
+		} else {
+		    continue;
+		}
+	    }
+	    match = std::find(places.begin(), places.end(), boost::algorithm::to_lower_copy(it->second));
+	    if (match != places.end()) {
+		if (!cache[it->second]) {
+		    std::cerr << "\tmatched place value: " << it->second << std::endl;
+		    hits->push_back(boost::algorithm::to_lower_copy(it->second));
+		    cache[it->second] = true;
+		}
+	    }
+	}
+	if (it->first == "highway") {
+	    hits->push_back("highway");
+	    auto match = std::find(highways.begin(), highways.end(), boost::algorithm::to_lower_copy(it->second));
+	    if (match != highways.end()) {
+		if (!cache[it->second]) {
+		    std::cerr << "\tmatched highway value: " << it->second << std::endl;
+		    hits->push_back(it->second);
+		    cache[it->second] = true;
+		}
+	    }
+	}
+	if (it->first == "waterway") {
+	    if (!cache[it->second]) {
+		std::cerr << "\tmatched waterway value: " << it->second << std::endl;
+		hits->push_back(it->first);
+		cache[it->second] = true;
+	    }
+	}
+    }
+
+    return hits;
 }
 
 /// Dump internal data to the terminal, only for debugging
