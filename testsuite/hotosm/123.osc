@@ -108,5 +108,33 @@ ebruary 2020"/>
       <tag k="wikidata" v="Q1196631"/>
       <tag k="wikipedia" v="en:Gaoyang County"/>
     </node>
+    <node id='177033515' timestamp='2014-01-29T23:34:10Z' uid='117055' user='GPS_dr' visible='true' version='7' changeset='20275166' lat='39.9132232' lon='-105.4988716' />
+    <node id='177048749' timestamp='2014-01-29T23:34:07Z' uid='117055' user='GPS_dr' visible='true' version='4' changeset='20275166' lat='39.913101' lon='-105.4989053' />
+    <node id='177048768' timestamp='2009-10-18T21:35:47Z' uid='147510' user='woodpeck_fixbot' visible='true' version='2' changeset='2888783' lat='39.915118' lon='-105.508842' />
+    <node id='177033337' timestamp='2009-10-18T21:28:28Z' uid='147510' user='woodpeck_fixbot' visible='true' version='2' changeset='2888783' lat='39.9151' lon='-105.509844' />
+    <way id='17055175' timestamp='2020-08-11T16:14:05Z' uid='4606673' user='rsavoy
+e' visible='true' version='9' changeset='89261115'>
+      <nd ref='177033515' />
+      <nd ref='177048749' />
+      <nd ref='177048768' />
+      <nd ref='177033337' />
+      <tag k='highway' v='residential' />
+      <tag k='name' v='Moon Gulch Road' />
+      <tag k='ref' v='CR 17N' />
+      <tag k='surface' v='compacted' />
+    </way>
+    <node id='1445252293' timestamp='2011-09-25T08:39:35Z' uid='412649' user='mewcx' visible='true' version='1' changeset='9389443' lat='39.9028315' lon='-105.6377601' />
+    <node id='1445252158' timestamp='2011-09-25T08:39:32Z' uid='412649' user='mewcx' visible='true' version='1' changeset='9389443' lat='39.9031992' lon='-105.6363493' />
+    <node id='1445252055' timestamp='2014-01-29T23:34:17Z' uid='117055' user='GPS_dr' visible='true' version='2' changeset='20275166' lat='39.9146195' lon='-105.5021399' />
+    <node id='2642853856' timestamp='2014-01-29T23:34:02Z' uid='117055' user='GPS_dr' visible='true' version='1' changeset='20275166' lat='39.9146014' lon='-105.5019872' />
+    <way id='131290808' timestamp='2020-06-19T11:37:41Z' uid='11322139' user='tynd
+ale' visible='true' version='8' changeset='86874914'>
+      <nd ref='1445252293' />
+      <nd ref='1445252158' />
+      <nd ref='1445252055' />
+      <nd ref='2642853856' />
+      <tag k='name' v='South Boulder Creek' />
+      <tag k='waterway' v='stream' />
+    </way>
   </create>
 </osmChange>
