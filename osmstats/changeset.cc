@@ -85,6 +85,9 @@ using namespace boost::gregorian;
 /// \namespace changeset
 namespace changeset {
 
+/// Check a character in a string if it's a control character
+bool IsControl(int i) { return (iscntrl(i)); }
+
 /// Read a changeset file from disk, which may be a huge file
 /// Since it is a huge file, process in pieces and don't store
 /// anything except in the database. A changeset file entry
@@ -402,7 +405,7 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
                     if (attr_pair.value.length() < 3) {
                         continue;
                     }
-                    char *token = std::strtok((char *)attr_pair.value.c_str(), "#;");
+                    char *token = std::strtok((char *) attr_pair.value.c_str(), "#;");
                     while (token != NULL) {
                         token = std::strtok(NULL, "#;");
                         if (token) {
@@ -418,12 +421,10 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
             // field instead.
             if (comhit && attr_pair.name == "v") {
                 comhit = false;
-                std::string tmp = attr_pair.value;
-                boost::algorithm::replace_all(tmp, "\'", "&quot;");
-                changes.back().addComment(tmp);
-                if (tmp.find('#') != std::string::npos) {
+                changes.back().addComment(attr_pair.value);
+                if (attr_pair.value.find('#') != std::string::npos) {
                     std::vector<std::string> result;
-                    boost::split(result, tmp, boost::is_any_of(" "));
+                    boost::split(result, attr_pair.value, boost::is_any_of(" "));
                     for (auto it=std::begin(result); it != std::end(result); ++it){
                         if (it->c_str()[0] == '#') {
                             changes.back().addHashtags(it->substr(1));

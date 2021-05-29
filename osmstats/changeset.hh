@@ -57,6 +57,7 @@
 #  include <libxml++/libxml++.h>
 #endif
 
+#include <boost/locale.hpp>
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
@@ -79,6 +80,9 @@ class GeoUtil;
 
 /// \namespace changeset
 namespace changeset {
+
+/// Check a character in a string if it'S a control character
+extern bool IsControl(int i);
 
 /// \file changeset.hh
 /// \brief The file is used for processing changeset files
@@ -103,18 +107,33 @@ public:
     /// Dump internal data to the terminal, used only for debugging
     void dump(void);
 
+    std::string fixString(std::string text) {
+        boost::algorithm::replace_all(text, "\'", "&apos;");
+        boost::algorithm::replace_all(text, "\\", "");
+        return boost::locale::conv::to_utf<char>(text,"Latin1");
+    };
+
     /// Add a hashtag to internal storage
     void addHashtags(std::string text) {
         boost::algorithm::replace_all(text, "\'", "&apos;");
         boost::algorithm::replace_all(text, "\\", "");
-        hashtags.push_back(text);
+        std::string tmp = boost::locale::conv::to_utf<char>(text,"Latin1");
+        hashtags.push_back(tmp);
     };
 
     /// Add the comment field, which is often used for hashtags
-    void addComment(const std::string &text) { comment = text; };
+    void addComment(std::string text) {
+        boost::algorithm::replace_all(text, "\'", "&apos;");
+        boost::algorithm::replace_all(text, "\\", "");
+        comment = boost::locale::conv::to_utf<char>(text,"Latin1");
+    };
 
     /// Add the editor field
-    void addEditor(const std::string &text) { editor = text; };
+    void addEditor(std::string text) {
+        boost::algorithm::replace_all(text, "\'", "&apos;");
+        boost::algorithm::replace_all(text, "\\", "");
+        editor = boost::locale::conv::to_utf<char>(text,"Latin1");
+    };
     
     //osmstats::RawCountry country;
     int countryid;

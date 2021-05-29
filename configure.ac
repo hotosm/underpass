@@ -195,6 +195,7 @@ AX_BOOST_DATE_TIME
 AX_BOOST_FILESYSTEM
 AX_BOOST_IOSTREAMS
 AX_BOOST_THREAD
+AX_BOOST_LOCALE
 dnl For some reason this test works on Fedora, and fails on Debian. For now
 dnl hardcode it.
 dnl AX_BOOST_REGEX
