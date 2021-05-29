@@ -203,7 +203,7 @@ main(int argc, char* argv[])
         runtest.fail("ChangeSetFile::collectStats(schools added)");
     }
 
-    if (hits["hospital"] == 4) {
+    if (hits["hospital"] == 3) {
         runtest.pass("ChangeSetFile::collectStats(hospitals added)");
     } else {
         runtest.fail("ChangeSetFile::collectStats(hospitals added)");
@@ -223,6 +223,18 @@ main(int argc, char* argv[])
         runtest.fail("ChangeSetFile::collectStats(places added)");
     }
     
+    if (hits["highway"] == 1) {
+        runtest.pass("ChangeSetFile::collectStats(highway added)");
+    } else {
+        runtest.fail("ChangeSetFile::collectStats(highway added)");
+    }
+
+    if (hits["waterway"] == 1) {
+        runtest.pass("ChangeSetFile::collectStats(waterway added)");
+    } else {
+        runtest.fail("ChangeSetFile::collectStats(waterway added)");
+    }
+    
     for (auto it = std::begin(hits); it != std::end(hits); ++it) {
         std::cout << "Created: " << it->first << " = " <<  it->second << std::endl;
     }
@@ -235,9 +247,9 @@ main(int argc, char* argv[])
     }
 
     if (mods["village"] == 1) {
-        runtest.pass("ChangeSetFile::collectStats(place name modified)");
+        runtest.pass("ChangeSetFile::collectStats(village name modified)");
     } else {
-        runtest.fail("ChangeSetFile::collectStats(place name modified)");
+        runtest.fail("ChangeSetFile::collectStats(village name modified)");
     }
 
     if (mods["town"] == 1) {
@@ -245,7 +257,7 @@ main(int argc, char* argv[])
     } else {
         runtest.fail("ChangeSetFile::collectStats(town name modified)");
     }
-    
+
     for (auto it = std::begin(mods); it != std::end(mods); ++it) {
         std::cout << "Modified: " << it->first << " = " <<  it->second << std::endl;
     }
