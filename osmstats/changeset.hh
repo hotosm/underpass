@@ -107,32 +107,21 @@ public:
     /// Dump internal data to the terminal, used only for debugging
     void dump(void);
 
-    std::string fixString(std::string text) {
-        boost::algorithm::replace_all(text, "\'", "&apos;");
-        boost::algorithm::replace_all(text, "\\", "");
-        return boost::locale::conv::to_utf<char>(text,"Latin1");
-    };
+    std::string fixString(std::string text);
 
     /// Add a hashtag to internal storage
     void addHashtags(std::string text) {
-        boost::algorithm::replace_all(text, "\'", "&apos;");
-        boost::algorithm::replace_all(text, "\\", "");
-        std::string tmp = boost::locale::conv::to_utf<char>(text,"Latin1");
-        hashtags.push_back(tmp);
+        hashtags.push_back(fixString(text));
     };
 
     /// Add the comment field, which is often used for hashtags
     void addComment(std::string text) {
-        boost::algorithm::replace_all(text, "\'", "&apos;");
-        boost::algorithm::replace_all(text, "\\", "");
-        comment = boost::locale::conv::to_utf<char>(text,"Latin1");
+        comment = fixString(text);
     };
 
     /// Add the editor field
     void addEditor(std::string text) {
-        boost::algorithm::replace_all(text, "\'", "&apos;");
-        boost::algorithm::replace_all(text, "\\", "");
-        editor = boost::locale::conv::to_utf<char>(text,"Latin1");
+        editor = fixString(text);
     };
     
     //osmstats::RawCountry country;
