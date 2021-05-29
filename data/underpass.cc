@@ -129,11 +129,7 @@ Underpass::updateCreator(long user_id, long change_id, const std::string &editor
 {
     std::string query = "INSERT INTO creators(user_id, change_id, editor) VALUES(";
     query += std::to_string(user_id) + "," + std::to_string(change_id);
-    std::string tmp = editor;
-    boost::algorithm::replace_all(tmp, ")", "&#41;");
-    boost::algorithm::replace_all(tmp, "(", "&#40;");
-    boost::algorithm::replace_all(tmp, "\'", "&quot;");
-    query += ",\'" + tmp;
+    query += ",\'" + changeset::fixString(editor);
     query += "\') ON CONFLICT DO NOTHING;";
     std::cout << "QUERY: " << query << std::endl;
 #if 0

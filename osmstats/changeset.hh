@@ -84,6 +84,8 @@ namespace changeset {
 /// Check a character in a string if it'S a control character
 extern bool IsControl(int i);
 
+extern std::string fixString(std::string text);
+
 /// \file changeset.hh
 /// \brief The file is used for processing changeset files
 ///
@@ -106,8 +108,6 @@ public:
 
     /// Dump internal data to the terminal, used only for debugging
     void dump(void);
-
-    std::string fixString(std::string text);
 
     /// Add a hashtag to internal storage
     void addHashtags(std::string text) {

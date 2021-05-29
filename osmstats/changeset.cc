@@ -442,7 +442,7 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
 #endif  // EOF LIBXML
 
 std::string
-ChangeSet::fixString(std::string text)
+fixString(std::string text)
 {
     std::string newstr;
     int i = 0;
@@ -451,6 +451,10 @@ ChangeSet::fixString(std::string text)
             newstr += "&apos;";
         } else if (text[i] == '\"') {
             newstr += "&quot;";
+        } else if (text[i] == ')') {
+            newstr += "&#41;";
+        } else if (text[i] == '(') {
+            newstr += "&#40;";
         } else if (text[i] == '\\') {
             // drop this character
         } else {
