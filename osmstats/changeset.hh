@@ -104,7 +104,9 @@ public:
     void dump(void);
 
     /// Add a hashtag to internal storage
-    void addHashtags(const std::string &text) {
+    void addHashtags(std::string text) {
+        boost::algorithm::replace_all(text, "\'", "&apos;");
+        boost::algorithm::replace_all(text, "\\", "");
         hashtags.push_back(text);
     };
 
