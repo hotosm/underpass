@@ -60,6 +60,7 @@ using namespace boost::gregorian;
 #include <boost/property_tree/ptree.hpp>
 #include <boost/filesystem.hpp>
 #include <ogrsf_frmts.h>
+#include <boost/units/systems/si/length.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/progress.hpp>
@@ -79,6 +80,7 @@ using namespace osmobjects;
 typedef boost::geometry::model::d2::point_xy<double> point_t;
 typedef boost::geometry::model::polygon<point_t> polygon_t;
 typedef boost::geometry::model::linestring<point_t> linestring_t;
+typedef boost::geometry::model::point<double, 2, boost::geometry::cs::spherical_equatorial<boost::geometry::degree> > sphere_t;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
@@ -221,7 +223,7 @@ OsmChangeFile::readXML(std::istream &xml)
                change.ways.push_back(object);
            } else if (child.first == "relation") {
                auto object = std::make_shared<OsmRelation>();
-               change.relations.push_back(object);
+g               change.relations.push_back(object);
            }
            
            // Process the attributes, which do exist in every element
@@ -420,21 +422,15 @@ OsmChangeFile::collectStats(void)
 
     std::cerr << "Collecting Statistics for: " << changes.size() << " changes" << std::endl;
 
-    // FIXME: it should be possible to load these values from a config file
-    // std::vector<std::string> places = {"village", "hamlet", "neigborhood", "city", "town"};
-    // std::vector<std::string> amenities = {"hospital", "school", "clinic", "kindergarten", "drinking_water", "health_facility", "health_center", "healthcare"};
-    // std::vector<std::string> highways = {"tertiary", "secondary", "unclassified", "track", "residential", "path", "bridge", "waterway"};
-
-    // std::vector<std::string> schools = {"primary", "secondary", "kindergarten"};
-    // std::vector<std::string> features = {"building", "amenity", "place", "school", "healthcare"};
-
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
         // change->dump();
+	std::map<long, point_t> nodecache;
         for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
             OsmNode *node = it->get();
 	    // If there are no tags, assume it's part of a way
             if (node->tags.size() == 0) {
+		nodecache[node->id] = node->point;
 		continue;
 	    }
 	    // Some older nodes in a way wound up with this one tag, which nobody noticed,
@@ -482,22 +478,40 @@ OsmChangeFile::collectStats(void)
 	    }
 	    auto hits = scanTags(way->tags);
 	    for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
+		// std::cout << "FIXME1: " << *hit << std::endl;
 		if (way->action == osmobjects::create) {
 		    ostats->added[*hit]++;
 		} else if (way->action == osmobjects::modify){
 		    ostats->modified[*hit]++;
 		}
-#if 0
-		if (tit->first == "highway" || tit->first == "waterway") {
-		    auto std::find(highways.begin(), highways.end(), boost::algorithm::to_lower_copy(tit->second));
-		    std::cerr << "\tmatched way highway value: " << it->second << std::endl;
+		if (*hit == "highway" || *hit == "waterway") {
+		    // Get the geometry behind each reference
+		    boost::geometry::model::linestring<sphere_t> line;
+		    for (auto lit = std::begin(way->refs); lit != std::end(way->refs); ++lit) {
+			line.push_back(sphere_t(nodecache[*lit].get<0>(),
+						nodecache[*lit].get<1>()));
+		    }
+		    std::string tag;
+		    if (*hit == "highway" && way->action == osmobjects::create) {
+			tag = "highway_km_added";
+		    } else if (*hit == "highway" && way->action == osmobjects::modify) {
+			tag = "highway_km_modified";
+		    }
+		    if (*hit == "waterway" && way->action == osmobjects::create) {
+			tag = "waterway_km_added";
+		    } else if (*hit == "highway" && way->action == osmobjects::modify) {
+			tag = "waterway_km_modified";
+		    }
+		    // radius of the earth
+		    double const mean_radius = 6371.0;
+		    auto length = boost::geometry::length(line, boost::geometry::strategy::distance::haversine<float>(mean_radius));
+		    std::cout << "LENGTH: " << *hit << ": " << length << std::endl;
 		    if (way->action == osmobjects::create) {
-			ostats->added[tit->second]++;
+			ostats->added[tag] += length;
 		    } else if (way->action == osmobjects::modify){
-			ostats->modified[tit->second]++;
+			ostats->modified[tag] += length;
 		    }
 		}
-#endif
 	    }
 	}
     }
@@ -528,7 +542,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	"health_center",
 	"healthcare"
     };
-    // These are valyues for the highway tag
+    // These are values for the highway tag
     std::vector<std::string> highways = {
 	"highway",
 	"tertiary",
@@ -587,7 +601,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	    if (match != highways.end()) {
 		if (!cache[it->second]) {
 		    std::cerr << "\tmatched highway value: " << it->second << std::endl;
-		    hits->push_back(it->second);
+		    hits->push_back(it->first);
 		    cache[it->second] = true;
 		}
 	    }
