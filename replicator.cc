@@ -204,11 +204,13 @@ main(int argc, char *argv[])
     std::string changeset;
     std::string osmchange;
     // The update frequency between downloads
-    std::string frequency = "minutely";
     //bool encrypted = false;
     long sequence = 0;
     ptime timestamp(not_a_date_time);
     std::string url;
+    std::string pserver = "https://planet.openstreetmap.org/";
+    std::string datadir = "replication/";
+    replication::frequency_t frequency = replication::minutely;
 
     opts::positional_options_description p;
     opts::variables_map vm;
@@ -217,7 +219,7 @@ main(int argc, char *argv[])
         desc.add_options()
             ("help,h", "display help")
             ("server,s", "database server (defaults to localhost)")
-//            ("statistics,s", "OSM Stats database name (defaults to osmstats)")
+            ("planet,p", "replication server (defaults to planet.openstreetmap.org)")
             ("url,u", opts::value<std::string>(), "Starting URL")
             ("monitor,m", "Starting monitor")
             ("frequency,f", opts::value<std::string>(), "Update frequency (hour, daily), default minute)")
@@ -270,18 +272,38 @@ main(int argc, char *argv[])
          std::cout << "Sequence is " << vm["sequence"].as<int>() << std::endl;
      }
 #endif
+     // This is a full URL to server with replication files
      if (vm.count("url")) {
          url = vm["url"].as<std::string>();
      }
+     // This is the default data directory on that server
+     if (vm.count("datadir")) {
+         datadir = vm["datadir"].as<std::string>();
+     }
+     const char *tmp = std::getenv("DATADIR");
+     if (tmp != 0) {
+         datadir = tmp;
+     }
 
      if (vm.count("frequency")) {
-         frequency = vm["frequency"].as<std::string>();
+         std::string tmp = vm["frequency"].as<std::string>();
+         if (tmp[0] = 'm') {
+             frequency = replication::minutely;
+         } else if (tmp[0] = 'h') {
+             frequency = replication::hourly;
+         } else if (tmp[0] = 'd') {
+             frequency = replication::daily;
+         }
      }
 
      // Specify a timestamp used by other options
      if (vm.count("timestamp")) {
-         std::cout << "Timestamp is: " << vm["timestamp"].as<std::string> () << "\n";
-         timestamp = time_from_string(vm["timestamp"].as<std::string>());
+         if (vm["timestamp"].as<std::string>() == "now") {
+             timestamp = boost::posix_time::microsec_clock::local_time();
+         } else {
+             timestamp = time_from_string(vm["timestamp"].as<std::string>());
+         }
+         std::cout << "Timestamp is: " << vm["timestamp"].as<std::string> () <<std::endl;
      }
 
      osmstats::QueryOSMStats ostats;
@@ -293,6 +315,10 @@ main(int argc, char *argv[])
      std::string clast;
      if (vm.count("monitor")) {
          std::string monitor = vm["monitor"].as<std::string>();
+         if (timestamp.is_not_a_date_time() && url.size() == 0) {
+             std::cerr << "ERROR: You need to supply either a timestamp or URL!" << std::endl;
+             exit(-1);
+         }
 
 //         if (timestamp.is_not_a_date_time()) {
 //             timestamp = ostats.getLastUpdate();
@@ -301,37 +327,34 @@ main(int argc, char *argv[])
          std::thread mthread;
          std::thread cthread;
          if (!url.empty()) {
-             if (url.find("minute") == std::string::npos) {
-                 auto state = under.getState(replication::minutely, timestamp);
-                 if (state->path.empty()) {
-                     last = planet.findData(replication::minutely, timestamp);
-                     if (last.empty()) {
-                         std::cerr << "ERROR: No last path!" << std::endl;
-                         exit(-1);
-                     }
-                 } else {
-                     last = replicator.baseurl + under.freq_to_string(replication::minutely) + "/" + state->path;
-                 }
-                 std::cout << "Last minutely is " << last  << std::endl;
-                 mthread = std::thread(threads::startMonitor, std::ref(last));
-             } else if (url.find("day") == std::string::npos) {
-                 auto state = under.getState(replication::daily, timestamp);
-                 if (state->path.empty()) {
-                     last = planet.findData(replication::daily, timestamp);
-                     if (last.empty()) {
-                         std::cerr << "ERROR: No last path!" << std::endl;
-                         exit(-1);
-                     }
-                 } else {
-                     last = replicator.baseurl + under.freq_to_string(replication::daily) + "/" + state->path;
-                 }
-                 std::cout << "Last daily is " << last  << std::endl;
-                 mthread = std::thread(threads::startMonitor, std::ref(last));
-             } else {
-                 auto state = under.getState(replication::minutely, url);
-                 mthread = std::thread(threads::startMonitor, std::ref(url));
-                 timestamp = state->timestamp;
+             std::vector<std::string> result;
+             boost::split(result, url, boost::is_any_of("/"));
+             pserver = result[0];
+             datadir = result[1];
+             if (result[3] == "hour") {
+                 frequency = replication::hourly;
+             } else if (result[3] == "daily") {
+                 frequency = replication::hourly;
+             } else if (result[3] == "hourly") {
+                 frequency = replication::minutely;
              }
+             std::cout << "Last path is " << url << std::endl;
+             mthread = std::thread(threads::startMonitor, std::ref(url));
+#if 0
+             auto state = under.getState(frequency, url);
+             if (state->path.empty()) {
+                 last = planet.findData(frequency, url);
+                 if (last.empty()) {
+                     std::cerr << "ERROR: No last path!" << std::endl;
+                     exit(-1);
+                 }
+             } else {
+                 last = replicator.baseurl + under.freq_to_string(frequency) + "/" + state->path;
+             }
+#else
+             last = url;
+#endif
+#if 0
              auto state2 = under.getState(replication::changeset, timestamp);
              clast = replicator.baseurl + under.freq_to_string(replication::changeset) + "/" + state2->path;
 #if 0
@@ -341,21 +364,22 @@ main(int argc, char *argv[])
                  clast = replicator.baseurl + under.freq_to_string(replication::changeset) + "/" + state2->path;
              }
 #endif
+#endif
              std::cout << "Last changeset is " << clast  << std::endl;
-             cthread = std::thread(threads::startMonitor, std::ref(clast));
-         } else {
+             // cthread = std::thread(threads::startMonitor, std::ref(clast));
+         } else if (!timestamp.is_not_a_date_time()) {
              // No URL, use the timestamp
-             auto state = under.getState(replication::minutely, timestamp);
+             auto state = under.getState(frequency, timestamp);
              if (state->path.empty()) {
-                 std::string tmp = planet.findData(replication::minutely, timestamp);
+                 std::string tmp = planet.findData(frequency, timestamp);
                  if (tmp.empty()) {
                      std::cerr << "ERROR: No last path!" << std::endl;
                      exit(-1);
                  } else {
-                     last = replicator.baseurl + under.freq_to_string(replication::minutely) + "/" + tmp;
+                     last = replicator.baseurl + under.freq_to_string(frequency) + "/" + tmp;
                  }
              } else {
-                 last = replicator.baseurl + under.freq_to_string(replication::minutely) + "/" + state->path;
+                 last = replicator.baseurl + under.freq_to_string(frequency) + "/" + state->path;
              }
              std::cout << "Last minutely is " << last  << std::endl;
              mthread = std::thread(threads::startMonitor, std::ref(last));

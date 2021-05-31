@@ -325,8 +325,7 @@ threadOsmChange(const std::string &file)
     // changeset::ChangeSetFile change;
     osmchange::OsmChangeFile osmchanges;
 
-    // boost::filesystem::path dir(file);
-    std::string dir = file.substr(file.find("minute"));
+    std::string dir = file.substr(file.find("replication"));
     auto data = std::make_shared<std::vector<unsigned char>>();
     // If the file is stored on disk, read it in instead of downloading
     if (boost::filesystem::exists(dir)) {
