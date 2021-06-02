@@ -25,3 +25,10 @@ Makefile.in
 po/*.gmo
 py-compile
 doc/html
+COPYING
+ChangeLog
+NEWS
+README
+depcomp
+install-sh
+missing
