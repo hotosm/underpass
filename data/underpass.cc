@@ -151,8 +151,9 @@ Underpass::getState(replication::frequency_t freq, const std::string &path)
     std::vector<std::string> nodes;
     boost::split(nodes, path, boost::is_any_of("/"));
     std::string tmp;
-    if (nodes[0] == "https:") {
-        tmp = nodes[5] + '/' + nodes[6] + '/' + nodes[7];
+    auto pos = path.find(":");
+    if (pos != std::string::npos) {
+        tmp = path.substr(pos+3);
     } else {
         tmp = path;
     }
@@ -232,9 +233,9 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
         int next;
         fmt % (next);
         state->path += fmt.str();
-        std::cerr << "ERROR: FIXME!!!!!" << state->path << std::endl;
-#else
-        std::cerr << "ERROR: FIXME!!!!!" << std::endl;
+//        std::cerr << "ERROR: FIXME!!!!!" << state->path << std::endl;
+//#else
+//        std::cerr << "ERROR: FIXME!!!!!" << std::endl;
 #endif
     }
     return state;
