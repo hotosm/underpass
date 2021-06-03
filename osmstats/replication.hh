@@ -160,10 +160,22 @@ class Planet
 {
 public:
     Planet(void);
+    Planet(const std::string &planet) { pserver = planet; };
+    Planet(const std::string &planet, const std::string &dir) {
+        pserver = planet;
+        datadir = dir;
+        connectServer();
+    };
+    Planet(const std::string &planet, const std::string &dir, frequency_t freq) {
+        pserver = planet;
+        datadir = dir;
+        frequency = freq;
+        connectServer();
+    };
     ~Planet(void);
 
     bool connectServer(void) {
-        return connectServer(server);
+        return connectServer(pserver);
     }
     bool connectServer(const std::string &server);
     bool disconnectServer(void) {
@@ -181,13 +193,9 @@ public:
     /// attempts to do a rough calculation of the probably data file,
     /// and downloads *.state.txt files till the right data file is found.
     /// Note that this can be slow as it has to download multiple files.
-    std::string findData(frequency_t freq, ptime starttime);
-    std::string findData(frequency_t freq, int sequence) {
-        boost::posix_time::time_duration delta;
-        // FIXME: this should return a real value
-        std::string fixme;
-        return fixme;
-    };
+    std::shared_ptr<StateFile> findData(frequency_t freq, long sequence);
+    std::shared_ptr<StateFile> findData(frequency_t freq, ptime starttime);
+    std::shared_ptr<StateFile> findData(frequency_t freq, const std::string &path);
 
     /// Dump internal data to the terminal, used only for debugging
     void dump(void);
@@ -201,7 +209,9 @@ public:
                     std::shared_ptr<std::vector<std::string>> &links);
 
 // private:
-    std::string server = "planet.openstreetmap.org"; ///< planet server
+    std::string pserver;        ///< The replication file server
+    std::string datadir;        ///< Default top level path to the data files
+    replication::frequency_t frequency;
     int port = 443;             ///< Network port on the server, note SSL only allowed
     int version = 11;           ///< HTTP version
     std::map<ptime, std::string> minute;
@@ -232,21 +242,17 @@ class Replication
 public:
     Replication(void) {
         last_run = boost::posix_time::second_clock::local_time();
-        server = "planet.openstreetmap.org";
-        path = "/replication/changesets/";
         sequence = 0;
         port = 443;
         version = 11;           ///! HTTP version
     };
     // Downloading a replication requires either a sequence
     // number or a starting timestamp
-    Replication(const std::string &host, ptime last, long seq) : Replication() {
-        if (!host.empty()) { server = host; }
+    Replication(ptime last, long seq) : Replication() {
         if (!last.is_not_a_date_time()) { last_run = last; }
         if (seq > 0) { sequence = seq; }
     }
         
-    Replication(std::string &host, long seq) { server = host; sequence = seq; };
     Replication(ptime last) { last_run = last; };
     Replication(long seq) { sequence = seq; };
 
@@ -256,19 +262,9 @@ public:
     /// Add this replication data to the changeset database
     bool mergeToDB();
 
-    /// Download a file from planet
-    std::shared_ptr<std::vector<unsigned char>> downloadFiles(const std::string &file, bool text) {
-        std::vector<std::string> tmp;
-        tmp.push_back(file);
-        return downloadFiles(tmp, text);
-    };
-
-    std::shared_ptr<std::vector<unsigned char>> downloadFiles(std::vector<std::string> file, bool text);
-
     std::vector<StateFile> states; ///< Stored state.txt files
 private:
-    std::string server;         ///< The repliciation file server
-    std::string path;           ///< Default top level path to the data files
+    std::string pserver;        ///< The replication file server
     int port;                   ///< Network port for the server
     ptime last_run;             ///< Timestamp of the replication file
     long sequence;              ///< Sequence number of the replication
