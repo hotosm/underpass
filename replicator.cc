@@ -113,8 +113,8 @@ public:
 
         // FIXME: should return a real value
         return false;
-#endif
         baseurl = "https://planet.openstreetmap.org/replication/";
+#endif
     };
     
     /// Initialize the raw_user, raw_hashtags, and raw_changeset tables
@@ -127,26 +127,6 @@ public:
         return false;
     };
 
-#if 0
-    /// Get the value for a hashtag
-    int lookupHashID(const std::string &hash) {
-        auto found = hashes->find(hash);
-        if (found != hashes->end()) {
-            return (*hashes)[hash];
-        } else {
-            // Connect to the OSM Stats database
-            // ostats.connect("mystats");
-            int id = ostats.lookupHashtag(hash);
-            return id;
-        }
-        return 0;
-    };
-
-    /// Get the numeric ID of the country by name
-    long lookupCountryID(const std::string &country) {
-        // return geou->getCountry(country).getID();
-    };
-#endif
 
 #if 0
     std::string getLastPath(replication::frequency_t interval) {
@@ -191,7 +171,7 @@ public:
         return match;
     }
 
-    std::string baseurl;                                ///< base URL for the planet server
+//    std::string baseurl;                                ///< base URL for the planet server
 private:
     std::shared_ptr<changeset::ChangeSetFile> changes;  ///< All the changes in the file
     std::shared_ptr<std::map<std::string, int>> hashes; ///< Existing hashtags
@@ -206,10 +186,13 @@ main(int argc, char *argv[])
     // The update frequency between downloads
     //bool encrypted = false;
     long sequence = 0;
-    ptime timestamp(not_a_date_time);
+    ptime starttime(not_a_date_time);
+    ptime endtime(not_a_date_time);
     std::string url;
-    std::string pserver = "https://planet.openstreetmap.org/";
-    std::string datadir = "replication/";
+    // std::string pserver = "https://download.openstreetmap.fr";
+    // std::string pserver = "https://planet.openstreetmap.org";
+    std::string pserver = "https://planet.maps.mail.ru";
+    std::string datadir = "/replication/";
     replication::frequency_t frequency = replication::minutely;
 
     opts::positional_options_description p;
@@ -220,10 +203,10 @@ main(int argc, char *argv[])
             ("help,h", "display help")
             ("server,s", "database server (defaults to localhost)")
             ("planet,p", "replication server (defaults to planet.openstreetmap.org)")
-            ("url,u", opts::value<std::string>(), "Starting URL")
+            ("url,u", opts::value<std::string>(), "Starting URL (ex. 000/075/000)")
             ("monitor,m", "Starting monitor")
             ("frequency,f", opts::value<std::string>(), "Update frequency (hour, daily), default minute)")
-            ("timestamp,t", opts::value<std::string>(), "Starting timestamp")
+            ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp")
             ("import,i", opts::value<std::string>(), "Initialize OSM database with datafile")
             ("changefile,c", opts::value<std::string>(), "Import change file")
             ("datadir,d", opts::value<std::string>(), "Base directory for cached files")
@@ -287,99 +270,110 @@ main(int argc, char *argv[])
 
      if (vm.count("frequency")) {
          std::string tmp = vm["frequency"].as<std::string>();
-         if (tmp[0] = 'm') {
+         if (tmp[0] == 'm') {
              frequency = replication::minutely;
-         } else if (tmp[0] = 'h') {
+         } else if (tmp[0] == 'h') {
              frequency = replication::hourly;
-         } else if (tmp[0] = 'd') {
+         } else if (tmp[0] == 'd') {
              frequency = replication::daily;
          }
      }
 
      // Specify a timestamp used by other options
      if (vm.count("timestamp")) {
-         if (vm["timestamp"].as<std::string>() == "now") {
-             timestamp = boost::posix_time::microsec_clock::local_time();
+         auto timestamps = vm["timestamp"].as<std::vector<std::string>>();
+         if (timestamps[0] == "now") {
+             starttime = boost::posix_time::microsec_clock::local_time();
          } else {
-             timestamp = time_from_string(vm["timestamp"].as<std::string>());
+             starttime = time_from_string(timestamps[0]);
+             if (timestamps.size() > 1) {
+                 endtime = time_from_string(timestamps[1]);
+             }
          }
-         std::cout << "Timestamp is: " << vm["timestamp"].as<std::string> () <<std::endl;
      }
 
      osmstats::QueryOSMStats ostats;
      ostats.connect();
      underpass::Underpass under;
      under.connect();
-     replication::Planet planet;
+     replication::Planet planet(pserver, datadir, frequency);
      std::string last;
      std::string clast;
      if (vm.count("monitor")) {
-         std::string monitor = vm["monitor"].as<std::string>();
-         if (timestamp.is_not_a_date_time() && url.size() == 0) {
+         if (starttime.is_not_a_date_time() && url.size() == 0) {
              std::cerr << "ERROR: You need to supply either a timestamp or URL!" << std::endl;
-             exit(-1);
-         }
-
 //         if (timestamp.is_not_a_date_time()) {
 //             timestamp = ostats.getLastUpdate();
 //         }
+             exit(-1);
+         }
+         std::map<replication::frequency_t, std::string> frequency_tags;
+         frequency_tags[replication::minutely] = "minute";
+         frequency_tags[replication::hourly] = "hour";
+         frequency_tags[replication::daily] = "day";
+         frequency_tags[replication::changeset] = "changeset";
+         std::string path = frequency_tags[frequency] + "/";
 
          std::thread mthread;
          std::thread cthread;
          if (!url.empty()) {
+             last = url;
              std::vector<std::string> result;
              boost::split(result, url, boost::is_any_of("/"));
-             pserver = result[0];
-             datadir = result[1];
-             if (result[3] == "hour") {
-                 frequency = replication::hourly;
-             } else if (result[3] == "daily") {
-                 frequency = replication::hourly;
-             } else if (result[3] == "hourly") {
-                 frequency = replication::minutely;
+             if (result[0] == "https:") {
+                 pserver = result[0] + "//" + result[2];
+                 datadir = result[3];
+                 path = result[5] + "/" + result[6] + "/" + result[7];
+                 if (result[4] == "hour") {
+                     frequency = replication::hourly;
+                 } else if (result[4] == "daily") {
+                     frequency = replication::hourly;
+                 } else if (result[4] == "hourly") {
+                     frequency = replication::minutely;
+                 }
+             } else {
+                 path += url;
              }
-             std::cout << "Last path is " << url << std::endl;
-             mthread = std::thread(threads::startMonitor, std::ref(url));
-#if 0
+
+             last = pserver + datadir + path;
+             std::cout << "Last path is " << last << std::endl;
+             mthread = std::thread(threads::startMonitor, std::ref(last));
+
              auto state = under.getState(frequency, url);
+             state->dump();
              if (state->path.empty()) {
-                 last = planet.findData(frequency, url);
-                 if (last.empty()) {
+                 auto tmp = planet.findData(frequency, last);
+                 if (tmp->path.empty()) {
                      std::cerr << "ERROR: No last path!" << std::endl;
                      exit(-1);
                  }
-             } else {
-                 last = replicator.baseurl + under.freq_to_string(frequency) + "/" + state->path;
              }
-#else
-             last = url;
-#endif
-#if 0
-             auto state2 = under.getState(replication::changeset, timestamp);
-             clast = replicator.baseurl + under.freq_to_string(replication::changeset) + "/" + state2->path;
-#if 0
-             if (state2->path.empty() || state2->timestamp.is_not_a_date_time()) {
-                 clast = planet.findData(replication::changeset, timestamp);
-             } else {
-                 clast = replicator.baseurl + under.freq_to_string(replication::changeset) + "/" + state2->path;
+             auto state2 = under.getState(replication::changeset, state->timestamp);
+             if (state2->path.empty()) {
+                 std::cerr << "WARNING: No changeset path in database!" << std::endl;
+                 auto tmp = planet.findData(replication::changeset, state->timestamp);
+                 if (tmp->path.empty()) {
+                     std::cerr << "ERROR: No changeset path!" << std::endl;
+                     exit(-1);
+                 }
+                 tmp->dump();
+                 clast = pserver + datadir + "changesets/" + tmp->path;
+                 std::cout << "Last changeset is " << clast  << std::endl;
+                 cthread = std::thread(threads::startMonitor, std::ref(clast));
              }
-#endif
-#endif
-             std::cout << "Last changeset is " << clast  << std::endl;
-             // cthread = std::thread(threads::startMonitor, std::ref(clast));
-         } else if (!timestamp.is_not_a_date_time()) {
+         } else if (!starttime.is_not_a_date_time()) {
              // No URL, use the timestamp
-             auto state = under.getState(frequency, timestamp);
+             auto state = under.getState(frequency, starttime);
              if (state->path.empty()) {
-                 std::string tmp = planet.findData(frequency, timestamp);
-                 if (tmp.empty()) {
+                 auto tmp = planet.findData(frequency, starttime);
+                 if (tmp->path.empty()) {
                      std::cerr << "ERROR: No last path!" << std::endl;
                      exit(-1);
                  } else {
-                     last = replicator.baseurl + under.freq_to_string(frequency) + "/" + tmp;
+                     // last = replicator.baseurl + under.freq_to_string(frequency) + "/" + tmp->path;
                  }
              } else {
-                 last = replicator.baseurl + under.freq_to_string(frequency) + "/" + state->path;
+                 // last = replicator.baseurl + under.freq_to_string(frequency) + "/" + state->path;
              }
              std::cout << "Last minutely is " << last  << std::endl;
              mthread = std::thread(threads::startMonitor, std::ref(last));
@@ -390,7 +384,7 @@ main(int argc, char *argv[])
              cthread.join();
          }
          if (mthread.joinable()) {
-                 mthread.join();
+             mthread.join();
          }
      }
 
@@ -481,15 +475,12 @@ main(int argc, char *argv[])
          std::cout << "Verbosity enabled.  Level is " << vm["verbose"].as<int>() << std::endl;
      }
 
-     if (sequence > 0 and !timestamp.is_not_a_date_time()) {
+     if (sequence > 0 and !starttime.is_not_a_date_time()) {
         std::cout << "ERROR: Can only specify a timestamp or a sequence" << std::endl;
         exit(1);
     }
 
-    // replication::Replication rep(server, timestamp, sequence);
-    replication::Replication rep("https://planet.openstreetmap.org", timestamp, sequence);
-
-
+    // replication::Replication rep(starttime, sequence);
     
     // std::vector<std::string> files;
     // files.push_back("004/139/998.state.txt");
