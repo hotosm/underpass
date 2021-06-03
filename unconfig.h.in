@@ -1,0 +1,121 @@
+/* unconfig.h.in.  Generated from configure.ac by autoheader.  */
+
+/* define if the Boost library is available */
+#undef HAVE_BOOST
+
+/* define if the Boost::Date_Time library is available */
+#undef HAVE_BOOST_DATE_TIME
+
+/* define if the Boost::Filesystem library is available */
+#undef HAVE_BOOST_FILESYSTEM
+
+/* define if the Boost::IOStreams library is available */
+#undef HAVE_BOOST_IOSTREAMS
+
+/* define if the Boost::Locale library is available */
+#undef HAVE_BOOST_LOCALE
+
+/* define if the Boost::Log library is available */
+#undef HAVE_BOOST_LOG
+
+/* define if the Boost::PROGRAM_OPTIONS library is available */
+#undef HAVE_BOOST_PROGRAM_OPTIONS
+
+/* define if the Boost::Serialization library is available */
+#undef HAVE_BOOST_SERIALIZATION
+
+/* define if the Boost::System library is available */
+#undef HAVE_BOOST_SYSTEM
+
+/* define if the Boost::Thread library is available */
+#undef HAVE_BOOST_THREAD
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <osmium/osm/node.hpp> header file. */
+#undef HAVE_OSMIUM_OSM_NODE_HPP
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Always define to 1, for backward compatibility. You can assume <stdlib.h>
+   exists. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Always define to 1, for backward compatibility. You can assume <string.h>
+   exists. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if the system has the type `_Bool'. */
+#undef HAVE__BOOL
+
+/* Use libxml++ library */
+#undef LIBXML
+
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
+#undef LT_OBJDIR
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Use rapidxml library in boost */
+#undef RAPIDXML
+
+/* Always define to 1, for backward compatibility. You can assume the C90
+   standard headers exist. */
+#undef STDC_HEADERS
+
+/* Store downloaded files to disk */
+#undef USE_CACHE
+
+/* Use multiple threads */
+#undef USE_MULTI
+
+/* Use multiple threaded downloader */
+#undef USE_MULTI_LOADER
+
+/* Don't use multiple threads */
+#undef USE_SINGLE
+
+/* Don't use multiple threaded file downloader */
+#undef USE_SINGLE_LOADER
+
+/* Use tmp file for downloaded files */
+#undef USE_TMPFILE
+
+/* Version number of package */
+#undef VERSION
