@@ -25,3 +25,6 @@ Makefile.in
 po/*.gmo
 py-compile
 doc/html
+infra/.terraform
+infra/.terraform.lock
+infra/.terraform.lock.hcl
