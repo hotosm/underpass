@@ -426,8 +426,15 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
                     std::vector<std::string> result;
                     boost::split(result, attr_pair.value, boost::is_any_of(" "));
                     for (auto it=std::begin(result); it != std::end(result); ++it){
-                        if (it->c_str()[0] == '#') {
-                            changes.back().addHashtags(it->substr(1));
+                        int i = 0;
+                        while (++i < it->size()) {
+                            // if (std::isalpha(it->at(i))) {
+                            //     break;
+                            // }
+                            if (it->at(i) == '#') {
+                                changes.back().addHashtags(it->substr(i));
+                                break;
+                            }
                         }
                     }
                 }
