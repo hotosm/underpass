@@ -1,4 +1,3 @@
-output "underpass_instance_ip_addr" {
-  value = aws_instance.underpass.public_ip
+output "underpass_instance_state" {
+  value = aws_instance.api.instance_state
 }
-

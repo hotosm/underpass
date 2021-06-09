@@ -5,12 +5,10 @@
 # Load Balancer?
 # Secrets Manager entry
 
-/**
 resource "aws_iam_instance_profile" "underpass" {
   name = "underpass_instance_profile"
   role = aws_iam_role.underpass.name
 }
-**/
 
 data "aws_iam_policy_document" "assume-role-ec2" {
   statement {
@@ -61,7 +59,6 @@ data "aws_iam_policy_document" "underpass" {
   }
 }
 
-/**
 resource "aws_iam_role" "underpass" {
   name = "underpass_role"
   path = "/"
@@ -73,7 +70,6 @@ resource "aws_iam_role" "underpass" {
     policy = data.aws_iam_policy_document.underpass.json
   }
 }
-**/
 
 data "aws_ami" "ubuntu" {
   most_recent = true

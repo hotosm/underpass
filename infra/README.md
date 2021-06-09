@@ -36,7 +36,7 @@ We use the following version of terraform to run our code
 
 ```
 ~/underpass $ terraform -v
-Terraform v0.15.5
+Terraform v1.0.0
 on linux_amd64
 + provider registry.terraform.io/hashicorp/aws v3.42.0
 ```
@@ -56,6 +56,29 @@ expires in one hour by default.
         "SecretAccessKey": "62Xm7KKhpljQJEC0yppSZz0fDW3SYc/QMT99J89l",
         "SessionToken": "FwoGZXIvYXdzE...sbQFWqz89I11mafgWQ5gBue6o=",
         "Expiration": "2021-06-02T21:37:19Z"
+    }
+}
+```
+
+* Assume role
+
+Session tokens can't be used to invoke IAM API. We need more privileges for it.
+We use STS assume-role to gain more privileged - but still temporary - access to
+AWS API. 
+
+
+```
+aws sts assume-role --serial-number arn:aws:iam::670261699094:mfa/yogeshgirikumar --token-code 729586 --role-arn arn:aws:iam::670261699094:role/yogesh-terraform-assumeRole --role-session-name terraform1 --output json
+{
+    "Credentials": {
+        "AccessKeyId": "ASIAZYDVV4ILI4C4EWHX",
+        "SecretAccessKey": "S2UK+XuLq2ZZo1jlEhu+QU9tQVGdrvwTQ/fciu59",
+        "SessionToken": "FwoGZXIvYXdzEND//////////wEaDPSm5TBmApFmXm2qHyKuASPdPvoP74pkzF+ebQaaPRC1y0xQfx2eOGNgVZkx0MHaOc23a0SE7tX6+FnmrNFf0LN1dm3qiPjxGV1cfGGsipURtfY4KRxpEBhtdamqCr35YZ1X5f0Ftr8xzHdFGNDw0YR9pywHaFCvtS355bFPcV2BMl5Cdt3NztHntx2okd0Jo9ljxmfj3Mz05nXOvNah061JlM2K35m6actdc6EaTjiaYbKMNSnxJcOG8mCCOSj8/P2FBjIt5EeuLM/3pZzVn2co6iqnZla8voQBTRm01DKhY85EusbjJA3HzwyX8oRJfQda",
+        "Expiration": "2021-06-08T15:28:12Z"
+    },
+    "AssumedRoleUser": {
+        "AssumedRoleId": "AROAZYDVV4ILBBV7CR2B5:terraform1",
+        "Arn": "arn:aws:sts::670261699094:assumed-role/yogesh-terraform-assumeRole/terraform1"
     }
 }
 ```
