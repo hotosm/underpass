@@ -266,16 +266,16 @@ Planet::getLinks(GumboNode* node, std::shared_ptr<std::vector<std::string>> &lin
 
 // Download a file from planet
 std::shared_ptr<std::vector<unsigned char>>
-Planet::downloadFile(const std::string &file)
+Planet::downloadFile(const std::string &url)
 {
     boost::system::error_code ec;
     auto data = std::make_shared<std::vector<unsigned char>>();
-    std::cout << "Downloading: " << file << std::endl;
+    std::cout << "Downloading: " << url << std::endl;
     // Set up an HTTP GET request message
-    http::request<http::string_body> req{http::verb::get, file, version };
+    http::request<http::string_body> req{http::verb::get, url, version};
 
     req.keep_alive();
-    req.set(http::field::host, pserver);
+    req.set(http::field::host, remote.domain);
     req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
     // Send the HTTP request to the remote host
@@ -289,7 +289,7 @@ Planet::downloadFile(const std::string &file)
     // read_header(stream, buffer, parser);
     read(stream, buffer, parser);
     if (parser.get().result() == boost::beast::http::status::not_found) {
-        std::cerr << "FIle not found: " << file << std::endl;
+        std::cerr << "Remote file not found: " << url << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -319,18 +319,12 @@ Planet::~Planet(void)
 
 Planet::Planet(void)
 {
-    frequency_tags[replication::minutely] = "minute";
-    frequency_tags[replication::hourly] = "hour";
-    frequency_tags[replication::daily] = "day";
-    frequency_tags[replication::changeset] = "changeset";
-    // FIXME: for bulk doownloads, we might want to strip across
+    // FIXME: for bulk downloads, we might want to strip across
     // all the mirrors. The support minutely diffs
     // pserver = "https://download.openstreetmap.fr";
-    pserver = "https://planet.maps.mail.ru";
+    // pserver = "https://planet.maps.mail.ru";
     // pserver = "https://planet.openstreetmap.org";
-    datadir = "/replication/";
-    frequency = replication::minutely;
-    connectServer();
+    // connectServer();
 };
 
 
@@ -357,7 +351,7 @@ bool
 Planet::connectServer(const std::string &planet)
 {
     if (!planet.empty()) {
-        pserver = planet;
+        remote.domain = planet;
     }
 
     // Gracefully close the socket
@@ -407,7 +401,7 @@ Planet::scanDirectory(const std::string &dir)
     ssl::stream<tcp::socket> stream{ioc, ctx};
 
     // Look up the domain name
-    auto const results = resolver.resolve(pserver, std::to_string(port));
+    auto const results = resolver.resolve(remote.domain, std::to_string(port));
 
     // Make the connection on the IP address we get from a lookup
     boost::asio::connect(stream.next_layer(), results.begin(), results.end());
@@ -419,7 +413,7 @@ Planet::scanDirectory(const std::string &dir)
 
     // Set up an HTTP GET request message
     http::request<http::string_body> req{http::verb::get, dir, version };
-    req.set(http::field::host, pserver);
+    req.set(http::field::host, remote.domain);
     req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
     // Send the HTTP request to the remote host
@@ -461,7 +455,7 @@ Planet::findData(frequency_t freq, const std::string &path)
         if (state->path[0] = 'h') {
             std::vector<std::string> result;
             boost::split(result, path, boost::is_any_of("/"));
-            state->path = result[5] + "/" + result[6] + "/" + result[7];
+            state->path = path;
         }
         state->dump();
         return state;
@@ -640,6 +634,86 @@ Planet::findData(frequency_t freq, ptime tstamp)
         }
     }
 #endif
+}
+
+RemoteURL::RemoteURL(void)
+{
+}
+
+RemoteURL::RemoteURL(const std::string &rurl)
+{
+    std::map<std::string, replication::frequency_t> frequency_tags;
+    frequency_tags["minute"] = replication::minutely;
+    frequency_tags["hour"] = replication::hourly;
+    frequency_tags["day"] = replication::daily;
+    frequency_tags["changeset"] = replication::changeset;
+
+    std::vector<std::string> parts;
+    boost::split(parts, rurl, boost::is_any_of("/"));
+    domain = parts[2];
+    datadir = parts[3];
+    frequency = frequency_tags[parts[4]];
+    subpath = parts[5] + "/" + parts[6] + "/" + parts[7];
+    major = std::stoi(parts[5]);
+    minor = std::stoi(parts[6]);
+    index = std::stoi(parts[7]);
+    if (frequency == replication::changeset) {
+        filespec = rurl.substr(rurl.find(datadir)) + ".osm.gz";
+        url = rurl + ".osm.gz";
+    } else {
+        filespec = rurl.substr(rurl.find(datadir)) + ".osc.gz";
+        url = rurl + ".osc.gz";
+    }
+    destdir = datadir + "/" + parts[4] + "/" +  parts[5] + "/" + parts[6];
+}
+
+void RemoteURL::Increment(void)
+{
+    boost::format fmt("%03d");
+    fmt % (major);
+    std::string newpath = fmt.str() + "/";
+    if (minor == 999) {
+        major++;
+        fmt % (major);
+        newpath += fmt.str() + "/000";
+        index = 0;
+    }
+    if (index == 999) {
+        minor++;
+        fmt % (minor);
+        newpath += fmt.str();
+        newpath += "/000";
+    } else {
+        fmt % (minor);
+        newpath += fmt.str();
+        fmt % (index++);
+        newpath += "/" + fmt.str();
+    }
+    if (minor == 999) {
+        major++;
+        fmt % (major);
+        newpath += fmt.str() + "/000";
+    }
+
+    // boost::algorithm::replace_all(destdir, subpath, newpath);
+    boost::algorithm::replace_all(filespec, subpath, newpath);
+    boost::algorithm::replace_all(url, subpath, newpath);
+    subpath = newpath;
+}
+
+void
+RemoteURL::dump(void)
+{
+    std::cerr << "URL: " << url << std::endl;
+    std::cerr << "\tDomain: " << domain << std::endl;
+    std::cerr << "\tDatadir: " << datadir << std::endl;
+    std::cerr << "\tSubpath: " << subpath << std::endl;
+    // std::cerr << "\tFrequency: " <<  << std::endl;
+    std::cerr << "\tMajor: " << major << std::endl;
+    std::cerr << "\tMinor: " <<  minor<< std::endl;
+    std::cerr << "\tIndex: " << index << std::endl;
+    std::cerr << "\tFilespec: " << filespec << std::endl;
+    std::cerr << "\tDestdir: " << destdir << std::endl;
 }
 
 } // EOF replication namespace

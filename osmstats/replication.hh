@@ -154,28 +154,56 @@ public:
     ptime closed_at;            ///< The last timestamp in the changefile
 };
 
+
+/// \class RemoteURL
+/// \brief This parses a remote URL into pieces
+class RemoteURL
+{
+public:
+    RemoteURL(void);
+    RemoteURL(const std::string &rurl);
+    std::string domain;
+    std::string datadir;
+    std::string subpath;
+    frequency_t frequency;
+    std::string base;
+    std::string url;
+    int major;
+    int minor;
+    int index;
+    std::string filespec;
+    std::string destdir;
+    void dump(void);
+    void Increment(void);
+};
+
 /// \class Planet
 /// \brief This stores file paths and timestamps from planet.
 class Planet
 {
 public:
     Planet(void);
-    Planet(const std::string &planet) { pserver = planet; };
-    Planet(const std::string &planet, const std::string &dir) {
-        pserver = planet;
-        datadir = dir;
-        connectServer();
+    // Planet(const std::string &planet) { pserver = planet; };
+    Planet(const RemoteURL &url) {
+        remote = url;
+        connectServer(url.domain);
     };
-    Planet(const std::string &planet, const std::string &dir, frequency_t freq) {
-        pserver = planet;
-        datadir = dir;
-        frequency = freq;
-        connectServer();
-    };
+    // Planet(const std::string &planet, const std::string &dir) {
+    //     pserver = planet;
+    //     datadir = dir;
+    //     frequency = replication::minutely;
+    //     connectServer();
+    // };
+    // Planet(const std::string &planet, const std::string &dir, frequency_t freq) {
+    //     pserver = planet;
+    //     datadir = dir;
+    //     frequency = freq;
+    //     connectServer();
+    // };
     ~Planet(void);
 
     bool connectServer(void) {
-        return connectServer(pserver);
+        return connectServer(remote.domain);
     }
     bool connectServer(const std::string &server);
     bool disconnectServer(void) {
@@ -209,9 +237,10 @@ public:
                     std::shared_ptr<std::vector<std::string>> &links);
 
 // private:
-    std::string pserver;        ///< The replication file server
-    std::string datadir;        ///< Default top level path to the data files
-    replication::frequency_t frequency;
+    RemoteURL remote;
+//    std::string pserver;        ///< The replication file server
+//    std::string datadir;        ///< Default top level path to the data files
+//    replication::frequency_t frequency;
     int port = 443;             ///< Network port on the server, note SSL only allowed
     int version = 11;           ///< HTTP version
     std::map<ptime, std::string> minute;
@@ -225,7 +254,7 @@ public:
     ssl::context ctx{ssl::context::sslv23_client};
     tcp::resolver resolver{ioc};
     boost::asio::ssl::stream<tcp::socket> stream{ioc, ctx};
-    std::string baseurl;        ///< URL for the planet server
+//    std::string baseurl;        ///< URL for the planet server
 };
 
 // These are the columns in the pgsnapshot.replication_changes table
