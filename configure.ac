@@ -205,7 +205,7 @@ dnl LIBS += "${BOOST_DATE_TIME} ${BOOST_SYSTEM} ${BOOST_FILESYSTEM} ${BOOST_LOG_
 AC_LANG_POP(C++)
 
 dnl Swig is used to generate API bindings for other languages
-AC_PATH_PROG(SWIG, swig)
+dnl AC_PATH_PROG(SWIG, swig)
 AM_CONDITIONAL(ENABLE_SWIG, [ test x"$SWIG" != x ])
 if test x"$SWIG" != x; then
   mkdir -p swig

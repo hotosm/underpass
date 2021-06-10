@@ -31,6 +31,7 @@ AUTOMAKE_OPTIONS = dejagnu
 
 # All of these are generated files
 CLEANFILES = all-includes.h.gch all-includes.h
+ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = testsuite
 
@@ -70,6 +71,11 @@ libhotosm_la_LDFLAGS = -avoid-version
 bin_PROGRAMS = replicator
 replicator_SOURCES = replicator.cc
 replicator_LDADD = libhotosm.la $(BOOST_LIBS)
+
+pkgdata_DATA = \
+	data/underpass.sql \
+	data/osmstats.sql \
+	data/geoboundaries.sql
 
 if ENABLE_SWIG
 SWIGdir = swig
