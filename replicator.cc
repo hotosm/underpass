@@ -268,17 +268,21 @@ main(int argc, char *argv[])
          datadir = tmp;
      }
 
+     std::string strfreq = "minute";
      if (vm.count("frequency")) {
-         std::string tmp = vm["frequency"].as<std::string>();
-         if (tmp[0] == 'm') {
+         strfreq = vm["frequency"].as<std::string>();
+         if (strfreq[0] == 'm') {
              frequency = replication::minutely;
-         } else if (tmp[0] == 'h') {
+         } else if (strfreq[0] == 'h') {
              frequency = replication::hourly;
-         } else if (tmp[0] == 'd') {
+         } else if (strfreq[0] == 'd') {
              frequency = replication::daily;
          }
      }
 
+     std::string fullurl = pserver + datadir + strfreq + "/" + url;
+     replication::RemoteURL remote(fullurl);
+//     remote.dump();
      // Specify a timestamp used by other options
      if (vm.count("timestamp")) {
          auto timestamps = vm["timestamp"].as<std::vector<std::string>>();
@@ -296,7 +300,7 @@ main(int argc, char *argv[])
      ostats.connect();
      underpass::Underpass under;
      under.connect();
-     replication::Planet planet(pserver, datadir, frequency);
+     replication::Planet planet(remote);
      std::string last;
      std::string clast;
      if (vm.count("monitor")) {
@@ -313,32 +317,11 @@ main(int argc, char *argv[])
          frequency_tags[replication::daily] = "day";
          frequency_tags[replication::changeset] = "changeset";
          std::string path = frequency_tags[frequency] + "/";
-
          std::thread mthread;
          std::thread cthread;
          if (!url.empty()) {
              last = url;
-             std::vector<std::string> result;
-             boost::split(result, url, boost::is_any_of("/"));
-             if (result[0] == "https:") {
-                 pserver = result[0] + "//" + result[2];
-                 datadir = result[3];
-                 path = result[5] + "/" + result[6] + "/" + result[7];
-                 if (result[4] == "hour") {
-                     frequency = replication::hourly;
-                 } else if (result[4] == "daily") {
-                     frequency = replication::hourly;
-                 } else if (result[4] == "hourly") {
-                     frequency = replication::minutely;
-                 }
-             } else {
-                 path += url;
-             }
-
-             last = pserver + datadir + path;
-             std::cout << "Last path is " << last << std::endl;
-             mthread = std::thread(threads::startMonitor, std::ref(last));
-
+             mthread = std::thread(threads::startMonitor, std::ref(remote));
              auto state = under.getState(frequency, url);
              state->dump();
              if (state->path.empty()) {
@@ -359,7 +342,7 @@ main(int argc, char *argv[])
                  tmp->dump();
                  clast = pserver + datadir + "changesets/" + tmp->path;
                  std::cout << "Last changeset is " << clast  << std::endl;
-                 cthread = std::thread(threads::startMonitor, std::ref(clast));
+                 // cthread = std::thread(threads::startMonitor, std::ref(remote));
              }
          } else if (!starttime.is_not_a_date_time()) {
              // No URL, use the timestamp
@@ -376,7 +359,7 @@ main(int argc, char *argv[])
                  // last = replicator.baseurl + under.freq_to_string(frequency) + "/" + state->path;
              }
              std::cout << "Last minutely is " << last  << std::endl;
-             mthread = std::thread(threads::startMonitor, std::ref(last));
+             // mthread = std::thread(threads::startMonitor, std::ref(remote));
          }
 
          std::cout << "Waiting..." << std::endl;
@@ -386,8 +369,10 @@ main(int argc, char *argv[])
          if (mthread.joinable()) {
              mthread.join();
          }
+         exit(0);
      }
 
+#if 0
     if (vm.count("url")) {
         std::string url = vm["url"].as<std::string>();
         int match = replicator.matchUrl(url);
@@ -456,7 +441,7 @@ main(int argc, char *argv[])
             break;
         }
     }
-
+#endif
      std::string statistics;
      if (vm.count("initialize")) {
          rawfile = vm["initialize"].as<std::vector<std::string>>();
