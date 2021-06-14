@@ -266,16 +266,16 @@ Planet::getLinks(GumboNode* node, std::shared_ptr<std::vector<std::string>> &lin
 
 // Download a file from planet
 std::shared_ptr<std::vector<unsigned char>>
-Planet::downloadFile(const std::string &file)
+Planet::downloadFile(const std::string &url)
 {
     boost::system::error_code ec;
     auto data = std::make_shared<std::vector<unsigned char>>();
-    // std::cout << "Downloading: " << file << std::endl;
+    std::cout << "Downloading: " << url << std::endl;
     // Set up an HTTP GET request message
-    http::request<http::string_body> req{http::verb::get, file, version };
+    http::request<http::string_body> req{http::verb::get, url, version};
 
     req.keep_alive();
-    req.set(http::field::host, server);
+    req.set(http::field::host, remote.domain);
     req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
     // Send the HTTP request to the remote host
@@ -289,7 +289,7 @@ Planet::downloadFile(const std::string &file)
     // read_header(stream, buffer, parser);
     read(stream, buffer, parser);
     if (parser.get().result() == boost::beast::http::status::not_found) {
-        std::cerr << "FIle not found: " << file << std::endl;
+        std::cerr << "Remote file not found: " << url << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -311,125 +311,20 @@ Planet::downloadFile(const std::string &file)
     return data;
 }
 
-// Download a file from planet
-std::shared_ptr<std::vector<unsigned char>>
-Replication::downloadFiles(std::vector<std::string> files, bool disk)
-{
-    boost::system::error_code ec;
-
-    // The io_context is required for all I/O
-    boost::asio::io_context ioc;
-
-    // The SSL context is required, and holds certificates
-    ssl::context ctx{ssl::context::sslv23_client};
-
-    // Verify the remote server's certificate
-    ctx.set_verify_mode(ssl::verify_none);
-
-    // These objects perform our I/O
-    tcp::resolver resolver{ioc};
-    ssl::stream<tcp::socket> stream{ioc, ctx};
-
-    // Look up the domain name
-    auto const results = resolver.resolve(server, std::to_string(port));
-
-    // Make the connection on the IP address we get from a lookup
-    boost::asio::connect(stream.next_layer(), results.begin(), results.end());
-
-    // Perform the SSL handshake
-    try {
-        stream.handshake(ssl::stream_base::client, ec);
-    } catch (const std::exception &e) {
-        std::cerr << "Couldn't shutdown stream" << e.what() << std::endl;
-    }
-    // stream.expires_after (std::chrono::seconds(30));
-    auto data = std::make_shared<std::vector<unsigned char>>();
-    auto links =  std::make_shared<std::vector<std::string>>();
-    for (auto it = std::begin(files); it != std::end(files); ++it) {
-        std::cout << "Downloading " << *it << std::endl;
-        // Set up an HTTP GET request message
-        http::request<http::string_body> req{http::verb::get, *it, version };
-
-        req.set(http::field::host, server);
-        req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-
-        // Send the HTTP request to the remote host
-        http::write(stream, req);
-
-        // This buffer is used for reading and must be persistant
-        boost::beast::flat_buffer buffer;
-
-        // Receive the HTTP response
-        http::response_parser<http::string_body> parser;
-        // read_header(stream, buffer, parser);
-        read(stream, buffer, parser);
-        if (parser.get().result() == boost::beast::http::status::not_found) {
-            continue;
-        }
-        
-        // read(stream, buffer, parser.base());
-        // Parse the HTML content to extract the hyperlinks to
-        // the directories and files
-        // Check the magic number of the file
-        if (parser.get().body()[0] == 0x1f) {
-            std::cout << "It's gzipped" << std::endl;
-            // it's gzipped
-        } else {
-            if (parser.get().body()[0] == '<') {
-                // It's an OSM XML file
-                std::cout << "It's XML" << std::endl;
-                if (disk) {
-                    // FIXME: write to disk is specified
-                }
-                // ::cout << parser.get().body() << std::endl;
-            } else {
-                // It's text, probably a state.txt file. State
-                // files are never compressed.
-                //StateFile fooby(parser.get().body(), true);
-                // Copy the data into the shared point, as this memory will be
-                // deleted.
-                for (auto body = std::begin(parser.get().body()); body != std::end(parser.get().body()); ++body) {
-                    data->push_back((unsigned char)*body);
-                }
-                
-                //data->reserve(parser.get().body().size());
-                // std::copy(parser.get().body().begin(), parser.get().body().end(),
-                //           std::back_inserter(data));
-                // states.push_back(fooby);
-                // fooby.dump();
-                if (disk) {
-                    // FIXME: write to disk is specified
-                }
-            }
-        }
-        if (files.size() == 1) {
-            path += files[0];
-        }
-    }
-
-    // Gracefully close the socket
-    stream.shutdown(ec);
-    if (ec) {
-        std::cerr << "ERROR: stream shutdown failed" << ": " << ec.message() << std::endl;
-    }
-    
-    return data;
-}
-
 Planet::~Planet(void)
 {
     ioc.reset();                // reset the I/O conhtext
-    stream.shutdown();          // shutdown the socket used by the stream
+    // stream.shutdown();          // shutdown the socket used by the stream
 }
 
 Planet::Planet(void)
 {
-    frequency_tags[replication::minutely] = "minute";
-    frequency_tags[replication::hourly] = "hour";
-    frequency_tags[replication::daily] = "day";
-    frequency_tags[replication::changeset] = "changeset";
-    baseurl = "https://planet.openstreetmap.org/replication";
-    connectServer();
+    // FIXME: for bulk downloads, we might want to strip across
+    // all the mirrors. The support minutely diffs
+    // pserver = "https://download.openstreetmap.fr";
+    // pserver = "https://planet.maps.mail.ru";
+    // pserver = "https://planet.openstreetmap.org";
+    // connectServer();
 };
 
 
@@ -456,14 +351,22 @@ bool
 Planet::connectServer(const std::string &planet)
 {
     if (!planet.empty()) {
-        server = planet;
+        remote.domain = planet;
     }
 
     // Gracefully close the socket
     boost::system::error_code ec;
     ioc.reset();
     ctx.set_verify_mode(ssl::verify_none);
-    auto const results = resolver.resolve(server, std::to_string(port));
+    // Strip off the https part
+    std::string tmp;
+    auto pos = planet.find(":");
+    if (pos != std::string::npos) {
+        tmp = planet.substr(pos+3);
+    } else {
+        tmp = planet;
+    }
+    auto const results = resolver.resolve(tmp, std::to_string(port));
     boost::asio::connect(stream.next_layer(), results.begin(), results.end(), ec);
     if (ec) {
         std::cerr << "ERROR: stream connect failed" << ": " << ec.message() << std::endl;
@@ -498,7 +401,7 @@ Planet::scanDirectory(const std::string &dir)
     ssl::stream<tcp::socket> stream{ioc, ctx};
 
     // Look up the domain name
-    auto const results = resolver.resolve(server, std::to_string(port));
+    auto const results = resolver.resolve(remote.domain, std::to_string(port));
 
     // Make the connection on the IP address we get from a lookup
     boost::asio::connect(stream.next_layer(), results.begin(), results.end());
@@ -510,7 +413,7 @@ Planet::scanDirectory(const std::string &dir)
 
     // Set up an HTTP GET request message
     http::request<http::string_body> req{http::verb::get, dir, version };
-    req.set(http::field::host, server);
+    req.set(http::field::host, remote.domain);
     req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
     // Send the HTTP request to the remote host
@@ -538,7 +441,36 @@ Planet::scanDirectory(const std::string &dir)
 // attempts to do a rough calculation of the probably data file,
 // and downloads *.state.txt files till the right data file is found.
 // Note that this can be slow as it has to download multiple files.
-std::string
+std::shared_ptr<replication::StateFile>
+Planet::findData(frequency_t freq, const std::string &path)
+{
+    auto data = downloadFile(path + ".state.txt");
+    if (data->size() == 0) {
+        std::cerr << "ERROR: StateFile not found: " << path << std::endl;
+        auto tmp = std::make_shared<replication::StateFile>();
+        return tmp;
+    } else {
+        std::string tmp(reinterpret_cast<const char *>(data->data()));
+        auto state = std::make_shared<replication::StateFile>(tmp, true);
+        if (state->path[0] = 'h') {
+            std::vector<std::string> result;
+            boost::split(result, path, boost::is_any_of("/"));
+            state->path = path;
+        }
+        state->dump();
+        return state;
+    }
+}
+
+std::shared_ptr<StateFile>
+Planet::findData(frequency_t freq, long sequence)
+{
+    auto state = std::make_shared<replication::StateFile>();
+
+    return state;
+}
+
+std::shared_ptr<StateFile>
 Planet::findData(frequency_t freq, ptime tstamp)
 {
     ptime now = boost::posix_time::microsec_clock::local_time();
@@ -553,21 +485,21 @@ Planet::findData(frequency_t freq, ptime tstamp)
     };
 
     // start timestamps for the top level changeset files
+    // There are no state.txt files before 002/010/000, the
+    // first sequence is 2009999, 2016-09-08 20:19:01
     std::vector<ptime> cstates = {
-        time_from_string("2012-10-29 12:15"),
-        time_from_string("2014-10-08 00:37"),
-        time_from_string("2016-09-02 13:22"),
-        time_from_string("2018-07-30 09:12"),
-        time_from_string("2020-06-29 16:05"),
+        time_from_string("2012-10-28 19:36"),
+        time_from_string("2014-10-07 07:58"),
+        time_from_string("2016-09-01 20:43"),
+        time_from_string("2018-07-29 16:33"), // 2999999
+        time_from_string("2020-06-28 23:26"), // 3999999
         now
     };
-
-    
     // Changeset files don't have an associated state.txt till
     // this first one: .../replication/changesets/002/007/990.state.txt
     underpass::Underpass under;
     under.connect();
-    replication::StateFile state;
+    auto state = std::make_shared<replication::StateFile>();
     // boost::local_time::local_time_period lp(states[0]);
     boost::posix_time::time_duration delta1, delta2;
     int minutes1 = 0;
@@ -575,36 +507,77 @@ Planet::findData(frequency_t freq, ptime tstamp)
     std::string major;
     std::string minor;
     std::string index;
+#if 0
+    auto data = downloadFile(newpath + ".state.txt");
+    if (data->size() == 0) {
+        std::cerr << "ERROR: StateFile not found: " << newpath << std::endl;
+        return state;
+    } else {
+        std::string tmp(reinterpret_cast<const char *>(data->data()));
+        auto state = std::make_shared<replication::StateFile>(tmp, true);
+        state->path = newpath;
+        under.writeState(*state);
+        state->dump();
+    }
+#endif
+    std::vector<ptime> times;
     if (freq == replication::minutely) {
-        for (int i = mstates.size(); i >= 0; --i) {
-            if (tstamp > mstates[i-1] && tstamp < mstates[i]) {
-                delta1 = tstamp - mstates[i-1];
-                delta2 = mstates[i] - mstates[i-1];
-                minutes1 = (delta1.hours() * 60) + delta1.minutes();
-                minutes2 = (delta2.hours() * 60) + delta2.minutes();
-                // int interval = minutes2/999.5;
-                int interval = minutes2/1000;
-                boost::format fmt("%03d");
-                fmt % (i-1);
-                major += fmt.str() + "/";
-                fmt % (minutes1/interval);
-                minor += fmt.str() + "/";
-                int total = 1;
-                fmt % (total);
-                index += fmt.str();
-                // state.path = major + minor + index;
-                state.path = major + minor + "000";
-                return state.path;
-                break;
-            }
+        times = mstates;
+    } else if (freq == replication::changeset) {
+        times = cstates;
+    } else if (freq == replication::hourly) {
+        // times = hstates;
+    }
+    for (int i = times.size(); i >= 0; --i) {
+        // std::cerr << to_simple_string(tstamp) << " : "
+        //           << to_simple_string(times[i-2]) << " : "
+        //           << to_simple_string(times[i-1]) << " : "
+        //           << std::endl;
+        if (tstamp > times[i-1] && tstamp < times[i]) {
+            delta1 = tstamp - times[i-1];
+            delta2 = times[i] - times[i-1];
+            std::cerr << "Hours: " << delta1.hours() << " : " << delta2.hours() << std::endl;
+            minutes1 = (delta1.hours() * 60) + delta1.minutes();
+            // This is the total time span in the major directory
+            minutes2 = (delta2.hours() * 60) + delta2.minutes();
+            std::cerr << "Minutes: " << minutes1 << " : " << minutes2 << std::endl;
+            boost::format fmt("%03d");
+            fmt % (i-1);
+            major += fmt.str() + "/";
+            fmt % (minutes1/1000);
+            minor += fmt.str() + "/";
+            int total = 2;
+            fmt % (total);
+            index += fmt.str();
+            state->path = major + minor + index;
+            // state->path = major + minor + "000";
+            //return state;
         }
+    }
+
+#if 0
+    std::string path = pserver + datadir + state->path;
+    auto data = downloadFile(path + ".state.txt");
+    if (data->size() == 0) {
+        std::cerr << "ERROR: StateFile not found: " << path << std::endl;
+        return state;
+    } else {
+        std::string tmp(reinterpret_cast<const char *>(data->data()));
+        auto state = std::make_shared<replication::StateFile>(tmp, true);
+            state->path = path;
+            under.writeState(*state);
+            state->dump();
+    }
+#endif
 #if 0
         state.timestamp = tstamp;
         under.writeState(state);
         state.dump();
         return state.path;
-#endif
     }
+#endif
+
+    return state;
 
 #if 0
     auto last = std::make_shared<replication::StateFile>();
@@ -661,6 +634,86 @@ Planet::findData(frequency_t freq, ptime tstamp)
         }
     }
 #endif
+}
+
+RemoteURL::RemoteURL(void)
+{
+}
+
+RemoteURL::RemoteURL(const std::string &rurl)
+{
+    std::map<std::string, replication::frequency_t> frequency_tags;
+    frequency_tags["minute"] = replication::minutely;
+    frequency_tags["hour"] = replication::hourly;
+    frequency_tags["day"] = replication::daily;
+    frequency_tags["changeset"] = replication::changeset;
+
+    std::vector<std::string> parts;
+    boost::split(parts, rurl, boost::is_any_of("/"));
+    domain = parts[2];
+    datadir = parts[3];
+    frequency = frequency_tags[parts[4]];
+    subpath = parts[5] + "/" + parts[6] + "/" + parts[7];
+    major = std::stoi(parts[5]);
+    minor = std::stoi(parts[6]);
+    index = std::stoi(parts[7]);
+    if (frequency == replication::changeset) {
+        filespec = rurl.substr(rurl.find(datadir)) + ".osm.gz";
+        url = rurl + ".osm.gz";
+    } else {
+        filespec = rurl.substr(rurl.find(datadir)) + ".osc.gz";
+        url = rurl + ".osc.gz";
+    }
+    destdir = datadir + "/" + parts[4] + "/" +  parts[5] + "/" + parts[6];
+}
+
+void RemoteURL::Increment(void)
+{
+    boost::format fmt("%03d");
+    fmt % (major);
+    std::string newpath = fmt.str() + "/";
+    if (minor == 999) {
+        major++;
+        fmt % (major);
+        newpath += fmt.str() + "/000";
+        index = 0;
+    }
+    if (index == 999) {
+        minor++;
+        fmt % (minor);
+        newpath += fmt.str();
+        newpath += "/000";
+    } else {
+        fmt % (minor);
+        newpath += fmt.str();
+        fmt % (index++);
+        newpath += "/" + fmt.str();
+    }
+    if (minor == 999) {
+        major++;
+        fmt % (major);
+        newpath += fmt.str() + "/000";
+    }
+
+    // boost::algorithm::replace_all(destdir, subpath, newpath);
+    boost::algorithm::replace_all(filespec, subpath, newpath);
+    boost::algorithm::replace_all(url, subpath, newpath);
+    subpath = newpath;
+}
+
+void
+RemoteURL::dump(void)
+{
+    std::cerr << "URL: " << url << std::endl;
+    std::cerr << "\tDomain: " << domain << std::endl;
+    std::cerr << "\tDatadir: " << datadir << std::endl;
+    std::cerr << "\tSubpath: " << subpath << std::endl;
+    // std::cerr << "\tFrequency: " <<  << std::endl;
+    std::cerr << "\tMajor: " << major << std::endl;
+    std::cerr << "\tMinor: " <<  minor<< std::endl;
+    std::cerr << "\tIndex: " << index << std::endl;
+    std::cerr << "\tFilespec: " << filespec << std::endl;
+    std::cerr << "\tDestdir: " << destdir << std::endl;
 }
 
 } // EOF replication namespace

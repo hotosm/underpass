@@ -149,17 +149,17 @@ Underpass::getState(replication::frequency_t freq, const std::string &path)
         return state;
     }
     std::vector<std::string> nodes;
-    boost::split(nodes, path, boost::is_any_of("/"));
     std::string tmp;
+    boost::split(nodes, path, boost::is_any_of("/"));
     if (nodes[0] == "https:") {
-        tmp = nodes[5] + '/' + nodes[6] + '/' + nodes[7];
+        tmp = nodes[5] + "/" + nodes[6] + "/" + nodes[7];
     } else {
         tmp = path;
     }
     //db_mutex.lock();
     std::string query = "SELECT timestamp,path,sequence,frequency FROM states WHERE path=\'";
     query += tmp + "\' AND frequency=\'" + frequency_tags[freq] + "\'";
-    // std::cout << "QUERY: " << query << std::endl;
+    std::cout << "QUERY: " << query << std::endl;
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     worker.commit();
@@ -232,9 +232,9 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
         int next;
         fmt % (next);
         state->path += fmt.str();
-        std::cerr << "ERROR: FIXME!!!!!" << state->path << std::endl;
-#else
-        std::cerr << "ERROR: FIXME!!!!!" << std::endl;
+//        std::cerr << "ERROR: FIXME!!!!!" << state->path << std::endl;
+//#else
+//        std::cerr << "ERROR: FIXME!!!!!" << std::endl;
 #endif
     }
     return state;

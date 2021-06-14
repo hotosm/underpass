@@ -84,259 +84,234 @@ namespace threads {
 
 // Starting with this URL, download the file, incrementing
 void
-startMonitor(const std::string &url)
+startMonitor(replication::RemoteURL &remote)
 {
     // auto planet = std::make_shared<replication::Planet>();
-    replication::Replication server;
-    bool mainloop = true;
+    // replication::Replication server;
     underpass::Underpass under;
     under.connect();
-    std::string path = url;
-    std::string base = url.substr(0, url.size() - 7);
-    std::shared_ptr<replication::StateFile> state;
 
+    auto planet = std::make_shared<replication::Planet>(remote);
+    bool mainloop = true;
     while (mainloop) {
-        auto planet = std::make_shared<replication::Planet>();
         // Look for the statefile first
-        bool subloop = true;
-        while (subloop) {
-            std::shared_ptr<replication::StateFile> exists;
-	    if (url.find("changeset") != std::string::npos) {
-                exists = under.getState(replication::changeset, path);
-            } else if (url.find("minute") != std::string::npos) {
-                exists = under.getState(replication::minutely, path);
-            } else if (url.find("day") != std::string::npos) {
-                exists = under.getState(replication::daily, path);
-            } else if (url.find("hour") != std::string::npos) {
-                exists = under.getState(replication::hourly, path);
+#if 0
+	std::shared_ptr<replication::StateFile> exists;
+	exists = under.getState(remote.frequency, remote.subpath);
+	if (exists) {
+	    std::cout << "Already stored in database: " << remote.subpath << std::endl;
+	    break;
+	} else {
+	    std::cout << "Downloading StateFile: " << remote.subpath + ".state.txt" << std::endl;
+	    auto state = threadStateFile(planet->stream, remote.subpath + ".state.txt");
+	    if (state->timestamp != boost::posix_time::not_a_date_time && (state->sequence != 0 && state->path.size() != 0)) {
+		state->dump();
+		under.writeState(*state);
+		break;
 	    }
-	    if (exists) {
-                std::cout << "Already stored: " << path << std::endl;
-                subloop = true;
-                break;
-            } else {
-		path = planet->baseurl + url;
-                std::cout << "Downloading StateFile: " << path << std::endl;
-                state = threadStateFile(planet->stream, path + ".state.txt");
-                if (state->timestamp != boost::posix_time::not_a_date_time && (state->sequence != 0 && state->path.size() != 0)) {
-                    state->dump();
-                    under.writeState(*state);
-                    break;
-                }
-            }
         }
-        if (path.find("changeset") != std::string::npos) {
-            std::string file = path + ".osm.gz";
-            // std::promise<bool> exists;
-            // std::thread osm(&threads::threadChangeSet, std::ref(file), std::move(exists));
-            // osm.join();
-            // auto found = exists.get_future();
+#endif
+        if (remote.frequency == replication::changeset) {
             Timer timer;
             timer.startTimer();
-            auto found = threadChangeSet(file);
+            auto found = threadChangeSet(remote);
             if (!found) {
-                planet->disconnectServer();
-                if (url.find("minute") != std::string::npos) {
+                // planet->disconnectServer();
+                if (remote.frequency == replication::minutely) {
                     std::this_thread::sleep_for(std::chrono::minutes{1});
-                } else if (url.find("hour") != std::string::npos) {
+                } else if (remote.frequency == replication::hourly) {
                     std::this_thread::sleep_for(std::chrono::hours{1});
-                } else if (url.find("day") != std::string::npos) {
+                } else if (remote.frequency == replication::daily) {
                     std::this_thread::sleep_for(std::chrono::hours{24});
                 }
-                planet.reset(new replication::Planet);
+                // planet.reset(new replication::Planet);
             } else {
-                std::cout << "Processed ChangeSet: " << path << std::endl;
+                std::cout << "Processed ChangeSet: " << remote.url << std::endl;
             }
             timer.endTimer("changeSet");
         } else {
-            std::string file = path + ".osc.gz";
-            // std::thread osm(threads::threadOsmChange, std::ref(file));
-            // osm.detach();
+            std::string file = remote.url + ".osc.gz";
             Timer timer;
             timer.startTimer();
-            bool found = threadOsmChange(file);
+            bool found = threadOsmChange(remote);
             if (!found) {
-                planet->disconnectServer();
-                if (url.find("minute") != std::string::npos) {
+                // planet->disconnectServer();
+                if (remote.frequency == replication::minutely) {
                     std::this_thread::sleep_for(std::chrono::minutes{1});
-                } else if (url.find("hour") != std::string::npos) {
+                } else if (remote.frequency == replication::hourly) {
                     std::this_thread::sleep_for(std::chrono::hours{1});
-                } else if (url.find("day") != std::string::npos) {
+                } else if (remote.frequency == replication::daily) {
                     std::this_thread::sleep_for(std::chrono::hours{24});
                 }
-                planet.reset(new replication::Planet);
+                // planet.reset(new replication::Planet);
             } else {
-                std::cout << "Processed OsmChange: " << path << std::endl;
+                std::cout << "Processed OsmChange: " << remote.url << std::endl;
             }
             timer.endTimer("osmChange");
         }
-        state.reset();
+	remote.Increment();
+	remote.dump();
+#if 0
         std::vector<std::string> result;
-        // The path is always something like this:
-        // https://planet.openstreetmap.org/replication/minute/004/304/997.osm.gz
-        // so it's safe to just grab the directory entries we need. Every directory
-        /// has 1000 files in it, so the minor needs to get incremented.
-        boost::split(result, path, boost::is_any_of("/"));
+        boost::split(result, remote.subpath, boost::is_any_of("/"));
         int major = 0;
         int minor = 0;
         int index = 0;
         try {
-            major = std::stoi(result[5]);
-            minor = std::stoi(result[6]);
-            index = std::stoi(result[7]);
+            major = std::stoi(result[0]);
+            minor = std::stoi(result[1]);
+            index = std::stoi(result[2]);
         } catch (std::exception& e) {
-            std::cerr << "ERROR: Couldn't parse: " << path << std::endl;
+            std::cerr << "ERROR: Couldn't parse: " << remote.url << std::endl;
             std::cerr << e.what() << std::endl;
             continue;
         }
-
         // Increment the index number
-        path = base;
+	std::string newpath = remote.base;
         boost::format fmt("%03d");
         if (minor == 999) {
             major++;
             fmt % (major);
-            path += fmt.str() + "/000";
+            newpath += fmt.str() + "/000";
             index = 0;
         }
         if (index == 999) {
             minor++;
             fmt % (minor);
-            path += fmt.str();
-            path += "/000";
+            newpath += fmt.str();
+            newpath += "/000";
         } else {
             fmt % (minor);
-            path += fmt.str();
+            newpath += fmt.str();
             fmt % (index + 1);
-            path += "/" + fmt.str();
+            newpath += "/" + fmt.str();
         }
         if (minor == 999) {
             major++;
             fmt % (major);
-            path += fmt.str() + "/000";
+            newpath += fmt.str() + "/000";
         }
+#endif
         // std::cerr << "PATH: " << path << ": /" << major << "/ " << minor << "/ " << index << std::endl;
         //planet->endTimer("change file");
     }
 }
 
 void
-startStateThreads(const std::string &base, std::vector<std::string> &files)
+startStateThreads(const std::string &base, const std::string &file)
 {
     // std::map<std::string, std::thread> thread_pool;
 
     //return;                     // FIXME:
     
-    boost::system::error_code ec;
-    underpass::Underpass under;
-    under.connect();
-    auto planet = std::make_shared<replication::Planet>();
-    planet->connectServer();
-
-#if 1
-    for (auto it = std::begin(files); it != std::end(files); ++it) {
-        // There are no state,txt file before this directory
-        // https://planet.openstreetmap.org/replication/changesets/002/008
-
-        //  state = [planet](const std::string &path)->bool {
-        std::string path = base + it->substr(0, 3);
-        std::shared_ptr<replication::StateFile> state = threadStateFile(planet->stream, path + ".state.txt");
-        if (!state->path.empty()) {
-            under.writeState(*state);
-            state->dump();
-        } else {
-            std::cerr << "ERROR: No StateFile returned: " << path << std::endl;
-            // planet.reset(new replication::Planet);
-            // planet.reset(new replication::Planet());
-            std::this_thread::sleep_for(std::chrono::seconds{1});
-            state = threadStateFile(planet->stream, path + ".state.txt");
-            if (!state->path.empty()) {
-                under.writeState(*state);
-                state->dump();
-            }
-        }
-    }
-#else
-    // boost::asio::thread_pool pool(20);
-    boost::asio::thread_pool pool(/* std::thread::hardware_concurrency() */ );
-
-    // Note this uses ranges, which only got added in C++20, so
-    // for now use the ranges-v3 library, which is the implementation.
-    // The planet server drops the network connection after 111
-    // GET requests, so break the 1000 strings into smaller chunks
-    // 144, 160, 176, 192, 208, 224
-    auto rng  = files | ranges::views::chunk(200);
-
+    // boost::system::error_code ec;
     // underpass::Underpass under;
     // under.connect();
-    //Timer timer;
-    //timer.startTimer();
-    for (auto cit = std::begin(rng); cit != std::end(rng); ++cit) {
-        std::cout << "Chunk data: " << *cit << std::endl;
-        for (auto it = std::begin(*cit); it != std::end(*cit); ++it) {
-            // There are no state,txt file before this directory
-            // https://planet.openstreetmap.org/replication/changesets/002/008
-            if (boost::filesystem::extension(*it) != ".txt") {
-                continue;
-            }
-            std::string subpath = base + it->substr(0, it->size() - 10);
-            auto exists = under.getState(subpath);
-            if (!exists->path.empty()) {
-                std::cout << "Already stored: " << subpath << std::endl;
-                continue;
-            }
-            // Add a thread to the pool for this file
-            if (!it->size() <= 1) {
-#ifdef USE_MULTI_LOADER
-                boost::asio::post(pool, [subpath, state]{state(subpath);});
-#else
-                auto state = threadStateFile(planet->stream, base + *it);
-                if (!state->path.empty()) {
-                    // under.writeState(*state);
-                    state->dump();
-                    continue;
-                } else {
-                    std::cerr << "ERROR: No StateFile returned: " << subpath << std::endl;
-                }
-#endif
-            }
-        }
-        //timer.endTimer("chunk ");
-        // Don't hit the server too hard while testing, it's not polite
-        // std::this_thread::sleep_for(std::chrono::seconds{1});
-        planet->disconnectServer();
-        planet.reset(new replication::Planet);
-    }
-#ifdef USE_MULTI_LOADER
-    pool.join();
-#endif
-    planet->ioc.reset();
-#endif
-    // planet->stream.socket().shutdown(tcp::socket::shutdown_both, ec);
-    //timer.endTimer("directory ");
+    // auto planet = std::make_shared<replication::Planet>();
+    // planet->connectServer();
+
+// #if 1
+//     for (auto it = std::begin(files); it != std::end(files); ++it) {
+//         // There are no state,txt file before this directory
+//         // https://planet.openstreetmap.org/replication/changesets/002/008
+
+//         //  state = [planet](const std::string &path)->bool {
+//         std::string path = base + it->substr(0, 3);
+//         std::shared_ptr<replication::StateFile> state = threadStateFile(planet->stream, path + ".state.txt");
+//         if (!state->path.empty()) {
+//             under.writeState(*state);
+//             state->dump();
+//         } else {
+//             std::cerr << "ERROR: No StateFile returned: " << path << std::endl;
+//             // planet.reset(new replication::Planet);
+//             // planet.reset(new replication::Planet());
+//             std::this_thread::sleep_for(std::chrono::seconds{1});
+//             state = threadStateFile(planet->stream, path + ".state.txt");
+//             if (!state->path.empty()) {
+//                 under.writeState(*state);
+//                 state->dump();
+//             }
+//         }
+//     }
+// #else
+//     // boost::asio::thread_pool pool(20);
+//     boost::asio::thread_pool pool(/* std::thread::hardware_concurrency() */ );
+
+//     // Note this uses ranges, which only got added in C++20, so
+//     // for now use the ranges-v3 library, which is the implementation.
+//     // The planet server drops the network connection after 111
+//     // GET requests, so break the 1000 strings into smaller chunks
+//     // 144, 160, 176, 192, 208, 224
+//     auto rng  = files | ranges::views::chunk(200);
+
+//     // underpass::Underpass under;
+//     // under.connect();
+//     //Timer timer;
+//     //timer.startTimer();
+//     for (auto cit = std::begin(rng); cit != std::end(rng); ++cit) {
+//         std::cout << "Chunk data: " << *cit << std::endl;
+//         for (auto it = std::begin(*cit); it != std::end(*cit); ++it) {
+//             // There are no state,txt file before this directory
+//             // https://planet.openstreetmap.org/replication/changesets/002/008
+//             if (boost::filesystem::extension(*it) != ".txt") {
+//                 continue;
+//             }
+//             std::string subpath = base + it->substr(0, it->size() - 10);
+//             auto exists = under.getState(subpath);
+//             if (!exists->path.empty()) {
+//                 std::cout << "Already stored: " << subpath << std::endl;
+//                 continue;
+//             }
+//             // Add a thread to the pool for this file
+//             if (!it->size() <= 1) {
+// #ifdef USE_MULTI_LOADER
+//                 boost::asio::post(pool, [subpath, state]{state(subpath);});
+// #else
+//                 auto state = threadStateFile(planet->stream, base + *it);
+//                 if (!state->path.empty()) {
+//                     // under.writeState(*state);
+//                     state->dump();
+//                     continue;
+//                 } else {
+//                     std::cerr << "ERROR: No StateFile returned: " << subpath << std::endl;
+//                 }
+// #endif
+//             }
+//         }
+//         //timer.endTimer("chunk ");
+//         // Don't hit the server too hard while testing, it's not polite
+//         // std::this_thread::sleep_for(std::chrono::seconds{1});
+//         planet->disconnectServer();
+//         planet.reset(new replication::Planet);
+//     }
+// #ifdef USE_MULTI_LOADER
+//     pool.join();
+// #endif
+//     planet->ioc.reset();
+// #endif
+//     // planet->stream.socket().shutdown(tcp::socket::shutdown_both, ec);
+//     //timer.endTimer("directory ");
 }
 
 // This thread get started for every osmChange file
 bool
-threadOsmChange(const std::string &file)
+threadOsmChange(const replication::RemoteURL &remote)
 {
     // osmstats::QueryOSMStats ostats;
-    replication::Planet planet;
-    // changeset::ChangeSetFile change;
+    std::vector<std::string> result;
     osmchange::OsmChangeFile osmchanges;
 
-    std::string dir = file.substr(file.find("replication"));
     auto data = std::make_shared<std::vector<unsigned char>>();
     // If the file is stored on disk, read it in instead of downloading
-    if (boost::filesystem::exists(dir)) {
-        std::cout << "Reading osmChange: " << file << std::endl;
+    if (boost::filesystem::exists(remote.filespec)) {
+        std::cout << "Reading osmChange: " << remote.filespec << std::endl;
         // Since we want to read in the entire file so it can be
         // decompressed, blow off C++ streaming and just load the
         // entire thing.
-        int size = boost::filesystem::file_size(dir);
+        int size = boost::filesystem::file_size(remote.filespec);
         data->reserve(size);
         data->resize(size);
-        int fd = open(dir.c_str(), O_RDONLY);
+        int fd = open(remote.filespec.c_str(), O_RDONLY);
         char *buf = new char[size];
         //memset(buf, 0, size);
         read(fd, buf, size);
@@ -344,25 +319,22 @@ threadOsmChange(const std::string &file)
         std::copy(buf, buf+size, data->begin());
         close(fd);
     } else {
-        std::cout << "Downloading osmChange: " << file << std::endl;
-        data = planet.downloadFile(file);
+        std::cout << "Downloading osmChange: " << remote.url << std::endl;
+ 	replication::Planet planet(remote);
+	data = planet.downloadFile(remote.url);
     }
     if (data->size() == 0) {
-        std::cout << "osmChange file not found: " << file << std::endl;
+        std::cout << "osmChange file not found: " << remote.url + ".osc.gz" << std::endl;
         return false;
     } else {
 #ifdef USE_CACHE
-        if (!boost::filesystem::exists(dir)) {
-            std::ofstream myfile;
-            std::vector<std::string> result;
-            boost::split(result, file, boost::is_any_of("/"));
-            boost::filesystem::create_directory(result[4]);
-            boost::filesystem::create_directory(result[4] + "/" + result[5]);
-            boost::filesystem::create_directory(result[4] + "/" + result[5] + "/" + result[6]);
-            myfile.open(dir, std::ios::binary);
-            myfile.write(reinterpret_cast<char *>(data->data()), data->size()-1);
-            myfile.close();
-        }
+        if (!boost::filesystem::exists(remote.destdir)) {
+	    boost::filesystem::create_directories(remote.destdir);
+	}
+	std::ofstream myfile;
+	myfile.open(remote.filespec, std::ios::binary);
+	myfile.write(reinterpret_cast<char *>(data->data()), data->size()-1);
+	myfile.close();
 #endif
         try {
             boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
@@ -373,13 +345,13 @@ threadOsmChange(const std::string &file)
             try {
                 osmchanges.readXML(instream);
             } catch (std::exception& e) {
-                std::cerr << "ERROR: Couldn't parse: " << file << std::endl;
+                std::cerr << "ERROR: Couldn't parse: " << remote.url << std::endl;
                 std::cerr << e.what() << std::endl;
                 // return false;
             }
             // change.readXML(instream);
         } catch (std::exception& e) {
-            std::cerr << "ERROR: " << file << " is corrupted!" << std::endl;
+            std::cerr << "ERROR: " << remote.url << " is corrupted!" << std::endl;
             std::cerr << e.what() << std::endl;
             // return false;
         }
@@ -416,21 +388,23 @@ threadOsmChange(const std::string &file)
 // the changeset file, and don't need to be calculated.
 //void threadChangeSet(const std::string &file, std::promise<bool> &&result)
 std::shared_ptr<replication::StateFile>
-threadChangeSet(const std::string &file)
+threadChangeSet(const replication::RemoteURL &remote)
 {
     changeset::ChangeSetFile changeset;
+
     auto state = std::make_shared<replication::StateFile>();
     auto data = std::make_shared<std::vector<unsigned char>>();
-    std::string dir = file.substr(file.find("changesets"));
-    if (boost::filesystem::exists(dir)) {
-        std::cout << "Reading ChangeSet: " << dir << std::endl;
+    // FIXME: this this be the datadir from the command line
+
+    if (boost::filesystem::exists(remote.datadir)) {
+        std::cout << "Reading ChangeSet: " << remote.filespec << std::endl;
         // Since we want to read in the entire file so it can be
         // decompressed, blow off C++ streaming and just load the
         // entire thing.
-        int size = boost::filesystem::file_size(dir);
+        int size = boost::filesystem::file_size(remote.filespec);
         data->reserve(size);
         data->resize(size);
-        int fd = open(dir.c_str(), O_RDONLY);
+        int fd = open(remote.filespec.c_str(), O_RDONLY);
         char *buf = new char[size];
         //memset(buf, 0, size);
         read(fd, buf, size);
@@ -438,29 +412,25 @@ threadChangeSet(const std::string &file)
         std::copy(buf, buf+size, data->begin());
         close(fd);
     } else {
-        std::cout << "Downloading ChangeSet: " << file << std::endl;
-        replication::Planet planet;
-        data = planet.downloadFile(file);
+        std::cout << "Downloading ChangeSet: " << remote.url << std::endl;
+	replication::Planet planet(remote);
+        data = planet.downloadFile(remote.url);
     }
     if (data->size() == 0) {
-        std::cout << "ChangeSet file not found: " << file << std::endl;
+        std::cout << "ChangeSet file not found: " << remote.url << std::endl;
         //result.set_value(false);
         return state;
     } else {
         //result.set_value(true);
         // XML parsers expect every line to have a newline, including the end of file
 #ifdef USE_CACHE
-        if (!boost::filesystem::exists(dir)) {
-            std::ofstream myfile;
-            std::vector<std::string> result;
-            boost::split(result, file, boost::is_any_of("/"));
-            boost::filesystem::create_directory(result[4]);
-            boost::filesystem::create_directory(result[4] + "/" + result[5]);
-            boost::filesystem::create_directory(result[4] + "/" + result[5] + "/" + result[6]);
-            myfile.open(result[4] + "/" + result[5] + "/" + result[6] + "/" + result[7], std::ios::binary);
-            myfile.write(reinterpret_cast<char *>(data->data()), data->size()-1);
-            myfile.close();
-        }
+        if (!boost::filesystem::exists(remote.destdir)) {
+	    boost::filesystem::create_directories(remote.destdir);
+	}
+	std::ofstream myfile;
+	myfile.open(remote.filespec, std::ios::binary);
+	myfile.write(reinterpret_cast<char *>(data->data()), data->size()-1);
+	myfile.close();
 #endif
         //data->push_back('\n');
         try {
@@ -473,13 +443,13 @@ threadChangeSet(const std::string &file)
             try {
                 changeset.readXML(instream);
             } catch (std::exception& e) {
-                std::cerr << "ERROR: Couldn't parse: " << file << std::endl;
+                std::cerr << "ERROR: Couldn't parse: " << remote.url << std::endl;
                 std::cerr << e.what() << std::endl;
                 // return false;
             }
             // change.readXML(instream);
         } catch (std::exception& e) {
-            std::cerr << "ERROR: " << file << " is corrupted!" << std::endl;
+            std::cerr << "ERROR: " << remote.url << " is corrupted!" << std::endl;
             std::cerr << e.what() << std::endl;
             // return false;
         }
@@ -520,9 +490,11 @@ threadStatistics(const std::string &database, ptime &timestamp)
 std::shared_ptr<replication::StateFile>
 threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
 {
-    std::string server = "planet.openstreetmap.org";
-    // See if the data exists in the database already
-    // auto  exists = under.getState(subpath);
+    std::string server;
+
+    std::vector<std::string> result;
+    boost::split(result, file, boost::is_any_of("/"));
+    server = result[2];
 
     // This buffer is used for reading and must be persistant
     boost::beast::flat_buffer buffer;
@@ -535,7 +507,7 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
     req.set(http::field::host, server);
     req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
     
-    // std::cout << "(" << std::this_thread::get_id() << ")Downloading " << file << std::endl;
+    std::cout << "(" << std::this_thread::get_id() << ")Downloading " << file << std::endl;
 
     // Stays locked till the function exits
     const std::lock_guard<std::mutex> lock(stream_mutex);
