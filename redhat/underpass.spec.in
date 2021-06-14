@@ -4,13 +4,12 @@ Summary: A Network boot loader
 Name: underpass
 Version: %{version}
 Release: 0
-Copyright: GPLv3
+License: GPL
 Group: Utilities/Network
-Source: https://github.com/hotosm/underpass.git
+Source: https://github.com/hotosm/$(distdir).tar.gz
 URL: https://hotosm.github.io/underpass/pages.html
 Vendor: Rob Savoye
 Packager: Rob Savoye <rob.savoye@hotosm.org>
-BuildRoot: /tmp/underpass-buildroot
 
 %description
 Underpass is a system daemon that process replication files from the OpenStreetMap planet server.
@@ -19,6 +18,7 @@ Underpass is a system daemon that process replication files from the OpenStreetM
 %setup
 
 %build
+cd $RPM_BUILD_ROOT
 ./configure --enable-trace --prefix $RPM_BUILD_ROOT/usr
 make
 
@@ -33,20 +33,20 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %doc
-COPYING
-README
-AUTHORS
-INSTALL
-ChangeLog
-doc/changefile.md
-doc/dataflow.md
-doc/install.md
-doc/osmstats.md
-doc/replication.md
-doc/replicator.md
-doc/schemas.md
-doc/statistics.md
-doc/utility.md
+/COPYING
+/README
+/AUTHORS
+/INSTALL
+/ChangeLog
+/doc/changefile.md
+/doc/dataflow.md
+/doc/install.md
+/doc/osmstats.md
+/doc/replication.md
+/doc/replicator.md
+/doc/schemas.md
+/doc/statistics.md
+/doc/utility.md
 
 %defattr(755,root,root)
 /usr/bin/replicator
