@@ -29,7 +29,7 @@ dnl OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 AC_PREREQ(2.59c)
-AC_INIT(underpass, 0.2-dev)
+AC_INIT(underpass, 0.3_dev)
 LT_INIT
 AM_INIT_AUTOMAKE
 AC_CONFIG_MACRO_DIR([m4])
@@ -50,6 +50,9 @@ DLOPEN="-dlopen"
 DLPREOPEN="-dlpreopen"
 AC_SUBST(DLOPEN)
 AC_SUBST(DLPREOPEN)
+
+AC_PATH_PROG(GIT, git)
+AC_SUBST(GIT)
 
 build_single=no
 build_multi=yes
@@ -206,17 +209,18 @@ AC_LANG_POP(C++)
 
 dnl Swig is used to generate API bindings for other languages
 dnl AC_PATH_PROG(SWIG, swig)
-AM_CONDITIONAL(ENABLE_SWIG, [ test x"$SWIG" != x ])
-if test x"$SWIG" != x; then
-  mkdir -p swig
-  AM_PATH_PYTHON
+dnl AM_PATH_PYTHON
+dnl AM_CONDITIONAL(ENABLE_SWIG, [ test x"$SWIG" != x ])
+dnl if test x"$SWIG" != x; then
+dnl   mkdir -p swig
+dnl   AM_PATH_PYTHON
 
-  AX_JNI_INCLUDE_DIR
+dnl   AX_JNI_INCLUDE_DIR
 
-  LIBS+=$(pkg-config --libs python)
-  CPPFLAGS+=$(pkg-config --cflags python)
-  CPPFLAGS+=$(echo ${JNI_INCLUDE_DIRS} | sed -e 's/^/-I/' -e 's/ / -I/')
-fi
+dnl   LIBS+=$(pkg-config --libs python)
+dnl   CPPFLAGS+=$(pkg-config --cflags python)
+dnl   CPPFLAGS+=$(echo ${JNI_INCLUDE_DIRS} | sed -e 's/^/-I/' -e 's/ / -I/')
+dnl fi
 
 AC_PATH_PROG(DOXYGEN, doxygen)
 AM_CONDITIONAL(ENABLE_DOXYGEN, [ test x"$DOXYGEN" != x ])
@@ -242,6 +246,8 @@ if test x"${enable_tmp}" = x"yes"; then
   AC_DEFINE(USE_TMPFILE, [1], [Use tmp file for downloaded files])
 fi
 
+ARCH=${host_cpu}
+AC_SUBST(ARCH)
 AM_CONDITIONAL([ENABLE_PCH], [test x"$enable_pch" != x"no"])
 
 PCH_FLAGS="-include all-includes.h -Winvalid-pch"
@@ -249,7 +255,6 @@ AC_SUBST(PCH_FLAGS)
 
 AC_CONFIG_FILES([
 Makefile
-doc/Makefile
 doc/Doxyfile
 testsuite/Makefile
 testsuite/hotosm/Makefile
