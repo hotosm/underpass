@@ -35,3 +35,5 @@ README
 depcomp
 install-sh
 missing
+unconfig.h.in
+
