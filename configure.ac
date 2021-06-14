@@ -253,6 +253,7 @@ doc/Makefile
 doc/Doxyfile
 testsuite/Makefile
 testsuite/hotosm/Makefile
+redhat/underpass.spec
 ])
 
 AC_OUTPUT
