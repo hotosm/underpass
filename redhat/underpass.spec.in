@@ -1,4 +1,5 @@
 %define version @VERSION@
+%define _arch @ARCH@
 
 Summary: A Network boot loader
 Name: underpass
@@ -6,7 +7,7 @@ Version: %{version}
 Release: 0
 License: GPL
 Group: Utilities/Network
-Source: https://github.com/hotosm/$(distdir).tar.gz
+Source: https://github.com/hotosm/${distdir}.tar.gz
 URL: https://hotosm.github.io/underpass/pages.html
 Vendor: Rob Savoye
 Packager: Rob Savoye <rob.savoye@hotosm.org>
@@ -18,48 +19,44 @@ Underpass is a system daemon that process replication files from the OpenStreetM
 %setup
 
 %build
-cd $RPM_BUILD_ROOT
-./configure --enable-trace --prefix $RPM_BUILD_ROOT/usr
+echo "FIXME: make $RPM_BUILD_ROOT  %{_arch}"
+./configure --prefix ${RPM_BUILD_ROOT}/usr
 make
 
 %install
-rm -rf $RPM_BUILD_ROOT
-mkdir -p $RPM_BUILD_ROOT/usr/bin
-mkdir -p $RPM_BUILD_ROOT/usr/lib/underpass
-mkdir -p $RPM_BUILD_ROOT/usr/doc/underpass-%{version}
+echo "FIXME: make install $RPM_BUILD_ROOT %{_arch}"
+make install
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %doc
-/COPYING
-/README
-/AUTHORS
-/INSTALL
-/ChangeLog
-/doc/changefile.md
-/doc/dataflow.md
-/doc/install.md
-/doc/osmstats.md
-/doc/replication.md
-/doc/replicator.md
-/doc/schemas.md
-/doc/statistics.md
-/doc/utility.md
+/usr/share/doc/underpass/changefile.md
+/usr/share/doc/underpass/dataflow.md
+/usr/share/doc/underpass/install.md
+/usr/share/doc/underpass/osmstats.md
+/usr/share/doc/underpass/replication.md
+/usr/share/doc/underpass/replicator.md
+/usr/share/doc/underpass/schemas.md
+/usr/share/doc/underpass/statistics.md
+/usr/share/doc/underpass/utility.md
+/usr/share/underpass/geoboundaries.sql
+/usr/share/underpass/osmstats.sql
+/usr/share/underpass/underpass.sql
 
 %defattr(755,root,root)
 /usr/bin/replicator
-/usr/lib/underpass/libhotosm.so
-/usr/lib/underpass/libhotosm.la
-/usr/lib/underpass/libhotosm.a
+/usr/lib/libhotosm.so
+/usr/lib/libhotosm.la
+/usr/lib/libhotosm.a
 
 %pre
 
 %post
 
 %changelog
-* Sun Oct 31 1999 Rob Savoye <rob.savoye@hotosm.org>
+* Mon Jun 14 2021 Rob Savoye <rob.savoye@hotosm.org>
 - Initial creation of this RPM support.
 
 
