@@ -1,0 +1,10 @@
+Source: underpass
+Section: net
+Priority: optional
+Maintainer: Rob Savoye <rob.savoye@hotosm.org>
+Standards-Version: 2.4.1.3
+
+Package: underpass
+Architecture: any
+#Depends: ${shlibs:Depends}
+Description: A daemon for processing OSM replication files.

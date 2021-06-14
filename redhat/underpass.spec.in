@@ -1,0 +1,67 @@
+%define version @VERSION@
+
+Summary: A Network boot loader
+Name: underpass
+Version: %{version}
+Release: 0
+Copyright: GPLv3
+Group: Utilities/Network
+Source: https://github.com/hotosm/underpass.git
+URL: https://hotosm.github.io/underpass/pages.html
+Vendor: Rob Savoye
+Packager: Rob Savoye <rob.savoye@hotosm.org>
+BuildRoot: /tmp/underpass-buildroot
+
+%description
+Underpass is a system daemon that process replication files from the OpenStreetMap planet server.
+
+%prep
+%setup
+
+%build
+./configure --enable-trace --prefix $RPM_BUILD_ROOT/usr
+make
+
+%install
+rm -rf $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT/usr/bin
+mkdir -p $RPM_BUILD_ROOT/usr/lib/underpass
+mkdir -p $RPM_BUILD_ROOT/usr/doc/underpass-%{version}
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+%doc
+COPYING
+README
+AUTHORS
+INSTALL
+ChangeLog
+doc/changefile.md
+doc/dataflow.md
+doc/install.md
+doc/osmstats.md
+doc/replication.md
+doc/replicator.md
+doc/schemas.md
+doc/statistics.md
+doc/utility.md
+
+%defattr(755,root,root)
+/usr/bin/replicator
+/usr/lib/underpass/libhotosm.so
+/usr/lib/underpass/libhotosm.la
+/usr/lib/underpass/libhotosm.a
+
+%pre
+
+%post
+
+%changelog
+* Sun Oct 31 1999 Rob Savoye <rob.savoye@hotosm.org>
+- Initial creation of this RPM support.
+
+
+
+
