@@ -112,14 +112,20 @@ SUFFIXES = .py .cc .java .js .hh
 	$(SWIG) $(SWIG_FLAGS) -javascript -node -o swig/$*_wrap_js.cc $(top_srcdir)/$*.i
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -I.. -I/usr/include/python3.8 -fPIC -shared swig/hotosm_wrap_js.cc -lpqxx -L.libs .libs/hotosm.o -o swig/_hotosmjs.so
 
-CLEANFILES += swig/* swig/*/*.class
+CLEANFILES += swig/* swig/*/*.class doc/html doc/latex
 
 endif
 
 if ENABLE_DOXYGEN
 apidoc:
-	$(MAKE) -C doc $@
+	(cd doc && $(DOXYGEN))
 endif
+
+install-data-hook:
+	$(MKDIR_P) $(docdir)
+	cp -ruvp $(srcdir)/doc/*.md doc/html $(docdir)
+
+DISTCLEANFILES = doc/html doc/latex
 
 if ENABLE_PCH
 # yes, a little consistency on the suffix would be nice.
