@@ -32,7 +32,7 @@ package=underpass
 
 build:
 	$(checkdir)
-	./configure --prefix=/usr --disable-shared)
+	./configure --prefix=/usr --disable-shared
 	touch build
 
 clean:
