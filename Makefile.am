@@ -211,7 +211,7 @@ endif
 # The rest of this file is only used to build snapshots and releases
 #
 include $(srcdir)/redhat/rpm.am
-# include $(srcdir)/debian/deb.am
+include $(srcdir)/debian/deb.am
 
 NOW := $(shell date "+%Y%m%d")
 
