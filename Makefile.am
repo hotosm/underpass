@@ -89,6 +89,7 @@ pkgdata_DATA =$(SQL_FILES)
 EXTRA_DIST = \
 	$(SQL_FILES) \
 	doc \
+	debian \
 	revno.h \
 	redhat/rpm.am
 
