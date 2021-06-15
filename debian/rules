@@ -34,13 +34,22 @@ build:
 	$(checkdir)
 	mkdir -p _build
 	(cd _build ; ../configure --prefix=/usr --disable-shared)
-	$(MAKE) -C _build
+	make -C _build
 	touch build
+
+clean:
+	$(checkdir)
+	rm -rf build install
 
 distclean:
 	$(checkdir)
 	-make -i -C _build distclean
 	rm -rf *~ debian/*~ debian/files* debian/substvars
+
+install:
+	$(checkdir)
+	make -i -C _build install
+	touch install
 
 ## binary-indep:	checkroot build
 binary-indep:	build
@@ -52,7 +61,7 @@ binary-arch:	build
 	install -d debian/tmp/DEBIAN\
 		-d debian/tmp/usr/doc/$(package)\
 		-d debian/tmp/usr/bin
-	$(MAKE) CFLAGS=-O2 LDFLAGS=-s INSTALL_PROGRAM='install -c -s' \
+	make CFLAGS=-O2 LDFLAGS=-s INSTALL_PROGRAM='install -c -s' \
 		prefix=`pwd`/debian/tmp/usr install
 	cp replicator debian/tmp/usr/bin/replicator
 	cp -fr doc/*.md debian/tmp/usr/share/doc/$(package)/
