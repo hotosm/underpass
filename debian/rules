@@ -1,5 +1,5 @@
 #!/usr/bin/make -f
-#
+
 # Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
 # All rights reserved.
 #
@@ -31,15 +31,16 @@
 package=underpass
 
 build:
-	$(shell cd $(distdir) ; ./configure --prefix=/usr --disable-shared)
-	$(MAKE) -C $(distdir)
+	$(checkdir)
+	mkdir -p _build
+	(cd _build ; ../configure --prefix=/usr --disable-shared)
+	$(MAKE) -C _build
 	touch build
 
-distclean clean:
+distclean:
 	$(checkdir)
-	rm -f build
-	-$(MAKE) -i -C ($distdir) distclean
-	rm -rf *~ debian/tmp debian/*~ debian/files* debian/substvars
+	-make -i -C _build distclean
+	rm -rf *~ debian/*~ debian/files* debian/substvars
 
 ## binary-indep:	checkroot build
 binary-indep:	build
