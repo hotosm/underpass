@@ -32,9 +32,7 @@ package=underpass
 
 build:
 	$(checkdir)
-	mkdir -p _build
-	(cd _build ; ../configure --prefix=/usr --disable-shared)
-	make -C _build
+	./configure --prefix=/usr --disable-shared)
 	touch build
 
 clean:
@@ -47,9 +45,8 @@ distclean:
 	rm -rf *~ debian/*~ debian/files* debian/substvars
 
 install:
-	$(checkdir)
-	make -i -C _build install
-	touch install
+	echo "Already installed"
+
 
 ## binary-indep:	checkroot build
 binary-indep:	build
