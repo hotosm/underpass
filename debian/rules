@@ -31,7 +31,7 @@
 package=underpass
 
 build:
-	$(shell cd (distdir) ; ./configure --prefix=/usr --disable-shared)
+	$(shell cd $(distdir) ; ./configure --prefix=/usr --disable-shared)
 	$(MAKE) -C $(distdir)
 	touch build
 
