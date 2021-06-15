@@ -32,7 +32,7 @@ package=underpass
 
 build:
 	$(shell cd (distdir) ; ./configure --prefix=/usr --disable-shared)
-	$(MAKE) -C ($distdir)
+	$(MAKE) -C $(distdir)
 	touch build
 
 distclean clean:
