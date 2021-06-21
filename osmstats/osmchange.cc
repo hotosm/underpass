@@ -438,7 +438,7 @@ OsmChangeFile::collectStats(void)
 	    if (node->tags.size() == 1 && node->tags.find("created_at") != node->tags.end()) {
 		continue;
 	    }
-	    node->dump();
+	    // node->dump();
 	    ostats = (*mstats)[node->change_id];
 	    if (ostats.get() == 0) {
 		ostats = std::make_shared<ChangeStats>();
@@ -449,6 +449,7 @@ OsmChangeFile::collectStats(void)
 	    }
 	    auto hits = scanTags(node->tags);
 	    for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
+		// std::cout << "FIXME node: " << *hit << " : " << (int)node->action << std::endl;
 		if (node->action == osmobjects::create) {
 		    ostats->added[*hit]++;
 		} else if (node->action == osmobjects::modify){
@@ -467,7 +468,6 @@ OsmChangeFile::collectStats(void)
 	    if (way->tags.size() == 1 && way->tags.find("created_at") != way->tags.end()) {
 		continue;
 	    }
-	    way->dump();
 	    ostats = (*mstats)[way->change_id];
 	    if (ostats.get() == 0) {
 		ostats = std::make_shared<ChangeStats>();
@@ -478,7 +478,8 @@ OsmChangeFile::collectStats(void)
 	    }
 	    auto hits = scanTags(way->tags);
 	    for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
-		// std::cout << "FIXME1: " << *hit << std::endl;
+		// std::cout << "FIXME way: " << *hit <<  " : " << (int)way->action << std::endl;
+		// way->dump();
 		if (way->action == osmobjects::create) {
 		    ostats->added[*hit]++;
 		} else if (way->action == osmobjects::modify){
@@ -542,6 +543,21 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	"health_center",
 	"healthcare"
     };
+    std::vector<std::string> buildings = {
+	"hospital",
+	"hut",
+	"school",
+	"healthcare"
+	"clinic",
+	"kindergarten",
+	"health center",
+	"health centre",
+	"latrine",
+	"latrines",
+	"toilet",
+	"toilets"
+    };
+
     // These are values for the highway tag
     std::vector<std::string> highways = {
 	"highway",
@@ -560,13 +576,6 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	"secondary",
 	"kindergarten"
     };
-    std::vector<std::string> features = {
-	"building",
-	"amenity",
-	"place",
-	"school",
-	"healthcare"
-    };
     // Some older nodes in a way wound up with this one tag, which nobody noticed,
     // so ignore it.
     if (tags.size() == 1 && tags.find("created_at") != tags.end()) {
@@ -582,6 +591,8 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 		    std::cerr << "\tmatched amenity value: " << it->second << std::endl;
 		    hits->push_back(boost::algorithm::to_lower_copy(it->second));
 		    cache[it->second] = true;
+		    // An amenity is a building, but the building tag may not be set
+		    hits->push_back("building");
 		} else {
 		    continue;
 		}
@@ -591,12 +602,37 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 		if (!cache[it->second]) {
 		    std::cerr << "\tmatched place value: " << it->second << std::endl;
 		    hits->push_back(boost::algorithm::to_lower_copy(it->second));
+		    hits->push_back("place");
+		    cache[it->second] = true;
+		}
+	    }
+
+	    // Add anything with the building tag set
+	    if (it->first == "building") {
+		hits->push_back("building");
+		match = std::find(buildings.begin(), buildings.end(), boost::algorithm::to_lower_copy(it->second));
+		if (match != buildings.end()) {
+		    if (!cache[it->second]) {
+			std::cerr << "\tmatched building value: " << it->second << std::endl;
+			hits->push_back(boost::algorithm::to_lower_copy(it->second));
+			cache[it->second] = true;
+		    }
+		}
+	    }
+	    match = std::find(schools.begin(), schools.end(), boost::algorithm::to_lower_copy(it->second));
+	    if (match != schools.end()) {
+		if (!cache[it->second]) {
+		    std::cerr << "\tmatched school value: " << it->second << std::endl;
+		    // Add the type of school
+		    hits->push_back(boost::algorithm::to_lower_copy(it->second));
+		    // Add a generic school accumulator
+		    hits->push_back("school");
 		    cache[it->second] = true;
 		}
 	    }
 	}
 	if (it->first == "highway") {
-	    hits->push_back("highway");
+	    // hits->push_back("highway");
 	    auto match = std::find(highways.begin(), highways.end(), boost::algorithm::to_lower_copy(it->second));
 	    if (match != highways.end()) {
 		if (!cache[it->second]) {
@@ -629,7 +665,7 @@ ChangeStats::dump(void)
     for (auto it = std::begin(added); it != std::end(added); ++it) {
 	std::cout << "\t\t" << it->first << " = " << it->second << std::endl;
     }
-    std::cout << "\tModified features: " << added.size() << std::endl;
+    std::cout << "\tModified features: " << modified.size() << std::endl;
     for (auto it = std::begin(modified); it != std::end(modified); ++it) {
 	std::cout << "\t\t" << it->first << " = " << it->second << std::endl;
     }
