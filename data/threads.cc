@@ -396,7 +396,7 @@ threadChangeSet(const replication::RemoteURL &remote)
     auto data = std::make_shared<std::vector<unsigned char>>();
     // FIXME: this this be the datadir from the command line
 
-    if (boost::filesystem::exists(remote.datadir)) {
+    if (boost::filesystem::exists(remote.filespec)) {
         std::cout << "Reading ChangeSet: " << remote.filespec << std::endl;
         // Since we want to read in the entire file so it can be
         // decompressed, blow off C++ streaming and just load the
