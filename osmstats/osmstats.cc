@@ -341,25 +341,32 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
 	// long_low,lat_low,
 	// long_high,lat_low,
 	// long_high,lat_high
-    query += ", ST_MULTI(ST_GeomFromText(\'SRID=4326;POLYGON((";
+    std::string bbox;
+    bbox += ", ST_MULTI(ST_GeomFromEWKT(\'SRID=4326;POLYGON((";
     // Upper left
-    query += std::to_string(max_lon) + "  ";
-    query += std::to_string(max_lat) + ",";
+    bbox += std::to_string(max_lon) + "  ";
+    bbox += std::to_string(max_lat) + ",";
     // Upper right
-    query += std::to_string(min_lon) + "  ";
-    query += std::to_string(max_lat) + ",";
+    bbox += std::to_string(min_lon) + "  ";
+    bbox += std::to_string(max_lat) + ",";
     // Lower right
-    query += std::to_string(min_lon) + "  ";
-    query += std::to_string(min_lat) + ",";
+    bbox += std::to_string(min_lon) + "  ";
+    bbox += std::to_string(min_lat) + ",";
     // Lower left
-    query += std::to_string(max_lon) + "  ";
-    query += std::to_string(min_lat) + ",";
+    bbox += std::to_string(max_lon) + "  ";
+    bbox += std::to_string(min_lat) + ",";
     // Close the polygon
-    query += std::to_string(max_lon) + "  ";
-    query += std::to_string(max_lat) + ")";
+    bbox += std::to_string(max_lon) + "  ";
+    bbox += std::to_string(max_lat) + ")";
+
+    query += bbox;
 
     query += ")\')";
-    query += ")) ON CONFLICT DO NOTHING;";
+    //query += ")) ON CONFLICT DO NOTHING;";
+    query += ")) ON CONFLICT (id) DO UPDATE SET editor=\'" + change.editor;
+    query += "\', created_at=\'" + to_simple_string(change.created_at);
+    query += "\', closed_at=\'" + to_simple_string(change.closed_at) + "\'";
+    query += ", bbox=" + bbox.substr(1) + ")'))";
     std::cout << "QUERY: " << query << std::endl;
     result = worker.exec(query);
 
