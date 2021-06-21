@@ -321,6 +321,7 @@ main(int argc, char *argv[])
          std::thread cthread;
          if (!url.empty()) {
              last = url;
+             remote.dump();
              mthread = std::thread(threads::startMonitor, std::ref(remote));
              auto state = under.getState(frequency, url);
              state->dump();
@@ -339,11 +340,12 @@ main(int argc, char *argv[])
                      std::cerr << "ERROR: No changeset path!" << std::endl;
                      exit(-1);
                  }
-                 tmp->dump();
-                 clast = pserver + datadir + "changesets/" + tmp->path;
-                 std::cout << "Last changeset is " << clast  << std::endl;
-                 // cthread = std::thread(threads::startMonitor, std::ref(remote));
              }
+             state2->dump();
+             clast = pserver + datadir + "changesets/" + state2->path;
+             remote.parse(clast);
+             remote.dump();
+             cthread = std::thread(threads::startMonitor, std::ref(remote));
          } else if (!starttime.is_not_a_date_time()) {
              // No URL, use the timestamp
              auto state = under.getState(frequency, starttime);
