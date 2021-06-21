@@ -161,7 +161,11 @@ class RemoteURL
 {
 public:
     RemoteURL(void);
-    RemoteURL(const std::string &rurl);
+    RemoteURL(const std::string &rurl) {
+        parse(rurl);
+    }
+    /// Parse a URL into it's elements
+    void parse(const std::string &rurl);
     std::string domain;
     std::string datadir;
     std::string subpath;

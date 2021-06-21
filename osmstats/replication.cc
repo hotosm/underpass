@@ -533,9 +533,9 @@ Planet::findData(frequency_t freq, ptime tstamp)
         //           << to_simple_string(times[i-2]) << " : "
         //           << to_simple_string(times[i-1]) << " : "
         //           << std::endl;
-        if (tstamp > times[i-1] && tstamp < times[i]) {
+        if (tstamp >= times[i-1] && tstamp <= times[i]) {
             delta1 = tstamp - times[i-1];
-            delta2 = times[i] - times[i-1];
+            delta2 = times[i] - tstamp;
             std::cerr << "Hours: " << delta1.hours() << " : " << delta2.hours() << std::endl;
             minutes1 = (delta1.hours() * 60) + delta1.minutes();
             // This is the total time span in the major directory
@@ -550,8 +550,7 @@ Planet::findData(frequency_t freq, ptime tstamp)
             fmt % (total);
             index += fmt.str();
             state->path = major + minor + index;
-            // state->path = major + minor + "000";
-            //return state;
+            return state;
         }
     }
 
@@ -640,13 +639,14 @@ RemoteURL::RemoteURL(void)
 {
 }
 
-RemoteURL::RemoteURL(const std::string &rurl)
+void
+RemoteURL::parse(const std::string &rurl)
 {
     std::map<std::string, replication::frequency_t> frequency_tags;
     frequency_tags["minute"] = replication::minutely;
     frequency_tags["hour"] = replication::hourly;
     frequency_tags["day"] = replication::daily;
-    frequency_tags["changeset"] = replication::changeset;
+    frequency_tags["changesets"] = replication::changeset;
 
     std::vector<std::string> parts;
     boost::split(parts, rurl, boost::is_any_of("/"));
