@@ -283,7 +283,7 @@ local | Whether it was a local training, or remote
 organization | The organization doing the training
 tools  | The software tools covered in the training
 teams | The teams the mapper is a member of
-gender | The slef-defined gender (optional) of the mapper
+gender | The self-defined gender (optional) of the mapper
 hours | The hours of training
 age | The age (optional) of the mapper
 
