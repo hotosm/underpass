@@ -1,3 +1,118 @@
+# Statistics Calculations
+
+Underpass process two input streams for data, but only one is used for
+the initial statistics calculations. [ChangeSet](changefile.md) are
+used to populate some of the columns in the database, but aren't used
+during statistrics calculations by the backend. Only the
+[OsmChange](changefile.md) file is used, as it contains the the data
+that is changed.
+
+The OsmChange data file contains 3 catagories of data, what was
+created, modified, or deleted. Currently only changed and modified
+data are used for statistics calculations.
+
+All of the changed data is parsed into a [data
+structure](https://hotosm.github.io/underpass/classosmchange_1_1OsmChange.html)
+that can be passed between classes. This data structure contains all
+the data as well as the associated action, create or modify. The
+parsed data is then passed to the
+[OsmChangeFile::collectStat()](https://hotosm.github.io/underpass/classosmchange_1_1OsmChangeFile.html#a4a6035b16ec815be6e0289b65bcbaaad)
+method to do the calculations. While currently part of the core code,
+in the future this will be a plugin, allowing others to create
+different statistics calculations without modifying the code.
+
+## What Is Collected
+
+The original statistics counted buildings, waterways, and POIs. The
+new statistics break this down into two catagories, assumulates
+statistics for things like *buildings*, as well as the more detailed
+representation, like what type of building it is. The list of values
+for buildings is configurable. Currently it's a simple list, but in
+the future will be populated by a config file in
+[YAML](https://yaml.org/) format.
+
+OpenStreetMap features support a *keyword* and *value* pair. The
+keywords are [loosely defined](https://taginfo.openstreetmap.org/),
+and over time some have changed and been improved. Often new mappers
+get confused, so may use keywords and values in an inconsistent
+manner. Also over time the definitions of some tags has changed, or
+been extended.
+
+For example, let's look at schools. There is a variety of ways school
+buildings are tagged. Sometimes it's *building=school*, with school as
+the value. Sometimes school is the keyword, and the value is the type
+of school. In this case, the type of school is accumulated, as well as
+a generic *school* count. Also if *building=school* isn't used, then
+every school also increments the count of buildings.
+
+Each catagory of data has the total accumulated value, as well as the
+more detailed breakdown. For example, it's possible to extract
+statistics for only hospitals, which is a subset of all the
+buildings. As keywords and values can be in different feature
+categories, some are checked for in multiple ways. Some keywords and
+values may be spelled differently than the default, so variations are
+also looked for to be complete.
+
+### Building Types
+
+Most buildings added by remote tracing of satellite imagery lack any
+metadata tags beyond *building=yes*. When local mappers import more
+detailed data, or update the existing metadata, those values get
+added. This is the current set of building values being accumulated.
+
+- hospital
+- school
+- healthcare
+- clinic
+- health center
+- health centre
+- latrine
+- latrines
+- toilet
+- toilets
+
+### Amenity Types
+
+Most amenities are added by local mappers or through a data
+import. Not all amenities are buildings, but for our use case that's
+all that is analyzed. These are the common values for the *amenity*
+keyword.
+
+- hospital
+- school
+- clinic
+- kindergarten
+- drinking_water
+- health_facility
+- health_center
+- healthcare
+	
+### Places Types
+
+- village
+- hamlet
+- neigborhood
+- city
+- town
+
+### Highway Types
+
+- highway
+- tertiary
+- secondary
+- unclassified
+- track
+- residential
+- path
+- bridge
+- waterway
+
+### School Types
+
+- primary
+- secondary
+- kindergarten
+	
 # Statistics Database
 
 The new statistics database schema is very different from the current
