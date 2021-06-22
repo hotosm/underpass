@@ -196,6 +196,7 @@ cid | An internal ID for this administrative boundary
 name | The name of the boundary
 admin_level | The administrative level of this boundary
 tags | Other metadata related to this boundary
+priority | If this is in a priority boundary
 boundary | The multipolygon of this boundary
 
 ## changesets table
@@ -228,12 +229,12 @@ Keyword | Description
 id | The ID of this changeset
 editor | The editor used for this changeset
 user_id | The OSM User ID of the mapper
-created_at | The timestamp 
-closed_at | The timestamp 
-updated_at | The timestamp 
-added | An array of the added map features
-modified | An array of the modified map features
-deleted | An array of the deleted map features
+created_at | The timestamp when this changes was uploaded
+closed_at | The timestamp when this uploaded change completed processing
+updated_at | The timestamp when this last had data updated
+added | An hstore array of the added map features
+modified | An hstore array of the modified map features
+deleted | An hstore array of the deleted map features
 hashtags | An array of the hashtags used for this changeset
 source | The imagery source used for this changeset
 validated | Where this changeset has been validated in the Tasking Manager
@@ -241,8 +242,10 @@ bbox | The bounding box of this changeset
 
 ## users table
 
-Tnis table contains data on mappers, and is used to track indivigual
-activity. Often badges are given based on this data.
+This table contains data on mappers, and is used to track indivigual
+activity. Often badges are given based on this data. Most of this data
+comes from the Tasking Manager, but is copied hear to improve
+performance. 
 
 Keyword | Description
 --------|------------
@@ -250,6 +253,9 @@ id | The OSM ID of this mapper
 name | The OSM user name of the mapper
 tm_registration | The timestamp of when the mapper registered with the tasking manager
 osm_registration | The timestamp of when the mapper registered with openstreetmap
+tasks_mapped | The number of tasking manager tasks completed
+tasks_validated | The number of tasking manager tasks validated
+projects_mapped | The number of tasking manager tasks invalidated
 gender | The mappers gender, when available
 home | The mappers home location, when available
 
@@ -267,3 +273,18 @@ endtime | The timestamp for when the data collection was completed
 username | The username of the mapper, not the same as an OSM username
 changeset_id | Changeset ID applied when the data is uploaded to OSM
 location | The coordinates of this POI
+
+## training data table
+
+Keyword | Description
+--------|------------
+name | The mappers name
+local | Whether it was a local training, or remote
+organization | The organization doing the training
+tools  | The software tools covered in the training
+teams | The teams the mapper is a member of
+gender | The slef-defined gender (optional) of the mapper
+hours | The hours of training
+age | The age (optional) of the mapper
+
+
