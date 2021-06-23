@@ -68,7 +68,7 @@ AWS API.
 
 
 ```
-aws sts assume-role --serial-number arn:aws:iam::670261699094:mfa/yogeshgirikumar --token-code 729586 --role-arn arn:aws:iam::670261699094:role/yogesh-terraform-assumeRole --role-session-name terraform1 --output json
+aws sts assume-role --serial-number arn:aws:iam::<ACCOUNT_ID>:mfa/<username> --token-code 729586 --role-arn arn:aws:iam::670261699094:role/<username>-terraform-assumeRole --role-session-name terraform1 --output json
 {
     "Credentials": {
         "AccessKeyId": "ASIAZYDVV4ILI4C4EWHX",
@@ -78,7 +78,7 @@ aws sts assume-role --serial-number arn:aws:iam::670261699094:mfa/yogeshgirikuma
     },
     "AssumedRoleUser": {
         "AssumedRoleId": "AROAZYDVV4ILBBV7CR2B5:terraform1",
-        "Arn": "arn:aws:sts::670261699094:assumed-role/yogesh-terraform-assumeRole/terraform1"
+        "Arn": "arn:aws:sts::670261699094:assumed-role/<username>-terraform-assumeRole/terraform1"
     }
 }
 ```
