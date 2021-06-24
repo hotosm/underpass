@@ -22,6 +22,14 @@ data "aws_iam_policy_document" "assume-role-ec2" {
   }
 }
 
+data "aws_iam_policy" "metrics" {
+  name = "CloudWatchAgentServerPolicy"
+}
+
+data "aws_iam_policy" "SSM" {
+  name = "AmazonSSMManagedInstanceCore"
+}
+
 /** TODO
 Figure out interpolation
 - Name of bucket - interpolation using bucket resource
@@ -69,6 +77,11 @@ resource "aws_iam_role" "underpass" {
     name   = "underpass-policy"
     policy = data.aws_iam_policy_document.underpass.json
   }
+
+  managed_policy_arns = [
+    data.aws_iam_policy.metrics.arn,
+    data.aws_iam_policy.SSM.arn,
+  ]
 }
 
 data "aws_ami" "ubuntu" {
@@ -118,6 +131,7 @@ data "aws_ami" "debian" {
 * Needs to access S3 bucket
 * Needs to be behind public ALB?
 * Needs to have public IP if no ALB and export it.
+* Add SSH Key
 *
 resource "aws_instance" "application" {
   ami           = data.aws_ami.ubuntu.id
@@ -152,6 +166,7 @@ resource "aws_eip" "underpass" {
 * Needs to access Database
 * Needs to be behind private ALB?
 * Needs to access Secrets manager entry for DB creds?
+* Add SSH key
 */
 resource "aws_instance" "api" {
   ami           = data.aws_ami.ubuntu.id
