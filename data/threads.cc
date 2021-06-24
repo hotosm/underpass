@@ -84,13 +84,14 @@ namespace threads {
 
 // Starting with this URL, download the file, incrementing
 void
-startMonitor(replication::RemoteURL &remote)
+startMonitor(const replication::RemoteURL &inr)
 {
     // auto planet = std::make_shared<replication::Planet>();
     // replication::Replication server;
     underpass::Underpass under;
     under.connect();
 
+    replication::RemoteURL remote = inr;
     auto planet = std::make_shared<replication::Planet>(remote);
     bool mainloop = true;
     while (mainloop) {
@@ -111,19 +112,14 @@ startMonitor(replication::RemoteURL &remote)
 	    }
         }
 #endif
+	remote.dump();
         if (remote.frequency == replication::changeset) {
             Timer timer;
             timer.startTimer();
             auto found = threadChangeSet(remote);
             if (!found) {
                 // planet->disconnectServer();
-                if (remote.frequency == replication::minutely) {
-                    std::this_thread::sleep_for(std::chrono::minutes{1});
-                } else if (remote.frequency == replication::hourly) {
-                    std::this_thread::sleep_for(std::chrono::hours{1});
-                } else if (remote.frequency == replication::daily) {
-                    std::this_thread::sleep_for(std::chrono::hours{24});
-                }
+		std::this_thread::sleep_for(std::chrono::minutes{1});
                 // planet.reset(new replication::Planet);
             } else {
                 std::cout << "Processed ChangeSet: " << remote.url << std::endl;
@@ -151,48 +147,6 @@ startMonitor(replication::RemoteURL &remote)
         }
 	remote.Increment();
 	remote.dump();
-#if 0
-        std::vector<std::string> result;
-        boost::split(result, remote.subpath, boost::is_any_of("/"));
-        int major = 0;
-        int minor = 0;
-        int index = 0;
-        try {
-            major = std::stoi(result[0]);
-            minor = std::stoi(result[1]);
-            index = std::stoi(result[2]);
-        } catch (std::exception& e) {
-            std::cerr << "ERROR: Couldn't parse: " << remote.url << std::endl;
-            std::cerr << e.what() << std::endl;
-            continue;
-        }
-        // Increment the index number
-	std::string newpath = remote.base;
-        boost::format fmt("%03d");
-        if (minor == 999) {
-            major++;
-            fmt % (major);
-            newpath += fmt.str() + "/000";
-            index = 0;
-        }
-        if (index == 999) {
-            minor++;
-            fmt % (minor);
-            newpath += fmt.str();
-            newpath += "/000";
-        } else {
-            fmt % (minor);
-            newpath += fmt.str();
-            fmt % (index + 1);
-            newpath += "/" + fmt.str();
-        }
-        if (minor == 999) {
-            major++;
-            fmt % (major);
-            newpath += fmt.str() + "/000";
-        }
-#endif
-        // std::cerr << "PATH: " << path << ": /" << major << "/ " << minor << "/ " << index << std::endl;
         //planet->endTimer("change file");
     }
 }
