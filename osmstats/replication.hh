@@ -161,6 +161,7 @@ class RemoteURL
 {
 public:
     RemoteURL(void);
+    RemoteURL(const RemoteURL &inr);
     RemoteURL(const std::string &rurl) {
         parse(rurl);
     }
@@ -179,6 +180,7 @@ public:
     std::string destdir;
     void dump(void);
     void Increment(void);
+    RemoteURL &operator=(const RemoteURL &inr);
 };
 
 /// \class Planet

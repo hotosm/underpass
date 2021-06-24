@@ -695,10 +695,40 @@ void RemoteURL::Increment(void)
         newpath += fmt.str() + "/000";
     }
 
-    // boost::algorithm::replace_all(destdir, subpath, newpath);
+    boost::algorithm::replace_all(url, subpath, newpath);
+    boost::algorithm::replace_all(destdir, subpath, newpath);
     boost::algorithm::replace_all(filespec, subpath, newpath);
     boost::algorithm::replace_all(url, subpath, newpath);
     subpath = newpath;
+}
+
+RemoteURL &
+RemoteURL::operator=(const RemoteURL &inr)
+{
+    domain = inr.domain;
+    datadir = inr.datadir;
+    subpath = inr.subpath;
+    frequency = inr.frequency;
+    major = inr.major;
+    minor = inr.minor;
+    index = inr.index;
+    url = inr.url;
+    filespec = inr.filespec;
+    destdir = inr.destdir;
+}
+
+RemoteURL::RemoteURL(const RemoteURL &inr)
+{
+    domain = inr.domain;
+    datadir = inr.datadir;
+    subpath = inr.subpath;
+    frequency = inr.frequency;
+    major = inr.major;
+    minor = inr.minor;
+    index = inr.index;
+    url = inr.url;
+    filespec = inr.filespec;
+    destdir = inr.destdir;
 }
 
 void
@@ -708,7 +738,13 @@ RemoteURL::dump(void)
     std::cerr << "\tDomain: " << domain << std::endl;
     std::cerr << "\tDatadir: " << datadir << std::endl;
     std::cerr << "\tSubpath: " << subpath << std::endl;
-    // std::cerr << "\tFrequency: " <<  << std::endl;
+    std::cerr << "\tURL: " << url << std::endl;
+    std::map<frequency_t, std::string> freqs;
+    freqs[replication::minutely] = "minute";
+    freqs[replication::hourly] = "hour";
+    freqs[replication::daily] = "day";
+    freqs[replication::changeset] = "changesets";
+    std::cerr << "\tFrequency: " << (int)frequency << std::endl;
     std::cerr << "\tMajor: " << major << std::endl;
     std::cerr << "\tMinor: " <<  minor<< std::endl;
     std::cerr << "\tIndex: " << index << std::endl;
