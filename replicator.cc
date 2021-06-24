@@ -321,7 +321,7 @@ main(int argc, char *argv[])
          std::thread cthread;
          if (!url.empty()) {
              last = url;
-             remote.dump();
+             // remote.dump();
              mthread = std::thread(threads::startMonitor, std::ref(remote));
              auto state = under.getState(frequency, url);
              state->dump();
@@ -344,7 +344,7 @@ main(int argc, char *argv[])
              state2->dump();
              clast = pserver + datadir + "changesets/" + state2->path;
              remote.parse(clast);
-             remote.dump();
+             // remote.dump();
              cthread = std::thread(threads::startMonitor, std::ref(remote));
          } else if (!starttime.is_not_a_date_time()) {
              // No URL, use the timestamp
