@@ -84,7 +84,7 @@ namespace threads {
 
 // Starting with this URL, download the file, incrementing
 void
-startMonitor(const replication::RemoteURL &inr)
+startMonitor(const replication::RemoteURL &inr, const multipolygon_t&poly)
 {
     // auto planet = std::make_shared<replication::Planet>();
     // replication::Replication server;
@@ -116,7 +116,7 @@ startMonitor(const replication::RemoteURL &inr)
         if (remote.frequency == replication::changeset) {
             Timer timer;
             timer.startTimer();
-            auto found = threadChangeSet(remote);
+            auto found = threadChangeSet(remote, poly);
             if (!found) {
                 // planet->disconnectServer();
 		std::this_thread::sleep_for(std::chrono::minutes{1});
@@ -129,7 +129,7 @@ startMonitor(const replication::RemoteURL &inr)
             std::string file = remote.url + ".osc.gz";
             Timer timer;
             timer.startTimer();
-            bool found = threadOsmChange(remote);
+            bool found = threadOsmChange(remote, poly);
             if (!found) {
                 // planet->disconnectServer();
                 if (remote.frequency == replication::minutely) {
@@ -249,7 +249,7 @@ startStateThreads(const std::string &base, const std::string &file)
 
 // This thread get started for every osmChange file
 bool
-threadOsmChange(const replication::RemoteURL &remote)
+threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t&poly)
 {
     // osmstats::QueryOSMStats ostats;
     std::vector<std::string> result;
@@ -327,7 +327,7 @@ threadOsmChange(const replication::RemoteURL &remote)
     }
 #endif
     // These stats are for the entire file
-    auto stats = osmchanges.collectStats();
+    auto stats = osmchanges.collectStats(poly);
     for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
         it->second->dump();
         ostats.applyChange(*it->second);
@@ -342,7 +342,7 @@ threadOsmChange(const replication::RemoteURL &remote)
 // the changeset file, and don't need to be calculated.
 //void threadChangeSet(const std::string &file, std::promise<bool> &&result)
 std::shared_ptr<replication::StateFile>
-threadChangeSet(const replication::RemoteURL &remote)
+threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t&poly)
 {
     changeset::ChangeSetFile changeset;
 
@@ -409,16 +409,6 @@ threadChangeSet(const replication::RemoteURL &remote)
         }
     }
 
-    osmstats::QueryOSMStats ostats;
-    ostats.connect();
-#if 0
-    // FIXME: should now be handled by on_end_element()
-    // Apply the changes to the database
-    for (auto it = std::begin(changeset.changes); it != std::end(changeset.changes); ++it) {
-        ostats.applyChange(*it);
-    }
-    changeset.dump();
-#endif
     // Create a stubbed state file to update the underpass database with more
     // accurate timestamps, also used if there is no state.txt file.
     if (changeset.changes.size() > 0) {
@@ -428,7 +418,6 @@ threadChangeSet(const replication::RemoteURL &remote)
     }
     
     return state;
-    // return true;
 }
 
 // This updates the calculated fields in the raw_changesets table, based on
