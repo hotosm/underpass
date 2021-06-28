@@ -52,8 +52,6 @@ using namespace boost::gregorian;
 // #include "hotosm.hh"
 #include "osmstats/changeset.hh"
 #include "osmstats/osmchange.hh"
-#include "data/geoutil.hh"
-#include "timer.hh"
 
 using namespace apidb;
 
@@ -64,9 +62,6 @@ namespace changeset {
 namespace osmchange {
 class OsmChange;
 class ChangeStats;
-};
-namespace geoutil {
-  class GeoUtil;
 };
 
 /// \namespace osmstats

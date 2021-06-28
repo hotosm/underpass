@@ -53,7 +53,7 @@ using namespace boost::gregorian;
 
 #include "osmstats/osmstats.hh"
 #include "osmstats/changeset.hh"
-#include "data/geoutil.hh"
+#include "data/osmobjects.hh"
 #include "data/underpass.hh"
 
 using namespace apidb;
@@ -210,6 +210,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     std::cout << "Applying ChangeSet data" << std::endl;
     change.dump();
 
+#if 0
     // See if the change is in one of the focus countries
     std::string query = "SELECT COUNT(changesets.id) FROM geoboundaries,changesets WHERE (ST_CONTAINS(ST_SetSRID(geoboundaries.boundary, 4326),";
     query += " ST_PointFromText(\'POINT(";
@@ -226,14 +227,15 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     } else {
 	std::cout << "Changeset " << change.id << " is in a focus country" << std::endl;
     }
+#endif
 
     // Some old changefiles have no user information
-    query = "INSERT INTO users VALUES(";
+    std::string query = "INSERT INTO users VALUES(";
     query += std::to_string(change.uid) + ",\'" + sdb->esc(change.user);
     query += "\') ON CONFLICT DO NOTHING;";
     std::cout << "QUERY: " << query << std::endl;
     pqxx::work worker(*sdb);
-    result = worker.exec(query);
+    pqxx::result result = worker.exec(query);
     //worker.commit();
 
     // If there are no hashtags in this changset, then it isn't part
