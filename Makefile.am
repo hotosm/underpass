@@ -27,7 +27,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-AUTOMAKE_OPTIONS = dejagnu
+AUTOMAKE_OPTIONS = dejagnu subdir-objects
 ACLOCAL_AMFLAGS = -I m4
 
 # All of these are generated files
@@ -88,10 +88,10 @@ pkgdata_DATA =$(SQL_FILES)
 
 EXTRA_DIST = \
 	$(SQL_FILES) \
+	data/priority.geojson \
 	doc \
 	debian \
-	revno.h \
-	redhat/rpm.am
+	redhat
 
 # if ENABLE_SWIG
 # SWIGdir = swig
@@ -138,6 +138,8 @@ apidoc:
 endif
 
 install-data-hook:
+	$(MKDIR_P) $(DESTDIR)/$(docdir)
+	cp -uvp data/priority.geojson $(DESTDIR)/$(datadir)/underpass
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
 	cp -ruvp $(srcdir)/doc/*.md $(DESTDIR)/$(docdir)
 
