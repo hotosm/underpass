@@ -39,22 +39,19 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <boost/geometry.hpp>
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 #include <boost/progress.hpp>
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/geometries/linestring.hpp>
-#include <boost/geometry/geometries/polygon.hpp>
-#include <boost/geometry/geometries/geometries.hpp>
+
 typedef boost::geometry::model::d2::point_xy<double> point_t;
 typedef boost::geometry::model::polygon<point_t> polygon_t;
-typedef boost::geometry::model::multi_point<point_t> mpoint_t;
+typedef boost::geometry::model::multi_polygon<polygon_t> multipolygon_t;
 typedef boost::geometry::model::linestring<point_t> linestring_t;
-typedef boost::geometry::model::multi_linestring<linestring_t> mlinestring_t;
+typedef boost::geometry::model::point<double, 2, boost::geometry::cs::spherical_equatorial<boost::geometry::degree> > sphere_t;
 
 /// \namespace osmobjects
 namespace osmobjects {
@@ -167,7 +164,7 @@ public:
     int numPoints(void) { return refs.size(); };
 
     /// Add a point to the way's geometric data storage
-    void makeLinestring(point_t point);
+    // void makeLinestring(point_t point);
 
     /// Calculate the length of the linestring in Kilometers
     double getLength(void) {
