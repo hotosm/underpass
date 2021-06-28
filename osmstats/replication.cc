@@ -636,12 +636,17 @@ Planet::findData(frequency_t freq, ptime tstamp)
 }
 
 RemoteURL::RemoteURL(void)
+    : major(0), minor(0), index(0), frequency(minutely)
 {
 }
 
 void
 RemoteURL::parse(const std::string &rurl)
 {
+    if (rurl.empty()) {
+        std::cerr << "URL is empty!" << std::endl;
+        return;
+    }
     std::map<std::string, replication::frequency_t> frequency_tags;
     frequency_tags["minute"] = replication::minutely;
     frequency_tags["hour"] = replication::hourly;
