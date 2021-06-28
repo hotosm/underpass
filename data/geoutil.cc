@@ -80,7 +80,7 @@ GeoUtil::readFile(const std::string &filespec)
     }
 
     OGRLayer *layer;
-    layer = poDS->GetLayerByName( "multipolygons" );
+    layer = poDS->GetLayerByName("priority");
     if (layer == 0) {
         std::cout << "ERROR: Couldn't get layer \"multipolygons\"" << std::endl;
         return false;
