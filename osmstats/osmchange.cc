@@ -81,6 +81,7 @@ typedef boost::geometry::model::d2::point_xy<double> point_t;
 typedef boost::geometry::model::polygon<point_t> polygon_t;
 typedef boost::geometry::model::linestring<point_t> linestring_t;
 typedef boost::geometry::model::point<double, 2, boost::geometry::cs::spherical_equatorial<boost::geometry::degree> > sphere_t;
+typedef boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian>  foo_t;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
@@ -425,7 +426,7 @@ OsmChangeFile::collectStats(void)
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
         // change->dump();
-	std::map<long, point_t> nodecache;
+	std::map<long, geoutil::point_t> nodecache;
         for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
             OsmNode *node = it->get();
 	    // If there are no tags, assume it's part of a way
@@ -487,23 +488,25 @@ OsmChangeFile::collectStats(void)
 		}
 		if (*hit == "highway" || *hit == "waterway") {
 		    // Get the geometry behind each reference
-		    geoutil::linestring_t line;
+		    boost::geometry::model::linestring<sphere_t> line;
 		    for (auto lit = std::begin(way->refs); lit != std::end(way->refs); ++lit) {
-			boost::geometry::append(line, nodecache[*lit]);
+			line.push_back(sphere_t(nodecache[*lit].get<0>(),
+						nodecache[*lit].get<1>()));
+
 		    }
 		    std::string tag;
 		    if (*hit == "highway" && way->action == osmobjects::create) {
-			tag = "highway_km_added";
+			tag = "highway_km";
 		    } else if (*hit == "highway" && way->action == osmobjects::modify) {
-			tag = "highway_km_modified";
+			tag = "highway_km";
 		    }
 		    if (*hit == "waterway" && way->action == osmobjects::create) {
-			tag = "waterway_km_added";
+			tag = "waterway_km";
 		    } else if (*hit == "highway" && way->action == osmobjects::modify) {
-			tag = "waterway_km_modified";
+			tag = "waterway_km";
 		    }
 		    double length = boost::geometry::length(line,
-                    boost::geometry::strategy::distance::haversine<float>(6371.0));
+                    boost::geometry::strategy::distance::haversine<float>(6371.0)) * 1000;
 		    // std::cout << "LENGTH: " << *hit << ": " << length << std::endl;
 		    if (way->action == osmobjects::create) {
 			ostats->added[tag] += length;
