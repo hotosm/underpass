@@ -51,28 +51,18 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 #include <boost/progress.hpp>
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/geometries/linestring.hpp>
-#include <boost/geometry/geometries/polygon.hpp>
-#include <boost/geometry/geometries/geometries.hpp>
-typedef boost::geometry::model::d2::point_xy<double> point_t;
-typedef boost::geometry::model::polygon<point_t> polygon_t;
-typedef boost::geometry::model::multi_point<point_t> mpoint_t;
-typedef boost::geometry::model::linestring<point_t> linestring_t;
-typedef boost::geometry::model::multi_linestring<linestring_t> mlinestring_t;
 
 #include "hotosm.hh"
 #include "data/osmobjects.hh"
 #include "osmstats/osmchange.hh"
-#include "osmstats/osmstats.hh"
-using namespace osmobjects;
-namespace osmstats {
-class OsmStats;
-};
-namespace osmschange {
-class OsmChange;
-};
+
+// forward declare geometry typedefs
+// namespace geoutil {
+// typedef boost::geometry::model::d2::point_xy<double> point_t;
+// typedef boost::geometry::model::linestring<point_t> linestring_t;
+// typedef boost::geometry::model::polygon<point_t> polygon_t;
+// typedef boost::geometry::model::multi_polygon<polygon_t> multipolygon_t;
+// };
 
 /// \namespace osmchange
 namespace osmchange {
@@ -166,42 +156,42 @@ public:
         if (type == way) { ways.back()->user = val; }
     };
     /// Instantiate a new node
-    std::shared_ptr<OsmNode> newNode(void) {
-        auto tmp = std::make_shared<OsmNode>();
+    std::shared_ptr<osmobjects::OsmNode> newNode(void) {
+        auto tmp = std::make_shared<osmobjects::OsmNode>();
         type = node;
         nodes.push_back(tmp);
         return tmp;
     };
     /// Instantiate a new way
-    std::shared_ptr<OsmWay> newWay(void) {
-        std::shared_ptr<OsmWay> tmp = std::make_shared<OsmWay>();
+    std::shared_ptr<osmobjects::OsmWay> newWay(void) {
+        std::shared_ptr<osmobjects::OsmWay> tmp = std::make_shared<osmobjects::OsmWay>();
         type = way;
         ways.push_back(tmp);
         return tmp;
     };
     /// Instantiate a new relation    
-    std::shared_ptr<OsmRelation> newRelation(void) {
-        std::shared_ptr<OsmRelation> tmp = std::make_shared<OsmRelation>();
+    std::shared_ptr<osmobjects::OsmRelation> newRelation(void) {
+        std::shared_ptr<osmobjects::OsmRelation> tmp = std::make_shared<osmobjects::OsmRelation>();
         type = relation;
         relations.push_back(tmp);
         return tmp;
     };
 
     /// Get a specific node in this change
-    std::shared_ptr<OsmNode> getNode(int index) { return nodes[index]; };
+    std::shared_ptr<osmobjects::OsmNode> getNode(int index) { return nodes[index]; };
     /// Get the current node in this change
-    std::shared_ptr<OsmNode> currentNode(void) { return nodes.back(); };
+    std::shared_ptr<osmobjects::OsmNode> currentNode(void) { return nodes.back(); };
     /// Get a specific way in this change
-    std::shared_ptr<OsmWay> getWay(int index) { return ways[index]; };
+    std::shared_ptr<osmobjects::OsmWay> getWay(int index) { return ways[index]; };
     /// Get a specific relation in this change
-    std::shared_ptr<OsmRelation> getRelation(int index) { return relations[index]; };
+    std::shared_ptr<osmobjects::OsmRelation> getRelation(int index) { return relations[index]; };
 
     osmobjects::action_t action = osmobjects::none;      ///< The change action
     osmtype_t type;                                      ///< The OSM object type
-    std::vector<std::shared_ptr<OsmNode>> nodes;         ///< The nodes in this change
-    std::vector<std::shared_ptr<OsmWay>> ways;           ///< The ways in this change
-    std::vector<std::shared_ptr<OsmRelation>> relations; ///< The relations in this change
-    std::shared_ptr<OsmObject> obj;
+    std::vector<std::shared_ptr<osmobjects::OsmNode>> nodes;         ///< The nodes in this change
+    std::vector<std::shared_ptr<osmobjects::OsmWay>> ways;           ///< The ways in this change
+    std::vector<std::shared_ptr<osmobjects::OsmRelation>> relations; ///< The relations in this change
+    std::shared_ptr<osmobjects::OsmObject> obj;
 };
 
 /// \class OsmChangeFile
@@ -237,7 +227,7 @@ public:
     std::vector<std::shared_ptr<OsmChange>> changes; ///< All the changes in this file
 
     /// Collect statistics for each user
-    std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>> collectStats(void);
+    std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>> collectStats(const multipolygon_t &poly);
 
     std::shared_ptr<std::vector<std::string>> scanTags(std::map<std::string, std::string> tags);
 

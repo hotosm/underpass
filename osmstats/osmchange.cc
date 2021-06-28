@@ -51,11 +51,6 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
 using namespace boost::gregorian;
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/geometries/linestring.hpp>
-#include <boost/geometry/geometries/polygon.hpp>
-#include <boost/geometry/geometries/geometries.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/filesystem.hpp>
@@ -76,11 +71,6 @@ using namespace boost::gregorian;
 // #include "osmstats/geoutil.hh"
 #include "data/osmobjects.hh"
 using namespace osmobjects;
-
-typedef boost::geometry::model::d2::point_xy<double> point_t;
-typedef boost::geometry::model::polygon<point_t> polygon_t;
-typedef boost::geometry::model::linestring<point_t> linestring_t;
-typedef boost::geometry::model::point<double, 2, boost::geometry::cs::spherical_equatorial<boost::geometry::degree> > sphere_t;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
@@ -411,7 +401,7 @@ OsmChangeFile::dump(void)
 }
 
 std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>>
-OsmChangeFile::collectStats(void)
+OsmChangeFile::collectStats(const multipolygon_t&poly)
 {
     // FIXME: stuff to extract for MERL
     // names added to villages, neigborhood, or citys
@@ -432,6 +422,13 @@ OsmChangeFile::collectStats(void)
             if (node->tags.size() == 0) {
 		nodecache[node->id] = node->point;
 		continue;
+	    }
+	    // Filter data by polygon
+	    if (!boost::geometry::within(node->point, poly)) {
+		std::cout << "Changeset "  << node->change_id << " is not in a priority area" << std::endl;
+		continue;
+	    } else {
+		std::cout << "Changeset " << node->change_id << " is in a priority area" << std::endl;
 	    }
 	    // Some older nodes in a way wound up with this one tag, which nobody noticed,
 	    // so ignore it.
@@ -459,9 +456,22 @@ OsmChangeFile::collectStats(void)
 	}
         for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
             OsmWay *way = it->get();
-	    // If there are no tags, assume it's part of a way
+	    // If there are no tags, assume it's part of a relation
             if (way->tags.size() == 0) {
 		continue;
+	    }
+	    if (way->polygon.outer().size() == 0) {
+		std::cerr << "ERROR: change "  << way->change_id << " has no points!" << std::endl;
+		continue;
+	    }
+	    // Filter data by polygon
+	    point_t pt;
+	    boost::geometry::centroid(way->polygon, pt);
+	    if (!boost::geometry::within(pt, poly)) {
+		std::cout << "Changeset "  << way->change_id << " is not in a priority area" << std::endl;
+		continue;
+	    } else {
+		std::cout << "Changeset " << way->change_id << " is in a priority area" << std::endl;
 	    }
 	    // Some older ways in a way wound up with this one tag, which nobody noticed,
 	    // so ignore it.
