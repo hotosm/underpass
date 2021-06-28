@@ -69,7 +69,7 @@ namespace opts = boost::program_options;
 // #include "hotosm.hh"
 #include "osmstats/changeset.hh"
 // #include "osmstats/osmstats.hh"
-// #include "data/geoutil.hh"
+#include "data/geoutil.hh"
 // #include "osmstats/replication.hh"
 #include "data/import.hh"
 #include "data/threads.hh"
@@ -104,17 +104,6 @@ public:
     /// Create a new instance, and read in the geoboundaries file.
     Replicator(void) {
         auto hashes = std::make_shared<std::map<std::string, int>>();
-#if 0
-        auto geou = std::make_shared<geoutil::GeoUtil>();
-        // FIXME: this shouldn't be hardcoded
-        geou->readFile("../underpass.git/data/geoboundaries.osm", true);
-        changes = std::make_shared<changeset::ChangeSetFile>();
-        changes->setupBoundaries(geou);
-
-        // FIXME: should return a real value
-        return false;
-        baseurl = "https://planet.openstreetmap.org/replication/";
-#endif
     };
     
     /// Initialize the raw_user, raw_hashtags, and raw_changeset tables
@@ -209,7 +198,6 @@ main(int argc, char *argv[])
             ("frequency,f", opts::value<std::string>(), "Update frequency (hour, daily), default minute)")
             ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp")
             ("import,i", opts::value<std::string>(), "Initialize OSM database with datafile")
-            ("changefile,c", opts::value<std::string>(), "Import change file")
             ("boundary,b", opts::value<std::string>(), "Boundary polygon file name")
             ("datadir,d", opts::value<std::string>(), "Base directory for cached files")
 //            ("verbose,v", "enable verbosity")
@@ -233,15 +221,15 @@ main(int argc, char *argv[])
          boundary = vm["boundary"].as<std::string>();
      }
 
-     auto geou = std::make_shared<geoutil::GeoUtil>();
+     geoutil::GeoUtil geou;
      std::string priority = SRCDIR;
      priority += "/data/" + boundary;
      if (boost::filesystem::exists(priority)) {
-         geou->readFile(datadir + boundary);
+         geou.readFile(datadir + boundary);
      } else {
          priority = PKGLIBDIR;
          priority += "/" + boundary;
-         geou->readFile(priority);
+         geou.readFile(priority);
      }
 
      Replicator replicator;
@@ -249,30 +237,6 @@ main(int argc, char *argv[])
      std::vector<std::string> rawfile;
      std::shared_ptr<std::vector<unsigned char>> data;
 
-     // A changeset has the hashtags and comments we need. Multiple URLS
-     // or filename may be specified on the command line, common when
-     // catching up on changes.
-     if (vm.count("changefile")) {
-         std::string file = vm["changefile"].as<std::string>();
-         std::cout << "Importing change file " << file << std::endl;
-         replicator.readChanges(file);
-     }
-
-#if 0
-     if (vm.count("osmchange")) {
-         std::vector<std::string> files = vm["osmchange"].as<std::vector<std::string>>();
-         if (files[0].substr(0, 4) == "http") {
-             data = replicator.downloadFiles(files, false);
-         } else {
-             for (auto it = std::begin(files); it != std::end(files); ++it) {
-                 replicator.readChanges(*it);
-             }
-         }
-     }
-     if (vm.count("sequence")) {
-         std::cout << "Sequence is " << vm["sequence"].as<int>() << std::endl;
-     }
-#endif
      // This is a full URL to server with replication files
      if (vm.count("url")) {
          url = vm["url"].as<std::string>();
@@ -340,7 +304,7 @@ main(int argc, char *argv[])
          if (!url.empty()) {
              last = url;
              // remote.dump();
-             mthread = std::thread(threads::startMonitor, std::ref(remote));
+             mthread = std::thread(threads::startMonitor, std::ref(remote), std::ref(geou.boundary));
              auto state = under.getState(frequency, url);
              state->dump();
              if (state->path.empty()) {
@@ -363,7 +327,7 @@ main(int argc, char *argv[])
              clast = pserver + "/" + datadir + "changesets/" + state2->path;
              remote.parse(clast);
              // remote.dump();
-             cthread = std::thread(threads::startMonitor, std::ref(remote));
+             cthread = std::thread(threads::startMonitor, std::ref(remote), std::ref(geou.boundary));
          } else if (!starttime.is_not_a_date_time()) {
              // No URL, use the timestamp
              auto state = under.getState(frequency, starttime);
