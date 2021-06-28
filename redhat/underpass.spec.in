@@ -44,6 +44,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/underpass/geoboundaries.sql
 /usr/share/underpass/osmstats.sql
 /usr/share/underpass/underpass.sql
+/usr/share/underpass/priority.geojson
 
 %defattr(755,root,root)
 /usr/bin/replicator
