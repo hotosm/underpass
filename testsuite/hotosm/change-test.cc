@@ -32,6 +32,7 @@
 #include <iostream>
 #include <string>
 #include <pqxx/pqxx>
+#include <cmath>
 
 #include "hottm.hh"
 #include "osmstats/osmstats.hh"
@@ -231,6 +232,19 @@ main(int argc, char* argv[])
         runtest.pass("ChangeSetFile::collectStats(waterway added)");
     } else {
         runtest.fail("ChangeSetFile::collectStats(waterway added)");
+    }
+
+    // distance are in meters, not kilometers for better accuracy
+    if (hits["highway_km"] == 4236) {
+        runtest.pass("ChangeSetFile::collectStats(highway length added)");
+    } else {
+        runtest.fail("ChangeSetFile::collectStats(highway length added)");
+    }
+
+    if (hits["waterway_km"] == 1980) {
+        runtest.pass("ChangeSetFile::collectStats(waterway length added)");
+    } else {
+        runtest.fail("ChangeSetFile::collectStats(waterway length added)");
     }
     
     for (auto it = std::begin(hits); it != std::end(hits); ++it) {
