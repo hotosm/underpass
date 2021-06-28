@@ -66,7 +66,7 @@ using namespace boost::gregorian;
 #include "timer.hh"
 #include "hotosm.hh"
 #include "osmstats/osmstats.hh"
-#include "data/geoutil.hh"
+#include "data/osmobjects.hh"
 
 // Forward declaration
 namespace osmstats {
@@ -184,11 +184,11 @@ public:
     /// Read an istream of the data and parse the XML
     bool readXML(std::istream & xml);
 
-    /// Setup the boundary data used to determine the country
-    bool setupBoundaries(std::shared_ptr<geoutil::GeoUtil> &geou) {
-        // boundaries = geou;
-        return false;
-    };
+    // /// Setup the boundary data used to determine the country
+    // bool setupBoundaries(std::shared_ptr<GeoUtil> &geou) {
+    //     // boundaries = geou;
+    //     return false;
+    // };
 
     /// Get one set of change data from the parsed XML data
     ChangeSet& operator[](int index) { return changes[index]; };
@@ -200,7 +200,7 @@ public:
 //     bool store;
     std::string filename;       ///< The filename of this changeset for disk files
     std::vector<ChangeSet> changes; ///< Storage of all the changes in this data
-    // std::shared_ptr<geoutil::GeoUtil> boundaries; ///< A pointer to the geoboundary data
+    // std::shared_ptr<GeoUtil> boundaries; ///< A pointer to the geoboundary data
 };
 }       // EOF changeset
 
