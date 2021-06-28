@@ -82,7 +82,7 @@ Validate::Validate(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         osmchange::OsmChange *change = it->get();
         change->dump();
-        if (change->action == create) {
+        if (change->action == osmobjects::create) {
             for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
                 osmobjects::OsmNode *node = it->get();
                 if (node->tags.size() > 0) {
