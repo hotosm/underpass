@@ -487,10 +487,9 @@ OsmChangeFile::collectStats(void)
 		}
 		if (*hit == "highway" || *hit == "waterway") {
 		    // Get the geometry behind each reference
-		    boost::geometry::model::linestring<sphere_t> line;
+		    geoutil::linestring_t line;
 		    for (auto lit = std::begin(way->refs); lit != std::end(way->refs); ++lit) {
-			line.push_back(sphere_t(nodecache[*lit].get<0>(),
-						nodecache[*lit].get<1>()));
+			boost::geometry::append(line, nodecache[*lit]);
 		    }
 		    std::string tag;
 		    if (*hit == "highway" && way->action == osmobjects::create) {
@@ -503,10 +502,9 @@ OsmChangeFile::collectStats(void)
 		    } else if (*hit == "highway" && way->action == osmobjects::modify) {
 			tag = "waterway_km_modified";
 		    }
-		    // radius of the earth
-		    double const mean_radius = 6371.0;
-		    auto length = boost::geometry::length(line, boost::geometry::strategy::distance::haversine<float>(mean_radius));
-		    std::cout << "LENGTH: " << *hit << ": " << length << std::endl;
+		    double length = boost::geometry::length(line,
+                    boost::geometry::strategy::distance::haversine<float>(6371.0));
+		    // std::cout << "LENGTH: " << *hit << ": " << length << std::endl;
 		    if (way->action == osmobjects::create) {
 			ostats->added[tag] += length;
 		    } else if (way->action == osmobjects::modify){
