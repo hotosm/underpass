@@ -139,7 +139,7 @@ endif
 
 install-data-hook:
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
-	cp -uvp data/priority.geojson $(DESTDIR)/$(datadir)/underpass
+	cp -uvp $(srcdir)/data/priority.geojson $(DESTDIR)/$(datadir)/underpass
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
 	cp -ruvp $(srcdir)/doc/*.md $(DESTDIR)/$(docdir)
 
