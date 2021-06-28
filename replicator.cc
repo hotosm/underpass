@@ -192,7 +192,8 @@ main(int argc, char *argv[])
     // std::string pserver = "https://download.openstreetmap.fr";
     // std::string pserver = "https://planet.openstreetmap.org";
     std::string pserver = "https://planet.maps.mail.ru";
-    std::string datadir = "/replication/";
+    std::string datadir = "replication/";
+    std::string boundary = "priority.geojson";
     replication::frequency_t frequency = replication::minutely;
 
     opts::positional_options_description p;
@@ -209,6 +210,7 @@ main(int argc, char *argv[])
             ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp")
             ("import,i", opts::value<std::string>(), "Initialize OSM database with datafile")
             ("changefile,c", opts::value<std::string>(), "Import change file")
+            ("boundary,b", opts::value<std::string>(), "Boundary polygon file name")
             ("datadir,d", opts::value<std::string>(), "Base directory for cached files")
 //            ("verbose,v", "enable verbosity")
             ;
@@ -227,6 +229,21 @@ main(int argc, char *argv[])
          return 1;
      }
 
+     if (vm.count("boundary")) {
+         boundary = vm["boundary"].as<std::string>();
+     }
+
+     auto geou = std::make_shared<geoutil::GeoUtil>();
+     std::string priority = SRCDIR;
+     priority += "/data/" + boundary;
+     if (boost::filesystem::exists(priority)) {
+         geou->readFile(datadir + boundary);
+     } else {
+         priority = PKGLIBDIR;
+         priority += "/" + boundary;
+         geou->readFile(priority);
+     }
+
      Replicator replicator;
      // replicator.initializeData();
      std::vector<std::string> rawfile;
@@ -240,6 +257,7 @@ main(int argc, char *argv[])
          std::cout << "Importing change file " << file << std::endl;
          replicator.readChanges(file);
      }
+
 #if 0
      if (vm.count("osmchange")) {
          std::vector<std::string> files = vm["osmchange"].as<std::vector<std::string>>();
@@ -280,7 +298,7 @@ main(int argc, char *argv[])
          }
      }
 
-     std::string fullurl = pserver + datadir + strfreq + "/" + url;
+     std::string fullurl = pserver + "/" + datadir + strfreq + "/" + url;
      replication::RemoteURL remote(fullurl);
 //     remote.dump();
      // Specify a timestamp used by other options
@@ -342,7 +360,7 @@ main(int argc, char *argv[])
                  }
              }
              state2->dump();
-             clast = pserver + datadir + "changesets/" + state2->path;
+             clast = pserver + "/" + datadir + "changesets/" + state2->path;
              remote.parse(clast);
              // remote.dump();
              cthread = std::thread(threads::startMonitor, std::ref(remote));
