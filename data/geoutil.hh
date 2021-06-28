@@ -56,32 +56,17 @@ using namespace boost::gregorian;
 
 #include "hotosm.hh"
 #include "osmstats/osmstats.hh"
-
-/// \namespace geoutil
-namespace geoutil {
+#include "data/osmobjects.hh"
 
 /// \file geoutil.hh
-/// \brief This file parses a data file containing country boundaries
+/// \brief This file parses a data file containing boundaries
 ///
 /// This uses GDAL to read and parse a file in any supported format
 /// and loads it into a data structure. This is used to determine which
 ///country a change was made in.
 
-/// \typedef point_t
-/// \brief Simplify access to boost geometry point
-typedef boost::geometry::model::d2::point_xy<double> point_t;
-
-/// \typedef ploygon_t
-/// \brief Simplify access to boost geometry polygon
-typedef boost::geometry::model::polygon<point_t> polygon_t;
-
-/// \typedef multiploygon_t
-/// \brief Simplify access to boost geometry multipolygon
-typedef boost::geometry::model::multi_polygon<polygon_t> multipolygon_t;
-
-/// \typedef linestring_t
-/// \brief Simplify access to boost geometry linestring
-typedef boost::geometry::model::linestring<point_t> linestring_t;
+/// \namespace geoutil
+namespace geoutil {
 
 /// \class GeoUtil
 /// \brief Read in the priority area boundaries data file
@@ -111,11 +96,16 @@ public:
         return inPriorityArea(point_t(lon, lat));
     };
 
+    bool inPriorityArea(polygon_t poly) {
+        point_t pt;
+        boost::geometry::centroid(poly, pt);
+        return inPriorityArea(pt);
+    };
     bool inPriorityArea(point_t pt) {
         return boost::geometry::within(pt, boundary);
     };
 
-private:
+// private:
     multipolygon_t boundary;
 };
     
