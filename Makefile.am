@@ -84,6 +84,8 @@ bin_PROGRAMS = replicator
 replicator_SOURCES = replicator.cc
 replicator_LDADD = libhotosm.la $(BOOST_LIBS)
 
+AM_CXXFLAGS = -DPKGLIBDIR=\"$(pkglibdir)\" -DSRCDIR=\"$(srcdir)\"
+
 pkgdata_DATA = $(SQL_FILES) data/priority.geojson
 
 EXTRA_DIST = \
