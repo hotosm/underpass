@@ -674,32 +674,28 @@ RemoteURL::parse(const std::string &rurl)
 
 void RemoteURL::Increment(void)
 {
-    boost::format fmt("%03d");
-    fmt % (major);
-    std::string newpath = fmt.str() + "/";
+    boost::format majorfmt("%03d");
+    boost::format minorfmt("%03d");
+    boost::format indexfmt("%03d");
+    std::string newpath;
     if (minor == 999) {
         major++;
-        fmt % (major);
-        newpath += fmt.str() + "/000";
+        minor = 0;
         index = 0;
     }
     if (index == 999) {
         minor++;
-        fmt % (minor);
-        newpath += fmt.str();
-        newpath += "/000";
+        index = 0;
     } else {
-        fmt % (minor);
-        newpath += fmt.str();
-        fmt % (index++);
-        newpath += "/" + fmt.str();
-    }
-    if (minor == 999) {
-        major++;
-        fmt % (major);
-        newpath += fmt.str() + "/000";
+        index++;
     }
 
+    majorfmt % (major);
+    minorfmt % (minor);
+    indexfmt % (index);
+
+    newpath = majorfmt.str() + "/" + minorfmt.str() + "/" + indexfmt.str();
+    // std::cout << "NEWPATH: " << newpath << std::endl;
     boost::algorithm::replace_all(url, subpath, newpath);
     boost::algorithm::replace_all(destdir, subpath, newpath);
     boost::algorithm::replace_all(filespec, subpath, newpath);
@@ -720,6 +716,8 @@ RemoteURL::operator=(const RemoteURL &inr)
     url = inr.url;
     filespec = inr.filespec;
     destdir = inr.destdir;
+
+    return *this;
 }
 
 RemoteURL::RemoteURL(const RemoteURL &inr)
