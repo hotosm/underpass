@@ -70,6 +70,19 @@ resource "aws_nat_gateway" "nat" {
   subnet_id     = aws_subnet.public[1].id
 }
 
+// EXPLICIT ASSOCIATIONS
+resource "aws_route_table_association" "private" {
+  count          = var.subnet_count
+  subnet_id      = aws_subnet.private[count.index].id
+  route_table_id = aws_vpc.underpass.default_route_table_id
+}
+
+resource "aws_route_table_association" "public" {
+  count          = var.subnet_count
+  subnet_id      = aws_subnet.public[count.index].id
+  route_table_id = aws_route_table.public.id
+}
+
 resource "aws_security_group" "database" {
   name        = "database"
   description = "Underpass Database"
