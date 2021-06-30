@@ -45,6 +45,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <ogr_geometry.h>
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -68,6 +69,7 @@ using tcp = net::ip::tcp;
 
 #include "osmstats/replication.hh"
 #include "osmstats/osmstats.hh"
+#include <ogr_geometry.h>
 
 namespace replication {
 class StateFile;
@@ -93,19 +95,19 @@ extern void startStateThreads(const std::string &base, const std::string &file);
 /// This monitors the planet server for new files of the specified type.
 /// It does a bulk download to catch up the database, then checks for the
 /// minutely change files and processes them.
-extern void startMonitor(const replication::RemoteURL &remote);
+extern void startMonitor(const replication::RemoteURL &remote, const multipolygon_t &poly);
 
 /// Updates the states table in the Underpass database
 extern std::shared_ptr<replication::StateFile> threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file);
 
 /// Updates the raw_hashtags, raw_users, and raw_changesets_countries tables
 /// from a changeset file
-extern bool threadOsmChange(const replication::RemoteURL &remote);
+extern bool threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t  &poly);
 
 /// This updates several fields in the raw_changesets table, which are part of
 /// the changeset file, and don't need to be calculated.
 //extern bool threadChangeSet(const std::string &file);
-extern std::shared_ptr<replication::StateFile> threadChangeSet(const replication::RemoteURL &remote);
+extern std::shared_ptr<replication::StateFile> threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly);
 // extern bool threadChangeSet(const std::string &file, std::promise<bool> && result);
 
 /// This updates the calculated fields in the raw_changesets table, based on

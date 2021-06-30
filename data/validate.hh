@@ -45,9 +45,8 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
-#include "osmstats/osmchange.hh"
 #include "data/osmobjects.hh"
-#include "timer.hh"
+#include "osmstats/osmchange.hh"
 
 /// \file validate.hh
 /// \brief This class tries to validate the OSM objects

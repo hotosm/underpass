@@ -53,9 +53,6 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
 using namespace boost::gregorian;
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/geometries.hpp>
-#include <boost/algorithm/string.hpp>
 
 #include "hotosm.hh"
 #include "osmstats/osmstats.hh"
@@ -63,67 +60,12 @@ using namespace boost::gregorian;
 #include "data/geoutil.hh"
 
 #include <gdal/ogrsf_frmts.h>
+#include <ogr_geometry.h>
 
 namespace geoutil {
 
-
-int
-GeoCountry::extractTags(const std::string &other)
-{
-    std::vector<std::string> tags;
-    boost::split(tags, other, boost::is_any_of(","));
-    for (int i = 0; i < tags.size(); i++) {
-        std::size_t pos = tags[i].find('=');
-        if (pos != std::string::npos) {
-            std::string key = tags[i].substr(0, pos);
-            key.erase(std::remove(key.begin(),key.end(),'\"'),key.end());
-            std::string value = tags[i].substr(pos + 2, std::string::npos);
-            // Remove the double quotes
-            key.erase(std::remove(key.begin(),key.end(),'\"'),key.end());
-            value.erase(std::remove(value.begin(),value.end(),'\"'),value.end());
-            names[key] = value;
-            if (key == "name:iso_w2" || key == "name:iso_w3") {
-                if (value.size() == 2) {
-                    iso_a2 = value;
-                } else {
-                    iso_a3 = value;
-                }
-            }
-            if (key == "cid") {
-                id = std::stol(value);
-            }
-        }
-    }
-
-    return tags.size();
-}
-
-// bool
-// GeoUtil::connect(const std::string &dbserver, const std::string &dbname)
-// {
-//     std::string args;
-//     if (dbname.empty()) {
-// 	args = "dbname = geobundaries";
-//     } else {
-// 	args = "dbname = " + dbname;
-//     }
-    
-//     try {
-// 	db = new pqxx::connection(args);
-// 	if (db->is_open()) {
-//             // worker = new pqxx::work(*db);
-// 	    return true;
-// 	} else {
-// 	    return false;
-// 	}
-//     } catch (const std::exception &e) {
-// 	std::cerr << e.what() << std::endl;
-// 	return false;
-//    }    
-// }
-
 bool
-GeoUtil::readFile(const std::string &filespec, bool multi)
+GeoUtil::readFile(const std::string &filespec)
 {
     GDALDataset       *poDS;
     std::string infile = filespec;
@@ -139,138 +81,24 @@ GeoUtil::readFile(const std::string &filespec, bool multi)
     }
 
     OGRLayer *layer;
-    layer = poDS->GetLayerByName( "multipolygons" );
+    layer = poDS->GetLayerByName("priority");
     if (layer == 0) {
-        std::cout << "ERROR: Couldn't get layer \"multipolygons\"" << std::endl;
+        std::cout << "ERROR: Couldn't get layer \"priority\"" << std::endl;
         return false;
     }
 
     if (layer != 0) {
         for (auto& feature: layer) {
-            GeoCountry country;
             const OGRGeometry* geom = feature->GetGeometryRef();
-            for (auto&& field: *feature) {
-                if(NULL != geom) {
-                    int eType = wkbFlatten(layer->GetGeomType());
-                    std::string value = field.GetAsString();
-                    if (strcmp(field.GetName(), "name") == 0) {
-                        country.setName(value);
-                    }
-                    if (strcmp(field.GetName(), "alt_name") == 0) {
-                        country.setAltName(value);
-                    }
-                    if (strcmp(field.GetName(), "other_tags") == 0) {
-                        country.extractTags(value);
-                    }
-                }
-            }
-            char* wkt1 = NULL;
             const OGRMultiPolygon *mp = geom->toMultiPolygon();
-            if (!multi) {
-                mp->exportToWkt(&wkt1);
-                // FIXME: add filtering by polygon!
-                // boost::geometry::read_wkt(wkt1, boundary);
-            } else {
-                mp->exportToWkt(&wkt1);
-                for (auto it = mp->begin(); it != mp->end(); ++it) {
-                    const OGRPolygon *poly = *it;
-                    poly->exportToWkt(&wkt1);
-                    country.addBoundary(wkt1);
-                }
-                countries.push_back(country);
-            }
-            CPLFree(wkt1);
+            std::string wkt = mp->exportToWkt();
+            boost::geometry::read_wkt(wkt, boundary);
         }
     }
 
     // FIXME: return something real
     return false;
 }
-
-bool
-GeoUtil::focusArea(double lat, double lon)
-{
-
-    return false;
-}
-
-// osmstats::RawCountry
-// GeoUtil::findCountry(double lat, double lon)
-// {
-
-// }
-
-void
-GeoUtil::dump(void)
-{
-    // std::cout << "Boundaries: " << boost::geometry::wkt(boundaries) << std::endl;
-    for (auto it = std::begin(countries); it != std::end(countries); ++it) {
-        it->dump();
-    }
-}
-
-GeoCountry &
-GeoUtil::inCountry(double max_lat, double max_lon, double min_lat, double min_lon)
-{
-    for (auto it = std::begin(countries); it != std::end(countries); ++it) {
-        bool in = it->inCountry(max_lat, max_lon, min_lat, min_lon);
-        if (in) {
-            return *it;
-        }
-    }
-}
-
-std::vector<osmstats::RawCountry>
-GeoUtil::exportCountries(void)
-{
-    std::vector<osmstats::RawCountry> countries;
-    for (auto it = std::begin(countries); it != std::end(countries); ++it) {
-        osmstats::RawCountry country(it->id, it->name, "iso");
-        countries.push_back(country);
-    }
-    return countries;
-}
-
-void
-GeoCountry::dump(void)
-{
-    std::cout << "Country Name: " << name << std::endl;
-    if (!alt_name.empty()) {
-        std::cout << "Alternate Name: " << name << std::endl;
-    }
-    if (!iso_a2.empty()) {
-        std::cout << "ISO A2: " << iso_a2 << std::endl;
-    }
-    if (!iso_a3.empty()) {
-        std::cout << "ISO A3: " << iso_a3 << std::endl;
-    }
-    std::cout << "Country ID: " << id << std::endl;
-
-    std::cout << "Boundary: " << boost::geometry::wkt(boundary) << std::endl;
-    for (auto it = std::begin(names); it != std::end(names); ++it) {
-        //std::cout << *it.first() << std::endl;
-    }
-}
-
-bool
-GeoCountry::inCountry(double max_lat, double max_lon, double min_lat, double min_lon)
-{
-    // Build the country outer boundary polygon
-    polygon_t location;
-    boost::geometry::append(location.outer(), point_t(min_lon, min_lat));
-    boost::geometry::append(location.outer(), point_t(min_lon, max_lat));
-    boost::geometry::append(location.outer(), point_t(max_lon, max_lat));
-    boost::geometry::append(location.outer(), point_t(max_lon, min_lat));
-    boost::geometry::append(location.outer(), point_t(min_lon, min_lat));
-
-    // FIXME: It might be faster to just test for the 4 points than
-    // using a polygon
-    // bool ret = boost::geometry::within(point_t(min_lon, min_lat), boundary);
-    bool ret = boost::geometry::within(location, boundary);
-
-    return ret;
-}
-
 
 }       // EOF geoutil
 
