@@ -70,6 +70,13 @@ resource "aws_nat_gateway" "nat" {
   subnet_id     = aws_subnet.public[1].id
 }
 
+resource "aws_route" "private" {
+  route_table_id         = aws_vpc.underpass.default_route_table_id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.nat.id
+  depends_on             = [aws_vpc.underpass]
+}
+
 // EXPLICIT ASSOCIATIONS
 resource "aws_route_table_association" "private" {
   count          = var.subnet_count
