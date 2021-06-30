@@ -84,7 +84,7 @@ namespace threads {
 
 // Starting with this URL, download the file, incrementing
 void
-startMonitor(const replication::RemoteURL &inr, const multipolygon_t&poly)
+startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly)
 {
     // auto planet = std::make_shared<replication::Planet>();
     // replication::Replication server;
@@ -249,7 +249,7 @@ startStateThreads(const std::string &base, const std::string &file)
 
 // This thread get started for every osmChange file
 bool
-threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t&poly)
+threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly)
 {
     // osmstats::QueryOSMStats ostats;
     std::vector<std::string> result;
@@ -342,7 +342,7 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t&poly)
 // the changeset file, and don't need to be calculated.
 //void threadChangeSet(const std::string &file, std::promise<bool> &&result)
 std::shared_ptr<replication::StateFile>
-threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t&poly)
+threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly)
 {
     changeset::ChangeSetFile changeset;
 
