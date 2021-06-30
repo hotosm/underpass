@@ -47,12 +47,8 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
 using namespace boost::gregorian;
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/geometries/linestring.hpp>
-#include <boost/geometry/geometries/polygon.hpp>
-#include <boost/geometry/geometries/geometries.hpp>
 #include <ogrsf_frmts.h>
+#include <ogr_geometry.h>
 
 #include "hotosm.hh"
 #include "osmstats/osmstats.hh"

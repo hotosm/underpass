@@ -60,6 +60,7 @@ using namespace boost::gregorian;
 #include "data/geoutil.hh"
 
 #include <gdal/ogrsf_frmts.h>
+#include <ogr_geometry.h>
 
 namespace geoutil {
 
@@ -82,27 +83,16 @@ GeoUtil::readFile(const std::string &filespec)
     OGRLayer *layer;
     layer = poDS->GetLayerByName("priority");
     if (layer == 0) {
-        std::cout << "ERROR: Couldn't get layer \"multipolygons\"" << std::endl;
+        std::cout << "ERROR: Couldn't get layer \"priority\"" << std::endl;
         return false;
     }
 
     if (layer != 0) {
         for (auto& feature: layer) {
-            const OGRGeometry *geom = feature->GetGeometryRef();
-            for (auto&& field: *feature) {
-            char *wkt = NULL;
+            const OGRGeometry* geom = feature->GetGeometryRef();
             const OGRMultiPolygon *mp = geom->toMultiPolygon();
-            mp->exportToWkt(&wkt);
+            std::string wkt = mp->exportToWkt();
             boost::geometry::read_wkt(wkt, boundary);
-            for (auto it = mp->begin(); it != mp->end(); ++it) {
-                const OGRPolygon *poly = *it;
-                poly->exportToWkt(&wkt);
-                boost::geometry::read_wkt(wkt, boundary);
-                //country.addBoundary(wkt1);
-                //countries.push_back(country);
-            }
-            CPLFree(wkt);
-            }
         }
     }
 
