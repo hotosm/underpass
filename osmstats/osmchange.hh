@@ -56,12 +56,14 @@ using namespace boost::gregorian;
 #include "data/osmobjects.hh"
 #include "osmstats/osmchange.hh"
 
+#include <ogr_geometry.h>
+
 // forward declare geometry typedefs
 // namespace geoutil {
 // typedef boost::geometry::model::d2::point_xy<double> point_t;
 // typedef boost::geometry::model::linestring<point_t> linestring_t;
 // typedef boost::geometry::model::polygon<point_t> polygon_t;
-// typedef boost::geometry::model::multi_polygon<polygon_t> multipolygon_t;
+// typedef boost::geometry::model::multi_polygon<polygon_t> multipolygon_t ;
 // };
 
 /// \namespace osmchange

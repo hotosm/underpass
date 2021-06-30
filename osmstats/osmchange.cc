@@ -68,8 +68,9 @@ using namespace boost::gregorian;
 #include "hotosm.hh"
 #include "timer.hh"
 #include "osmstats/osmchange.hh"
-// #include "osmstats/geoutil.hh"
 #include "data/osmobjects.hh"
+#include <ogr_geometry.h>
+
 using namespace osmobjects;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
@@ -401,7 +402,7 @@ OsmChangeFile::dump(void)
 }
 
 std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>>
-OsmChangeFile::collectStats(const multipolygon_t&poly)
+OsmChangeFile::collectStats(const multipolygon_t &poly)
 {
     // FIXME: stuff to extract for MERL
     // names added to villages, neigborhood, or citys
@@ -410,7 +411,7 @@ OsmChangeFile::collectStats(const multipolygon_t&poly)
     auto mstats = std::make_shared<std::map<long, std::shared_ptr<ChangeStats>>>();
     std::shared_ptr<ChangeStats> ostats;
 
-    std::cerr << "Collecting Statistics for: " << changes.size() << " changes" << std::endl;
+    std::cout << "Collecting Statistics for: " << changes.size() << " changes" << std::endl;
 
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
@@ -418,6 +419,7 @@ OsmChangeFile::collectStats(const multipolygon_t&poly)
 	std::map<long, point_t> nodecache;
         for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
             OsmNode *node = it->get();
+	    auto wkt = boost::geometry::wkt(node->point);
 	    // If there are no tags, assume it's part of a way
             if (node->tags.size() == 0) {
 		nodecache[node->id] = node->point;
@@ -425,10 +427,10 @@ OsmChangeFile::collectStats(const multipolygon_t&poly)
 	    }
 	    // Filter data by polygon
 	    if (!boost::geometry::within(node->point, poly)) {
-		std::cout << "Changeset "  << node->change_id << " is not in a priority area" << std::endl;
+		std::cout << "Changeset with node "  << node->change_id << " is not in a priority area" << std::endl;
 		continue;
 	    } else {
-		std::cout << "Changeset " << node->change_id << " is in a priority area" << std::endl;
+		std::cout << "Changeset with node " << node->change_id << " is in a priority area" << std::endl;
 	    }
 	    // Some older nodes in a way wound up with this one tag, which nobody noticed,
 	    // so ignore it.
@@ -468,10 +470,10 @@ OsmChangeFile::collectStats(const multipolygon_t&poly)
 	    point_t pt;
 	    boost::geometry::centroid(way->polygon, pt);
 	    if (!boost::geometry::within(pt, poly)) {
-		std::cout << "Changeset "  << way->change_id << " is not in a priority area" << std::endl;
+		std::cout << "Changeset with way "  << way->change_id << " is not in a priority area" << std::endl;
 		continue;
 	    } else {
-		std::cout << "Changeset " << way->change_id << " is in a priority area" << std::endl;
+		std::cout << "Changeset with way " << way->change_id << " is in a priority area" << std::endl;
 	    }
 	    // Some older ways in a way wound up with this one tag, which nobody noticed,
 	    // so ignore it.
