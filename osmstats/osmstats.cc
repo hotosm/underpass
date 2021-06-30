@@ -210,25 +210,6 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     std::cout << "Applying ChangeSet data" << std::endl;
     change.dump();
 
-#if 0
-    // See if the change is in one of the focus countries
-    std::string query = "SELECT COUNT(changesets.id) FROM geoboundaries,changesets WHERE (ST_CONTAINS(ST_SetSRID(geoboundaries.boundary, 4326),";
-    query += " ST_PointFromText(\'POINT(";
-    query += std::to_string(change.min_lon) + " " + std::to_string(change.min_lat);
-    query += ")\', 4326))) AND geoboundaries.priority=\'t\';";
-    std::cout << "QUERY X: " << query << std::endl;
-    pqxx::work worker1(*sdb);
-    pqxx::result result = worker1.exec(query);
-    worker1.commit();
-    int ids = std::stol(result[0][0].c_str());
-    if (ids == 0) {
-	std::cout << "Changeset " << change.id << " is not in a focus country" << std::endl;
-	return true;
-    } else {
-	std::cout << "Changeset " << change.id << " is in a focus country" << std::endl;
-    }
-#endif
-
     // Some old changefiles have no user information
     std::string query = "INSERT INTO users VALUES(";
     query += std::to_string(change.uid) + ",\'" + sdb->esc(change.user);
@@ -259,11 +240,12 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
 
     // osmstats=# UPDATE raw_changesets SET road_km_added = (SELECT road_km_added + 10.0 FROM raw_changesets WHERE road_km_added>0 AND user_id=649260 LIMIT 1) WHERE user_id=649260;
 
-    if (!change.open) {
-        query = "INSERT INTO changesets (id, editor, user_id, created_at, closed_at";
-    } else {
-        query = "INSERT INTO changesets (id, editor, user_id, created_at";
-    }
+    query = "INSERT INTO changesets (id, editor, user_id, created_at";
+    // if (change.open) {
+    //     query = "INSERT INTO changesets (id, editor, user_id, created_at";
+    // } else {
+    //     query = "INSERT INTO changesets (id, editor, user_id, created_at, closed_at";
+    // }
     if (change.hashtags.size() > 0) {
         query += ", hashtags ";        
     }
@@ -274,9 +256,9 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     query += std::to_string(change.id) + ",\'" + change.editor + "\',\'";\
     query += std::to_string(change.uid) + "\',\'";
     query += to_simple_string(change.created_at) + "\'";
-    if (!change.open) {
-        query += ",\'" + to_simple_string(change.closed_at) + "\'";
-    }
+    // if (!change.open) {
+    //     query += ",\'" + to_simple_string(change.closed_at) + "\'";
+    // }
     // Hashtags are only used in mapping campaigns using Tasking Manager
     if (change.hashtags.size() > 0) {
         query += ", \'{ ";
@@ -367,8 +349,10 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     //query += ")) ON CONFLICT DO NOTHING;";
     query += ")) ON CONFLICT (id) DO UPDATE SET editor=\'" + change.editor;
     query += "\', created_at=\'" + to_simple_string(change.created_at);
-    query += "\', closed_at=\'" + to_simple_string(change.closed_at) + "\'";
-    query += ", bbox=" + bbox.substr(1) + ")'))";
+    // if (!change.open) {
+    // 	query += "\', closed_at=\'" + to_simple_string(change.closed_at);
+    // }
+    query += "\', bbox=" + bbox.substr(2) + ")'))";
     std::cout << "QUERY: " << query << std::endl;
     result = worker.exec(query);
 
