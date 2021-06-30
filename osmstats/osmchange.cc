@@ -416,7 +416,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
         // change->dump();
-	std::map<long, geoutil::point_t> nodecache;
+	std::map<long, point_t> nodecache;
         for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
             OsmNode *node = it->get();
 	    auto wkt = boost::geometry::wkt(node->point);
