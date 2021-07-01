@@ -62,6 +62,8 @@ SQL_FILES = \
 # inst_HEADERS = hotosm.hh hottm.hh
 libhotosm_la_SOURCES = \
 	timer.hh \
+	log.cc log.hh \
+	dsodefs.hh gettest.h \
 	hotosm.cc hotosm.hh \
 	hottm.cc hottm.hh \
 	hottm/tmusers.cc hottm/tmusers.hh \
