@@ -90,6 +90,9 @@ using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 /// Control access to the database connection
 std::mutex db_mutex;
 
+#include "log.hh"
+using namespace logger;
+
 namespace replication {
 
 /// Parse the two state files for a replication file, from
@@ -128,8 +131,7 @@ StateFile::StateFile(const std::string &file, bool memory)
             state.open(file, std::ifstream::in);
         }
         catch(std::exception& e) {
-            std::cout << "ERROR opening " << file << std::endl;
-            std::cout << e.what() << std::endl;
+            log_debug(_("ERROR opening %1% %2%"), file, e.what());
             // return false;
         }
         // For a disk file, none of the state files appears to be larger than
@@ -189,9 +191,10 @@ StateFile::StateFile(const std::string &file, bool memory)
                 tstamp += value.substr(pos + 1, 3); // get seconds
                 timestamp = from_iso_extended_string(tstamp);
             } else {
-                std::cerr << "Invalid Key found: " << key << std::endl;
-                exit(EXIT_FAILURE);            }
+                log_error(_("Invalid Key found: "), key);
+                exit(EXIT_FAILURE);
             }
+        }
     }
 
     state.close();
@@ -201,12 +204,12 @@ StateFile::StateFile(const std::string &file, bool memory)
 void
 StateFile::dump(void)
 {
-    std::cout << "Dumping state.txt file" << std::endl;    
-    std::cout << "\tTimestamp: " << timestamp << std::endl;
-    std::cout << "\tSequence: " << sequence << std::endl;
-    std::cout << "\tPath: " << path << std::endl;
-    std::cout << "\tcreated_at: " << created_at << std::endl;
-    std::cout << "\tclosed_at: " << closed_at << std::endl;
+    std::cerr << "Dumping state.txt file" << std::endl;
+    std::cerr << "\tTimestamp: " << timestamp  << std::endl;
+    std::cerr << "\tSequence: " << sequence  << std::endl;
+    std::cerr << "\tPath: " << path  << std::endl;
+    std::cerr << "\tcreated_at: " << created_at  << std::endl;
+    std::cerr << "\tclosed_at: " << closed_at << std::endl;
 }
 
 // parse a replication file containing changesets
@@ -238,7 +241,7 @@ Planet::getLinks(GumboNode* node, std::shared_ptr<std::vector<std::string>> &lin
 {
     // if (node->type == GUMBO_NODE_TEXT) {
     //     std::string val = std::string(node->v.text.text);
-    //     std::cout << "FIXME: " << "GUMBO_NODE_TEXT " << val << std::endl;
+    //     log_debug(_("FIXME: " << "GUMBO_NODE_TEXT " << val);
     // }
     
     if (node->type == GUMBO_NODE_ELEMENT) {
@@ -249,7 +252,7 @@ Planet::getLinks(GumboNode* node, std::shared_ptr<std::vector<std::string>> &lin
             // start with a 3 digit number
             if (href->value[0] >= 48 && href->value[0] <= 57) {
                 //if (std::isalnum(href->value[0]) && std::isalnum(href->value[1])) {
-                // std::cout << "FIXME: " << href->value << std::endl;
+                // log_debug(_("FIXME: %1%"), href->value);
                 if (std::strlen(href->value) > 0) {
                     links->push_back(href->value);
                 }
@@ -270,7 +273,7 @@ Planet::downloadFile(const std::string &url)
 {
     boost::system::error_code ec;
     auto data = std::make_shared<std::vector<unsigned char>>();
-    std::cout << "Downloading: " << url << std::endl;
+    log_debug(_("Downloading: %1%"), url);
     // Set up an HTTP GET request message
     http::request<http::string_body> req{http::verb::get, url, version};
 
@@ -289,16 +292,16 @@ Planet::downloadFile(const std::string &url)
     // read_header(stream, buffer, parser);
     read(stream, buffer, parser);
     if (parser.get().result() == boost::beast::http::status::not_found) {
-        std::cerr << "Remote file not found: " << url << std::endl;
+        log_error(_("Remote file not found: %1%"), url);
         exit(EXIT_FAILURE);
     }
 
     // Check the magic number of the file
     if (parser.get().body()[0] == 0x1f) {
-        std::cout << "It's gzipped" << std::endl;
+        log_debug(_("It's gzipped"));
     } else {
         if (parser.get().body()[0] == '<') {
-            std::cout << "It's XML" << std::endl;
+            log_debug(_("It's XML"));
         }
     }
 
@@ -332,18 +335,18 @@ Planet::Planet(void)
 void
 Planet::dump(void)
 {
-    std::cout << "Dumping Planet data" << std::endl;
+    log_debug(_("Dumping Planet data"));
     for (auto it = std::begin(changeset); it != std::end(changeset); ++it) {
-        std::cout << "Changeset at: " << it->first << ": " << it->second << std::endl;
+        std::cerr << "Changeset at: " << it->first << it->second << std::endl;
     }
     for (auto it = std::begin(minute); it != std::end(minute); ++it) {
-        std::cout << "Minutely at: " << it->first << ": " << it->second << std::endl;
+        std::cerr << "Minutely at: " << it->first << ": " << it->second << std::endl;
     }
     for (auto it = std::begin(hour); it != std::end(hour); ++it) {
-        std::cout << "Minutely at: " << it->first << ": " << it->second << std::endl;
+        std::cerr << "Minutely at: " << it->first << ": " << it->second << std::endl;
     }
     for (auto it = std::begin(day); it != std::end(day); ++it) {
-        std::cout << "Daily at: " << it->first << ": " << it->second << std::endl;
+        std::cerr << "Daily at: " << it->first << ": " << it->second << std::endl;
     }
 }
 
@@ -369,12 +372,12 @@ Planet::connectServer(const std::string &planet)
     auto const results = resolver.resolve(tmp, std::to_string(port));
     boost::asio::connect(stream.next_layer(), results.begin(), results.end(), ec);
     if (ec) {
-        std::cerr << "ERROR: stream connect failed" << ": " << ec.message() << std::endl;
+        log_error(_("stream connect failed %1%"), ec.message());
         return false;
     }
     stream.handshake(ssl::stream_base::client, ec);
     if (ec) {
-        std::cerr << "ERROR: stream handshake failed" << ": " << ec.message() << std::endl;
+        log_error(_("stream handshake failed %1%"), ec.message());
         return false;
     }
 
@@ -385,7 +388,7 @@ Planet::connectServer(const std::string &planet)
 std::shared_ptr<std::vector<std::string>>
 Planet::scanDirectory(const std::string &dir)
 {
-    std::cout << "Scanning remote Directory: " << dir << std::endl;
+    log_debug(_("Scanning remote Directory: %1%"), dir);
 
     // The io_context is required for all I/O
     boost::asio::io_context ioc;
@@ -446,7 +449,7 @@ Planet::findData(frequency_t freq, const std::string &path)
 {
     auto data = downloadFile(path + ".state.txt");
     if (data->size() == 0) {
-        std::cerr << "ERROR: StateFile not found: " << path << std::endl;
+        log_error(_("StateFile not found: %1%"), path);
         auto tmp = std::make_shared<replication::StateFile>();
         return tmp;
     } else {
@@ -510,7 +513,7 @@ Planet::findData(frequency_t freq, ptime tstamp)
 #if 0
     auto data = downloadFile(newpath + ".state.txt");
     if (data->size() == 0) {
-        std::cerr << "ERROR: StateFile not found: " << newpath << std::endl;
+        log_error(_("StateFile not found: %1%"),newpath);
         return state;
     } else {
         std::string tmp(reinterpret_cast<const char *>(data->data()));
@@ -532,15 +535,15 @@ Planet::findData(frequency_t freq, ptime tstamp)
         // std::cerr << to_simple_string(tstamp) << " : "
         //           << to_simple_string(times[i-2]) << " : "
         //           << to_simple_string(times[i-1]) << " : "
-        //           << std::endl;
+        //          );
         if (tstamp >= times[i-1] && tstamp <= times[i]) {
             delta1 = tstamp - times[i-1];
             delta2 = times[i] - tstamp;
-            std::cerr << "Hours: " << delta1.hours() << " : " << delta2.hours() << std::endl;
+            log_debug(_("Hours: %1% : %2%"), delta1.hours(), delta2.hours());
             minutes1 = (delta1.hours() * 60) + delta1.minutes();
             // This is the total time span in the major directory
             minutes2 = (delta2.hours() * 60) + delta2.minutes();
-            std::cerr << "Minutes: " << minutes1 << " : " << minutes2 << std::endl;
+            log_error(_("Minutes: %1% : %2%"), minutes1, minutes2);
             boost::format fmt("%03d");
             fmt % (i-1);
             major += fmt.str() + "/";
@@ -558,7 +561,7 @@ Planet::findData(frequency_t freq, ptime tstamp)
     std::string path = pserver + datadir + state->path;
     auto data = downloadFile(path + ".state.txt");
     if (data->size() == 0) {
-        std::cerr << "ERROR: StateFile not found: " << path << std::endl;
+        log_error(_("StateFile not found: " << path);
         return state;
     } else {
         std::string tmp(reinterpret_cast<const char *>(data->data()));
@@ -606,11 +609,11 @@ Planet::findData(frequency_t freq, ptime tstamp)
     next = (index + remainder)%1000;
     fmt3 % (next);
     newpath += "/" + fmt3.str();
-    std::cout << "FOUND: " << newpath << std::endl;
+    log_debug(_("FOUND: " << newpath);
     while (loop) {
         auto data = downloadFile(newpath + ".state.txt");
         if (data->size() == 0) {
-            std::cerr << "ERROR: StateFile not found: " << newpath << std::endl;
+            log_error(_("StateFile not found: " << newpath);
             return std::string();
         } else {
             std::string tmp(reinterpret_cast<const char *>(data->data()));
@@ -620,12 +623,12 @@ Planet::findData(frequency_t freq, ptime tstamp)
             state->dump();
             // see if it's within range
             delta = state->timestamp - tstamp;
-            // std::cerr << "DELTA: " << delta.seconds() << std::endl;
+            // std::cerr << "DELTA: " << delta.seconds());
             if (delta.seconds() > 0) {
-                std::cout << "StateFile in range: " << newpath << std::endl;
+                log_debug(_("StateFile in range: %1%"), newpath);
                 return state->path;
             } else {
-                std::cerr << "ERROR: StateFile not in range: " << newpath << std::endl;
+                    log_error(_("StateFile not in range: %1%"), newpath);
                 fmt3 % (++next);
                 newpath = newpath.substr(0, newpath.rfind('/')) + "/" + fmt3.str();
                 continue;
@@ -644,7 +647,7 @@ void
 RemoteURL::parse(const std::string &rurl)
 {
     if (rurl.empty()) {
-        std::cerr << "URL is empty!" << std::endl;
+        log_error(_("URL is empty!"));
         return;
     }
     std::map<std::string, replication::frequency_t> frequency_tags;
@@ -695,7 +698,7 @@ void RemoteURL::Increment(void)
     indexfmt % (index);
 
     newpath = majorfmt.str() + "/" + minorfmt.str() + "/" + indexfmt.str();
-    // std::cout << "NEWPATH: " << newpath << std::endl;
+    // log_debug(_("NEWPATH: " << newpath);
     boost::algorithm::replace_all(url, subpath, newpath);
     boost::algorithm::replace_all(destdir, subpath, newpath);
     boost::algorithm::replace_all(filespec, subpath, newpath);

@@ -82,6 +82,9 @@ using namespace boost::gregorian;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
+#include "log.hh"
+using namespace logger;
+
 /// \namespace changeset
 namespace changeset {
 
@@ -113,7 +116,7 @@ ChangeSetFile::importChanges(const std::string &file)
         parse_file(file);
     }
     catch(const xmlpp::exception& ex) {
-        std::cerr << "libxml++ exception: " << ex.what() << std::endl;
+        log_error(_("libxml++ exception: %1%"), ex.what());
         int return_code = EXIT_FAILURE;
     }
 #endif
@@ -145,7 +148,7 @@ ChangeSetFile::readChanges(const std::string &file)
 //    store = false;
     
     unsigned char *buffer;
-    std::cout << "Reading changeset file " << file << std::endl;
+    log_debug(_("Reading changeset file %1% "), file);
     std::string suffix = boost::filesystem::extension(file);
     // It's a gzipped file, common for files downloaded from planet
     std::ifstream ifile(file, std::ios_base::in | std::ios_base::binary);
@@ -157,11 +160,10 @@ ChangeSetFile::readChanges(const std::string &file)
             inbuf.push(boost::iostreams::gzip_decompressor());
             inbuf.push(ifile);
             std::istream instream(&inbuf);
-            // std::cout << instream.rdbuf();
+            // log_debug(_(instream.rdbuf();
             readXML(instream);
         } catch(std::exception& e) {
-            std::cout << "ERROR opening " << file << std::endl;
-            std::cout << e.what() << std::endl;
+            log_error(_("opening %1% %2%"), file, e.what());
             // return false;
         }
     } else {                // it's a text file
@@ -182,33 +184,33 @@ ChangeSetFile::readChanges(const std::string &file)
 void
 ChangeSet::dump(void)
 {
-    std::cout << "-------------------------" << std::endl;
-    std::cout << "Change ID: " << id << std::endl;
-    std::cout << "Created At:  " << to_simple_string(created_at)  << std::endl;
-    std::cout << "Closed At:   " << to_simple_string(closed_at) << std::endl;
+    std::cerr << "-------------------------" << std::endl;
+    std::cerr << "Change ID: " << id << std::endl;
+    std::cerr << "Created At:  " << to_simple_string(created_at)  << std::endl;
+    std::cerr << "Closed At:   " << to_simple_string(closed_at) << std::endl;
     if (open) {
-        std::cout << "Open change: true" << std::endl;
+        std::cerr << "Open change: true" << std::endl;
     } else {
-        std::cout << "Open change: false" << std::endl;
+        std::cerr << "Open change: false" << std::endl;
     }
-    std::cout << "User:        " << user<< std::endl;
-    std::cout << "User ID:     " << uid << std::endl;
-    std::cout << "Min Lat:     " << min_lat << std::endl;
-    std::cout << "Min Lon:     " << min_lon << std::endl;
-    std::cout << "Max Lat:     " << max_lat << std::endl;
-    std::cout << "Max Lon:     " << max_lon << std::endl;
-    std::cout << "Changes:     " << num_changes << std::endl;
+    std::cerr << "User:        " << user<< std::endl;
+    std::cerr << "User ID:     " << uid << std::endl;
+    std::cerr << "Min Lat:     " << min_lat << std::endl;
+    std::cerr << "Min Lon:     " << min_lon << std::endl;
+    std::cerr << "Max Lat:     " << max_lat << std::endl;
+    std::cerr << "Max Lon:     " << max_lon << std::endl;
+    std::cerr << "Changes:     " << num_changes << std::endl;
     if (!source.empty()) {
-        std::cout << "Source:      " << source << std::endl;
+        std::cerr << "Source:      " << source << std::endl;
     }
-    // std::cout << "Comments:    " << comments_count << std::endl;
+    // std::cerr << "Comments:    " << comments_count << std::endl;
     for (auto it = std::begin(hashtags); it != std::end(hashtags); ++it) {
-        std::cout << "Hashtags:    " << *it <<  std::endl;
+        std::cerr << "Hashtags:    " << *it <<  std::endl;
     }
     if (!comment.empty()) {
-        std::cout << "Comments:    " << comment << std::endl;
+        std::cerr << "Comments:    " << comment << std::endl;
     }
-    std::cout << "Editor:      " << editor << std::endl;
+    std::cerr << "Editor:      " << editor << std::endl;
 }
 
 #ifdef LIBXML
@@ -255,7 +257,7 @@ ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes)
             } else if (attr_pair.name == "comments_count") {
             }
         } catch(const Glib::ConvertError& ex) {
-            std::cerr << "ChangeSet::ChangeSet(): Exception caught while converting values for std::cout: " << ex.what() << std::endl;
+            log_error(_("ChangeSet::ChangeSet(): Exception caught while converting values for std::cout: "), ex.what());
             }
     }
 }
@@ -264,7 +266,7 @@ ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes)
 void
 ChangeSetFile::dump(void)
 {
-    std::cout << "There are " << changes.size() << " changes" << std::endl;
+    std::cerr << "There are " << changes.size() << " changes" << std::endl;
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         it->dump();
     }
@@ -275,7 +277,7 @@ ChangeSetFile::dump(void)
 bool
 ChangeSetFile::readXML(std::istream &xml)
 {
-    // std::cout << xml.rdbuf();
+    // log_debug(_(xml.rdbuf();
 #ifdef LIBXML
     // libxml calls on_element_start for each node, using a SAX parser,
     // and works well for large files.
@@ -284,7 +286,7 @@ ChangeSetFile::readXML(std::istream &xml)
         parse_stream(xml);
     }
     catch(const xmlpp::exception& ex) {
-        std::cerr << "libxml++ exception: " << ex.what() << std::endl;
+        log_error(_("libxml++ exception: %1%"), ex.what());
         int return_code = EXIT_FAILURE;
     }
 #else
@@ -296,7 +298,7 @@ ChangeSetFile::readXML(std::istream &xml)
     boost::property_tree::read_xml(xml, pt);
 
     if (pt.empty()) {
-        std::cerr << "ERROR: XML data is empty!" << std::endl;
+        log_error(_("ERROR: XML data is empty!"));
         return false;
     }
     
@@ -336,7 +338,7 @@ ChangeSetFile::readXML(std::istream &xml)
 void
 ChangeSetFile::on_end_element(const Glib::ustring& name)
 {
-    // std::cout << "Element \'" << name << "\' ending" << std::endl;
+    // log_debug(_("Element \'" << name << "\' ending" << std::endl;
     if (name == "changeset") {
         // FIXME: it'd be better to not redo the database connection
         //for every changeset
@@ -350,7 +352,7 @@ void
 ChangeSetFile::on_start_element(const Glib::ustring& name,
                                 const AttributeList& attributes)
 {
-    // std::cout << "Element \'" << name << "\' starting" << std::endl;
+    // log_debug(_("Element \'" << name << "\' starting" << std::endl;
 
     if (name == "changeset") {
         changeset::ChangeSet change(attributes);

@@ -58,6 +58,9 @@ using namespace boost::gregorian;
 
 using namespace apidb;
 
+#include "log.hh"
+using namespace logger;
+
 /// \namespace osmstats
 namespace osmstats {
 
@@ -87,21 +90,20 @@ bool
 QueryOSMStats::connect(const std::string &dbname)
 {
     if (dbname.empty()) {
-	std::cerr << "ERROR: need to specify database name!" << std::endl;
+	log_error(_(" need to specify database name!"));
     }
     
     try {
         std::string args = "dbname = " + dbname;
 	sdb = std::make_shared<pqxx::connection>(args);
 	if (sdb->is_open()) {
-            std::cout << "Opened database connection to " << dbname  << std::endl;
+            log_debug(_("Opened database connection to %1%"), dbname);
 	    return true;
 	} else {
 	    return false;
 	}
     } catch (const std::exception &e) {
-	std::cerr << "ERROR: Couldn't open database connection to " << dbname  << std::endl;
-	std::cerr << e.what() << std::endl;
+	log_error(_(" Couldn't open database connection to %1% %2%"), dbname, e.what());
 	return false;
    }    
 }
@@ -197,7 +199,7 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
     aquery += " updated_at = \'" + to_simple_string(now) + "\'";
     aquery += " WHERE changesets.id=" + std::to_string(change.change_id);
 
-    std::cout << "QUERY stats: " << aquery << std::endl;
+    log_debug(_("QUERY stats: %1%"), aquery);
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(aquery);
 
@@ -207,14 +209,14 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
 bool
 QueryOSMStats::applyChange(changeset::ChangeSet &change)
 {
-    std::cout << "Applying ChangeSet data" << std::endl;
+    log_debug(_("Applying ChangeSet data"));
     change.dump();
 
     // Some old changefiles have no user information
     std::string query = "INSERT INTO users VALUES(";
     query += std::to_string(change.uid) + ",\'" + sdb->esc(change.user);
     query += "\') ON CONFLICT DO NOTHING;";
-    std::cout << "QUERY: " << query << std::endl;
+    log_debug(_("QUERY: %1%"), query);
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     //worker.commit();
@@ -226,12 +228,12 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     underpass::Underpass under;
     under.connect();
     if (change.hashtags.size() == 0) {
-        std::cout << "No hashtags in change id: " << change.id << std::endl;
+        log_debug(_("No hashtags in change id: %1%"), change.id);
         under.updateCreator(change.uid, change.id, change.editor);
         worker.commit();
         // return true;
     } else {
-        std::cout << "Found hashtags for change id: " << change.id << std::endl;
+        log_debug(_("Found hashtags for change id: %1%"), change.id);
     }
 #endif
     // Add changeset data
@@ -287,12 +289,12 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     //std::cout << "FIXME: Float diff " << fff << std::endl;
     int fudge = 0.0001;
     if (fff < fudge) {
-        std::cout << "FIXME: line too short! " << fff << std::endl;
+        log_debug(_("FIXME: line too short! "), fff);
         return false;
     }
     // a changeset with a single node in it doesn't draw a line
     if (change.max_lon < 0 && change.min_lat < 0) {
-        std::cerr << "WARNING: single point! " << change.id << std::endl;
+        log_error(_("WARNING: single point! %1%"), change.id);
 	min_lat = change.min_lat + (fudge/2);
 	max_lat = change.max_lat + (fudge/2);
 	min_lon = change.min_lon - (fudge/2);
@@ -300,7 +302,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
         //return false;
     }
     if (max_lon == min_lon || max_lat == min_lat) {
-        std::cerr << "WARNING: not a line! " << change.id << std::endl;
+        log_error(_("WARNING: not a line! %1%"), change.id);
 	min_lat = change.min_lat + (fudge/2);
 	max_lat = change.max_lat + (fudge/2);
 	min_lon = change.min_lon - (fudge/2);
@@ -308,7 +310,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
 	// return false;
     }
     if (max_lon < 0 && min_lat < 0) {
-        std::cerr << "WARNING: single point! " << change.id << std::endl;
+        log_error(_("WARNING: single point! "), change.id);
 	min_lat = change.min_lat + (fudge/2);
 	max_lat = change.max_lat + (fudge/2);
 	min_lon = change.min_lon - (fudge/2);
@@ -316,7 +318,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
         // return false;
     }
     if (change.num_changes == 0) {
-        std::cerr << "WARNING: no changes! " << change.id << std::endl;
+        log_error(_("WARNING: no changes! "), change.id);
         return false;
     }
     // Add the bounding box of the changeset here next
@@ -353,7 +355,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     // 	query += "\', closed_at=\'" + to_simple_string(change.closed_at);
     // }
     query += "\', bbox=" + bbox.substr(2) + ")'))";
-    std::cout << "QUERY: " << query << std::endl;
+    log_debug(_("QUERY: %1%"), query);
     result = worker.exec(query);
 
     // Commit the results to the database
@@ -426,9 +428,8 @@ QueryOSMStats::getRawChangeSets(std::vector<long> &changeset_ids)
     }
     sql += "]);";
 
-    std::cout << "QUERY: " << sql << std::endl;
+    log_debug(_("QUERY: %1%"), sql);
     pqxx::result result = worker.exec(sql);
-    std::cout << "SIZE: " << result.size() <<std::endl;
     //OsmStats stats(result);
     worker.commit();
 
@@ -445,7 +446,7 @@ QueryOSMStats::hasHashtag(long changeid)
 {
 #if 0
     std::string query = "SELECT COUNT(hashtag_id) FROM changesets_hashtags WHERE changeset_id=" + std::to_string(changeid) + ";";
-    std::cout << "QUERY: " << query << std::endl;
+    log_debug(_("QUERY: %1%"), query);
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     worker.commit();
@@ -462,7 +463,7 @@ ptime
 QueryOSMStats::getLastUpdate(void)
 {
     std::string query = "SELECT MAX(created_at) FROM changesets;";
-    std::cout << "QUERY: " << query << std::endl;
+    log_debug(_("QUERY: %1%"), query);
     // auto worker = std::make_shared<pqxx::work>(*db);
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
@@ -495,7 +496,7 @@ QueryOSMStats::updateRawHashtags(void)
     // query += "nextval('raw_hashtags_id_seq'), \'" + tag;
     // query += "\'" + tag;
     query += "\') ON CONFLICT DO NOTHING";
-    std::cout << "QUERY: " << query << std::endl;
+    log_debug(_("QUERY: %1%", query);
     pqxx::work worker(*db);
     pqxx::result result = worker.exec(query);
     worker.commit();

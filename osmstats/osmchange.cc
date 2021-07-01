@@ -75,6 +75,9 @@ using namespace osmobjects;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
+#include "log.hh"
+using namespace logger;
+
 namespace osmchange {
 
 /// And OsmChange file contains the data of the actual change. It uses the same
@@ -99,7 +102,7 @@ OsmChangeFile::readChanges(const std::string &file)
     std::ifstream change;
     int size = 0;
     unsigned char *buffer;
-    std::cout << "Reading OsmChange file " << file << std::endl;
+    log_debug(_("Reading OsmChange file %1%"), file);
     std::string suffix = boost::filesystem::extension(file);
     // It's a gzipped file, common for files downloaded from planet
     std::ifstream ifile(file, std::ios_base::in | std::ios_base::binary);
@@ -110,11 +113,10 @@ OsmChangeFile::readChanges(const std::string &file)
             inbuf.push(boost::iostreams::gzip_decompressor());
             inbuf.push(ifile);
             std::istream instream(&inbuf);
-            // std::cout << instream.rdbuf();
+            // log_debug(_(instream.rdbuf();
             readXML(instream);
         } catch (std::exception& e) {
-            std::cout << "ERROR opening " << file << std::endl;
-            std::cout << e.what() << std::endl;
+            log_debug(_("ERROR opening %1% %2%"),file, e.what());
             // return false;
         }
     } else {                // it's a text file
@@ -137,7 +139,7 @@ OsmChangeFile::readChanges(const std::string &file)
 bool
 OsmChangeFile::readXML(std::istream &xml)
 {
-    // std::cout << "OsmChangeFile::readXML(): " << xml.rdbuf();
+    // log_debug(_("OsmChangeFile::readXML(): " << xml.rdbuf();
     std::ofstream myfile;
 #ifdef LIBXML
     // libxml calls on_element_start for each node, using a SAX parser,
@@ -150,8 +152,8 @@ OsmChangeFile::readXML(std::istream &xml)
         timer.endTimer("libxml++");
     }
     catch(const xmlpp::exception& ex) {
-        std::cerr << "libxml++ exception: " << ex.what() << std::endl;
-        std::cerr << xml.rdbuf() << std::endl;
+        log_error(_("libxml++ exception: %1%"), ex.what());
+        // log_debug(xml.rdbuf());
         int return_code = EXIT_FAILURE;
     }
 #else
@@ -171,7 +173,7 @@ OsmChangeFile::readXML(std::istream &xml)
     timer.endTimer("parse_tree");
 
     if (pt.empty()) {
-        std::cerr << "ERROR: XML data is empty!" << std::endl;
+        log_error(_("ERROR: XML data is empty!"));
         // return false;
     }
 
@@ -242,7 +244,7 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
 {
     // If a change is in progress, apply to to that instance
     std::shared_ptr<OsmChange> change;
-    // std::cout << "NAME: " << name << std::endl;
+    // log_debug(_("NAME: %1%"), name));
     // Top level element can be ignored
     if (name == "osmChange") {
         return;
@@ -292,7 +294,7 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
     std::string cache;
     for (const auto& attr_pair : attributes) {
         // Sometimes the data string is unicode
-        // std::wcout << "\tPAIR: " << attr_pair.name << " = " << attr_pair.value << std::endl;
+        // std::wcout << "\tPAIR: " << attr_pair.name << " = " << attr_pair.value);
         // tags use a 'k' for the key, and 'v' for the value
         if (attr_pair.name == "ref") {
             //static_cast<OsmWay *>(object)->refs.push_back(std::stol(attr_pair.value));
@@ -349,27 +351,27 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
 void
 OsmChange::dump(void)
 {
-    std::cout << "------------" << std::endl;
-    std::cout << "Dumping OsmChange()" << std::endl;
+    std::cerr << "------------" << std::endl;
+    std::cerr << "Dumping OsmChange()" << std::endl;
     if (action == osmobjects::create) {
-        std::cout << "\tAction: create" << std::endl;
+        std::cerr << "\tAction: create" << std::endl;
     } else if(action == osmobjects::modify) {
-        std::cout << "\tAction: modify" << std::endl;
+        std::cerr << "\tAction: modify" << std::endl;
     } else if(action == osmobjects::remove) {
-        std::cout << "\tAction: delete" << std::endl;
+        std::cerr << "\tAction: delete" << std::endl;
     } else if(action == osmobjects::none) {
-        std::cout << "\tAction: data element" << std::endl;
+        std::cerr << "\tAction: data element" << std::endl;
     }
 
     if (nodes.size() > 0) {
-        std::cout << "\tDumping nodes:"  << std::endl;
+        std::cerr << "\tDumping nodes:"  << std::endl;
         for (auto it = std::begin(nodes); it != std::end(nodes); ++it) {
             std::shared_ptr<OsmNode> node = *it;
             node->dump();
         }
     }
     if (ways.size() > 0) {
-        std::cout << "\tDumping ways:" << std::endl;
+        std::cerr << "\tDumping ways:" << std::endl;
         for (auto it = std::begin(ways); it != std::end(ways); ++it) {
             std::shared_ptr<OsmWay> way = *it;
             way->dump();
@@ -377,9 +379,9 @@ OsmChange::dump(void)
     }
     if (relations.size() > 0) {
         for (auto it = std::begin(relations); it != std::end(relations); ++it) {
-            // std::cout << "\tDumping relations: " << it->dump() << std::endl;
+            // std::cerr << "\tDumping relations: " << it->dump() << std::endl;
             // std::shared_ptr<OsmWay> rel = *it;
-            // rel->dump();
+            // rel->dump( << std::endl;
         }
     }
 }
@@ -387,11 +389,11 @@ OsmChange::dump(void)
 void
 OsmChangeFile::dump(void)
 {
-    std::cout << "Dumping OsmChangeFile()" << std::endl;
-    std::cout << "There are " << changes.size() << " changes" << std::endl;
+    std::cerr << "Dumping OsmChangeFile()" << std::endl;
+    std::cerr << "There are " << changes.size() << " changes" << std::endl;
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
-        change->dump();
+	change->dump();
     }
     if (userstats.size() > 0) {
         for (auto it = std::begin(userstats); it != std::end(userstats); ++it) {
@@ -411,7 +413,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
     auto mstats = std::make_shared<std::map<long, std::shared_ptr<ChangeStats>>>();
     std::shared_ptr<ChangeStats> ostats;
 
-    std::cout << "Collecting Statistics for: " << changes.size() << " changes" << std::endl;
+    log_debug(_("Collecting Statistics for: %1%"), changes.size());
 
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
@@ -427,10 +429,10 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 	    }
 	    // Filter data by polygon
 	    if (!boost::geometry::within(node->point, poly)) {
-		std::cout << "Changeset with node "  << node->change_id << " is not in a priority area" << std::endl;
+		log_debug(_("Changeset with node %1% is not in a priority area"), node->change_id);
 		continue;
 	    } else {
-		std::cout << "Changeset with node " << node->change_id << " is in a priority area" << std::endl;
+		log_debug(_("Changeset with node %1% is in a priority area"), node->change_id);
 	    }
 	    // Some older nodes in a way wound up with this one tag, which nobody noticed,
 	    // so ignore it.
@@ -448,7 +450,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 	    }
 	    auto hits = scanTags(node->tags);
 	    for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
-		// std::cout << "FIXME node: " << *hit << " : " << (int)node->action << std::endl;
+		// log_debug(_("FIXME node: " << *hit << " : " << (int)node->action);
 		if (node->action == osmobjects::create) {
 		    ostats->added[*hit]++;
 		} else if (node->action == osmobjects::modify){
@@ -463,17 +465,17 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 		continue;
 	    }
 	    if (way->polygon.outer().size() == 0) {
-		std::cerr << "ERROR: change "  << way->change_id << " has no points!" << std::endl;
+		log_error(_("ERROR: change %1% has no points"), way->change_id);
 		continue;
 	    }
 	    // Filter data by polygon
 	    point_t pt;
 	    boost::geometry::centroid(way->polygon, pt);
 	    if (!boost::geometry::within(pt, poly)) {
-		std::cout << "Changeset with way "  << way->change_id << " is not in a priority area" << std::endl;
+		log_debug(_("Changeset with way %1% is not in a priority area"), way->change_id);
 		continue;
 	    } else {
-		std::cout << "Changeset with way " << way->change_id << " is in a priority area" << std::endl;
+		log_debug(_("Changeset with way %1% is in a priority area"), way->change_id);
 	    }
 	    // Some older ways in a way wound up with this one tag, which nobody noticed,
 	    // so ignore it.
@@ -490,7 +492,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 	    }
 	    auto hits = scanTags(way->tags);
 	    for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
-		// std::cout << "FIXME way: " << *hit <<  " : " << (int)way->action << std::endl;
+		// log_debug(_("FIXME way: " << *hit <<  " : " << (int)way->action);
 		// way->dump();
 		if (way->action == osmobjects::create) {
 		    ostats->added[*hit]++;
@@ -518,7 +520,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 		    }
 		    double length = boost::geometry::length(line,
                     boost::geometry::strategy::distance::haversine<float>(6371.0)) * 1000;
-		    // std::cout << "LENGTH: " << *hit << ": " << length << std::endl;
+		    // log_debug(_("LENGTH: " << *hit << ": " << length);
 		    if (way->action == osmobjects::create) {
 			ostats->added[tag] += length;
 		    } else if (way->action == osmobjects::modify){
@@ -600,7 +602,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	    auto match = std::find(amenities.begin(), amenities.end(), boost::algorithm::to_lower_copy(it->second));
 	    if (match != amenities.end()) {
 		if (!cache[it->second]) {
-		    std::cerr << "\tmatched amenity value: " << it->second << std::endl;
+		    log_error(_("\tmatched amenity value: %1%"), it->second);
 		    hits->push_back(boost::algorithm::to_lower_copy(it->second));
 		    cache[it->second] = true;
 		    // An amenity is a building, but the building tag may not be set
@@ -612,7 +614,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	    match = std::find(places.begin(), places.end(), boost::algorithm::to_lower_copy(it->second));
 	    if (match != places.end()) {
 		if (!cache[it->second]) {
-		    std::cerr << "\tmatched place value: " << it->second << std::endl;
+		    log_error(_("\tmatched place value: %1%"), it->second);
 		    hits->push_back(boost::algorithm::to_lower_copy(it->second));
 		    hits->push_back("place");
 		    cache[it->second] = true;
@@ -625,7 +627,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 		match = std::find(buildings.begin(), buildings.end(), boost::algorithm::to_lower_copy(it->second));
 		if (match != buildings.end()) {
 		    if (!cache[it->second]) {
-			std::cerr << "\tmatched building value: " << it->second << std::endl;
+			log_error(_("\tmatched building value: %1%"), it->second);
 			hits->push_back(boost::algorithm::to_lower_copy(it->second));
 			cache[it->second] = true;
 		    }
@@ -634,7 +636,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	    match = std::find(schools.begin(), schools.end(), boost::algorithm::to_lower_copy(it->second));
 	    if (match != schools.end()) {
 		if (!cache[it->second]) {
-		    std::cerr << "\tmatched school value: " << it->second << std::endl;
+		    log_error(_("\tmatched school value: %1%"), it->second);
 		    // Add the type of school
 		    hits->push_back(boost::algorithm::to_lower_copy(it->second));
 		    // Add a generic school accumulator
@@ -648,7 +650,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	    auto match = std::find(highways.begin(), highways.end(), boost::algorithm::to_lower_copy(it->second));
 	    if (match != highways.end()) {
 		if (!cache[it->second]) {
-		    std::cerr << "\tmatched highway value: " << it->second << std::endl;
+		    log_error(_("\tmatched highway value: %1%"), it->second);
 		    hits->push_back(it->first);
 		    cache[it->second] = true;
 		}
@@ -656,7 +658,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	}
 	if (it->first == "waterway") {
 	    if (!cache[it->second]) {
-		std::cerr << "\tmatched waterway value: " << it->second << std::endl;
+		log_error(_("\tmatched waterway value: %1%"), it->second);
 		hits->push_back(it->first);
 		cache[it->second] = true;
 	    }
@@ -670,20 +672,20 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 void
 ChangeStats::dump(void)
 {
-    std::cout << "Dumping ChangeStats for: \t " << change_id << std::endl;
-    std::cout << "\tUser ID: \t\t " << user_id << std::endl;
-    std::cout << "\tUser Name: \t\t " << username << std::endl;
-    std::cout << "\tAdded features: " << added.size() << std::endl;
+    std::cerr << "Dumping ChangeStats for: \t " << change_id << std::endl;
+    std::cerr << "\tUser ID: \t\t " << user_id << std::endl;
+    std::cerr << "\tUser Name: \t\t " << username << std::endl;
+    std::cerr << "\tAdded features: " << added.size() << std::endl;
     for (auto it = std::begin(added); it != std::end(added); ++it) {
-	std::cout << "\t\t" << it->first << " = " << it->second << std::endl;
+	std::cerr << "\t\t" << it->first << " = " << it->second << std::endl;
     }
-    std::cout << "\tModified features: " << modified.size() << std::endl;
+    std::cerr << "\tModified features: " << modified.size() << std::endl;
     for (auto it = std::begin(modified); it != std::end(modified); ++it) {
-	std::cout << "\t\t" << it->first << " = " << it->second << std::endl;
+	std::cerr << "\t\t" << it->first << " = " << it->second << std::endl;
     }
-    // std::cout << "\tDeleted features: " << added.size() << std::endl;
-    // for (auto it = std::begin(deleted); it != std::end(deleted); ++it) {
-    // 	std::cout << "\t\t" << it->first << " = " << it->second << std::endl;
+    // std::cerr << "\tDeleted features: " << added.size() << std::endl;
+    // for (auto it = std::begin(deleted << std::endl; it != std::end(deleted << std::endl; ++it) {
+    // 	std::cerr << "\t\t" << it->first << " = " << it->second << std::endl;
     // }
 };
 
