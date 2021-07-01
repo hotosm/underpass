@@ -56,8 +56,12 @@ using namespace boost::gregorian;
 #include "osmstats/osmchange.hh"
 #include "data/underpass.hh"
 
+#include "log.hh"
+using namespace logger;
+
 namespace underpass {
 
+// logger::LogFile& dbglogfile = logger::LogFile::getDefaultInstance();
 // Underpass::Underpass(void)
 // {
 //     frequency_tags[replication::minutely] = "minute";
@@ -92,7 +96,7 @@ Underpass::~Underpass(void)
 void
 Underpass::dump(void)
 {
-    std::cout << "Database url: " << db_url << std::endl;
+    log_debug(_("Database url: %1%"), db_url);
 }
 
 bool
@@ -105,20 +109,19 @@ bool
 Underpass::connect(const std::string &dbname)
 {
     if (dbname.empty()) {
-	std::cerr << "ERROR: need to specify database name!" << std::endl;
+	log_error(_("ERROR: need to specify database name!"));
     }
     try {
         std::string args = "dbname = " + dbname;
         sdb = std::make_shared<pqxx::connection>(args);
         if (sdb->is_open()) {
-            std::cout << "Opened database connection to " << dbname  << std::endl;
+            log_debug(_("Opened database connection to %1%"), dbname);
             return true;
         } else {
             return false;
         }
     } catch (const std::exception &e) {
-	std::cerr << "ERROR: Couldn't open database connection to " << dbname  << std::endl;
-	std::cerr << e.what() << std::endl;
+	log_error(_("Couldn't open database connection to %1% %2%"), dbname, e.what());
 	return false;
     }
 }
@@ -131,7 +134,7 @@ Underpass::updateCreator(long user_id, long change_id, const std::string &editor
     query += std::to_string(user_id) + "," + std::to_string(change_id);
     query += ",\'" + changeset::fixString(editor);
     query += "\') ON CONFLICT DO NOTHING;";
-    std::cout << "QUERY: " << query << std::endl;
+    log_debug(_("QUERY: %1%"), query);
 #if 0
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
@@ -145,7 +148,7 @@ Underpass::getState(replication::frequency_t freq, const std::string &path)
 {
     auto state = std::make_shared<replication::StateFile>();
     if (!sdb->is_open()) {
-        std::cerr << "ERROR: database not connected!" << std::endl;
+        log_error(_("database not connected!"));
         return state;
     }
     std::vector<std::string> nodes;
@@ -159,7 +162,7 @@ Underpass::getState(replication::frequency_t freq, const std::string &path)
     //db_mutex.lock();
     std::string query = "SELECT timestamp,path,sequence,frequency FROM states WHERE path=\'";
     query += tmp + "\' AND frequency=\'" + frequency_tags[freq] + "\'";
-    std::cout << "QUERY: " << query << std::endl;
+    log_debug(_("QUERY: %1%"), query);
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     worker.commit();
@@ -179,17 +182,17 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
 {
     auto state = std::make_shared<replication::StateFile>();
     if (tstamp == boost::posix_time::not_a_date_time) {
-        std::cerr << "ERROR: bad timestamp!" << std::endl;
+        log_error(_("ERROR: bad timestamp!"));
         exit(1);
     }
     
     if (sdb > 0) {
         if (!sdb->is_open()) {
-            std::cerr << "ERROR: database not connected!" << std::endl;
+            log_error(_("database not connected!"));
             return state;
         }
     } else {
-        std::cerr << "ERROR: database not connected!" << std::endl;
+        log_error(_("database not connected!"));
         return state;
     }
 
@@ -200,7 +203,7 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
     query += " AND frequency=";
     query += "\'" + frequency_tags[freq] + "\'";
     query += " ORDER BY timestamp ASC LIMIT 1;";
-    std::cout << "QUERY: " << query << std::endl;
+    log_debug(_("QUERY: %1%"), query);
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     worker.commit();
@@ -210,8 +213,7 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
             state->timestamp = time_from_string(result[0][0].c_str());
             state->path = pqxx::to_string(result[0][1]);
         } catch (std::exception& e) {
-            std::cerr << "ERROR: Couldn't parse StateFile " << std::endl;
-            std::cerr << e.what() << std::endl;
+            log_error(_("Couldn't parse StateFile %1%"), e.what());
             state->path = pqxx::to_string(result[0][0]);
             state->timestamp = time_from_string(result[0][1].c_str());
             state->created_at = time_from_string(pqxx::to_string(result[0][2]));
@@ -232,9 +234,6 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
         int next;
         fmt % (next);
         state->path += fmt.str();
-//        std::cerr << "ERROR: FIXME!!!!!" << state->path << std::endl;
-//#else
-//        std::cerr << "ERROR: FIXME!!!!!" << std::endl;
 #endif
     }
     return state;
@@ -278,7 +277,7 @@ Underpass::writeState(replication::StateFile &state)
         query += ", \'" + to_simple_string(state.closed_at) + "\'";
     }
     query += ") ON CONFLICT DO NOTHING;";
-    // std::cout << "QUERY: " << query << std::endl;
+    // log_debug(_("QUERY: " << query);
     //db_mutex.lock();
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
@@ -305,7 +304,7 @@ Underpass::getLastState(replication::frequency_t freq)
         query += "\'day\'";
     }
     query +=" ORDER BY timestamp DESC LIMIT 1;";
-    std::cout << "QUERY: " << query << std::endl;
+    log_debug(_("QUERY: %1%"), query);
     pqxx::result result = worker.exec(query);
     auto last = std::make_shared<replication::StateFile>();
     if (result.size() > 0) {
@@ -329,7 +328,7 @@ Underpass::getFirstState(replication::frequency_t freq)
 {
     pqxx::work worker(*sdb);
     std::string query = "SELECT timestamp,sequence,path FROM states ORDER BY timestamp ASC LIMIT 1;";
-    // std::cout << "QUERY: " << query << std::endl;
+    // log_debug(_("QUERY: %1%", query);
     pqxx::result result = worker.exec(query);
     auto first = std::make_shared<replication::StateFile>();
     first->timestamp = time_from_string(pqxx::to_string(result[0][0]));
@@ -355,7 +354,7 @@ Underpass::getCountry(double max_lat, double max_lon, double min_lat, double min
     query += "," + std::to_string(min_lon) + " " + std::to_string(min_lat);
     query += "," + std::to_string(min_lon) + " " + std::to_string(max_lat);
     query += ")\', 4326)), wkb)";
-    std::cout << "QUERY: " << query << std::endl;
+    log_debug(_("QUERY: %1%"), query);
 #if 0
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);

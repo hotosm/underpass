@@ -58,32 +58,34 @@ using namespace boost::gregorian;
 #include "osmstats/osmstats.hh"
 #include "osmstats/changeset.hh"
 #include "data/geoutil.hh"
-
 #include <gdal/ogrsf_frmts.h>
 #include <ogr_geometry.h>
+
+#include "log.hh"
+using namespace logger;
 
 namespace geoutil {
 
 bool
 GeoUtil::readFile(const std::string &filespec)
 {
-    GDALDataset       *poDS;
+    GDALDataset *poDS;
     std::string infile = filespec;
     if (filespec.empty()) {
         infile = "/include.osm";
     }
 
-    std::cout << "Opening geo data file: " << infile << std::endl;
+    log_debug("Opening geo data file: %1%", infile);
     poDS = (GDALDataset*) GDALOpenEx(infile.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
     if (poDS == 0) {
-        std::cout << "ERROR:couldn't open " << infile << std::endl;
+        log_error("couldn't open %1%", infile);
         return false;
     }
 
     OGRLayer *layer;
     layer = poDS->GetLayerByName("priority");
     if (layer == 0) {
-        std::cout << "ERROR: Couldn't get layer \"priority\"" << std::endl;
+        log_error("Couldn't get layer \"priority\"");
         return false;
     }
 

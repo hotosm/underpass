@@ -57,40 +57,43 @@ using namespace boost::gregorian;
 #include "hotosm.hh"
 #include "data/osmobjects.hh"
 
+#include "log.hh"
+using namespace logger;
+
 namespace osmobjects {
 
 void
 OsmObject::dump(void)
 {
-    std::cout << "Dumping OsmObject()" << std::endl;
+    log_debug(_("Dumping OsmObject()"));
     if (action == create) {
-        std::cout << "\tAction: Create" << std::endl;
+        log_debug(_("\tAction: Create"));
     } else if (action == modify) {
-        std::cout << "\tAction: Modify" << std::endl;
+        log_debug(_("\tAction: Modify"));
     } else if (action == remove) {
-        std::cout << "\tAction: Delete" << std::endl;
+        log_debug(_("\tAction: Delete"));
     }
     
     if (type == node) {
-        std::cout << "\tType: OsmNode" << std::endl;
+        log_debug(_("\tType: OsmNode"));
     } else if (type == way) {
-        std::cout << "\tType: OsmWay" << std::endl;
+        log_debug(_("\tType: OsmWay"));
     } else if (type == relation) {
-        std::cout << "\tType: OsmRelation" << std::endl;
+        log_debug(_("\tType: OsmRelation"));
     }
     
-    std::cout << "\tID: " << id << std::endl;
-    std::cout << "\tVersion: " << version << std::endl;
-    std::cout << "\tTimestamp: " << timestamp << std::endl;
-    std::cout << "\tUID: " << uid << std::endl;
-    std::cout << "\tUser: " << user << std::endl;
+    log_debug(_("\tID: %1%"), id);
+    log_debug(_("\tVersion: %1%"), version);
+    log_debug(_("\tTimestamp: %1%"), timestamp);
+    log_debug(_("\tUID: %1%"), uid);
+    log_debug(_("\tUser: %1%"), user);
     if (change_id > 0) {
-        std::cout << "\tChange ID: " << change_id << std::endl;
+        log_debug(_("\tChange ID: "), change_id);
     }
     if (tags.size() > 0) {
-        std::cout << "\tTags: " << tags.size() << std::endl;            
+        log_debug(_("\tTags: %1%"), tags.size());
         for (auto it = std::begin(tags); it != std::end(tags); ++it) {
-            std::cout << "\t\t" << it->first << " : " << it->second << std::endl;
+            log_debug("\t\t", it->first, " : ", it->second);
         }
     }
 };
@@ -113,12 +116,11 @@ void
 OsmWay::dump(void){
     OsmObject::dump();
     if (refs.size() > 0) {
-        std::cout << "\tRefs: " << refs.size() << std::endl;
-        std::cout << "\t";
+        log_debug(_("\tRefs: "), refs.size());
+        log_debug("\t");
         for (auto it = std::begin(refs); it != std::end(refs); ++it) {
-            std::cout << *it << ", ";
+            std::cerr << *it << ", " << std::endl;
         }
-        std::cout << std::endl;
     }
 };
 

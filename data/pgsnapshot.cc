@@ -49,8 +49,12 @@ using namespace boost::gregorian;
 
 #include "hotosm.hh"
 #include "data/pgsnapshot.hh"
+#include "log.hh"
+using namespace logger;
 
 namespace pgsnapshot {
+
+logger::LogFile& dbglogfile = logger::LogFile::getDefaultInstance();
 
 // These tables are empty by default, and only used when applying a changeset
 // pgsnapshot.state
@@ -85,7 +89,7 @@ PGSnapshot::connect(const std::string &dbname, const std::string &server)
 	    return false;
 	}
     } catch (const std::exception &e) {
-	std::cerr << e.what() << std::endl;
+	log_error(e.what());
 	return false;
    }    
 }
@@ -120,7 +124,7 @@ PGSnapshot::addNode(const osmium::Node& node)
     query += "\'," + node.changeset();
     query += "\'," + node.location().x();
     query += ") ON CONFLICT DO NOTHING;";
-    std::cout << "Query: " << query << std::endl;
+    log_debug(_("Query: %1%"), query);
     
     worker = new pqxx::work(*db);
     pqxx::result result = worker->exec(query);
@@ -149,12 +153,11 @@ PGSnapshot::addWay(const osmium::Way& way)
     pqxx::result result = worker->exec(query);
     int i = 0;
     for (const osmium::NodeRef& nref : way.nodes()) {
-        std::cout << "ref:  " << nref.ref()
-                  << std::endl;
+        log_debug(_("ref: %1%"), nref.ref());
     }
     
     // for (const osmium::Tag& t : way.tags()) {
-    //     std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
+    //     log_debug("\t", t.key(), "=", t.value());
     //     query = "INSERT INTO way_nodes(way_id,node_id,sequence_id) VALUES(";
     //     query += std::to_string(way.id()) + ",");
     //     query += "\') ON CONFLICT DO NOTHING;";

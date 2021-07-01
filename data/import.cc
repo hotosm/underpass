@@ -59,8 +59,12 @@ using namespace boost::gregorian;
 #include "data/pgsnapshot.hh"
 #include "data/import.hh"
 #include "osmstats/changeset.hh"
+#include "log.hh"
+using namespace logger;
 
 namespace import {
+
+logger::LogFile& dbglogfile = logger::LogFile::getDefaultInstance();
 
 typedef boost::geometry::model::d2::point_xy<double> point_t;
 typedef boost::geometry::model::polygon<point_t> polygon_t;
@@ -99,7 +103,7 @@ OSMHandler::connect(const std::string &dbname, const std::string &server)
 	    return false;
 	}
     } catch (const std::exception &e) {
-	std::cerr << e.what() << std::endl;
+	log_error(_(e.what()));
 	return false;
    }    
 }
@@ -125,17 +129,19 @@ OSMHandler::addUser(long uid, const std::string &user)
 void
 OSMHandler::way(const osmium::Way& way)
 {
-    std::cout << "way " << way.id()
-              << ", Changeset: " << way.changeset()
-              << ", Version: " << way.version()
-              << ", UID: " << way.uid()
-              << ", User: " << way.user()
-              << ", Timestamp: " << way.timestamp() << std::endl;
+#if 0
+    log_info(_("way ", way.id(),
+               ", Changeset: ", way.changeset(),
+               ", Version: ", way.version(),
+               ", UID: ", way.uid(),
+               ", User: ", way.user(),
+               ", Timestamp: ", way.timestamp()));
+#endif
     // Setup the tags
     std::string tags;
     std::stringstream ss;
     for (const osmium::Tag& t : way.tags()) {
-        std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
+        log_info("\t", t.key(), "=", t.value());
         std::string tmp = changeset::fixString(t.value());
         ss << "\"" << db->esc(t.key()) << "\"=>\"" << db->esc(tmp) << "\", ";
         tags = ss.str();
@@ -153,12 +159,12 @@ OSMHandler::way(const osmium::Way& way)
     // Get the bounding box of the way
     linestring_t lines;
     for (const osmium::NodeRef& nref : way.nodes()) {
-        std::cout << "ref:  " << nref.ref() << std::endl;
+        log_info(_("ref: %1%"), nref.ref());
         // If the location data is bad, drop it
         if (cache[nref.ref()]) {
             boost::geometry::append(lines, point_t(cache[nref.ref()].lat(), cache[nref.ref()].lon()));
         } else {
-            std::cout << "ERROR: bad location data in " << nref.ref() <<  std::endl;
+            log_info(_("ERROR: bad location data in %1%"), nref.ref());
         }
     }
 
@@ -198,7 +204,7 @@ OSMHandler::way(const osmium::Way& way)
         query += ", ST_GeomFromText(\'" + bbox.str() + "\', 4326";
     }
     query += ")) ON CONFLICT DO NOTHING;";
-    std::cout << "Query: " << query << std::endl;
+    log_info(_("Query: %1%"), query);
 
     worker = new pqxx::work(*db);
     pqxx::result result = worker->exec(worker->esc(query));
@@ -210,7 +216,7 @@ OSMHandler::way(const osmium::Way& way)
         query += std::to_string(way.id());
         query += ", " + std::to_string(nref.ref());
         query += ", " + std::to_string(i++) + ")  ON CONFLICT DO NOTHING;";
-        // std::cout << "Query: " << query << std::endl;
+        // log_info(_("Query: %1%"). query);
         pqxx::result result = worker->exec(query);
     }
 
@@ -226,21 +232,23 @@ OSMHandler::way(const osmium::Way& way)
 }
 
 void
-OSMHandler::node(const osmium::Node& node) {
-    std::cout << "node " << node.id()
-              << ", Changeset: " << node.changeset()
-              << ", Version: " << node.version()
-              << ", UID: " << node.uid()
-              << ", User: " << node.user()
-              << ", Timestamp: " << node.timestamp() << std::endl;
-
+OSMHandler::node(const osmium::Node& node)
+{
+#if 0
+    log_info(_("node ". node.id(),
+               ", Changeset: ", node.changeset(),
+               ", Version: ", node.version(),
+               ", UID: ", node.uid(),
+               ", User: ", node.user(),
+               ", Timestamp: ", node.timestamp()));
+#endif
     cache[node.id()] = node.location();
 
     // Use a stringstream to handle unicode conversion
     std::stringstream ss;
     std::string tags;
     for (const osmium::Tag& t : node.tags()) {
-        std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
+        log_info("\t", t.key(), "=", t.value());
         std::string tmp = changeset::fixString(t.value());
         ss << "\"" << db->esc(t.key()) << "\"=>\"" << db->esc(tmp) << "\", ";
         tags = ss.str();
@@ -268,7 +276,7 @@ OSMHandler::node(const osmium::Node& node) {
     query += "ST_GeomFromText('POINT(" + std::to_string(node.location().lon()) + " ";
     query += std::to_string(node.location().lat()) + ")\'";
     query += ", 4326)) ON CONFLICT DO NOTHING;";
-    std::cout << "Query: " << query << std::endl;
+    log_info(_("Query: "), query);
     
     worker = new pqxx::work(*db);
     pqxx::result result = worker->exec(query);
@@ -280,12 +288,12 @@ OSMHandler::node(const osmium::Node& node) {
 void
 OSMHandler::relation(const osmium::Relation& rel)
 {
-    std::cout << "rel " << rel.id() << std::endl;
+    log_info(_("rel "), rel.id());
     for (const osmium::Tag& t : rel.tags()) {
-        std::cout << "\t" << t.key() << "=" << t.value() << std::endl;
+        log_info("\t", t.key(), "=", t.value());
     }
 
-    std::cerr << "FIXME: implement relations!!!" << std::endl;
+    log_unimpl(_("relations handler"));
     
     // pgsnapshot.relations
     // id | version | user_id | tstamp | changeset_id | tags

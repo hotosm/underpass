@@ -46,6 +46,9 @@ using namespace boost::gregorian;
 #include "osmstats/osmchange.hh"
 #include "data/validate.hh"
 
+#include "log.hh"
+using namespace logger;
+
 // JOSM validator
 //   Crossing ways
 //   Duplicate Ways
@@ -74,6 +77,8 @@ using namespace boost::gregorian;
 /// \namespace validate
 namespace validate {
 
+logger::LogFile& dbglogfile = logger::LogFile::getDefaultInstance();
+
 // FIXME: things to look for
 // Villages, hamlets, neigborhoods, towns, or cities added without a name
 
@@ -86,7 +91,7 @@ Validate::Validate(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
             for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
                 osmobjects::OsmNode *node = it->get();
                 if (node->tags.size() > 0) {
-                    std::cout << "Validating New Node ID " << node->id << " has tags!" << std::endl;
+                    log_debug(_("Validating New Node ID %1% has tags"), node->id);
                     checkPOI(node);
                 } else {
                     continue;
@@ -94,7 +99,7 @@ Validate::Validate(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
             // for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
             //     OsmWay *way = it->get();
             //     if (way->tags.size() == 0) {
-            //         std::cerr << "Validating New Way ID " << way->id << " has no tags!" << std::endl;
+            //         log_error(_("Validating New Way ID %1% has no tags"), way->id);
             //         checkWay(way);
             //     } else {
             //         continue;
@@ -111,7 +116,7 @@ bool
 Validate::checkPOI(osmobjects::OsmNode *node)
 {
     if (node->tags.size() == 0) {
-        std::cerr << "WARNING: POI " << node->id << " has no tags!" << std::endl;
+        log_error(_("WARNING: POI %1% has no tags!"), node->id);
         node_errors.push_back(node->id);
         return false;
     }
@@ -133,7 +138,7 @@ Validate::checkWay(osmobjects::OsmWay *way)
     }
 
     if (way->numPoints() == 5 && way->isClosed() && way->tags.size() == 0) {
-        std::cerr << "WARNING: " << way->id << " might be a building!" << std::endl;
+        log_error(_("WARNING: %1% might be a building!"), way->id);
         buildings.push_back(way->id);
         return false;
     }
@@ -147,13 +152,13 @@ Validate::checkTag(const std::string &key, const std::string &value)
 {
     // Check for an empty value
     if (value.empty() && !key.empty()) {
-        std::cout << "WARNING: empty value for tag \"" << key << "\"!" << std::endl;
+        log_error(_("WARNING: empty value for tag \"%1%\""), key);
         return false;
     }
     
     // Check for a space in the tag key
     if (key.find(' ') != std::string::npos) {
-        std::cout << "WARNING: spaces in tag key \"" << key << "\"!" << std::endl;
+        log_error(_("WARNING: spaces in tag key \"%1%\""), key);
         return false;
     }
 

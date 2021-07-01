@@ -77,17 +77,20 @@ using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 #include "osmstats/replication.hh"
 #include "data/underpass.hh"
 #include "data/validate.hh"
+#include "log.hh"
 
 std::mutex stream_mutex;
 
+using namespace logger;
+
 namespace threads {
+
+// logger::LogFile& dbglogfile = logger::LogFile::getDefaultInstance();
 
 // Starting with this URL, download the file, incrementing
 void
 startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly)
 {
-    // auto planet = std::make_shared<replication::Planet>();
-    // replication::Replication server;
     underpass::Underpass under;
     under.connect();
 
@@ -100,10 +103,10 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly)
 	std::shared_ptr<replication::StateFile> exists;
 	exists = under.getState(remote.frequency, remote.subpath);
 	if (exists) {
-	    std::cout << "Already stored in database: " << remote.subpath << std::endl;
+	    log_warning(_("Already stored in database: %1%"), remote.subpath);
 	    break;
 	} else {
-	    std::cout << "Downloading StateFile: " << remote.subpath + ".state.txt" << std::endl;
+	    log_info(_("Downloading StateFile: %1% %2%"), remote.subpath ".state.txt");
 	    auto state = threadStateFile(planet->stream, remote.subpath + ".state.txt");
 	    if (state->timestamp != boost::posix_time::not_a_date_time && (state->sequence != 0 && state->path.size() != 0)) {
 		state->dump();
@@ -122,7 +125,7 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly)
 		std::this_thread::sleep_for(std::chrono::minutes{1});
                 // planet.reset(new replication::Planet);
             } else {
-                std::cout << "Processed ChangeSet: " << remote.url << std::endl;
+                log_debug(_("Processed ChangeSet: %1%"), remote.url);
             }
             timer.endTimer("changeSet");
         } else {
@@ -141,7 +144,7 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly)
                 }
                 // planet.reset(new replication::Planet);
             } else {
-                std::cout << "Processed OsmChange: " << remote.url << std::endl;
+                log_debug(_("Processed OsmChange: %1%"), remote.url);
             }
             timer.endTimer("osmChange");
         }
@@ -203,7 +206,7 @@ startStateThreads(const std::string &base, const std::string &file)
 //     //Timer timer;
 //     //timer.startTimer();
 //     for (auto cit = std::begin(rng); cit != std::end(rng); ++cit) {
-//         std::cout << "Chunk data: " << *cit << std::endl;
+//         log_debug(_("Chunk data: %1%"), *cit));
 //         for (auto it = std::begin(*cit); it != std::end(*cit); ++it) {
 //             // There are no state,txt file before this directory
 //             // https://planet.openstreetmap.org/replication/changesets/002/008
@@ -213,7 +216,7 @@ startStateThreads(const std::string &base, const std::string &file)
 //             std::string subpath = base + it->substr(0, it->size() - 10);
 //             auto exists = under.getState(subpath);
 //             if (!exists->path.empty()) {
-//                 std::cout << "Already stored: " << subpath << std::endl;
+//                 log_debug(_("Already stored: %1%"), subpath);
 //                 continue;
 //             }
 //             // Add a thread to the pool for this file
@@ -227,7 +230,7 @@ startStateThreads(const std::string &base, const std::string &file)
 //                     state->dump();
 //                     continue;
 //                 } else {
-//                     std::cerr << "ERROR: No StateFile returned: " << subpath << std::endl;
+//                     log_error(_("No StateFile returned"));
 //                 }
 // #endif
 //             }
@@ -258,7 +261,7 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
     auto data = std::make_shared<std::vector<unsigned char>>();
     // If the file is stored on disk, read it in instead of downloading
     if (boost::filesystem::exists(remote.filespec)) {
-        std::cout << "Reading osmChange: " << remote.filespec << std::endl;
+        log_debug(_("Reading osmChange: %1%"), remote.filespec);
         // Since we want to read in the entire file so it can be
         // decompressed, blow off C++ streaming and just load the
         // entire thing.
@@ -273,12 +276,12 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
         std::copy(buf, buf+size, data->begin());
         close(fd);
     } else {
-        std::cout << "Downloading osmChange: " << remote.url << std::endl;
+        log_debug(_("Downloading osmChange: %1%"), remote.url);
  	replication::Planet planet(remote);
 	data = planet.downloadFile(remote.url);
     }
     if (data->size() == 0) {
-        std::cout << "osmChange file not found: " << remote.url + ".osc.gz" << std::endl;
+        log_error(_("osmChange file not found: %1% %2%"), remote.url, ".osc.gz");
         return false;
     } else {
 #ifdef USE_CACHE
@@ -299,13 +302,13 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
             try {
                 osmchanges.readXML(instream);
             } catch (std::exception& e) {
-                std::cerr << "ERROR: Couldn't parse: " << remote.url << std::endl;
+                log_error(_("Couldn't parse: %1%"), remote.url);
                 std::cerr << e.what() << std::endl;
                 // return false;
             }
             // change.readXML(instream);
         } catch (std::exception& e) {
-            std::cerr << "ERROR: " << remote.url << " is corrupted!" << std::endl;
+            log_error(_("%1% is corrupted!"), remote.url);
             std::cerr << e.what() << std::endl;
             // return false;
         }
@@ -351,7 +354,7 @@ threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly
     // FIXME: this this be the datadir from the command line
 
     if (boost::filesystem::exists(remote.filespec)) {
-        std::cout << "Reading ChangeSet: " << remote.filespec << std::endl;
+        log_debug(_("Reading ChangeSet: %1%"), remote.filespec);
         // Since we want to read in the entire file so it can be
         // decompressed, blow off C++ streaming and just load the
         // entire thing.
@@ -366,12 +369,12 @@ threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly
         std::copy(buf, buf+size, data->begin());
         close(fd);
     } else {
-        std::cout << "Downloading ChangeSet: " << remote.url << std::endl;
+	log_debug(_("Downloading ChangeSet: %1%"), remote.url);
 	replication::Planet planet(remote);
         data = planet.downloadFile(remote.url);
     }
     if (data->size() == 0) {
-        std::cout << "ChangeSet file not found: " << remote.url << std::endl;
+        log_error(_("ChangeSet file not found: %1%"), remote.url);
         //result.set_value(false);
         return state;
     } else {
@@ -397,14 +400,12 @@ threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly
             try {
                 changeset.readXML(instream);
             } catch (std::exception& e) {
-                std::cerr << "ERROR: Couldn't parse: " << remote.url << std::endl;
-                std::cerr << e.what() << std::endl;
+                log_error(_("Couldn't parse: %1% %2%"), remote.url, e.what());
                 // return false;
             }
             // change.readXML(instream);
         } catch (std::exception& e) {
-            std::cerr << "ERROR: " << remote.url << " is corrupted!" << std::endl;
-            std::cerr << e.what() << std::endl;
+	    log_error(_("%1% is corrupted!"), remote.url);
             // return false;
         }
     }
@@ -450,7 +451,7 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
     req.set(http::field::host, server);
     req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
     
-    std::cout << "(" << std::this_thread::get_id() << ")Downloading " << file << std::endl;
+    log_debug(_("(%1%)Downloading %2%"), std::this_thread::get_id(), file);
 
     // Stays locked till the function exits
     const std::lock_guard<std::mutex> lock(stream_mutex);
@@ -462,7 +463,7 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
     http::write(stream, req);
     boost::beast::http::read(stream, buffer, parser, ec);
     if (ec == http::error::partial_message) {
-        std::cerr << "ERROR: partial read" << ": " << ec.message() << std::endl;
+        log_network(_("ERROR: partial read: %1%"), ec.message());
         std::this_thread::yield();
         http::write(stream, req);
         boost::beast::http::read(stream, buffer, parser, ec);
@@ -471,12 +472,12 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
         //return std::make_shared<replication::StateFile>();
     }
     if (ec == http::error::end_of_stream) {
-        std::cerr << "ERROR: end of stream read failed" << ": " << ec.message() << std::endl;
+        log_error(_("end of stream read failed: %1%"), ec.message());
         // Give the network a chance to recover
         // stream.socket().shutdown(tcp::socket::shutdown_both, ec);
         return std::make_shared<replication::StateFile>();
     } else if (ec) {
-        std::cerr << "ERROR: stream read failed" << ": " << ec.message() << std::endl;
+        log_network(_("ERROR: stream read failed: %1%"), ec.message());
         return std::make_shared<replication::StateFile>();
     }
     if (parser.get().result() == boost::beast::http::status::not_found) {
@@ -485,7 +486,7 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
 
     // File never downloaded, return empty
     if (parser.get().body().size() < 10) {
-        std::cerr << "ERROR: failed to download:  " << ": " << file << std::endl;
+        log_error(_("failed to download: %1%"), file);
         return std::make_shared<replication::StateFile>();
     }
 
@@ -495,7 +496,7 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
         data->push_back((unsigned char)*body);
     }
     if (data->size() == 0) {
-        std::cout << "StateFile not found: " << file << std::endl;
+        log_error(_("StateFile not found: %1%"), file);
         return std::make_shared<replication::StateFile>();
     } else {
         std::string tmp(reinterpret_cast<const char *>(data->data()));
