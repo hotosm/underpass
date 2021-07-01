@@ -47,11 +47,12 @@
 #endif
 
 // the default name for the debug log
-#define DEFAULT_LOGFILE "underpass-dbg.log"
+#define DEFAULT_LOGFILE "underpass.log"
 
 // Support compilation with (or without) native language support
+#define ENABLE NLS 0
 #include "gettext.h"
-#define    _(String) gettext (String)
+#define  _(String) gettext (String)
 #define N_(String) gettext_noop (String)
 
 // Macro to prevent repeated logging calls for the same
@@ -75,11 +76,8 @@ namespace logger {
 class DSOEXPORT LogFile
 {
 public:
-
     static LogFile& getDefaultInstance();
-
     ~LogFile();
-
     enum LogLevel {
         LOG_SILENT,
         LOG_NORMAL,
@@ -144,28 +142,20 @@ public:
         return _verbose;
     }
     
-    void setActionDump(int x) {
-        _actiondump = x;
-    }
-
     void setNetwork(int x) {
         _network = x;
     }
 
-    int getActionDump() const {
-        return _actiondump;
-    }
-    
     int getNetwork() const {
         return _network;
     }
     
-    void setParserDump (int x) {
-        _parserdump = x;
+    void setInfoDump (int x) {
+        _infodump = x;
     }
 
-    int getParserDump() const {
-        return _parserdump;
+    int getInfoDump() const {
+        return _infodump;
     }
     
     void setStamp (bool b) {
@@ -227,8 +217,8 @@ private:
     /// Whether to dump all networking actions
     bool _network;
 
-    /// Whether to dump parser output
-    bool _parserdump;
+    /// Whether to dump info output
+    bool _infodump;
 
     /// The state of the log file.
     FileState _state;
@@ -251,12 +241,7 @@ DSOEXPORT void processLog_error(const boost::format& fmt);
 DSOEXPORT void processLog_unimpl(const boost::format& fmt);
 DSOEXPORT void processLog_trace(const boost::format& fmt);
 DSOEXPORT void processLog_debug(const boost::format& fmt);
-DSOEXPORT void processLog_action(const boost::format& fmt);
-DSOEXPORT void processLog_parse(const boost::format& fmt);
-DSOEXPORT void processLog_security(const boost::format& fmt);
-DSOEXPORT void processLog_swferror(const boost::format& fmt);
-DSOEXPORT void processLog_aserror(const boost::format& fmt);
-DSOEXPORT void processLog_abc(const boost::format& fmt);
+DSOEXPORT void processLog_info(const boost::format& fmt);
 
 template <typename FuncType>
 inline void
@@ -316,107 +301,10 @@ inline void log_debug(StringType msg, Args... args)
 }
 
 template<typename StringType, typename... Args>
-inline void log_action(StringType msg, Args... args)
+inline void log_info(StringType msg, Args... args)
 {
-    log_impl(msg, processLog_action, args...);
+    log_impl(msg, processLog_info, args...);
 }
-
-template<typename StringType, typename... Args>
-inline void log_parse(StringType msg, Args... args)
-{
-    log_impl(msg, processLog_parse, args...);
-}
-
-template<typename StringType, typename... Args>
-inline void log_security(StringType msg, Args... args)
-{
-    log_impl(msg, processLog_security, args...);
-}
-
-template<typename StringType, typename... Args>
-inline void log_swferror(StringType msg, Args... args)
-{
-    log_impl(msg, processLog_swferror, args...);
-}
-
-template<typename StringType, typename... Args>
-inline void log_aserror(StringType msg, Args... args)
-{
-    log_impl(msg, processLog_aserror, args...);
-}
-
-template<typename StringType, typename... Args>
-inline void log_abc(StringType msg, Args... args)
-{
-    log_impl(msg, processLog_abc, args...);
-}
-
-/// Convert a sequence of bytes to hex or ascii format.
-//
-/// @param bytes    the array of bytes to process
-/// @param length   the number of bytes to read. Callers are responsible
-///                 for checking that length does not exceed the array size.
-/// @param ascii    whether to return in ascii or space-separated hex format.
-/// @return         a string representation of the byte sequence.
-DSOEXPORT std::string hexify(const unsigned char *bytes, size_t length,
-        bool ascii);
-
-// Define to 0 to completely remove parse debugging at compile-time
-#ifndef VERBOSE_PARSE
-#define VERBOSE_PARSE 1
-#endif
-
-// Define to 0 to completely remove action debugging at compile-time
-#ifndef VERBOSE_ACTION
-#define VERBOSE_ACTION 1
-#endif
-
-// Define to 0 to remove ActionScript errors verbosity at compile-time
-#ifndef VERBOSE_ASCODING_ERRORS
-#define VERBOSE_ASCODING_ERRORS  1
-#endif
-
-// Define to 0 this to remove invalid SWF verbosity at compile-time
-#ifndef VERBOSE_MALFORMED_SWF
-#define VERBOSE_MALFORMED_SWF 1
-#endif
-
-// Define to 0 this to remove Networking verbosity at compile-time
-#ifndef VERBOSE_NETWORKING
-#define VERBOSE_NETWORKING 1
-#endif
-
-#if VERBOSE_PARSE
-#define IF_VERBOSE_PARSE(x) do { if ( LogFile::getDefaultInstance().getParserDump() ) { x; } } while (0);
-#else
-#define IF_VERBOSE_PARSE(x)
-#endif
-
-#if VERBOSE_ACTION
-#define IF_VERBOSE_ACTION(x) do { if ( LogFile::getDefaultInstance().getActionDump() ) { x; } } while (0);
-#else
-#define IF_VERBOSE_ACTION(x)
-#endif
-
-#if VERBOSE_ACTION
-#define IF_VERBOSE_NETWORK(x) do { if ( LogFile::getDefaultInstance().getNetwork() ) { x; } } while (0);
-#else
-#define IF_VERBOSE_NETWORK(x)
-#endif
-
-#if VERBOSE_ASCODING_ERRORS
-// TODO: check if it's worth to check verbosity level too...
-#define IF_VERBOSE_ASCODING_ERRORS(x) { if ( underpass::RcInitFile::getDefaultInstance().showASCodingErrors() ) { x; } }
-#else
-#define IF_VERBOSE_ASCODING_ERRORS(x)
-#endif
-
-#if VERBOSE_MALFORMED_SWF
-// TODO: check if it's worth to check verbosity level too... 
-#define IF_VERBOSE_MALFORMED_SWF(x) { if ( underpass::RcInitFile::getDefaultInstance().showMalformedSWFErrors() ) { x; } }
-#else
-#define IF_VERBOSE_MALFORMED_SWF(x)
-#endif
 
 class DSOEXPORT HostFunctionReport
 {

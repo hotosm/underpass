@@ -1,5 +1,9 @@
 /* unconfig.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define to 1 if translation of program messages to the user's native
+   language is requested. */
+#undef ENABLE_NLS
+
 /* define if the Boost library is available */
 #undef HAVE_BOOST
 
@@ -30,11 +34,32 @@
 /* define if the Boost::Thread library is available */
 #undef HAVE_BOOST_THREAD
 
+/* Define to 1 if you have the Mac OS X function
+   CFLocaleCopyPreferredLanguages in the CoreFoundation framework. */
+#undef HAVE_CFLOCALECOPYPREFERREDLANGUAGES
+
+/* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
+   the CoreFoundation framework. */
+#undef HAVE_CFPREFERENCESCOPYAPPVALUE
+
+/* Define if the GNU dcgettext() function is already present or preinstalled.
+   */
+#undef HAVE_DCGETTEXT
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
+/* Define if the GNU gettext() function is already present or preinstalled. */
+#undef HAVE_GETTEXT
+
+/* Define if you have the iconv() function and it works. */
+#undef HAVE_ICONV
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
 
 /* Define to 1 if you have the <osmium/osm/node.hpp> header file. */
 #undef HAVE_OSMIUM_OSM_NODE_HPP
@@ -42,15 +67,13 @@
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
-/* Always define to 1, for backward compatibility. You can assume <stdlib.h>
-   exists. */
+/* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
-/* Always define to 1, for backward compatibility. You can assume <string.h>
-   exists. */
+/* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
@@ -95,8 +118,7 @@
 /* Use rapidxml library in boost */
 #undef RAPIDXML
 
-/* Always define to 1, for backward compatibility. You can assume the C90
-   standard headers exist. */
+/* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
 /* Store downloaded files to disk */

@@ -105,8 +105,7 @@ getTicks()
 # endif // not WIN32
 
 /// Common non-boost function to return the present time offset.
-/// This all seems like a terrible hack. It was moved from Date.cpp,
-/// whence the following explanation also comes.
+/// This all seems like a terrible hack.
 ///
 /// If the real mktime() sees isdst == 0 with a DST date, it sets
 /// t_isdst and modifies the hour fields, but we need to set the
@@ -323,19 +322,7 @@ processLog_debug(const boost::format& fmt)
 }
 
 void
-processLog_abc(const boost::format& fmt)
-{
-    if (dbglogfile.getVerbosity() < LogFile::LOG_EXTRA) return;
-    dbglogfile.log(N_("ABC"), fmt.str());
-    // Print messages to the Android log, where they can be retrieved with
-    // logcat.    
-#ifdef __ANDROID__
-    __android_log_print(ANDROID_LOG_VERBOSE, "Underpass", fmt.str().c_str());
-#endif    
-}
-
-void
-processLog_parse(const boost::format& fmt)
+processLog_info(const boost::format& fmt)
 {
     dbglogfile.log(fmt.str());
     // Print messages to the Android log, where they can be retrieved with
@@ -376,48 +363,6 @@ processLog_unimpl(const boost::format& fmt)
 #ifdef __ANDROID__
     __android_log_print(ANDROID_LOG_WARN, "Underpass", fmt.str().c_str());
 #endif    
-}
-
-void
-processLog_security(const boost::format& fmt)
-{
-    dbglogfile.log(N_("SECURITY"), fmt.str());
-    // Print messages to the Android log, where they can be retrieved with
-    // logcat.    
-#ifdef __ANDROID__
-    __android_log_print(ANDROID_LOG_WARN, "Underpass", fmt.str().c_str());
-#endif    
-}
-
-void
-processLog_swferror(const boost::format& fmt)
-{
-    dbglogfile.log(N_("MALFORMED SWF"), fmt.str());
-    // Print messages to the Android log, where they can be retrieved with
-    // logcat.    
-#ifdef __ANDROID__
-    __android_log_print(ANDROID_LOG_WARN, "Underpass", fmt.str().c_str());
-#endif    
-}
-
-void
-processLog_aserror(const boost::format& fmt)
-{
-    dbglogfile.log(N_("ACTIONSCRIPT ERROR"), fmt.str());
-    // Print messages to the Android log, where they can be retrieved with
-    // logcat.    
-#ifdef __ANDROID__
-    __android_log_print(ANDROID_LOG_WARN, "Underpass", fmt.str().c_str());
-#endif    
-}
-
-void
-processLog_action(const boost::format& fmt)
-{
-    bool stamp = dbglogfile.getStamp();
-    dbglogfile.setStamp(false);
-    dbglogfile.log(fmt.str());
-    dbglogfile.setStamp(stamp);
 }
 
 void
@@ -472,9 +417,7 @@ LogFile::setWriteDisk(bool use)
 LogFile::LogFile()
     :
     _verbose(0),
-    _actiondump(false),
     _network(false),
-    _parserdump(false),
     _state(CLOSED),
     _stamp(true),
     _write(false),

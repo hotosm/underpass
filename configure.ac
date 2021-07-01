@@ -253,7 +253,10 @@ AM_CONDITIONAL([ENABLE_PCH], [test x"$enable_pch" != x"no"])
 PCH_FLAGS="-include all-includes.h -Winvalid-pch"
 AC_SUBST(PCH_FLAGS)
 
+AM_GNU_GETTEXT([external])
+
 AC_CONFIG_FILES([
+po/Makefile.in
 Makefile
 doc/Doxyfile
 testsuite/Makefile

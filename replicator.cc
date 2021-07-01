@@ -75,10 +75,13 @@ namespace opts = boost::program_options;
 #include "data/threads.hh"
 #include "data/underpass.hh"
 #include "timer.hh"
+#include "log.hh"
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
 enum pathMatches{ROOT, DIRECTORY, SUBDIRECTORY, FILEPATH};
+
+using namespace logger;
 
 // Forward declarations
 namespace changeset {
@@ -199,8 +202,9 @@ main(int argc, char *argv[])
             ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp")
             ("import,i", opts::value<std::string>(), "Initialize OSM database with datafile")
             ("boundary,b", opts::value<std::string>(), "Boundary polygon file name")
-            ("datadir,d", opts::value<std::string>(), "Base directory for cached files")
-//            ("verbose,v", "enable verbosity")
+            ("datadir,i", opts::value<std::string>(), "Base directory for cached files")
+            ("verbose,v", "enable verbosity")
+            ("debug,d", "enable debug messages for developers")
             ;
         
         opts::store(opts::command_line_parser(argc, argv).
@@ -221,6 +225,17 @@ main(int argc, char *argv[])
          boundary = vm["boundary"].as<std::string>();
      }
 
+     logger::LogFile& dbglogfile = logger::LogFile::getDefaultInstance();
+     dbglogfile.setWriteDisk(true);
+     if (vm.count("verbose")) {
+         dbglogfile.setLogFilename("underpass.log");
+         dbglogfile.setVerbosity();
+     }
+
+     if (vm.count("debug")) {
+         dbglogfile.setVerbosity();
+     }     
+
      geoutil::GeoUtil geou;
      std::string priority = SRCDIR;
      priority += "/data/" + boundary;
@@ -231,7 +246,7 @@ main(int argc, char *argv[])
          priority += "/" + boundary;
          geou.readFile(priority);
      }
-
+     
      Replicator replicator;
      // replicator.initializeData();
      std::vector<std::string> rawfile;
@@ -285,9 +300,10 @@ main(int argc, char *argv[])
      replication::Planet planet(remote);
      std::string last;
      std::string clast;
+     
      if (vm.count("monitor")) {
          if (starttime.is_not_a_date_time() && url.size() == 0) {
-             std::cerr << "ERROR: You need to supply either a timestamp or URL!" << std::endl;
+             log_error("ERROR: You need to supply either a timestamp or URL!");
 //         if (timestamp.is_not_a_date_time()) {
 //             timestamp = ostats.getLastUpdate();
 //         }
@@ -342,11 +358,11 @@ main(int argc, char *argv[])
              } else {
                  // last = replicator.baseurl + under.freq_to_string(frequency) + "/" + state->path;
              }
-             std::cout << "Last minutely is " << last  << std::endl;
+             log_debug(_("Last minutely is "), last);
              // mthread = std::thread(threads::startMonitor, std::ref(remote));
          }
 
-         std::cout << "Waiting..." << std::endl;
+         log_info(_("Waiting..."));
          if (cthread.joinable()) {
              cthread.join();
          }
@@ -356,76 +372,6 @@ main(int argc, char *argv[])
          exit(0);
      }
 
-#if 0
-    if (vm.count("url")) {
-        std::string url = vm["url"].as<std::string>();
-        int match = replicator.matchUrl(url);
-
-        // Trailing slash check.
-        if (url.back() != '/' && match != pathMatches::FILEPATH) {
-          url += "/";
-        }
-        auto links = planet.scanDirectory(url);
-
-        Timer timer;
-        switch (match) {
-            default: // Root
-            {
-                for (auto it = std::begin(*links); it != std::end(*links); ++it) {
-                    if (it->empty()) {
-                        continue;
-                    }
-
-                    std::cout << *it << std::endl;
-                    std::string subUrl = url + *it;
-                    auto sublinks = planet.scanDirectory(subUrl);
-                    std::thread tstate (threads::startStateThreads, std::ref(subUrl),
-                                        std::ref(*sublinks));
-                    std::cout << "Waiting..." << std::endl;
-                    tstate.join();
-                    timer.endTimer();
-               }
-            }
-            break;
-            case pathMatches::DIRECTORY:
-            {
-                for (auto sit = std::begin(*links); sit != std::end(*links); ++sit) {
-                    if (sit->empty()) {
-                        continue;
-                    }
-                    timer.startTimer();
-                    std::string subdir = url + *sit;
-                    
-                    std::cout << "Sub Directory: " << subdir << std::endl;
-                    auto flinks = planet.scanDirectory(subdir);
-                    std::thread tstate (threads::startStateThreads, std::ref(subdir),
-                                         std::ref(*flinks));
-
-                    std::cout << "Waiting..." << std::endl;
-                    tstate.join();
-                    timer.endTimer();
-                    continue;
-                }
-            }
-            break;
-
-            case pathMatches::SUBDIRECTORY:
-            {
-                std::thread tstate (threads::startStateThreads, std::ref(url),
-                    std::ref(*links));
-                std::cout << "Waiting for startStateThreads()..." << std::endl;
-                tstate.join();
-                timer.endTimer();
-            }
-            break;
-
-            case pathMatches::FILEPATH:
-                threads::startStateThreads(std::ref(url), std::ref(*links));
-                timer.endTimer();
-            break;
-        }
-    }
-#endif
      std::string statistics;
      if (vm.count("initialize")) {
          rawfile = vm["initialize"].as<std::vector<std::string>>();
@@ -439,13 +385,8 @@ main(int argc, char *argv[])
          std::string file = vm["import"].as<std::string>();
          import::ImportOSM osm(file, osmdb);
      }
-     // FIXME: add logging
-     if (vm.count("verbose")) {
-         std::cout << "Verbosity enabled.  Level is " << vm["verbose"].as<int>() << std::endl;
-     }
-
      if (sequence > 0 and !starttime.is_not_a_date_time()) {
-        std::cout << "ERROR: Can only specify a timestamp or a sequence" << std::endl;
+         log_error(_("Can only specify a timestamp or a sequence"));
         exit(1);
     }
 
@@ -463,3 +404,7 @@ main(int argc, char *argv[])
     // return 0;
 }
 
+// Local Variables:
+// mode: C++
+// indent-tabs-mode: nil
+// End:
