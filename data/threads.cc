@@ -69,6 +69,8 @@ namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
 namespace http = beast::http;       // from <boost/beast/http.hpp>
 using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 
+#include <boost/config.hpp> // for BOOST_SYMBOL_EXPORT
+
 #include "timer.hh"
 #include "data/threads.hh"
 #include "osmstats/osmstats.hh"
@@ -76,7 +78,7 @@ using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 #include "osmstats/changeset.hh"
 #include "osmstats/replication.hh"
 #include "data/underpass.hh"
-#include "data/validate.hh"
+#include "validate/validate.hh"
 #include "log.hh"
 
 std::mutex stream_mutex;

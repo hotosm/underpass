@@ -44,7 +44,8 @@ using namespace boost::gregorian;
 
 #include "data/osmobjects.hh"
 #include "osmstats/osmchange.hh"
-#include "data/validate.hh"
+#include "validate/validate.hh"
+#include <boost/config.hpp> // for BOOST_SYMBOL_EXPORT
 
 #include "log.hh"
 using namespace logger;

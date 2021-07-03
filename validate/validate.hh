@@ -40,6 +40,7 @@
 #include <vector>
 #include <iostream>
 
+#include <boost/config.hpp>
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
@@ -85,7 +86,7 @@ namespace validate {
 
 typedef enum {notags, isbuilding } errortype_t;
 
-class Validate
+class BOOST_SYMBOL_VISIBLE Validate
 {
 public:
     Validate(void) {};
@@ -93,13 +94,13 @@ public:
 
     /// Check a POI for tags. A node that is part of a way shouldn't have any
     /// tags, this is to check actual POIs, like a school.
-    bool checkPOI(osmobjects::OsmNode *node);
+    virtual bool checkPOI(osmobjects::OsmNode *node);
 
     /// This checks a way. A way should always have some tags. Often a polygon
     /// is a building 
-    bool checkWay(osmobjects::OsmWay *way);
+    virtual bool checkWay(osmobjects::OsmWay *way);
 
-    bool checkTags (std::map<std::string, std::string> tags) {
+    virtual bool checkTags (std::map<std::string, std::string> tags) {
         bool result;
         for (auto it = std::begin(tags); it != std::end(tags); ++it) {
             result = checkTag(it->first, it->second);
@@ -107,7 +108,7 @@ public:
         return result;
     };
 
-    bool checkTag(const std::string &key, const std::string &value);
+    virtual bool checkTag(const std::string &key, const std::string &value);
 
 private:
     std::vector<long> buildings;       ///< 

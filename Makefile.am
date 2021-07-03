@@ -64,7 +64,7 @@ libhotosm_la_SOURCES = \
 	timer.hh \
 	log.cc log.hh \
 	dsodefs.hh gettest.h \
-	hotosm.cc hotosm.hh \
+	validate/hotosm.cc hotosm.hh \
 	hottm.cc hottm.hh \
 	hottm/tmusers.cc hottm/tmusers.hh \
 	hottm/tmteams.cc hottm/tmteams.hh \
@@ -77,7 +77,7 @@ libhotosm_la_SOURCES = \
 	data/pgsnapshot.cc data/pgsnapshot.hh\
 	data/import.cc data/import.hh \
 	data/osmobjects.cc data/osmobjects.hh \
-	data/validate.cc data/validate.hh \
+	validate/validate.cc validate/validate.hh \
 	data/threads.cc data/threads.hh \
 	data/underpass.cc data/underpass.hh
 libhotosm_la_LDFLAGS = -avoid-version
