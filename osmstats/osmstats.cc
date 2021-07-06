@@ -199,7 +199,7 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
     aquery += " updated_at = \'" + to_simple_string(now) + "\'";
     aquery += " WHERE changesets.id=" + std::to_string(change.change_id);
 
-    log_debug(_("QUERY stats: %1%"), aquery);
+    // log_debug(_("QUERY stats: %1%"), aquery);
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(aquery);
 
@@ -216,7 +216,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     std::string query = "INSERT INTO users VALUES(";
     query += std::to_string(change.uid) + ",\'" + sdb->esc(change.user);
     query += "\') ON CONFLICT DO NOTHING;";
-    log_debug(_("QUERY: %1%"), query);
+    // log_debug(_("QUERY: %1%"), query);
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     //worker.commit();
@@ -294,7 +294,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     }
     // a changeset with a single node in it doesn't draw a line
     if (change.max_lon < 0 && change.min_lat < 0) {
-        log_error(_("WARNING: single point! %1%"), change.id);
+        // log_error(_("WARNING: single point! %1%"), change.id);
 	min_lat = change.min_lat + (fudge/2);
 	max_lat = change.max_lat + (fudge/2);
 	min_lon = change.min_lon - (fudge/2);
@@ -302,7 +302,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
         //return false;
     }
     if (max_lon == min_lon || max_lat == min_lat) {
-        log_error(_("WARNING: not a line! %1%"), change.id);
+        // log_error(_("WARNING: not a line! %1%"), change.id);
 	min_lat = change.min_lat + (fudge/2);
 	max_lat = change.max_lat + (fudge/2);
 	min_lon = change.min_lon - (fudge/2);
@@ -355,7 +355,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     // 	query += "\', closed_at=\'" + to_simple_string(change.closed_at);
     // }
     query += "\', bbox=" + bbox.substr(2) + ")'))";
-    log_debug(_("QUERY: %1%"), query);
+    // log_debug(_("QUERY: %1%"), query);
     result = worker.exec(query);
 
     // Commit the results to the database
@@ -396,19 +396,6 @@ QueryOSMStats::populate(void)
         hashtags[rh.name] = rh;
     };
 #endif
-    // ptime start = time_from_string("2010-07-08 13:29:46");
-    // ptime end = second_clock::local_time();
-    // long roadsAdded = QueryStats::getCount(QueryStats::highway, 0,
-    //                                        QueryStats::totals, start, end);
-    // long roadKMAdded = QueryStats::getLength(QueryStats::highway, 0,
-    //                                          start, end);
-    // long waterwaysAdded = QueryStats::getCount(QueryStats::waterway, 0,
-    //                                            QueryStats::totals, start, end);
-    // long waterwaysKMAdded = QueryStats::getLength(QueryStats::waterway, 0,
-    //                                               start, end);
-    // long buildingsAdded = QueryStats::getCount(QueryStats::waterway, 0,
-    //                                            QueryStats::totals, start, end);
-
     worker2.commit();
 
     return true;
@@ -428,7 +415,7 @@ QueryOSMStats::getRawChangeSets(std::vector<long> &changeset_ids)
     }
     sql += "]);";
 
-    log_debug(_("QUERY: %1%"), sql);
+    // log_debug(_("QUERY: %1%"), sql);
     pqxx::result result = worker.exec(sql);
     //OsmStats stats(result);
     worker.commit();
@@ -463,7 +450,7 @@ ptime
 QueryOSMStats::getLastUpdate(void)
 {
     std::string query = "SELECT MAX(created_at) FROM changesets;";
-    log_debug(_("QUERY: %1%"), query);
+    // log_debug(_("QUERY: %1%"), query);
     // auto worker = std::make_shared<pqxx::work>(*db);
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
@@ -496,7 +483,7 @@ QueryOSMStats::updateRawHashtags(void)
     // query += "nextval('raw_hashtags_id_seq'), \'" + tag;
     // query += "\'" + tag;
     query += "\') ON CONFLICT DO NOTHING";
-    log_debug(_("QUERY: %1%", query);
+    //log_debug(_("QUERY: %1%", query);
     pqxx::work worker(*db);
     pqxx::result result = worker.exec(query);
     worker.commit();
@@ -530,15 +517,14 @@ RawChangeset::RawChangeset(pqxx::const_result_iterator &res)
 void
 RawChangeset::dump(void)
 {
-    std::cout << "-----------------------------------" << std::endl;
-    std::cout << "changeset id: \t\t " << id << std::endl;
-    std::cout << "Editor: \t\t " << editor << std::endl;
-    std::cout << "User ID: \t\t "  << user_id << std::endl;
-    std::cout << "Created At: \t\t " << created_at << std::endl;
-    std::cout << "Closed At: \t\t " << closed_at << std::endl;
-    std::cout << "Verified: \t\t " << verified << std::endl;
-    // std::cout << augmented_diffs << std::endl;
-    std::cout << "Updated At: \t\t " << updated_at << std::endl;
+    log_debug("-----------------------------------");
+    log_debug(_("changeset id: \t\t %1%"), std::to_string(id));
+    log_debug(_("Editor: \t\t %1%"), editor);
+    log_debug(_("User ID: \t\t %1%"), std::to_string(user_id));
+    log_debug(_("Created At: \t\t %1%"), to_simple_string(created_at));
+    log_debug(_("Closed At: \t\t %1%"), to_simple_string(closed_at));
+    log_debug(_("Verified: \t\t %1%"), verified);
+    //log_debug(_("Updated At: \t\t %1%"). to_simple_string(updated_at));
 }
 
 }       // EOF osmstatsdb
