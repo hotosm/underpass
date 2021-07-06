@@ -149,8 +149,8 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly)
             timer.endTimer("osmChange");
         }
 	remote.Increment();
-	remote.dump();
-        //planet->endTimer("change file");
+	// remote.dump();
+        // planet->endTimer("change file");
     }
 }
 

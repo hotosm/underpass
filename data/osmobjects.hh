@@ -127,7 +127,6 @@ public:
 
     /// Dump internal data to the terminal, only for debugging
     void dump(void) {
-        std::cout << "\tLocation: " << point.get<0>() << ", " << point.get<1>() << std::endl;
         OsmObject::dump();
     };
 };

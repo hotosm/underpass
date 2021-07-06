@@ -82,18 +82,18 @@ OsmObject::dump(void)
         log_debug(_("\tType: OsmRelation"));
     }
     
-    log_debug(_("\tID: %1%"), id);
-    log_debug(_("\tVersion: %1%"), version);
-    log_debug(_("\tTimestamp: %1%"), timestamp);
-    log_debug(_("\tUID: %1%"), uid);
+    log_debug(_("\tID: %1%"), std::to_string(id));
+    log_debug(_("\tVersion: %1%"), std::to_string(version));
+    log_debug(_("\tTimestamp: %1%"), to_simple_string(timestamp));
+    log_debug(_("\tUID: %1%"), std::to_string(uid));
     log_debug(_("\tUser: %1%"), user);
     if (change_id > 0) {
-        log_debug(_("\tChange ID: "), change_id);
+        log_debug(_("\tChange ID: "), std::to_string(change_id));
     }
     if (tags.size() > 0) {
         log_debug(_("\tTags: %1%"), tags.size());
         for (auto it = std::begin(tags); it != std::end(tags); ++it) {
-            log_debug("\t\t", it->first, " : ", it->second);
+            log_debug("\t\t %1% : %2%", it->first, it->second);
         }
     }
 };
@@ -117,10 +117,11 @@ OsmWay::dump(void){
     OsmObject::dump();
     if (refs.size() > 0) {
         log_debug(_("\tRefs: "), refs.size());
-        log_debug("\t");
+        std::string tmp;
         for (auto it = std::begin(refs); it != std::end(refs); ++it) {
-            std::cerr << *it << ", " << std::endl;
+            tmp += std::to_string(*it) + ",";
         }
+        log_debug("\t%1%", tmp);
     }
 };
 
