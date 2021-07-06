@@ -415,18 +415,15 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 
     log_debug(_("Collecting Statistics for: %1%"), changes.size());
 
+    std::map<long, point_t> nodecache;
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
+	nodecache.clear();
         OsmChange *change = it->get();
         // change->dump();
-	std::map<long, point_t> nodecache;
         for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
             OsmNode *node = it->get();
 	    auto wkt = boost::geometry::wkt(node->point);
-	    // If there are no tags, assume it's part of a way
-            if (node->tags.size() == 0) {
-		nodecache[node->id] = node->point;
-		continue;
-	    }
+	    nodecache[node->id] = node->point;
 	    // Filter data by polygon
 	    if (!boost::geometry::within(node->point, poly)) {
 		log_debug(_("Changeset with node %1% is not in a priority area"), node->change_id);
@@ -462,21 +459,9 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
             OsmWay *way = it->get();
 	    // If there are no tags, assume it's part of a relation
             if (way->tags.size() == 0) {
-		continue;
-	    }
-	    if (way->polygon.outer().size() == 0) {
-		log_error(_("ERROR: change %1% has no points"), way->change_id);
-		continue;
+		// continue;
 	    }
 	    // Filter data by polygon
-	    point_t pt;
-	    boost::geometry::centroid(way->polygon, pt);
-	    if (!boost::geometry::within(pt, poly)) {
-		log_debug(_("Changeset with way %1% is not in a priority area"), way->change_id);
-		continue;
-	    } else {
-		log_debug(_("Changeset with way %1% is in a priority area"), way->change_id);
-	    }
 	    // Some older ways in a way wound up with this one tag, which nobody noticed,
 	    // so ignore it.
 	    if (way->tags.size() == 1 && way->tags.find("created_at") != way->tags.end()) {
@@ -492,39 +477,44 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 	    }
 	    auto hits = scanTags(way->tags);
 	    for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
-		// log_debug(_("FIXME way: " << *hit <<  " : " << (int)way->action);
-		// way->dump();
-		if (way->action == osmobjects::create) {
-		    ostats->added[*hit]++;
-		} else if (way->action == osmobjects::modify){
-		    ostats->modified[*hit]++;
-		}
+		// log_debug("FIXME way: ", *hit, (int)way->action);
+		way->dump();
 		if (*hit == "highway" || *hit == "waterway") {
 		    // Get the geometry behind each reference
 		    boost::geometry::model::linestring<sphere_t> line;
 		    for (auto lit = std::begin(way->refs); lit != std::end(way->refs); ++lit) {
 			line.push_back(sphere_t(nodecache[*lit].get<0>(),
-						nodecache[*lit].get<1>()));
-
+                                                nodecache[*lit].get<1>()));
+		    }
+		    // Get the middle point of the linestring on the sphere
+		    long ref = way->refs[way->refs.size()/2];
+		    point_t pt(nodecache[ref].get<0>(), nodecache[ref].get<1>());
+		    if (!boost::geometry::within(pt, poly)) {
+			log_debug(_("Changeset with way %1% is not in a priority area"), way->change_id);
+			continue;
+		    } else {
+			log_debug(_("Changeset with way %1% is in a priority area"), way->change_id);
 		    }
 		    std::string tag;
 		    if (*hit == "highway" && way->action == osmobjects::create) {
-			tag = "highway_km";
+			tag = "highway_km_added";
 		    } else if (*hit == "highway" && way->action == osmobjects::modify) {
-			tag = "highway_km";
+			tag = "highway_km_modified";
 		    }
 		    if (*hit == "waterway" && way->action == osmobjects::create) {
-			tag = "waterway_km";
+			tag = "waterway_km_added";
 		    } else if (*hit == "highway" && way->action == osmobjects::modify) {
-			tag = "waterway_km";
+			tag = "waterway_km_modified";
 		    }
 		    double length = boost::geometry::length(line,
-                    boost::geometry::strategy::distance::haversine<float>(6371.0)) * 1000;
-		    // log_debug(_("LENGTH: " << *hit << ": " << length);
+                        boost::geometry::strategy::distance::haversine<float>(6371.0)) * 1000;
+		    // log_debug("LENGTH: %1%", std::to_string(length));
 		    if (way->action == osmobjects::create) {
 			ostats->added[tag] += length;
+			ostats->added[*hit]++;
 		    } else if (way->action == osmobjects::modify){
 			ostats->modified[tag] += length;
+			ostats->modified[*hit]++;
 		    }
 		}
 	    }
@@ -650,7 +640,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	    auto match = std::find(highways.begin(), highways.end(), boost::algorithm::to_lower_copy(it->second));
 	    if (match != highways.end()) {
 		if (!cache[it->second]) {
-		    log_error(_("\tmatched highway value: %1%"), it->second);
+		    log_debug(_("\tmatched highway value: %1%"), it->second);
 		    hits->push_back(it->first);
 		    cache[it->second] = true;
 		}
@@ -658,7 +648,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	}
 	if (it->first == "waterway") {
 	    if (!cache[it->second]) {
-		log_error(_("\tmatched waterway value: %1%"), it->second);
+		log_debug(_("\tmatched waterway value: %1%"), it->second);
 		hits->push_back(it->first);
 		cache[it->second] = true;
 	    }
