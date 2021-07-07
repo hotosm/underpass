@@ -271,14 +271,16 @@ PCH_FLAGS="-include all-includes.h -Winvalid-pch"
 AC_SUBST(PCH_FLAGS)
 
 AM_GNU_GETTEXT([external])
+AM_CONDITIONAL([HAS_GETTEXT], [test x"$gt_use_preinstalled_gnugettext" != x"no"])
 
 AC_CONFIG_FILES([
-po/Makefile.in
+validate/Makefile
 Makefile
 doc/Doxyfile
 testsuite/Makefile
 testsuite/hotosm/Makefile
 redhat/underpass.spec
+po/Makefile
 ])
 
 AC_OUTPUT

@@ -38,7 +38,9 @@ CLEANFILES = \
 DISTCLEANFILES = doc/html doc/latex .lastmod
 MAINTAINERCLEANFILES = revno.h .lastmod
 
-SUBDIRS = testsuite
+SUBDIRS = \
+	validate
+#	po
 
 lib_LTLIBRARIES = libunderpass.la
 instdir = /tmp
@@ -64,8 +66,6 @@ libunderpass_la_SOURCES = \
 	timer.hh \
 	log.cc log.hh \
 	dsodefs.hh gettest.h \
-	validate/hotosm.cc validate/hotosm.hh \
-	validate/validate.hh \
 	hottm.cc hottm.hh \
 	hottm/tmusers.cc hottm/tmusers.hh \
 	hottm/tmteams.cc hottm/tmteams.hh \
