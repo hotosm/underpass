@@ -38,297 +38,105 @@
 #include <iostream>
 
 #include "hotosm.hh"
+#include "validate.hh"
+#include "log.hh"
 
-namespace apidb {
+namespace hotosm {
 
-//static QueryDB::base = new  QueryDB();
-    
-// QueryDB::QueryDB()
-QueryDB::QueryDB(void)
+using namespace logger;
+
+logger::LogFile& dbglogfile = logger::LogFile::getDefaultInstance();
+
+// FIXME: things to look for
+// Villages, hamlets, neigborhoods, towns, or cities added without a name
+
+Hotosm::Hotosm(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
 {
-    // Keywords used for querying objects
-    keywords[QueryDB::building] = "building";
-    keywords[QueryDB::waterway] = "waterway";
-    keywords[QueryDB::highway] = "highway";
-    keywords[QueryDB::education] = "education";
-    keywords[QueryDB::emergency] = "emergency";
-    keywords[QueryDB::financial] = "financial";
-    keywords[QueryDB::government] = "government";
-    keywords[QueryDB::humanitarian] = "humanitarian";
-    keywords[QueryDB::landuse] = "landuse";
-    keywords[QueryDB::natural] = "natural";
-    keywords[QueryDB::power] = "power";
-    keywords[QueryDB::sport] = "sport";
-    keywords[QueryDB::transportation] = "transportation";
-    keywords[QueryDB::water] = "water";
-    keywords[QueryDB::language] = "language";
-    keywords[QueryDB::all] = "all";
+    for (auto it = std::begin(changes); it != std::end(changes); ++it) {
+        osmchange::OsmChange *change = it->get();
+        change->dump();
+        if (change->action == osmobjects::create) {
+            for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
+                osmobjects::OsmNode *node = it->get();
+                if (node->tags.size() > 0) {
+                    log_debug(_("Validating New Node ID %1% has tags"), node->id);
+                    checkPOI(node);
+                } else {
+                    continue;
+                }
+            // for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
+            //     OsmWay *way = it->get();
+            //     if (way->tags.size() == 0) {
+            //         log_error(_("Validating New Way ID %1% has no tags"), way->id);
+            //         checkWay(way);
+            //     } else {
+            //         continue;
+            //     }
+            // }
+            }       
+        }
+    }
 }
 
-// Connect to the database
+// Check a POI for tags. A node that is part of a way shouldn't have any
+// tags, this is to check actual POIs, like a school.
 bool
-QueryDB::connect(std::string &database)
+Hotosm::checkPOI(osmobjects::OsmNode *node)
 {
-    if (database.empty()) {
-	database = "pgsnapshot";
+    if (node->tags.size() == 0) {
+        log_error(_("WARNING: POI %1% has no tags!"), node->id);
+        node_errors.push_back(node->id);
+        return false;
+    }
+
+    return true;
+}
+
+// This checks a way. A way should always have some tags. Often a polygon
+// with no tags is a building.
+bool
+Hotosm::checkWay(osmobjects::OsmWay *way)
+{
+    bool result = true;
+    for (auto it = std::begin(way->tags); it != std::end(way->tags); ++it) {
+        result = checkTag(it->first, it->second);
+        if (!result) {
+            return result;
+        }
+    }
+
+    if (way->numPoints() == 5 && way->isClosed() && way->tags.size() == 0) {
+        log_error(_("WARNING: %1% might be a building!"), way->id);
+        buildings.push_back(way->id);
+        return false;
     }
     
-    try {
-	std::string args = "dbname = " + database;
-	db = new pqxx::connection(args);
-	if (db->is_open()) {
-	    worker = new pqxx::work(*db);
-	    return true;
-	} else {
-	    return false;
-	}
-    } catch (const std::exception &e) {
-	std::cerr << e.what() << std::endl;
-	return false;
-   }
+    return true;
 }
 
-pqxx::result
-QueryDB::query(std::string &select)
+// Check a tag for typical errors
+bool
+Hotosm::checkTag(const std::string &key, const std::string &value)
 {
-    pqxx::result result = worker->exec(select);
-    if (db->is_open()) {
-	result = worker->exec(select);
-    } else {
-	std::cout << "ERROR: database not open!" << std::endl;
-    }
-    return result;
-}
-
-QueryDB::~QueryDB(void)
-{
-    // TODO: close database
-    // QueryDB::db.disconnect ();
-}
-
-QueryStats::QueryStats(void)
-{
-
-}
-
-QueryStats::~QueryStats(void)
-{
-
-}
-
-//
-// These methods collect statistics
-//
-
-
-// Get the timestamp of the users last update
-ptime &
-QueryStats::lastUpdate(long userid, ptime &last)
-{
-    std::string sql = "SELECT tstamp FROM ways WHERE user_id=";
-    sql += std::to_string(userid);
-    sql += " ORDER BY tstamp DESC LIMIT 1;";
-
-    std::cout << "QUERY: " << sql << std::endl;
-    pqxx::result result = worker->exec(sql);
-    std::string timestamp = pqxx::to_string(result[0][0]);
-
-    if (!timestamp.empty()) {
-	last = time_from_string(timestamp);
-    }
-
-    return last;
-}
-
-long
-QueryStats::getLength(object obj, long userid, ptime &start, ptime &end)
-{
-    std::string sql = "SELECT ST_Length(linestring) FROM ways WHERE tags->'";
-    sql += keywords[obj] + "' is not NULL";
-    sql += " AND user_id=" + std::to_string(userid);
-    sql += " ORDER BY tstamp;";
-    std::cout << "QUERY: " << sql << std::endl;
-    pqxx::result result = worker->exec(sql);
-    std::cout << "SIZE: " << result.size() <<std::endl;
-
-    if (result.size() == 0) {
-	return 0;
+    // Check for an empty value
+    if (value.empty() && !key.empty()) {
+        log_error(_("WARNING: empty value for tag \"%1%\""), key);
+        return false;
     }
     
-    long total = 0;
-    pqxx::result::const_iterator it;
-    for (it = result.begin(); it != result.end(); ++it) {
-	std::string count = pqxx::to_string(it[0]);
-	if (!count.empty()) {
-	    total += std::stol(count);
-	}
+    // Check for a space in the tag key
+    if (key.find(' ') != std::string::npos) {
+        log_error(_("WARNING: spaces in tag key \"%1%\""), key);
+        return false;
     }
 
-    return total;
+    return true;
 }
 
-// Count how many occurances there are for an object.
-// object is building, highway, waterway, all
-// action is added, modified, deleted, totals
-long
-QueryStats::getCount(object obj,long userid, action op,
-		     ptime &start, ptime &end) const
-{    
-    std::string sql;
-    if (op == QueryStats::changesets) {
-	sql = "SELECT COUNT(changeset_id) FROM ways WHERE tags->'";
-    } else if (op == QueryStats::totals) {
-	sql = "SELECT COUNT(id) FROM ways WHERE tags->'";
-    }
-    sql += keywords[obj] + "' is not NULL";
-
-    if (userid > 0) {
-	sql += " AND user_id=" + std::to_string(userid);
-    }
-    sql += " AND tstamp>='" + to_simple_string(start) + "'";
-	
-    std::cout << "QUERY: " << sql << std::endl;
-    pqxx::result result = worker->exec(sql);
-    pqxx::result::const_iterator it;
-
-    long total = std::stol(pqxx::to_string(result[0][0]));
-    
-    return total;
-}
-
-// Tasking Manager Classes
-QueryTM::QueryTM(void)
-{
-
-}
-
-// Tasking Manager Classes
-QueryTM::~QueryTM(void)
-{
-
-}
-
-std::shared_ptr<std::vector<long>>
-QueryTM::getProjects(long userid)
-{
-    auto projects =  std::make_shared<std::vector<long>>();
-
-    std::string sql = "SELECT id FROM projects";
-    if (userid > 0) {
-	sql += " WHERE author_id=" + std::to_string(userid);
-    }
-    std::cout << "QUERY: " << sql << std::endl;
-    pqxx::result result = worker->exec(sql);
-    std::cout << "SIZE: " << result.size() <<std::endl;
-    
-    pqxx::result::const_iterator it;
-    for (it = result.begin(); it != result.end(); ++it) {
-	std::string id = pqxx::to_string(it[0]);
-	if (!id.empty()) {
-	    projects->push_back(std::stol(id));
-	}
-    }    
-    return projects;
-}
-
-std::shared_ptr<std::vector<long>>
-QueryTM::getUserTasks(long projectid, long userid)
-{
-    auto tasks =  std::make_shared<std::vector<long>>();
-
-    std::string sql = "SELECT id FROM task_history";
-    sql += " WHERE user_id=" + std::to_string(userid);
-    sql += " AND project_id='" + std::to_string(projectid) + "';";
-
-    std::cout << "QUERY: " << sql << std::endl;
-    pqxx::result result = worker->exec(sql);
-    std::cout << "SIZE: " << result.size() <<std::endl;
-    
-    pqxx::result::const_iterator it;
-    for (it = result.begin(); it != result.end(); ++it) {
-	std::string id = pqxx::to_string(it[0]);
-	if (!id.empty()) {
-	    tasks->push_back(std::stol(id));
-	}
-    }
-    
-    return tasks;
-}
-
-int
-QueryTM::getTasksMapped(long userid)
-{
-    std::string sql = "SELECT tasks_mapped FROM users";
-    sql += " WHERE id=" + std::to_string(userid);
-
-    std::cout << "QUERY: " << sql << std::endl;
-    pqxx::result result = worker->exec(sql);
-
-    int total = std::stoi(pqxx::to_string(result[0][0]));
-
-    return total;
-}
-
-int
-QueryTM::getTasksValidated(long userid)
-{
-    std::string sql = "SELECT tasks_validated FROM users";
-    sql += " WHERE id=" + std::to_string(userid);
-
-    std::cout << "QUERY: " << sql << std::endl;
-    pqxx::result result = worker->exec(sql);
-
-    int total = std::stoi(pqxx::to_string(result[0][0]));
-
-    return total;
-}
-
-std::shared_ptr<std::vector<int>>
-QueryTM::getUserTeams(long userid)
-{
-    auto teams =  std::make_shared<std::vector<int>>();
-
-    std::string sql = "SELECT team_id FROM team_members";
-    sql += " WHERE user_id=" + std::to_string(userid);
-
-    std::cout << "QUERY: " << sql << std::endl;
-    pqxx::result result = worker->exec(sql);
-
-    pqxx::result::const_iterator it;
-    for (it = result.begin(); it != result.end(); ++it) {
-	std::string id = pqxx::to_string(it[0]);
-	if (!id.empty()) {
-	    teams->push_back(std::stol(id));
-	}
-    }
-
-    return teams;
-}
-
-// Tasking Manager Classes
-QueryTMAPI::QueryTMAPI(void)
-{
-
-}
-QueryTMAPI::~QueryTMAPI(void)
-{
-
-}
-
-//
-// BuildOSM methods
-//
-int
-BuildOSM::getWayNodes(long way_id)
-{
-    // std::string query = "SELECT * FROM XXXX";
-    return 3;
-}
-
-} // EOF apidb namespace
+};      // EOF hotosm namespace
 #endif  // EOF __HOTOSM_H__
+
 // Local Variables:
 // mode: C++
 // indent-tabs-mode: t
 // End:
-

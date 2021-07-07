@@ -42,125 +42,47 @@
 #include <memory>
 #include <iostream>
 
-#include <pqxx/pqxx>
-#include <osmium/osm/timestamp.hpp>
-#include <osmium/osm/location.hpp>
-#include <osmium/osm/node.hpp>
-#include <osmium/osm/node_ref.hpp>
-#include <osmium/osm/node_ref_list.hpp>
-#include <osmium/osm/way.hpp>
-#include <osmium/osm/relation.hpp>
-
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
-#include "hottm.hh"
+#include "validate.hh"
 
-namespace apidb {
+namespace hotosm {
 
-enum mapformats { gpkg, shp, pbf, img, obf, mbtiles, mapsme };
+using namespace validate;
 
-// This manages the connection to to either an OSM database or the
-// tasking manager.
-class QueryDB
+class BOOST_SYMBOL_VISIBLE Hotosm
 {
-  public:
-    enum object { building, waterway, highway,
-        education, emergency, financial, government,
-        humanitarian, landuse, natural, power,
-        sport, transportation, water, language, all };
-    enum action { changesets, added, modified, deleted, totals };
-    
-    // QueryDB(const std::string &database);
-    QueryDB(void);
-    ~QueryDB(void);
+public:
+  Hotosm(void) {};
 
-    pqxx::result query(std::string &select);
-    bool connect(std::string &database);
-    pqxx::connection *db;
-    pqxx::work *worker;
-protected:
-    std::array<std::string, 16> keywords;
+  ~Hotosm(void) {};
+  Hotosm(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes);
+
+  /// Check a POI for tags. A node that is part of a way shouldn't have any
+  /// tags, this is to check actual POIs, like a school.
+  bool checkPOI(osmobjects::OsmNode *node);
+
+  /// This checks a way. A way should always have some tags. Often a polygon
+  /// is a building 
+  bool checkWay(osmobjects::OsmWay *way);
+
+  bool checkTag(const std::string &key, const std::string &value);
+
+private:
+    std::vector<long> buildings;       ///< 
+    std::vector<long> node_errors;     ///< 
+    std::vector<long> way_errors;      ///< 
+    std::vector<long> relation_errors; ///< 
 };
 
-// This talks to an OSM database using the 'apidb' schema,
-// which contains the history of changes.
-class QueryChanges : public QueryDB
-{
-  public:
-    QueryChanges(void);
-    ~QueryChanges(void);
+} // EOF hotosm namespace
 
-    long getCount(object obj, long userid, action op,
-                  ptime &start, ptime &end) const;
-};
-
-// This talks to an OSM database using the 'pgsnapshot' schema
-// with the optional linestring extension.
-class QueryStats : public QueryDB
-{
-  public:    
-    QueryStats(void);
-    ~QueryStats(void);
-
-    // Get counts of various things, like buildings, and optionally
-    // filter by user id, timestamps, or within a polygon.
-    long getCount(object foo, long userid, action op,
-                  ptime &start, ptime &end /*, polygon */
-        ) const;
-    long getLength(object obj, long userid, ptime &start, ptime &end);
-    ptime &lastUpdate(long userid, ptime &last);
-};
-
-// Query a tasking manager database via postgres for statistics
-class QueryTM : public QueryDB
-{
-  public:
-    QueryTM(void);
-    ~QueryTM(void);
-
-    std::shared_ptr<std::vector<long>> getProjects(long userid);
-    // std::shared_ptr<std::vector<long>> getUsers(long projectid)
-    // getUserStats(long projectid)
-    std::shared_ptr<std::vector<long>> getUserTasks(long projectid, long userid);
-    std::shared_ptr<std::vector<int>> getUserTeams(long userid);
-    std::shared_ptr<tmdb::TMTeam> getTeam(long userid);
-
-    int getTasksMapped(long userid);
-    int getTasksValidated(long userid);
-    
-    // lastUpdated
-    // ptime &dataRegistered
-};
-
-// Query a tasking manager database via the REST API for statistics
-class QueryTMAPI
-{
-  public:
-    QueryTMAPI(void);
-    ~QueryTMAPI(void);
-
-    // std::array &getProjects(long userid) const;
-    // getUsers(long projectid)
-    // getUserStats(long projectid)
-    // getUserTasks(long projectid)
-    // lastUpdated
-    // dataRegistered
-};
-
-class BuildOSM : public QueryDB
-{
-  public:
-    BuildOSM(void) {} ;
-    ~BuildOSM(void) {} ;
-
-    // FIXME: just for debugging
-    int getWayNodes(long way_id);
-    osmium::Node& getNode(int id);
-};
-
-
-} // EOF apidb namespace
 #endif  // EOF __HOTOSM_HH__
+
+// Local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

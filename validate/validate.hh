@@ -89,34 +89,35 @@ typedef enum {notags, isbuilding } errortype_t;
 class BOOST_SYMBOL_VISIBLE Validate
 {
 public:
-    Validate(void) {};
-    Validate(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes);
+  Validate(void) {};
+  virtual ~Validate(void) {};
+  Validate(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes) {};
 
-    /// Check a POI for tags. A node that is part of a way shouldn't have any
-    /// tags, this is to check actual POIs, like a school.
-    virtual bool checkPOI(osmobjects::OsmNode *node);
+  /// Check a POI for tags. A node that is part of a way shouldn't have any
+  /// tags, this is to check actual POIs, like a school.
+  virtual bool checkPOI(osmobjects::OsmNode *node);
 
-    /// This checks a way. A way should always have some tags. Often a polygon
-    /// is a building 
-    virtual bool checkWay(osmobjects::OsmWay *way);
+  /// This checks a way. A way should always have some tags. Often a polygon
+  /// is a building 
+  virtual bool checkWay(osmobjects::OsmWay *way);
 
-    virtual bool checkTags (std::map<std::string, std::string> tags) {
-        bool result;
-        for (auto it = std::begin(tags); it != std::end(tags); ++it) {
-            result = checkTag(it->first, it->second);
-        }
-        return result;
-    };
+  virtual bool checkTags (std::map<std::string, std::string> tags) {
+      bool result;
+      for (auto it = std::begin(tags); it != std::end(tags); ++it) {
+          result = checkTag(it->first, it->second);
+      }
+      return result;
+  };
 
-    virtual bool checkTag(const std::string &key, const std::string &value);
+  virtual bool checkTag(const std::string &key, const std::string &value);
 
-private:
-    std::vector<long> buildings;       ///< 
-    std::vector<long> node_errors;     ///< 
-    std::vector<long> way_errors;      ///< 
-    std::vector<long> relation_errors; ///< 
 };
 
 } // EOF validate namespace
 
 #endif  // EOF __VALIDATE_HH__
+
+// Local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:
