@@ -40,7 +40,7 @@ MAINTAINERCLEANFILES = revno.h .lastmod
 
 SUBDIRS = testsuite
 
-lib_LTLIBRARIES = libhotosm.la
+lib_LTLIBRARIES = libunderpass.la
 instdir = /tmp
 
 BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
@@ -60,11 +60,12 @@ SQL_FILES = \
 	data/geoboundaries.sql
 
 # inst_HEADERS = hotosm.hh hottm.hh
-libhotosm_la_SOURCES = \
+libunderpass_la_SOURCES = \
 	timer.hh \
 	log.cc log.hh \
 	dsodefs.hh gettest.h \
-	validate/hotosm.cc hotosm.hh \
+	validate/hotosm.cc validate/hotosm.hh \
+	validate/validate.hh \
 	hottm.cc hottm.hh \
 	hottm/tmusers.cc hottm/tmusers.hh \
 	hottm/tmteams.cc hottm/tmteams.hh \
@@ -77,14 +78,13 @@ libhotosm_la_SOURCES = \
 	data/pgsnapshot.cc data/pgsnapshot.hh\
 	data/import.cc data/import.hh \
 	data/osmobjects.cc data/osmobjects.hh \
-	validate/validate.cc validate/validate.hh \
 	data/threads.cc data/threads.hh \
 	data/underpass.cc data/underpass.hh
-libhotosm_la_LDFLAGS = -avoid-version
+libunderpass_la_LDFLAGS = -avoid-version
 
 bin_PROGRAMS = replicator
 replicator_SOURCES = replicator.cc
-replicator_LDADD = libhotosm.la $(BOOST_LIBS)
+replicator_LDADD = libunderpass.la $(BOOST_LIBS)
 
 AM_CXXFLAGS = -DPKGLIBDIR=\"$(pkglibdir)\" -DSRCDIR=\"$(srcdir)\"
 
