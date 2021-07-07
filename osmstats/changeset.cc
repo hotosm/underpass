@@ -76,7 +76,6 @@ using namespace boost::gregorian;
 #include <boost/property_tree/ptree.hpp>
 #include<boost/tokenizer.hpp>
 
-#include "hotosm.hh"
 #include "osmstats/osmstats.hh"
 #include "osmstats/changeset.hh"
 

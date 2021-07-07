@@ -65,7 +65,6 @@ using namespace boost::gregorian;
 // using boost::multi_index_container;
 // using namespace boost::multi_index;
 
-#include "hotosm.hh"
 #include "timer.hh"
 #include "osmstats/osmchange.hh"
 #include "data/osmobjects.hh"

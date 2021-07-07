@@ -64,7 +64,6 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "timer.hh"
-#include "hotosm.hh"
 #include "osmstats/osmstats.hh"
 #include "data/osmobjects.hh"
 

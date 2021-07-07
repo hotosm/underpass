@@ -56,8 +56,6 @@ using namespace boost::gregorian;
 #include "data/osmobjects.hh"
 #include "data/underpass.hh"
 
-using namespace apidb;
-
 #include "log.hh"
 using namespace logger;
 
@@ -371,7 +369,7 @@ QueryOSMStats::populate(void)
 {
     // Get the country ID from the raw_countries table
     std::string query = "SELECT id,name,code FROM raw_countries;";
-    pqxx::work worker(*db);
+    pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     for (auto it = std::begin(result); it != std::end(result); ++it) {
         RawCountry rc(it);
@@ -381,7 +379,7 @@ QueryOSMStats::populate(void)
     };
 
     query = "SELECT id,name FROM users;";
-    pqxx::work worker2(*db);
+    pqxx::work worker2(*sdb);
     result = worker2.exec(query);
     for (auto it = std::begin(result); it != std::end(result); ++it) {
         RawUser ru(it);
@@ -417,7 +415,7 @@ QueryOSMStats::populate(void)
 bool
 QueryOSMStats::getRawChangeSets(std::vector<long> &changeset_ids)
 {
-    pqxx::work worker(*db);
+    pqxx::work worker(*sdb);
     std::string sql = "SELECT id,road_km_added,road_km_modified,waterway_km_added,waterway_km_modified,roads_added,roads_modified,waterways_added,waterways_modified,buildings_added,buildings_modified,pois_added,pois_modified,editor,user_id,created_at,closed_at,verified,augmented_diffs,updated_at FROM changesets WHERE id=ANY(ARRAY[";
     // Build an array string of the IDs
     for (auto it = std::begin(changeset_ids); it != std::end(changeset_ids); ++it) {

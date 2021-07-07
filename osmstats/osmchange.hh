@@ -52,7 +52,6 @@ using namespace boost::gregorian;
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 #include <boost/progress.hpp>
 
-#include "hotosm.hh"
 #include "data/osmobjects.hh"
 #include "osmstats/osmchange.hh"
 
