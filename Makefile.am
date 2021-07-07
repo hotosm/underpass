@@ -65,7 +65,7 @@ libunderpass_la_SOURCES = \
 	log.cc log.hh \
 	dsodefs.hh gettest.h \
 	validate/hotosm.cc validate/hotosm.hh \
-	validate/validate.hh \
+	validate/validate.cc validate/validate.hh \
 	hottm.cc hottm.hh \
 	hottm/tmusers.cc hottm/tmusers.hh \
 	hottm/tmteams.cc hottm/tmteams.hh \
