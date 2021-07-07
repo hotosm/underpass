@@ -54,7 +54,6 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
-#include "hotosm.hh"
 #include "osmstats/osmstats.hh"
 #include "osmstats/changeset.hh"
 #include "data/geoutil.hh"

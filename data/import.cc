@@ -55,7 +55,6 @@ using namespace boost::gregorian;
 #include <boost/geometry/geometries/polygon.hpp>
 #include <boost/geometry/geometries/geometries.hpp>
 
-#include "hotosm.hh"
 #include "data/pgsnapshot.hh"
 #include "data/import.hh"
 #include "osmstats/changeset.hh"
