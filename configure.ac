@@ -272,6 +272,7 @@ AC_SUBST(PCH_FLAGS)
 
 AM_GNU_GETTEXT([external])
 AM_CONDITIONAL([HAS_GETTEXT], [test x"$gt_use_preinstalled_gnugettext" != x"no"])
+AC_SUBST([POMAKEFILEDEPS])
 
 AC_CONFIG_FILES([
 validate/Makefile
