@@ -31,8 +31,10 @@ AUTOMAKE_OPTIONS = -Wno-portability
 
 POFILES = AUTO
 
-# translations = cs da de en_GB es fi fr it ja el km nb ne ru zh_CN zh_TW
-translations = de fr
+# Same list as Tasking manager
+ translations = bn de fa_IR gl it lt nl_NL pt sl vi cs en fi hu ja mg pl ru ta  zh_TW
+
+# translations = de fr
 
 # This is GNU make specific, so if you are building on a BSD
 # machine, you probably want to install GNU make in additional to
