@@ -215,7 +215,7 @@ resource "aws_db_instance" "underpass" {
   allocated_storage         = 100
   max_allocated_storage     = 1000 # Storage auto-scaling
   engine                    = "postgres"
-  engine_version            = "12.5"
+  engine_version            = "12.7"
   instance_class            = var.db_instance_type
   name                      = "underpass"
   username                  = "mineworker"
