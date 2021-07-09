@@ -292,7 +292,7 @@ public:
     Replication(long seq) { sequence = seq; };
 
     /// parse a replication file containing changesets
-    bool readChanges(const std::string &file);
+    bool readChanges(const std::string &file, osmstats::QueryOSMStats &ostats);
 
     /// Add this replication data to the changeset database
     bool mergeToDB();

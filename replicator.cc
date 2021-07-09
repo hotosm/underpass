@@ -181,6 +181,7 @@ main(int argc, char *argv[])
     ptime starttime(not_a_date_time);
     ptime endtime(not_a_date_time);
     std::string url;
+    std::string dburl = "localhost";
     // std::string pserver = "https://download.openstreetmap.fr";
     // std::string pserver = "https://planet.openstreetmap.org";
     std::string pserver = "https://planet.maps.mail.ru";
@@ -194,8 +195,8 @@ main(int argc, char *argv[])
         opts::options_description desc("Allowed options");
         desc.add_options()
             ("help,h", "display help")
-            ("server,s", "database server (defaults to localhost)")
-            ("planet,p", "replication server (defaults to planet.openstreetmap.org)")
+            ("server,s", opts::value<std::string>(), "database server (defaults to localhost)")
+            ("planet,p", opts::value<std::string>(), "replication server (defaults to planet.openstreetmap.org)")
             ("url,u", opts::value<std::string>(), "Starting URL (ex. 000/075/000)")
             ("monitor,m", "Starting monitor")
             ("frequency,f", opts::value<std::string>(), "Update frequency (hour, daily), default minute)")
@@ -235,6 +236,12 @@ main(int argc, char *argv[])
      if (vm.count("debug")) {
          dbglogfile.setVerbosity();
      }     
+
+     if (vm.count("server")) {
+         dburl = vm["server"].as<std::string>();
+         //osmstats::QueryOSMStats ostats;
+         //ostats.connect(dburl);
+     }
 
      geoutil::GeoUtil geou;
      std::string priority = SRCDIR;
@@ -293,8 +300,8 @@ main(int argc, char *argv[])
          }
      }
 
-     osmstats::QueryOSMStats ostats;
-     ostats.connect();
+     // osmstats::QueryOSMStats ostats;
+     // ostats.connect();
      underpass::Underpass under;
      under.connect();
      replication::Planet planet(remote);
@@ -320,7 +327,8 @@ main(int argc, char *argv[])
          if (!url.empty()) {
              last = url;
              // remote.dump();
-             mthread = std::thread(threads::startMonitor, std::ref(remote), std::ref(geou.boundary));
+             mthread = std::thread(threads::startMonitor, std::ref(remote),
+                                   std::ref(geou.boundary), std::ref(dburl));
              auto state = under.getState(frequency, url);
              state->dump();
              if (state->path.empty()) {
@@ -343,7 +351,8 @@ main(int argc, char *argv[])
              clast = pserver + "/" + datadir + "changesets/" + state2->path;
              remote.parse(clast);
              // remote.dump();
-             cthread = std::thread(threads::startMonitor, std::ref(remote), std::ref(geou.boundary));
+             cthread = std::thread(threads::startMonitor, std::ref(remote),
+                                   std::ref(geou.boundary), std::ref(dburl));
          } else if (!starttime.is_not_a_date_time()) {
              // No URL, use the timestamp
              auto state = under.getState(frequency, starttime);
