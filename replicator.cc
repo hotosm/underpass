@@ -205,6 +205,7 @@ main(int argc, char *argv[])
             ("boundary,b", opts::value<std::string>(), "Boundary polygon file name")
             ("datadir,i", opts::value<std::string>(), "Base directory for cached files")
             ("verbose,v", "enable verbosity")
+            ("changefile,c", opts::value<std::string>(), "Import change file")
             ("debug,d", "enable debug messages for developers")
             ;
         
@@ -239,9 +240,9 @@ main(int argc, char *argv[])
 
      if (vm.count("server")) {
          dburl = vm["server"].as<std::string>();
-         //osmstats::QueryOSMStats ostats;
-         //ostats.connect(dburl);
      }
+     //osmstats::QueryOSMStats ostats;
+     //ostats.connect(dburl);
 
      geoutil::GeoUtil geou;
      std::string priority = SRCDIR;
@@ -255,6 +256,15 @@ main(int argc, char *argv[])
      }
      
      Replicator replicator;
+     if (vm.count("changefile")) {
+         osmstats::QueryOSMStats ostats;
+         ostats.connect(dburl);
+         std::string file = vm["changefile"].as<std::string>();
+         std::cout << "Importing change file " << file << std::endl;
+         replicator.readChanges(file, ostats);
+         exit(0);
+     }
+
      // replicator.initializeData();
      std::vector<std::string> rawfile;
      std::shared_ptr<std::vector<unsigned char>> data;
