@@ -208,7 +208,7 @@ resource "aws_instance" "file-processor" {
     throughput  = 125
   }
 
-  iam_instance_profile = aws_iam_instance_profile.underpass.arn
+  iam_instance_profile = aws_iam_instance_profile.underpass.name
   key_name             = var.ssh_key_pair_name
 
   tags = {
