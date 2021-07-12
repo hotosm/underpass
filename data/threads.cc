@@ -337,6 +337,9 @@ threadOsmChange(const replication::RemoteURL &remote,
     // These stats are for the entire file
     auto stats = osmchanges.collectStats(poly);
     for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
+	if (it->second->added.size() == 0 && it->second->modified.size() == 0) {
+	    continue;
+	}
         it->second->dump();
         ostats.applyChange(*it->second);
     }
@@ -415,6 +418,11 @@ threadChangeSet(const replication::RemoteURL &remote,
             // return false;
         }
     }
+    // Apply the changes to the database
+    for (auto it = std::begin(changeset.changes); it != std::end(changeset.changes); ++it) {
+        ostats.applyChange(*it);
+    }
+    changeset.dump();
 
     // Create a stubbed state file to update the underpass database with more
     // accurate timestamps, also used if there is no state.txt file.
