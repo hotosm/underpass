@@ -195,7 +195,7 @@ class QueryOSMStats : public apidb::QueryStats
     QueryOSMStats(void);
     QueryOSMStats(const std::string &dbname);
     /// close the database connection
-    ~QueryOSMStats(void) { disconnect(); };
+    ~QueryOSMStats(void) { if (sdb) disconnect(); };
     void disconnect(void) { sdb->close(); };
 
     bool readGeoBoundaries(const std::string &rawfile) {
@@ -204,7 +204,7 @@ class QueryOSMStats : public apidb::QueryStats
 
     /// Connect to the database
     bool connect(void);
-    bool connect(const std::string &database);
+    bool connect(const std::string &dburl);
 
     /// Populate internal storage of a few heavily used data, namely
     /// the indexes for each user, country, or hashtag.
