@@ -27,3 +27,7 @@ variable "subnet_count" {
   type    = number
   default = 4
 }
+
+variable "ssh_key_pair_name" {
+  type    = string
+}

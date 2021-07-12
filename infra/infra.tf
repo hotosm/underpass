@@ -147,18 +147,15 @@ data "aws_ami" "debian_bullseye" {
   owners = ["903794441882"] # Debian
 }
 
-/** TODO
-* Needs to access S3 bucket
-* Needs to be behind public ALB?
-* Needs to have public IP if no ALB and export it.
-* Add SSH Key
-*
-resource "aws_instance" "application" {
-  ami           = data.aws_ami.ubuntu.id
+resource "aws_launch_configuration" "processor_conf" {
+  name_prefix   = "underpass-changeset-processor-"
+  image_id      = data.aws_ami.ubuntu.id
   instance_type = var.app_instance_type
 
-  subnet_id              = aws_subnet.public[2].id
-  vpc_security_group_ids = [aws_security_group.app.id]
+  iam_instance_profile        = aws_iam_instance_profile.underpass.arn
+  key_name                    = var.ssh_key_pair_name
+  security_groups             = [aws_security_group.app.id]
+  associate_public_ip_address = false # TODO: Review
 
   root_block_device {
     volume_size = 10
@@ -166,16 +163,58 @@ resource "aws_instance" "application" {
 
   ebs_block_device {
     device_name = "/dev/sdb"
+    volume_size = 100
+    volume_type = "gp3"
+    throughput  = 125
+  }
+
+}
+
+resource "aws_autoscaling_group" "changefile_processor" {
+  name_prefix          = "underpass-changeset-processor-"
+  launch_configuration = aws_launch_configuration.processor_conf.name
+  min_size             = 1
+  max_size             = 2
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+/** TODO
+* Needs to access S3 bucket
+* Needs to be behind public ALB?
+* Put this in an auto-scaling group
+*/
+resource "aws_instance" "file-processor" {
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = var.app_instance_type
+
+  subnet_id              = aws_subnet.private[2].id
+  vpc_security_group_ids = [aws_security_group.app.id]
+
+  root_block_device {
     volume_size = 10
+    volume_type = "gp3"
+    throughput  = 125
+  }
+
+  ebs_block_device {
+    device_name = "/dev/sdb"
+    volume_size = 100
+    volume_type = "gp3"
+    throughput  = 125
   }
 
   iam_instance_profile = aws_iam_instance_profile.underpass.arn
+  key_name             = var.ssh_key_pair_name
 
   tags = {
     Name = "underpass-application"
   }
 }
 
+/*
 resource "aws_eip" "underpass" {
   instance = aws_instance.application.id
   vpc      = true
@@ -197,14 +236,18 @@ resource "aws_instance" "api" {
 
   root_block_device {
     volume_size = 10
+    volume_type = "gp3"
+    throughput  = 125
   }
 
   ebs_block_device {
     device_name = "/dev/sdb"
-    volume_size = 10
+    volume_size = 100
+    volume_type = "gp3"
+    throughput  = 125
   }
 
-  #  iam_instance_profile = aws_iam_instance_profile.underpass.arn
+  iam_instance_profile = aws_iam_instance_profile.underpass.arn
 
   tags = {
     Name = "underpass-api"
