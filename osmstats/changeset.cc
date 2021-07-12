@@ -338,14 +338,7 @@ ChangeSetFile::readXML(std::istream &xml)
 void
 ChangeSetFile::on_end_element(const Glib::ustring& name)
 {
-    log_debug(_("Element \'%1%\' ending"), name);
-    // if (name == "changeset") {
-    //     // FIXME: it'd be better to not redo the database connection
-    //     //for every changeset
-    //     osmstats::QueryOSMStats ostats;
-    //     ostats.connect();
-    //     ostats.applyChange(changes.back());
-    // }
+    // log_debug(_("Element \'%1%\' ending"), name);
 }
 
 void
