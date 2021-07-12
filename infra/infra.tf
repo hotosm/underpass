@@ -152,7 +152,7 @@ resource "aws_launch_configuration" "processor_conf" {
   image_id      = data.aws_ami.ubuntu.id
   instance_type = var.app_instance_type
 
-  iam_instance_profile        = aws_iam_instance_profile.underpass.arn
+  iam_instance_profile        = aws_iam_instance_profile.underpass.name
   key_name                    = var.ssh_key_pair_name
   security_groups             = [aws_security_group.app.id]
   associate_public_ip_address = false # TODO: Review
@@ -175,6 +175,8 @@ resource "aws_autoscaling_group" "changefile_processor" {
   launch_configuration = aws_launch_configuration.processor_conf.name
   min_size             = 1
   max_size             = 2
+
+  vpc_zone_identifier = aws_subnet.private[*].id
 
   lifecycle {
     create_before_destroy = true
@@ -247,7 +249,7 @@ resource "aws_instance" "api" {
     throughput  = 125
   }
 
-  iam_instance_profile = aws_iam_instance_profile.underpass.arn
+  iam_instance_profile = aws_iam_instance_profile.underpass.name
 
   tags = {
     Name = "underpass-api"

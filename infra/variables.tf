@@ -29,5 +29,5 @@ variable "subnet_count" {
 }
 
 variable "ssh_key_pair_name" {
-  type    = string
+  type = string
 }
