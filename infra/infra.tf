@@ -172,7 +172,7 @@ data "aws_ami" "debian_bullseye_arm" {
 * Needs to access S3 bucket
 */
 resource "aws_instance" "file-processor" {
-  ami           = data.aws_ami.debian_bullseye_arm.id
+  ami           = data.aws_ami.debian_bullseye.id
   instance_type = var.app_instance_type
 
   subnet_id              = aws_subnet.private[2].id
@@ -235,6 +235,7 @@ resource "aws_instance" "api" {
   }
 
   iam_instance_profile = aws_iam_instance_profile.underpass.name
+  key_name             = var.ssh_key_pair_name
 
   tags = {
     Name = "underpass-api"

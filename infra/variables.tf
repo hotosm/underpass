@@ -11,7 +11,7 @@ variable "vpc_cidr" {
 // Memory optimized with at least 8GB
 variable "app_instance_type" {
   type    = string
-  default = "r6g.medium"
+  default = "r5a.large"
 }
 
 variable "api_instance_type" {
