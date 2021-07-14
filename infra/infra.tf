@@ -146,6 +146,28 @@ data "aws_ami" "debian_bullseye" {
   owners = ["903794441882"] # Debian
 }
 
+data "aws_ami" "debian_bullseye_arm" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["debian-11-arm64-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["arm64"] # or x86_64
+  }
+
+  owners = ["903794441882"] # Debian
+}
+
+
 /** TODO
 * Needs to access S3 bucket
 */
