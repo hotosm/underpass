@@ -3,7 +3,6 @@
 # Cloudwatch monitoring
 # Cloudwatch Alarms
 # Load Balancer?
-# Secrets Manager entry
 
 resource "aws_iam_instance_profile" "underpass" {
   name = "underpass_instance_profile"
@@ -147,49 +146,11 @@ data "aws_ami" "debian_bullseye" {
   owners = ["903794441882"] # Debian
 }
 
-resource "aws_launch_configuration" "processor_conf" {
-  name_prefix   = "underpass-changeset-processor-"
-  image_id      = data.aws_ami.ubuntu.id
-  instance_type = var.app_instance_type
-
-  iam_instance_profile        = aws_iam_instance_profile.underpass.name
-  key_name                    = var.ssh_key_pair_name
-  security_groups             = [aws_security_group.app.id]
-  associate_public_ip_address = false # TODO: Review
-
-  root_block_device {
-    volume_size = 10
-  }
-
-  ebs_block_device {
-    device_name = "/dev/sdb"
-    volume_size = 100
-    volume_type = "gp3"
-    throughput  = 125
-  }
-
-}
-
-resource "aws_autoscaling_group" "changefile_processor" {
-  name_prefix          = "underpass-changeset-processor-"
-  launch_configuration = aws_launch_configuration.processor_conf.name
-  min_size             = 1
-  max_size             = 2
-
-  vpc_zone_identifier = aws_subnet.private[*].id
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
 /** TODO
 * Needs to access S3 bucket
-* Needs to be behind public ALB?
-* Put this in an auto-scaling group
 */
 resource "aws_instance" "file-processor" {
-  ami           = data.aws_ami.ubuntu.id
+  ami           = data.aws_ami.debian_bullseye.id
   instance_type = var.app_instance_type
 
   subnet_id              = aws_subnet.private[2].id
@@ -212,8 +173,10 @@ resource "aws_instance" "file-processor" {
   key_name             = var.ssh_key_pair_name
 
   tags = {
-    Name = "underpass-application"
+    Name = "underpass-processor-${count.index}"
   }
+
+  count = 2
 }
 
 /*
@@ -256,6 +219,46 @@ resource "aws_instance" "api" {
   }
 }
 
+resource "random_password" "underpass_database_password_string" {
+  length  = 32
+  special = false
+  number  = true
+  lower   = true
+  upper   = true
+
+  keepers = {
+    # Generate new id each time we switch to a new ami_id
+    ## ami_id = var.ami_id
+  }
+}
+
+resource "aws_secretsmanager_secret" "underpass_database_credentials" {
+  name = "underpass-db"
+}
+resource "aws_secretsmanager_secret_version" "underpass_database_credentials" {
+  secret_id = aws_secretsmanager_secret.underpass_database_credentials.id
+  secret_string = jsonencode(zipmap(
+    [
+      "dbinstanceidentifier",
+      "dbname",
+      "engine",
+      "host",
+      "port",
+      "username",
+      "password",
+    ],
+    [
+      aws_db_instance.underpass.id,
+      aws_db_instance.underpass.name,
+      aws_db_instance.underpass.engine,
+      aws_db_instance.underpass.address,
+      aws_db_instance.underpass.port,
+      aws_db_instance.underpass.username,
+      random_password.underpass_database_password_string.result,
+    ]
+  ))
+}
+
 resource "aws_db_instance" "underpass" {
   allocated_storage         = 100
   max_allocated_storage     = 1000 # Storage auto-scaling
@@ -264,7 +267,7 @@ resource "aws_db_instance" "underpass" {
   instance_class            = var.db_instance_type
   name                      = "underpass"
   username                  = "mineworker"
-  password                  = "shovelANDhammer"
+  password                  = random_password.underpass_database_password_string.result
   skip_final_snapshot       = true
   final_snapshot_identifier = "bye-underpass"
 }
@@ -287,14 +290,14 @@ resource "aws_route53_record" "underpass" {
 * Figure out Lifecycle rules
 * Figure out ACL and perms
 *
+*/
 resource "aws_s3_bucket" "underpass" {
   bucket_prefix = "underpass"
   acl           = "private"
 
   tags = {
-    name = "something"
+    name = "underpass"
   }
 
 }
-*/
 
