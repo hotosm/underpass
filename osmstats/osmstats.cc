@@ -303,7 +303,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
         query += ", \'{ ";
         for (auto it = std::begin(change.hashtags); it != std::end(change.hashtags); ++it) {
             boost::algorithm::replace_all(*it, "\"", "&quot;");
-            query += "\"" + *it + "\"" + ", ";
+            query += "\"" + *sdb->esc(*it) + "\"" + ", ";
         }
         // drop the last comma
         query.erase(query.size() - 2);
