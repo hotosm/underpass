@@ -93,6 +93,7 @@ pkgdata_DATA = $(SQL_FILES) data/priority.geojson
 EXTRA_DIST = \
 	$(SQL_FILES) \
 	data/priority.geojson \
+	po \
 	doc \
 	debian \
 	redhat
