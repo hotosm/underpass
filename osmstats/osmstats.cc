@@ -212,15 +212,16 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
     std::string aquery;
     if (ahstore.size() > 0) {
 	if (change.added.size() > 0) {
-	    aquery = "INSERT INTO changesets (id, user_id, updated_at, added)";
+	    aquery = "INSERT INTO changesets (id, user_id, closed_at, updated_at, added)";
 	} else if (change.modified.size() > 0) {
-	    aquery = "INSERT INTO changesets (id, user_id, updated_at, modified)";
+	    aquery = "INSERT INTO changesets (id, user_id, closed_at, updated_at, modified)";
 	}
     } else {
 	aquery = "INSERT INTO changesets (id, user_id, updated_at)";
     }
     aquery += " VALUES(" + std::to_string(change.change_id) + ", ";
     aquery += std::to_string(change.user_id) + ", ";
+    aquery += "\'" + to_simple_string(change.closed_at) + "\', ";
     aquery += "\'" + to_simple_string(now) + "\', ";
     if (ahstore.size() > 0) {
 	if (change.added.size() > 0) {
@@ -233,6 +234,7 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
 	aquery += ") ON CONFLICT (id) DO UPDATE SET";
     }
     
+    aquery += " closed_at = \'" + to_simple_string(change.closed_at) + "\',";
     aquery += " updated_at = \'" + to_simple_string(now) + "\'";
     aquery += " WHERE changesets.id=" + std::to_string(change.change_id);
 
@@ -280,11 +282,6 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     // osmstats=# UPDATE raw_changesets SET road_km_added = (SELECT road_km_added + 10.0 FROM raw_changesets WHERE road_km_added>0 AND user_id=649260 LIMIT 1) WHERE user_id=649260;
 
     query = "INSERT INTO changesets (id, editor, user_id, created_at";
-    // if (change.open) {
-    //     query = "INSERT INTO changesets (id, editor, user_id, created_at";
-    // } else {
-    //     query = "INSERT INTO changesets (id, editor, user_id, created_at, closed_at";
-    // }
     if (change.hashtags.size() > 0) {
         query += ", hashtags ";        
     }
@@ -392,7 +389,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     // 	query += "\', closed_at=\'" + to_simple_string(change.closed_at);
     // }
     query += "\', bbox=" + bbox.substr(2) + ")'))";
-    // log_debug(_("QUERY: %1%"), query);
+    log_debug(_("QUERY: %1%"), query);
     result = worker.exec(query);
 
     // Commit the results to the database
