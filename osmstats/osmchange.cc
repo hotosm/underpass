@@ -443,6 +443,8 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 		ostats->change_id = node->id;
 		ostats->user_id = node->uid;
 		ostats->username = node->user;
+		//ostats->created_at = change->created_at;
+		ostats->closed_at = node->timestamp;
 		(*mstats)[node->change_id] = ostats;
 	    }
 	    auto hits = scanTags(node->tags);
@@ -473,6 +475,8 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 		ostats->change_id = way->id;
 		ostats->user_id = way->uid;
 		ostats->username = way->user;
+		//ostats->created_at = change->created_at;
+		ostats->closed_at = way->timestamp;
 		(*mstats)[way->change_id] = ostats;
 	    }
 	    auto hits = scanTags(way->tags);
@@ -481,14 +485,16 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 		way->dump();
 		if (*hit == "highway" || *hit == "waterway") {
 		    // Get the geometry behind each reference
-		    boost::geometry::model::linestring<sphere_t> line;
+		    boost::geometry::model::linestring<sphere_t> globe;
+		    boost::geometry::model::linestring<point_t> line;
 		    for (auto lit = std::begin(way->refs); lit != std::end(way->refs); ++lit) {
-			line.push_back(sphere_t(nodecache[*lit].get<0>(),
+			globe.push_back(sphere_t(nodecache[*lit].get<0>(),
                                                 nodecache[*lit].get<1>()));
+			boost::geometry::append(line, nodecache[*lit]);
 		    }
 		    // Get the middle point of the linestring on the sphere
-		    long ref = way->refs[way->refs.size()/2];
-		    point_t pt(nodecache[ref].get<0>(), nodecache[ref].get<1>());
+		    point_t pt;
+		    boost::geometry::centroid(line, pt);
 		    if (!boost::geometry::within(pt, poly)) {
 			log_debug(_("Changeset with way %1% is not in a priority area"), way->change_id);
 			continue;
@@ -496,17 +502,13 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 			log_debug(_("Changeset with way %1% is in a priority area"), way->change_id);
 		    }
 		    std::string tag;
-		    if (*hit == "highway" && way->action == osmobjects::create) {
-			tag = "highway_km_added";
-		    } else if (*hit == "highway" && way->action == osmobjects::modify) {
-			tag = "highway_km_modified";
+		    if (*hit == "highway") {
+			tag = "highway_km";
 		    }
-		    if (*hit == "waterway" && way->action == osmobjects::create) {
-			tag = "waterway_km_added";
-		    } else if (*hit == "highway" && way->action == osmobjects::modify) {
-			tag = "waterway_km_modified";
+		    if (*hit == "waterway") {
+			tag = "waterway_km";
 		    }
-		    double length = boost::geometry::length(line,
+		    double length = boost::geometry::length(globe,
                         boost::geometry::strategy::distance::haversine<float>(6371.0)) * 1000;
 		    // log_debug("LENGTH: %1%", std::to_string(length));
 		    if (way->action == osmobjects::create) {
