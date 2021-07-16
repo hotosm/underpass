@@ -94,6 +94,8 @@ public:
     long change_id = 0;             ///< The ID of this change
     long user_id = 0;               ///< The User ID
     std::string username;	    ///< The User Name
+    ptime created_at;               ///< The starting timestamp
+    ptime closed_at;                ///< The finished timestamp
     std::map<std::string, int> added;
     std::map<std::string, int> modified;
     std::map<std::string, int> deleted;
