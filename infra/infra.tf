@@ -172,7 +172,7 @@ data "aws_ami" "debian_bullseye_arm" {
 * Needs to access S3 bucket
 */
 resource "aws_instance" "file-processor" {
-  ami           = data.aws_ami.debian_bullseye.id
+  ami           = data.aws_ami.debian.id
   instance_type = var.app_instance_type
 
   subnet_id              = aws_subnet.private[2].id
