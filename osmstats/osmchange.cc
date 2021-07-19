@@ -413,11 +413,20 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
     auto mstats = std::make_shared<std::map<long, std::shared_ptr<ChangeStats>>>();
     std::shared_ptr<ChangeStats> ostats;
 
-    log_debug(_("Collecting Statistics for: %1%"), changes.size());
+    // log_debug(_("Collecting Statistics for: %1%"), changes.size());
 
-    std::map<long, point_t> nodecache;
+    // std::map<long, point_t> nodecache;
+    if (nodecache.size() > 10000) {
+	std::map<long, point_t>::iterator it;
+	log_debug(_("Truncating node cache"));
+	int i = 0;
+	while (i<1000) {
+	    nodecache.erase(it);
+	    i++;
+	}
+    }
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
-	nodecache.clear();
+	// nodecache.clear();
         OsmChange *change = it->get();
         // change->dump();
         for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
@@ -426,10 +435,10 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 	    nodecache[node->id] = node->point;
 	    // Filter data by polygon
 	    if (!boost::geometry::within(node->point, poly)) {
-		log_debug(_("Changeset with node %1% is not in a priority area"), node->change_id);
+		// log_debug(_("Changeset with node %1% is not in a priority area"), node->change_id);
 		continue;
 	    } else {
-		log_debug(_("Changeset with node %1% is in a priority area"), node->change_id);
+		// log_debug(_("Changeset with node %1% is in a priority area"), node->change_id);
 	    }
 	    // Some older nodes in a way wound up with this one tag, which nobody noticed,
 	    // so ignore it.
@@ -496,7 +505,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 		    point_t pt;
 		    boost::geometry::centroid(line, pt);
 		    if (!boost::geometry::within(pt, poly)) {
-			log_debug(_("Changeset with way %1% is not in a priority area"), way->change_id);
+			// log_debug(_("Changeset with way %1% is not in a priority area"), way->change_id);
 			continue;
 		    } else {
 			log_debug(_("Changeset with way %1% is in a priority area"), way->change_id);
@@ -510,7 +519,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 		    }
 		    double length = boost::geometry::length(globe,
                         boost::geometry::strategy::distance::haversine<float>(6371.0)) * 1000;
-		    // log_debug("LENGTH: %1%", std::to_string(length));
+		    // log_debug("LENGTH: %1% %2%", std::to_string(length), way->change_id);
 		    if (way->action == osmobjects::create) {
 			ostats->added[tag] += length;
 			ostats->added[*hit]++;
@@ -594,7 +603,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	    auto match = std::find(amenities.begin(), amenities.end(), boost::algorithm::to_lower_copy(it->second));
 	    if (match != amenities.end()) {
 		if (!cache[it->second]) {
-		    log_error(_("\tmatched amenity value: %1%"), it->second);
+		    // log_debug(_("\tmatched amenity value: %1%"), it->second);
 		    hits->push_back(boost::algorithm::to_lower_copy(it->second));
 		    cache[it->second] = true;
 		    // An amenity is a building, but the building tag may not be set
@@ -606,7 +615,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	    match = std::find(places.begin(), places.end(), boost::algorithm::to_lower_copy(it->second));
 	    if (match != places.end()) {
 		if (!cache[it->second]) {
-		    log_error(_("\tmatched place value: %1%"), it->second);
+		    // log_debug(_("\tmatched place value: %1%"), it->second);
 		    hits->push_back(boost::algorithm::to_lower_copy(it->second));
 		    hits->push_back("place");
 		    cache[it->second] = true;
@@ -619,7 +628,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 		match = std::find(buildings.begin(), buildings.end(), boost::algorithm::to_lower_copy(it->second));
 		if (match != buildings.end()) {
 		    if (!cache[it->second]) {
-			log_error(_("\tmatched building value: %1%"), it->second);
+			// log_debug(_("\tmatched building value: %1%"), it->second);
 			hits->push_back(boost::algorithm::to_lower_copy(it->second));
 			cache[it->second] = true;
 		    }
@@ -628,7 +637,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	    match = std::find(schools.begin(), schools.end(), boost::algorithm::to_lower_copy(it->second));
 	    if (match != schools.end()) {
 		if (!cache[it->second]) {
-		    log_error(_("\tmatched school value: %1%"), it->second);
+		    // log_debug(_("\tmatched school value: %1%"), it->second);
 		    // Add the type of school
 		    hits->push_back(boost::algorithm::to_lower_copy(it->second));
 		    // Add a generic school accumulator
@@ -642,7 +651,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	    auto match = std::find(highways.begin(), highways.end(), boost::algorithm::to_lower_copy(it->second));
 	    if (match != highways.end()) {
 		if (!cache[it->second]) {
-		    log_debug(_("\tmatched highway value: %1%"), it->second);
+		    // log_debug(_("\tmatched highway value: %1%"), it->second);
 		    hits->push_back(it->first);
 		    cache[it->second] = true;
 		}
@@ -650,7 +659,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	}
 	if (it->first == "waterway") {
 	    if (!cache[it->second]) {
-		log_debug(_("\tmatched waterway value: %1%"), it->second);
+		// log_debug(_("\tmatched waterway value: %1%"), it->second);
 		hits->push_back(it->first);
 		cache[it->second] = true;
 	    }
