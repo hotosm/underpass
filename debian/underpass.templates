@@ -1,0 +1,6 @@
+Template: underpass/configure
+Type: string
+Default: postgres
+Description: for internal use; can be preseeded
+ Which DB usr to use ?
+
