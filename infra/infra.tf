@@ -83,12 +83,33 @@ resource "aws_iam_role" "underpass" {
   ]
 }
 
-data "aws_ami" "ubuntu" {
+data "aws_ami" "ubuntu-lts" {
   most_recent = true
 
   filter {
     name   = "name"
     values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"] # or arm64
+  }
+
+  owners = ["099720109477"] # Canonical
+}
+
+data "aws_ami" "ubuntu-latest" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-hirsute-21.04-amd64-server-*"]
   }
 
   filter {
@@ -172,7 +193,7 @@ data "aws_ami" "debian_bullseye_arm" {
 * Needs to access S3 bucket
 */
 resource "aws_instance" "file-processor" {
-  ami           = data.aws_ami.ubuntu.id
+  ami           = data.aws_ami.ubuntu-latest.id
   instance_type = var.app_instance_type
 
   subnet_id              = aws_subnet.private[2].id
@@ -215,7 +236,7 @@ resource "aws_eip" "underpass" {
 * Add SSH key
 */
 resource "aws_instance" "api" {
-  ami           = data.aws_ami.ubuntu.id
+  ami           = data.aws_ami.ubuntu-lts.id
   instance_type = var.api_instance_type
 
   subnet_id              = aws_subnet.private[2].id
