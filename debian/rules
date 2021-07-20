@@ -28,48 +28,58 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package=underpass
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+NOW := $(shell date "+%Y%m%d")
 
-build:
-	$(checkdir)
-	./configure --prefix=/usr --disable-shared
-	touch build
+FAKEROOT = fakeroot
+
+configure: config-stamp
+config-stamp:
+	dh_testdir
+	@printf "\n == CONFIGURE ==\n\n"
+	./configure --prefix=/usr --disable-shared CXX="ccache g++"
+	touch $@
+
+build: build-stamp
+build-stamp: configure
+	dh_testdir
+	@printf "\n == BUILD ==\n\n"
+	$(MAKE) -j $(nproc) CXXFLAGS="-std=c++17 -g -O0" CXX="ccache g++"
+	touch $@
 
 clean:
-	$(checkdir)
-	rm -rf build install
+	dh_testdir
+	dh_testroot
+	@printf "\n == CLEAN ==\n\n"
+#	rm -fr debian/tmp
 
 distclean:
-	$(checkdir)
 	-make -i -C _build distclean
 	rm -rf *~ debian/*~ debian/files* debian/substvars
 
-install:
-	echo "Already installed"
-
+install: build
+	dh_testdir
+	dh_testroot
+	dh_installdirs
+	@printf "\n == INSTALL ==\n\n"
+	$(MAKE) install DESTDIR=$(PWD)/debian/tmp
 
 ## binary-indep:	checkroot build
-binary-indep:	build
-	$(checkdir)
+binary-indep:
+# We have nothing to do by default.
 
-binary-arch:	build
-	$(checkdir)
-	rm -rf debian/tmp
-	install -d debian/tmp/DEBIAN\
-		-d debian/tmp/usr/doc/$(package)\
-		-d debian/tmp/usr/bin
-	make CFLAGS=-O2 LDFLAGS=-s INSTALL_PROGRAM='install -c -s' \
-		prefix=`pwd`/debian/tmp/usr install
-	cp replicator debian/tmp/usr/bin/replicator
-	cp -fr doc/*.md debian/tmp/usr/share/doc/$(package)/
-	cp debian/copyright debian/tmp/usr/share/doc/$(package)/
-	cp debian/changelog debian/tmp/usr/share/doc/$(package)/changelog.Debian
-	cp ChangeLog debian/tmp/usr/share/doc/$(package)/changelog
-	cd debian/tmp/usr/share/doc/$(package) && gzip -9v changelog changelog.Debian
+binary-arch: install
+	@printf "\n == PACKAGE ==\n\n"
+	mkdir -p debian/tmp/DEBIAN
+#	dh_installdirs --sourcedir=$(PWD)/debian/tmp DEBIAN
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs -XChangeLog
 	dpkg-gencontrol
-	chown -R root.root debian/tmp
-	chmod -R g-ws debian/tmp
-	dpkg --build debian/tmp ..
+	dh_md5sums
+#	dh_builddeb -- -b debian/tmp/
+	dpkg-deb -b debian/tmp/ ../underpass_$(NOW)_$(DEB_BUILD_ARCH).deb
 
 define checkdir
 	test -f debian/rules
@@ -77,10 +87,9 @@ endef
 
 # Below here is fairly generic really
 
-binary:		binary-indep binary-arch
+binary:	binary-indep binary-arch
 
 checkroot:
-	$(checkdir)
 	test root = "`whoami`"
 
 .PHONY: binary binary-arch binary-indep clean checkroot
