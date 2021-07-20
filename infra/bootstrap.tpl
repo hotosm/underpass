@@ -4,6 +4,8 @@ set -e -o pipefail
 working_dir=$(mktemp -d -p /opt underpass.XXXXX)
 
 setup_basics() {
+    apt-get -y update && \
+    apt-get -y upgrade
     apt-get -y install \
         git     \
         python3 \
