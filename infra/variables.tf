@@ -46,3 +46,13 @@ variable "underpass_database_credentials" {
     dbname               = ""
   }
 }
+
+variable "debfile_name" {
+  type    = string
+  default = "underpass_20210614_amd64.deb"
+}
+
+variable "libpqxx_version" {
+  type    = string
+  default = "7.3.1"
+}
