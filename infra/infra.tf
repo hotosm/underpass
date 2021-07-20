@@ -86,10 +86,9 @@ resource "aws_iam_role" "underpass" {
 /** TODO
 * Needs to access S3 bucket
 * Add CloudWatchAgent
-* s3.amazonaws.com/amazoncloudwatch-agent/debian/amd64/latest/amazon-cloudwatch-agent.deb
 */
 resource "aws_instance" "file-processor" {
-  ami           = data.aws_ami.ubuntu-lts.id
+  ami           = data.aws_ami.ubuntu-latest.id
   instance_type = var.app_instance_type
 
   subnet_id              = aws_subnet.private[2].id
