@@ -51,22 +51,28 @@ opts['dbuser']=""
 opts['dbpass']=""
 opts['dropdb']="no"
 
-# OPTS="`getopt -o hu:i:p:r -l help,import,dbuser:,dbpasswd:,recreate`"
-# while test $# -gt 0; do
-#     case $1 in
-# 	-u|--dbuser) dbuser=$2;;
-# 	-b|--passwd) dbpass=$2 ;;
-# 	-r|--recreate) dropdb="yes" ;;
-# 	-i|--import) import="yes" ;;
-#         -h|--help) usage ;;
-#         --) break ;;
-#     esac
-#     shift
-# done
+OPTS="`getopt -o hu:s:p:r -l help,dbuser:,dbpasswd:,dbserver:,recreate`"
+while test $# -gt 0; do
+    case $1 in
+	-s|--dbserver) dbhost=$2;;
+	-u|--dbuser) dbuser=$2;;
+	-p|--dbpasswd) dbpass=$2 ;;
+	-r|--recreate) dropdb="yes" ;;
+        -h|--help) usage ;;
+        --) break ;;
+    esac
+    shift
+done
+
+echo ${opts[dbhost]}
+echo ${opts[dbuser]}
+echo ${opts[dbpass]}
+exit
 
 # Note that the user running this script must have the right permissions.
 
-databases="underpass pgsnapshot osmstats"
+# databases="underpass pgsnapshot osmstats"
+databases="underpass osmstats"
 
 for dbname in ${databases}; do
     echo "Processing ${infile} into ${dbname}..."
