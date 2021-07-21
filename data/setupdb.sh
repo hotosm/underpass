@@ -45,12 +45,19 @@ EOF
     exit
 }
 
-declare -Ag opts
-opts['dbhost']="localhost"
-opts['dbuser']=""
-opts['dbpass']=""
-opts['dropdb']="no"
-opts['datahost']=""
+dropdb="yes"
+datahost="https://www.senecass.com/projects/Mapping/underpass/"
+
+if test -e /etc/default/underpass; then
+    . /etc/default/underpass
+    dbhost="${PGHOST}"
+    dbuser="${PGUSER}"
+    dbpass="${PGPASSWORD}"
+else 
+    dbhost="localhost"
+    dbuser=""
+    dbpass=""
+fi
 
 OPTS="`getopt -o hu:s:p:r -l help,dbuser:,dbpasswd:,dbserver:,recreate`"
 while test $# -gt 0; do
@@ -65,66 +72,63 @@ while test $# -gt 0; do
     shift
 done
 
-echo ${opts[dbhost]}
-echo ${opts[dbuser]}
-echo ${opts[dbpass]}
-exit
-
 # Note that the user running this script must have the right permissions.
 
-# databases="underpass pgsnapshot osmstats"
-databases="underpass osmstats"
+databases="underpass pgsnapshot osmstats"
 
 for dbname in ${databases}; do
-    echo "Processing ${infile} into ${dbname}..."
-    exists="`psql -l | grep -c ${dbname}`"
+    echo "Setting up database ${dbname}..."
+    if test x"${dbhost}" = x"localhost"; then
+	host=""
+    else
+	host="${dbhost}"
+    fi
+    if test x"${dropdb}" = x"yes"; then
+	dropdb ${host} -U ${dbuser} --if-exists ${dbname} >& /dev/null
+	exists=0
+    else
+	exists="`psql -h ${dbhost} -U ${dbuser} -l | grep -c ${dbname}`"
+    fi
     if test "${exists}" -eq 0; then
 	echo "Creating postgresql database ${dbname}"
-	if test x"${dropdb}" = x"yes"; then
-	    dropdb --if-exists ${dbname} >& /dev/null
-	fi
-	createdb -EUTF8 ${dbname} ${dbname} -T template0  >& /dev/null
+	createdb ${host} -U ${dbuser} -O ${dbuser} -EUTF8 ${dbname} ${dbname} -T template0  >& /dev/null
 	if test $? -gt 0; then
 	    echo "WARNING: createdb ${dbname} failed!"
 	    exit
 	fi
-	psql -d ${dbname} -c 'create extension hstore;' >& /dev/null
+	psql ${host} -d ${dbname} -U ${dbuser} -c 'create extension hstore;' >& /dev/null
 	if test $? -gt 0; then
 	    echo "ERROR: couldn't add hstore extension!"
 	    exit
 	fi
-	psql -d ${dbname} -c 'create extension postgis;' >& /dev/null
+	psql ${host} -d ${dbname} -U ${dbuser} -c 'create extension postgis;' >& /dev/null
 	if test $? -gt 0; then	
 	    echo "ERROR: couldn't add postgis extension!"
 	    exit
 	fi
-	psql -d ${dbname} -c 'create extension fuzzystrmatch;' >& /dev/null
+	psql ${host} -d ${dbname} -U ${dbuser} -c 'create extension fuzzystrmatch;' >& /dev/null
 	if test $? -gt 0; then	
 	    echo "ERROR: couldn't add fuzzystrmatch extension!"
 	    exit
 	fi
 	# Create the database schemas
-	psql -d ${dbname} -f ${dbname}.sql
+	psql ${host} -d ${dbname} -U ${dbuser} -f /usr/share/underpass/${dbname}.sql
     else
 	echo "Postgresql database ${dbname} already exists, not creating."
     fi
 done
 
-# osm2pgsql -x -c --slim -C 500 -d ${dbname} --number-processes 8 ${infile} --hstore --input-reader xml --drop >& /dev/null
-
-# ogr2ogr -skipfailures -progress -overwrite -f  "PostgreSQL" PG:"dbname=${dbname}" -nlt GEOMETRYCOLLECTION ${infile} -lco COLUMN_TYPES="other_tags=hstore"
-
-
-if text x"$opts{'datahost']" = x; then
+if test x"$opts{'datahost']" = x; then
     echo -n "Do you want to download bootstrap data ? Files may be large: "
     read tmp
     if test x"${tmp}" = x -a x"${tmp}" != x"no"; then
-	wget "https://$opts{'datahost']/underpass/states.sql.bz2"
-	wget "https://$opts{'datahost']/underpass/osmstats.sql.bz2"
-	bunzip /tmp/states.sql.bz2
-	bunzip /tmp/osmstats.sql.bz2
-	. /etc/default/underpass
-	psql -d underpass -f /tmp/states.sql
+	for i in ${databases}; do
+	    url="https://$opts{'datahost']/underpass/${i}.sql.bz2"
+	    wget ${url}
+	    if test $? > 0; then
+		echo "ERROR: Couldn't download ${url}!"
+	    fi
+	done
 	psql -d osmstats -f /tmp/osmstats.sql
     fi
 fi
