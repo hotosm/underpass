@@ -3,8 +3,8 @@
 set -e
 
 dbhost="localhost"
-dbuser=${USER}
-dbpass=""
+dbuser="underpass"
+dbpass="galaxy"
 
 if [ "$1" = "configure" ]; then
     echo -n "Database hostname (default ${dbhost}): "
@@ -40,13 +40,13 @@ if [ "$1" = "configure" ]; then
 
     args=""
     if test x"${dbhost}" -a x"${dbhost}" != x"localhost"; then
-	args="${args} -h ${dbhost} "
+	args="${args} --dbserver ${dbhost} "
     fi
     if test x"${dbuser}" -a x"${dbuser}" != x"${USER}"; then
-	args="${args} -u ${dbuser} "
+	args="${args} --dbuser ${dbuser} "
     fi
     if test x"${dbpass}"; then
-	args="${args} -p ${dbpass} "
+	args="${args} --dbpasswd ${dbpass} "
     fi
-    /usr/bin/bash /usr/share/underpass/setupdb.sh ${args}
+    /usr/bin/bash /usr/share/underpass/setupdb.sh --recreate ${args}
 fi
