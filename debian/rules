@@ -61,15 +61,14 @@ install: build
 	dh_testroot
 	dh_installdirs 
 	@printf "\n == INSTALL ==\n\n"
-	dh_auto_install
+	dh_auto_install --destdir=debian/underpass
 #	dh_systemd_enable
 #	dh_systemd_start
 
-## binary-indep:	checkroot build
 binary-indep:
-# We have nothing to do by default.
+#	nothing to do
 
-binary-arch: install
+binary binary-arch: install
 	@printf "\n == PACKAGE ==\n\n"
 	dh_testdir
 	dh_testroot
@@ -80,10 +79,6 @@ binary-arch: install
 	dpkg-gencontrol -Pdebian/underpass -punderpass
 	dh_md5sums
 	dh_builddeb
-
-# Below here is fairly generic really
-
-binary:	binary-indep binary-arch
 
 .PHONY: binary binary-arch binary-indep clean
 
