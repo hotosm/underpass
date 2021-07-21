@@ -62,8 +62,8 @@ install: build
 	dh_installdirs 
 	@printf "\n == INSTALL ==\n\n"
 	dh_auto_install --destdir=debian/underpass
-#	dh_systemd_enable
-#	dh_systemd_start
+	dh_systemd_enable
+	dh_systemd_start
 
 binary-indep:
 #	nothing to do
