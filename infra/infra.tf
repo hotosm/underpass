@@ -140,7 +140,7 @@ resource "aws_eip" "underpass" {
 * Add SSH key
 */
 resource "aws_instance" "api" {
-  ami           = data.aws_ami.ubuntu-lts.id
+  ami           = data.aws_ami.ubuntu-latest.id
   instance_type = var.api_instance_type
 
   subnet_id              = aws_subnet.private[2].id
