@@ -56,6 +56,7 @@ BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
 
 SQL_FILES = \
 	data/underpass.sql \
+	data/pgsnapshot.sql \
 	data/osmstats.sql \
 	data/geoboundaries.sql
 
@@ -79,7 +80,9 @@ libhotosm_la_SOURCES = \
 	data/osmobjects.cc data/osmobjects.hh \
 	data/validate.cc data/validate.hh \
 	data/threads.cc data/threads.hh \
-	data/underpass.cc data/underpass.hh
+	data/underpass.cc data/underpass.hh \
+	data/setupdb.sh
+
 libhotosm_la_LDFLAGS = -avoid-version
 
 bin_PROGRAMS = replicator
@@ -88,7 +91,7 @@ replicator_LDADD = libhotosm.la $(BOOST_LIBS)
 
 AM_CXXFLAGS = -DPKGLIBDIR=\"$(pkglibdir)\" -DSRCDIR=\"$(srcdir)\"
 
-pkgdata_DATA = $(SQL_FILES) data/priority.geojson
+pkgdata_DATA = $(SQL_FILES) data/priority.geojson data/setupdb.sh
 
 EXTRA_DIST = \
 	$(SQL_FILES) \
