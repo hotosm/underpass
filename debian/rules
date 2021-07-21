@@ -34,36 +34,36 @@ NOW := $(shell date "+%Y%m%d")
 
 FAKEROOT = fakeroot
 
+# The default path for debhelper functions is debian/tmp
 configure: config-stamp
 config-stamp:
 	dh_testdir
 	@printf "\n == CONFIGURE ==\n\n"
-	./configure --prefix=/usr --disable-shared CXX="ccache g++"
+	dh_auto_configure
 	touch $@
 
 build: build-stamp
 build-stamp: configure
 	dh_testdir
 	@printf "\n == BUILD ==\n\n"
-	$(MAKE) -j $(nproc) CXXFLAGS="-std=c++17 -g -O0" CXX="ccache g++"
+	dh_auto_build -- CXXFLAGS="-std=c++17 -g -O0"
 	touch $@
 
 clean:
 	dh_testdir
 	dh_testroot
 	@printf "\n == CLEAN ==\n\n"
+#	dh_auto_clean
 #	rm -fr debian/tmp
-
-distclean:
-	-make -i -C _build distclean
-	rm -rf *~ debian/*~ debian/files* debian/substvars
 
 install: build
 	dh_testdir
 	dh_testroot
-	dh_installdirs
+	dh_installdirs 
 	@printf "\n == INSTALL ==\n\n"
-	$(MAKE) install DESTDIR=$(PWD)/debian/tmp
+	dh_auto_install
+#	dh_systemd_enable
+#	dh_systemd_start
 
 ## binary-indep:	checkroot build
 binary-indep:
@@ -71,27 +71,20 @@ binary-indep:
 
 binary-arch: install
 	@printf "\n == PACKAGE ==\n\n"
-	mkdir -p debian/tmp/DEBIAN
-#	dh_installdirs --sourcedir=$(PWD)/debian/tmp DEBIAN
 	dh_testdir
 	dh_testroot
+	dh_installdirs
+	dh_installdeb
+	dh_installdebconf
 	dh_installchangelogs -XChangeLog
-	dpkg-gencontrol
+	dpkg-gencontrol -Pdebian/underpass -punderpass
 	dh_md5sums
-#	dh_builddeb -- -b debian/tmp/
-	dpkg-deb -b debian/tmp/ ../underpass_$(NOW)_$(DEB_BUILD_ARCH).deb
-
-define checkdir
-	test -f debian/rules
-endef
+	dh_builddeb
 
 # Below here is fairly generic really
 
 binary:	binary-indep binary-arch
 
-checkroot:
-	test root = "`whoami`"
-
-.PHONY: binary binary-arch binary-indep clean checkroot
+.PHONY: binary binary-arch binary-indep clean
 
 
