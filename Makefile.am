@@ -143,8 +143,8 @@ apidoc:
 endif
 
 install-data-hook:
-	$(MKDIR_P) $(pkglibdir)
-	cp -uvp $(srcdir)/data/priority.geojson $(pkglibdir)
+	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
+	cp -uvp $(srcdir)/data/priority.geojson $(DESTDIR)/$(pkglibdir)
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
 	cp -ruvp $(srcdir)/doc/*.md $(DESTDIR)/$(docdir)
 
