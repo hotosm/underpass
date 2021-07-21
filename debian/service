@@ -1,0 +1,12 @@
+[Unit]
+Description=A daemon for processing OSM replication files.
+
+[Service]
+EnvironmentFile=-/etc/default/underpass
+ExecStart=/usr/sbin/cron -f -P $EXTRA_OPTS
+IgnoreSIGPIPE=false
+KillMode=process
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
