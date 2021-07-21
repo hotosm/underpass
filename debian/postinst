@@ -1,0 +1,35 @@
+#!/bin/sh
+
+set -e
+
+dbhost="localhost"
+dbuser=${USER}
+dbpass=""
+
+if [ "$1" = "configure" ]; then
+    echo -n "Database hostname (default ${dbhost}): "
+    read htmp
+    if test x"${htmp}" != x; then
+	dbhost=${htmp}
+    fi
+    echo -n "Database user name (if needed, default ${dbuser}): "
+    read utmp
+    if test x"${utmp}" != x; then
+	dbuser=${utmp}
+    fi
+
+    echo -n "Database passwd (if any needed) ?: "
+    read ptmp
+    if test x"${ptmp}" != x; then
+	dbpass=${ptmp}
+    fi
+
+    if test -e /etc/default/underpass; then
+	echo -n "Replace current authentication defaults (default yes)? "
+	if test x"${tmp}" != x -o x"${tmp}" != x"no"; then
+	    echo "${dbhost}:${dbuser}:${dbpass}" > /etc/default/underpass
+	fi
+    fi
+
+    data/setupdb.sh -s ${dbhost} -u ${dbuser} -p ${dbpass}
+fi
