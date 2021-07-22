@@ -92,7 +92,7 @@ fi
 sudo -u postgres psql -c "ALTER USER ${dbuser} WITH PASSWORD \'${dbpass}\'" >& /dev/null
 
 # Note that the user running this script must have the right permissions.
-set -x
+
 databases="underpass pgsnapshot osmstats"
 
 for dbname in ${databases}; do
@@ -100,8 +100,8 @@ for dbname in ${databases}; do
     if test x"${dropdb}" = x"yes"; then
 	sudo -u postgres dropdb ${host} --if-exists ${dbname} >& /dev/null
     fi
-    # exists="`psql ${host} ${user} -l | grep -c ${dbname}`"
-    exists=0
+    exists="`psql ${host} ${user} -l | grep -c ${dbname}`"
+    # exists=0
     if test "${exists}" -eq 0; then
 	echo "Creating postgresql database ${dbname}"
 	sudo -u postgres createdb ${host} -T template0 -O ${dbuser} ${dbname} >& /dev/null
@@ -109,7 +109,7 @@ for dbname in ${databases}; do
 	    echo "WARNING: createdb ${dbname} failed!"
 	    exit
 	fi
-	sudo -u postgres psql ${host} -d ${dbname} -U ${dbuser} -c 'create extension hstore;' >& /dev/null
+	sudo -u postgres psql ${host} -d ${dbname} ${user} -c 'create extension hstore;' >& /dev/null
 	if test $? -gt 2; then
 	    echo "ERROR: couldn't add hstore extension!"
 	    exit

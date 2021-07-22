@@ -27,15 +27,19 @@ if [ "$1" = "configure" ]; then
     if test -e /etc/default/underpass; then
 	echo -n "Replace current authentication defaults (default yes)? "
 	read tmp
-	if test x"${tmp}" != x -o x"${tmp}" != x"no"; then
+	if test x"${tmp}" != x -a x"${tmp}" != x"no"; then
 	    echo "PGHOST=${dbhost}" > /etc/default/underpass
 	    echo "PGUSER=${dbuser}" >> /etc/default/underpass
 	    echo "PGPASSWORD=${dbpass}" >> /etc/default/underpass
 	fi
     else
-	echo "PGHOST=${dbhost}" > /etc/default/underpass
-	echo "PGUSER=${dbuser}" >> /etc/default/underpass
-	echo "PGPASSWORD=${dbpass}" >> /etc/default/underpass
+	echo -n "Create authentication defaults (default yes)? "
+	read tmp
+	if test x"${tmp}" != x -o x"${tmp}" != x"no"; then
+	    echo "PGHOST=${dbhost}" > /etc/default/underpass
+	    echo "PGUSER=${dbuser}" >> /etc/default/underpass
+	    echo "PGPASSWORD=${dbpass}" >> /etc/default/underpass
+	fi
     fi
 
     args=""
@@ -48,5 +52,9 @@ if [ "$1" = "configure" ]; then
     if test x"${dbpass}"; then
 	args="${args} --dbpasswd ${dbpass} "
     fi
-    /usr/bin/bash /usr/share/underpass/setupdb.sh --recreate ${args}
+    echo -n "Replace current database ? (default no)? "
+    read tmp
+    if test x"${tmp}" != x -a x"${tmp}" != x"no"; then
+	/usr/bin/bash /usr/share/underpass/setupdb.sh --recreate ${args}
+    fi
 fi
