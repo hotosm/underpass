@@ -39,7 +39,7 @@ configure: config-stamp
 config-stamp:
 	dh_testdir
 	@printf "\n == CONFIGURE ==\n\n"
-	dh_auto_configure
+	dh_auto_configure -- --disable-shared
 	touch $@
 
 build: build-stamp
