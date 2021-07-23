@@ -84,6 +84,12 @@ else
     user=""
 fi
 
+if test $(grep -c postgres /etc/passwd) -eq 0; then
+    echo "You need to install postgresql-all to create the databases"
+    echo "Once installed, execute /usr/share/underpass/setupdb.sh"
+    exit 0;
+fi
+
 # Create the user account
 sudo -u postgres createuser --createdb underpass
 if test $? -gt 1; then
