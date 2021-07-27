@@ -40,7 +40,7 @@ MAINTAINERCLEANFILES = revno.h .lastmod
 
 SUBDIRS = \
 	validate
-#	po
+# 	po
 
 lib_LTLIBRARIES = libunderpass.la
 instdir = /tmp
@@ -80,13 +80,17 @@ libunderpass_la_SOURCES = \
 	data/osmobjects.cc data/osmobjects.hh \
 	data/threads.cc data/threads.hh \
 	data/underpass.cc data/underpass.hh
+#	plugins.cc plugins.hh
 libunderpass_la_LDFLAGS = -avoid-version
 
 bin_PROGRAMS = replicator
 replicator_SOURCES = replicator.cc
 replicator_LDADD = libunderpass.la $(BOOST_LIBS)
 
-AM_CXXFLAGS = -DPKGLIBDIR=\"$(pkglibdir)\" -DSRCDIR=\"$(srcdir)\"
+AM_CXXFLAGS = \
+	-rdynamic \
+	-DPKGLIBDIR=\"$(pkglibdir)\" \
+	-DSRCDIR=\"$(srcdir)\"
 
 pkgdata_DATA = $(SQL_FILES) data/priority.geojson
 
@@ -168,7 +172,6 @@ PCHFLAGS = \
         -I$(top_srcdir)/hottm
 
 PCHHEADERS = \
-        $(top_srcdir)/hotosm.hh \
         $(top_srcdir)/timer.hh \
         $(top_srcdir)/hottm.hh \
         $(top_srcdir)/osmstats/osmstats.hh \
