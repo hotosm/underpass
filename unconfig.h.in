@@ -58,22 +58,21 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
-
 /* Define to 1 if you have the <osmium/osm/node.hpp> header file. */
 #undef HAVE_OSMIUM_OSM_NODE_HPP
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
-/* Define to 1 if you have the <stdlib.h> header file. */
+/* Always define to 1, for backward compatibility. You can assume <stdlib.h>
+   exists. */
 #undef HAVE_STDLIB_H
 
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
-/* Define to 1 if you have the <string.h> header file. */
+/* Always define to 1, for backward compatibility. You can assume <string.h>
+   exists. */
 #undef HAVE_STRING_H
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
@@ -118,7 +117,8 @@
 /* Use rapidxml library in boost */
 #undef RAPIDXML
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Always define to 1, for backward compatibility. You can assume the C90
+   standard headers exist. */
 #undef STDC_HEADERS
 
 /* Store downloaded files to disk */

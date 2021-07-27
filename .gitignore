@@ -28,7 +28,6 @@ doc/html
 infra/.terraform
 infra/.terraform.lock
 infra/.terraform.lock.hcl
-COPYING
 ChangeLog
 NEWS
 README
