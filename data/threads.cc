@@ -45,6 +45,7 @@
 #include <future>
 #include <unistd.h>
 
+#include <boost/dll/import.hpp>
 #include <boost/format.hpp>
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
@@ -69,7 +70,10 @@ namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
 namespace http = beast::http;       // from <boost/beast/http.hpp>
 using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 
-#include <boost/config.hpp> // for BOOST_SYMBOL_EXPORT
+#include <boost/config.hpp>
+#include <boost/dll/shared_library.hpp>
+#include <boost/dll/runtime_symbol_info.hpp>
+#include <boost/function.hpp>
 
 #include "timer.hh"
 #include "data/threads.hh"
@@ -79,6 +83,7 @@ using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 #include "osmstats/replication.hh"
 #include "data/underpass.hh"
 #include "validate/validate.hh"
+// #include "validate/hotosm.hh"
 #include "log.hh"
 
 std::mutex stream_mutex;
@@ -96,9 +101,34 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly)
     underpass::Underpass under;
     under.connect();
 
+    osmstats::QueryOSMStats ostats;
+    ostats.connect();
+
     replication::RemoteURL remote = inr;
     auto planet = std::make_shared<replication::Planet>(remote);
     bool mainloop = true;
+
+    boost::dll::fs::path lib_path("validate/.libs");
+    boost::function<plugin_t> creator;
+#if 1
+    try {
+	creator = boost::dll::import_alias<plugin_t>(
+	    lib_path / "libhotosm", "create_plugin",
+	    boost::dll::load_mode::append_decorations
+	    );
+#else
+	boost::dll::shared_library self(boost::dll::program_location());
+//	boost::function<boost::shared_ptr<Validate>()> creator = self.get_alias<boost::shared_ptr<Validate>()>("create_plugin");
+	typedef std::shared_ptr<Validate>(plugin_tt)();
+	auto creator = self.get_alias<plugin_tt>("create_plugin");
+	creator()->checkTag("building", "yes");
+#endif
+	std::cerr << "Loaded plugin hotosm!" << std::endl;
+    } catch (std::exception& e) {
+	std::cerr << "Couldn't load plugin! %1%" << e.what() << std::endl;
+    }
+    auto validator = creator();
+
     while (mainloop) {
         // Look for the statefile first
 #if 0
@@ -132,10 +162,17 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly)
             timer.endTimer("changeSet");
         } else {
             std::string file = remote.url + ".osc.gz";
+	    boost::posix_time::time_duration delta;
+	    ptime now = boost::posix_time::microsec_clock::local_time();
             Timer timer;
             timer.startTimer();
-            bool found = threadOsmChange(remote, poly);
-            if (!found) {
+            auto changefile = threadOsmChange(remote, poly, ostats, validator);
+	    // FIXME: There is probably a better way to determine when to delay,
+	    // or when to just keep processing files when catching up.
+	    if (changefile->changes.size() > 0) {
+		delta = now - changefile->changes[0]->nodes[0]->timestamp;
+	    }
+            if (!delta.minutes() <= 1) {
                 // planet->disconnectServer();
                 if (remote.frequency == replication::minutely) {
                     std::this_thread::sleep_for(std::chrono::minutes{1});
@@ -253,13 +290,24 @@ startStateThreads(const std::string &base, const std::string &file)
 }
 
 // This thread get started for every osmChange file
-bool
-threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly)
+std::shared_ptr<osmchange::OsmChangeFile>
+threadOsmChange(const replication::RemoteURL &remote,
+		const multipolygon_t &poly,
+		osmstats::QueryOSMStats &ostats,
+		std::shared_ptr<Validate> &plugin)
 {
     // osmstats::QueryOSMStats ostats;
     std::vector<std::string> result;
-    osmchange::OsmChangeFile osmchanges;
+    auto osmchanges = std::make_shared<osmchange::OsmChangeFile>();
 
+#if 1
+    bool ret = plugin->checkTag("building", "yes");
+    if (ret) {
+	std::cerr << "Building is YESS" << std::endl;
+    } else {
+	std::cerr << "Building is NOO" << std::endl;
+    }
+#endif
     auto data = std::make_shared<std::vector<unsigned char>>();
     // If the file is stored on disk, read it in instead of downloading
     if (boost::filesystem::exists(remote.filespec)) {
@@ -284,7 +332,7 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
     }
     if (data->size() == 0) {
         log_error(_("osmChange file not found: %1% %2%"), remote.url, ".osc.gz");
-        return false;
+        return osmchanges;
     } else {
 #ifdef USE_CACHE
         if (!boost::filesystem::exists(remote.destdir)) {
@@ -302,7 +350,7 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
             inbuf.push(arrs);
             std::istream instream(&inbuf);
             try {
-                osmchanges.readXML(instream);
+                osmchanges->readXML(instream);
             } catch (std::exception& e) {
                 log_error(_("Couldn't parse: %1%"), remote.url);
                 std::cerr << e.what() << std::endl;
@@ -316,10 +364,8 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
         }
     }
 
-    // Apply the changes to the database
-    osmstats::QueryOSMStats ostats;
-    ostats.connect();
 #if 0
+    // Apply the changes to the database
     underpass::Underpass under;
     under.connect();
     replication::StateFile state;
@@ -332,15 +378,13 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
     }
 #endif
     // These stats are for the entire file
-    auto stats = osmchanges.collectStats(poly);
+    auto stats = osmchanges->collectStats(poly);
     for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
         it->second->dump();
         ostats.applyChange(*it->second);
     }
 
-    validate::Validate validator(osmchanges.changes);
-
-    return true;
+    return osmchanges;
 }
 
 // This updates several fields in the changesets table, which are part of

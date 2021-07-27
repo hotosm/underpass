@@ -69,6 +69,7 @@ using tcp = net::ip::tcp;
 
 #include "osmstats/replication.hh"
 #include "osmstats/osmstats.hh"
+#include "validate/validate.hh"
 #include <ogr_geometry.h>
 
 namespace replication {
@@ -76,6 +77,7 @@ class StateFile;
 class RemoteURL;
 };
 
+typedef std::shared_ptr<Validate>(plugin_t)();
 
 /// \file threads.hh
 /// \brief Threads for monitoring the OSM planet server for replication files.
@@ -102,7 +104,10 @@ extern std::shared_ptr<replication::StateFile> threadStateFile(ssl::stream<tcp::
 
 /// Updates the raw_hashtags, raw_users, and raw_changesets_countries tables
 /// from a changeset file
-extern bool threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t  &poly);
+extern std::shared_ptr<osmchange::OsmChangeFile> threadOsmChange(const replication::RemoteURL &remote,
+                            const multipolygon_t &poly,
+                            osmstats::QueryOSMStats &ostats,
+                            std::shared_ptr<Validate> &plugin);
 
 /// This updates several fields in the raw_changesets table, which are part of
 /// the changeset file, and don't need to be calculated.
