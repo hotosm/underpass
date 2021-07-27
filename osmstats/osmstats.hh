@@ -49,7 +49,6 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
-#include "validate/hotosm.hh"
 #include "osmstats/changeset.hh"
 #include "osmstats/osmchange.hh"
 
