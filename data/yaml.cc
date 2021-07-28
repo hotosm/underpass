@@ -79,8 +79,10 @@ Yaml::read(const std::string &fspec)
             pos2 = key.rfind(':');
             if (pos2 != std::string::npos && pos2 == key.size()-1) {
                 key.erase(key.size()-1);
-            }   
-            config[key] = entries;
+            }
+            if (!key.empty()) {
+                config[key] = entries;
+            }
         } else {
             value = line.substr(pos1 + 2);
             config[key].push_back(value);
