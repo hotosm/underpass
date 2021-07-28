@@ -71,13 +71,6 @@ Yaml::read(const std::string &fspec)
         }
         pos1 = line.find('-');
         pos2 = line.rfind(':');
-        if (pos1 != std::string::npos) {
-            value = line.substr(pos1 + 2);
-            std::cerr << "\"" << value << "\", ";
-            //if (pos2 == std::string::npos) {
-            entries.push_back(value);
-            //}
-        }
         if (line[line.size()-1] == ':') {
             if (pos1 != std::string::npos) {     
                 key = line.substr(pos1+2, pos2-pos1-2);
@@ -85,8 +78,16 @@ Yaml::read(const std::string &fspec)
                 key = line.substr(0, pos2-1);
             }
             std::cerr << std::endl << "KEY: \"" << key << "\"" << std::endl;
+            entries.clear();
+            config[key] = entries;
         }
-        config[key] = entries;
+        if (pos1 != std::string::npos) {
+            value = line.substr(pos1 + 2);
+            std::cerr << "\"" << value << "\", ";
+            if (pos2 == std::string::npos) {
+                config[key].push_back(value);
+            }
+        }
     }
 }
 
@@ -100,7 +101,7 @@ void Yaml::dump(void)
             continue;
         }
         std::vector<std::string> value = cit->second;
-        std::cerr << "\t\t";
+        std::cerr << "\t\t\t\t";
         for (auto vit = std::begin(value); vit != std::end(value); ++vit) {
             std::cerr << *vit << ", ";
         }
