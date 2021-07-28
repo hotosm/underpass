@@ -52,9 +52,9 @@ using namespace boost::gregorian;
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 #include <boost/progress.hpp>
 
+#include "validate/validate.hh"
 #include "data/osmobjects.hh"
 #include "osmstats/osmchange.hh"
-
 #include <ogr_geometry.h>
 
 // forward declare geometry typedefs
@@ -218,7 +218,6 @@ public:
     /// Called by libxml++ for each element of the XML file
     void on_start_element(const Glib::ustring& name,
                           const AttributeList& properties) override;
-
 #endif
     /// Read an istream of the data and parse the XML
     bool readXML(std::istream & xml);
@@ -226,9 +225,14 @@ public:
     std::map<long, std::shared_ptr<ChangeStats>> userstats; ///< User statistics for this file
     
     std::vector<std::shared_ptr<OsmChange>> changes; ///< All the changes in this file
+    std::map<long, point_t> nodecache;
 
     /// Collect statistics for each user
-    std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>> collectStats(const multipolygon_t &poly);
+    std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>> collectStats(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin);
+
+    bool validateNodes(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin);
+
+    bool validateWays(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin);
 
     std::shared_ptr<std::vector<std::string>> scanTags(std::map<std::string, std::string> tags);
 

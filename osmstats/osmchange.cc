@@ -66,6 +66,7 @@ using namespace boost::gregorian;
 // using namespace boost::multi_index;
 
 #include "timer.hh"
+#include "validate/validate.hh"
 #include "osmstats/osmchange.hh"
 #include "data/osmobjects.hh"
 #include <ogr_geometry.h>
@@ -403,7 +404,7 @@ OsmChangeFile::dump(void)
 }
 
 std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>>
-OsmChangeFile::collectStats(const multipolygon_t &poly)
+OsmChangeFile::collectStats(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin)
 {
     // FIXME: stuff to extract for MERL
     // names added to villages, neigborhood, or citys
@@ -414,10 +415,20 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 
     log_debug(_("Collecting Statistics for: %1%"), changes.size());
 
+    // std::map<long, point_t> nodecache;
+    if (nodecache.size() > 10000) {
+	std::map<long, point_t>::iterator it;
+	log_debug(_("Truncating node cache"));
+	int i = 0;
+	while (i<1000) {
+	    nodecache.erase(it);
+	    i++;
+	}
+    }
+
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
         // change->dump();
-	std::map<long, point_t> nodecache;
         for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
             OsmNode *node = it->get();
 	    auto wkt = boost::geometry::wkt(node->point);
@@ -687,6 +698,65 @@ ChangeStats::dump(void)
     // 	std::cerr << "\t\t" << it->first << " = " << it->second << std::endl;
     // }
 };
+
+bool OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin)
+{
+    for (auto it = std::begin(changes); it != std::end(changes); ++it) {
+        OsmChange *change = it->get();
+	for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
+	    OsmNode *node = nit->get();
+	    nodecache[node->id] = node->point;
+	    if (!boost::geometry::within(node->point, poly)) {
+		log_debug(_("Node %1% is not in a priority area"), node->id);
+		// continue;
+	    } else {
+		log_debug(_("Node %1% is in a priority area"), node->id);
+	    }
+	    for (auto tit = std::begin(node->tags); tit != std::end(node->tags); ++tit) {
+		// Filter data by polygon
+		if (tit->first == "building") {
+		    bool ret = plugin->checkTag("building", "yes");
+		    if (ret) {
+			std::cerr << "Building is YYESS" << std::endl;
+			node->dump();
+		    } else {
+			std::cerr << "Building is NNOO" << std::endl;
+		    }
+		}
+//		bool ret = plugin->checkTag("building:material", "yes");
+	    }
+	}
+    }
+}
+
+bool OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin)
+{
+    for (auto it = std::begin(changes); it != std::end(changes); ++it) {
+        OsmChange *change = it->get();
+	for (auto nit = std::begin(change->ways); nit != std::end(change->ways); ++nit) {
+	    OsmWay *way = nit->get();
+	    int middle = way->refs.size()/2;
+	    if (!boost::geometry::within(nodecache[middle], poly)) {
+		log_debug(_("Way %1% is not in a priority area"), way->id);
+		// continue;
+	    } else {
+		log_debug(_("Way %1% is in a priority area"), way->id);
+	    }
+	    for (auto tit = std::begin(way->tags); tit != std::end(way->tags); ++tit) {
+		// Filter data by polygon
+		if (tit->first == "highway") {
+		    bool ret = plugin->checkTag("highway", "yes");
+		    if (ret) {
+			std::cerr << "Highway is YYESS" << std::endl;
+			way->dump();
+		    } else {
+			std::cerr << "Highway is NNOO" << std::endl;
+		    }
+		}
+	    }
+	}
+    }
+}
 
 } // EOF namespace osmchange
 
