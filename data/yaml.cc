@@ -26,6 +26,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 
 #include "yaml.hh"
 #include "log.hh"
@@ -71,22 +72,18 @@ Yaml::read(const std::string &fspec)
         }
         pos1 = line.find('-');
         pos2 = line.rfind(':');
-        if (line[line.size()-1] == ':') {
-            if (pos1 != std::string::npos) {     
-                key = line.substr(pos1+2, pos2-pos1-2);
-            } else {
-                key = line.substr(0, pos2-1);
+        if (pos2 != std::string::npos) {
+            if (pos1 != std::string::npos) {
+                key = line.substr(pos1+2, pos2+2);
             }
-            std::cerr << std::endl << "KEY: \"" << key << "\"" << std::endl;
-            entries.clear();
+            pos2 = key.rfind(':');
+            if (pos2 != std::string::npos && pos2 == key.size()-1) {
+                key.erase(key.size()-1);
+            }   
             config[key] = entries;
-        }
-        if (pos1 != std::string::npos) {
+        } else {
             value = line.substr(pos1 + 2);
-            std::cerr << "\"" << value << "\", ";
-            if (pos2 == std::string::npos) {
-                config[key].push_back(value);
-            }
+            config[key].push_back(value);
         }
     }
 }
@@ -96,12 +93,12 @@ void Yaml::dump(void)
     std::cerr << std::endl << "Dumping yaml file: " << filespec << std::endl;
     
     for (auto cit = std::begin(config); cit != std::end(config); ++cit) {
-	std::cerr << "\t\t" << cit->first << std::endl;
+	std::cerr << "\t\tKey: " << cit->first << std::endl;
         if ( cit->second.size() == 0) {
             continue;
         }
         std::vector<std::string> value = cit->second;
-        std::cerr << "\t\t\t\t";
+        std::cerr << "\t\t\t\tValues: ";
         for (auto vit = std::begin(value); vit != std::end(value); ++vit) {
             std::cerr << *vit << ", ";
         }
