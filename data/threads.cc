@@ -82,8 +82,8 @@ using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 #include "osmstats/changeset.hh"
 #include "osmstats/replication.hh"
 #include "data/underpass.hh"
+#include "data/osmobjects.hh"
 #include "validate/validate.hh"
-// #include "validate/hotosm.hh"
 #include "log.hh"
 
 std::mutex stream_mutex;
@@ -110,22 +110,15 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly)
 
     boost::dll::fs::path lib_path("validate/.libs");
     boost::function<plugin_t> creator;
-#if 1
     try {
 	creator = boost::dll::import_alias<plugin_t>(
 	    lib_path / "libhotosm", "create_plugin",
 	    boost::dll::load_mode::append_decorations
 	    );
-#else
-	boost::dll::shared_library self(boost::dll::program_location());
-//	boost::function<boost::shared_ptr<Validate>()> creator = self.get_alias<boost::shared_ptr<Validate>()>("create_plugin");
-	typedef std::shared_ptr<Validate>(plugin_tt)();
-	auto creator = self.get_alias<plugin_tt>("create_plugin");
-	creator()->checkTag("building", "yes");
-#endif
 	std::cerr << "Loaded plugin hotosm!" << std::endl;
     } catch (std::exception& e) {
 	std::cerr << "Couldn't load plugin! %1%" << e.what() << std::endl;
+	exit(0);
     }
     auto validator = creator();
 
@@ -170,9 +163,10 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly)
 	    // FIXME: There is probably a better way to determine when to delay,
 	    // or when to just keep processing files when catching up.
 	    if (changefile->changes.size() > 0) {
-		delta = now - changefile->changes[0]->nodes[0]->timestamp;
+		// delta = now - changefile->changes[0]->nodes[0]->timestamp;
 	    }
-            if (!delta.minutes() <= 1) {
+            //if (!delta.minutes() <= 1) {
+	    if (false) {
                 // planet->disconnectServer();
                 if (remote.frequency == replication::minutely) {
                     std::this_thread::sleep_for(std::chrono::minutes{1});
@@ -300,14 +294,6 @@ threadOsmChange(const replication::RemoteURL &remote,
     std::vector<std::string> result;
     auto osmchanges = std::make_shared<osmchange::OsmChangeFile>();
 
-#if 1
-    bool ret = plugin->checkTag("building", "yes");
-    if (ret) {
-	std::cerr << "Building is YESS" << std::endl;
-    } else {
-	std::cerr << "Building is NOO" << std::endl;
-    }
-#endif
     auto data = std::make_shared<std::vector<unsigned char>>();
     // If the file is stored on disk, read it in instead of downloading
     if (boost::filesystem::exists(remote.filespec)) {
@@ -377,13 +363,40 @@ threadOsmChange(const replication::RemoteURL &remote,
 	under.writeState(state);
     }
 #endif
+    //boost::timer::cpu_timer timer;
+    for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
+	osmchange::OsmChange *change = it->get();
+        for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
+	    osmobjects::OsmNode *node = it->get();
+	}
+	for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
+            osmobjects::OsmWay *way = it->get();
+	}
+    }
+    //timer.stop();
+    // log_debug("Took %1% to process validation", timer.wall);
+
+    Timer timer;
+    timer.startTimer();
+    log_debug(_("Pre filtering size is %1%"), osmchanges->changes.size());
+    osmchanges->areaFilter(poly);
+    log_debug(_("Post filtering size is %1%"), osmchanges->changes.size());
+    timer.endTimer("areaFilter");
+    
+    timer.startTimer();
     // These stats are for the entire file
-    auto stats = osmchanges->collectStats(poly);
+    auto stats = osmchanges->collectStats(poly, plugin);
     for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
         it->second->dump();
         ostats.applyChange(*it->second);
     }
+    timer.endTimer("collectStats");
 
+    timer.startTimer();
+    osmchanges->validateNodes(poly, plugin);
+    osmchanges->validateWays(poly, plugin);
+    timer.endTimer("validate");
+    
     return osmchanges;
 }
 

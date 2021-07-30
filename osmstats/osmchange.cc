@@ -42,6 +42,8 @@
 #include <locale>
 #include <algorithm>
 #include <pqxx/pqxx>
+#include <list>
+
 #ifdef LIBXML
 # include <libxml++/libxml++.h>
 #endif
@@ -67,8 +69,8 @@ using namespace boost::gregorian;
 
 #include "timer.hh"
 #include "validate/validate.hh"
-#include "osmstats/osmchange.hh"
 #include "data/osmobjects.hh"
+#include "osmstats/osmchange.hh"
 #include <ogr_geometry.h>
 
 using namespace osmobjects;
@@ -403,6 +405,39 @@ OsmChangeFile::dump(void)
     }
 }
 
+bool
+OsmChangeFile::areaFilter(const multipolygon_t &poly)
+{
+    for (auto it = std::begin(changes); it != std::end(changes); it++) {
+        OsmChange *change = it->get();
+	point_t point;
+	for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
+	    OsmNode *node = nit->get();
+	    if (!boost::geometry::within(point, poly)) {
+		log_debug(_("Changeset with node %1% is not in a priority area"), node->change_id);
+		node->priority = false;
+		changes.erase(it--);
+		break;
+	    } else {
+		log_debug(_("Changeset with node %1% is in a priority area"), node->change_id);
+		node->priority = true;
+	    }
+	}
+	for (auto nit = std::begin(change->ways); nit != std::end(change->ways); ++nit) {
+	    OsmWay *way = nit->get();
+	    int middle = way->refs.size()/2;
+	    if (!boost::geometry::within(nodecache[middle], poly)) {
+		log_debug(_("Way %1% is not in a priority area"), way->id);
+		way->priority = false;
+	    } else {
+		log_debug(_("Way %1% is in a priority area"), way->id);
+		changes.erase(it--);
+		way->priority = true;
+	    }
+	}
+    }
+}
+
 std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>>
 OsmChangeFile::collectStats(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin)
 {
@@ -438,7 +473,8 @@ OsmChangeFile::collectStats(const multipolygon_t &poly, std::shared_ptr<Validate
 		continue;
 	    }
 	    // Filter data by polygon
-	    if (!boost::geometry::within(node->point, poly)) {
+	    //if (!boost::geometry::within(node->point, poly)) {
+	    if (!node->priority) {
 		log_debug(_("Changeset with node %1% is not in a priority area"), node->change_id);
 		continue;
 	    } else {
