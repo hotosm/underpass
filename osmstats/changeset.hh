@@ -145,6 +145,8 @@ public:
     std::string editor;                ///< The OSM editor the end user used
     std::string source;                ///< The imagery source
     std::map<std::string, std::string> tags;
+    polygon_t bbox;
+    bool priority;
 };
 
 /// \class ChangeSetFile
@@ -162,6 +164,8 @@ class ChangeSetFile
 {
 public:
     ChangeSetFile(void) { };
+
+    bool areaFilter(const multipolygon_t &poly);
 
     /// Read a changeset file from disk or memory into internal storage
     bool readChanges(const std::string &file);
@@ -190,7 +194,7 @@ public:
     // };
 
     /// Get one set of change data from the parsed XML data
-    ChangeSet& operator[](int index) { return changes[index]; };
+    // ChangeSet& operator[](int index) { return changes[index]; };
     
     /// Dump the data of this class to the terminal. This should only
     /// be used for debugging.
@@ -198,7 +202,7 @@ public:
 // protected:
 //     bool store;
     std::string filename;       ///< The filename of this changeset for disk files
-    std::vector<ChangeSet> changes; ///< Storage of all the changes in this data
+    std::list<std::shared_ptr<ChangeSet>> changes; ///< Storage of all the changes in this data
     // std::shared_ptr<GeoUtil> boundaries; ///< A pointer to the geoboundary data
 };
 }       // EOF changeset

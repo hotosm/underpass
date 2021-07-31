@@ -123,7 +123,7 @@ ChangeSetFile::importChanges(const std::string &file)
     osmstats::QueryOSMStats ostats;
     ostats.connect();
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
-        ostats.applyChange(*it);
+        //ostats.applyChange(*it);
     }
 
     change.close();
@@ -178,6 +178,29 @@ ChangeSetFile::readChanges(const std::string &file)
     // boost::iostreams::filtering_streambuf<boost::iostreams::input> fooby(foo, 10);
 #endif
     change.close();
+}
+
+bool
+ChangeSetFile::areaFilter(const multipolygon_t &poly)
+{
+    for (auto it = std::begin(changes); it != std::end(changes); it++) {
+        ChangeSet *change = it->get();
+        point_t pt;
+        boost::geometry::append(change->bbox, point_t(change->max_lon, change->max_lat));
+        boost::geometry::append(change->bbox, point_t(change->max_lon, change->min_lat));
+        boost::geometry::append(change->bbox, point_t(change->min_lon, change->min_lat));
+        boost::geometry::append(change->bbox, point_t(change->min_lon, change->max_lat));
+        boost::geometry::append(change->bbox, point_t(change->max_lon, change->max_lat));
+        boost::geometry::centroid(change->bbox, pt);
+        if (!boost::geometry::within(pt, poly)) {
+            // log_debug(_("Validating changeset %1% is not in a priority area"), change->id);
+            change->priority = false;
+            changes.erase(it--);
+        } else {
+            // log_debug(_("Validating changeset %1% is in a priority area"), change->id);
+            change->priority = true;
+        }
+    }
 }
 
 void
@@ -267,7 +290,7 @@ ChangeSetFile::dump(void)
 {
     std::cerr << "There are " << changes.size() << " changes" << std::endl;
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
-        it->dump();
+        //it->dump();
     }
 }
 
@@ -341,9 +364,9 @@ ChangeSetFile::on_end_element(const Glib::ustring& name)
     if (name == "changeset") {
         // FIXME: it'd be better to not redo the database connection
         //for every changeset
-        osmstats::QueryOSMStats ostats;
-        ostats.connect();
-        ostats.applyChange(changes.back());
+        // osmstats::QueryOSMStats ostats;
+        // ostats.connect();       // FIXME: this is fixed in master
+        // ostats.applyChange(changes.back());
     }
 }
 
@@ -352,9 +375,8 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
                                 const AttributeList& attributes)
 {
     // log_debug(_("Element \'" << name << "\' starting" << std::endl;
-
     if (name == "changeset") {
-        changeset::ChangeSet change(attributes);
+        auto change = std::make_shared<changeset::ChangeSet>(attributes);
         changes.push_back(change);
         // changes.back().dump();
     } else if (name == "tag") {
@@ -410,11 +432,11 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
                     while (token != NULL) {
                         token = std::strtok(NULL, "#;");
                         if (token) {
-                            changes.back().addHashtags(token);
+                            changes.back()->addHashtags(token);
                         }
                     }
                 } else {
-                    changes.back().addHashtags(attr_pair.value);
+                    changes.back()->addHashtags(attr_pair.value);
                 }
             }
             // Hashtags start with an # of course. The hashtag tag wasn't
@@ -422,7 +444,7 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
             // field instead.
             if (comhit && attr_pair.name == "v") {
                 comhit = false;
-                changes.back().addComment(attr_pair.value);
+                changes.back()->addComment(attr_pair.value);
                 if (attr_pair.value.find('#') != std::string::npos) {
                     std::vector<std::string> result;
                     boost::split(result, attr_pair.value, boost::is_any_of(" "));
@@ -433,7 +455,7 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
                             //     break;
                             // }
                             if (it->at(i) == '#') {
-                                changes.back().addHashtags(it->substr(i));
+                                changes.back()->addHashtags(it->substr(i));
                                 break;
                             }
                         }
@@ -442,7 +464,7 @@ ChangeSetFile::on_start_element(const Glib::ustring& name,
             }
             if (cbyhit && attr_pair.name == "v") {
                 cbyhit = false;
-                changes.back().addEditor(attr_pair.value);
+                changes.back()->addEditor(attr_pair.value);
             }
         }
     }
