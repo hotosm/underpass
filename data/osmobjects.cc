@@ -80,12 +80,16 @@ OsmObject::dump(void)
     } else if (type == relation) {
         log_debug(_("\tType: OsmRelation"));
     }
-    
     log_debug(_("\tID: %1%"), id);
     log_debug(_("\tVersion: %1%"), version);
     log_debug(_("\tTimestamp: %1%"), timestamp);
     log_debug(_("\tUID: %1%"), uid);
     log_debug(_("\tUser: %1%"), user);
+    if (priority) {
+        log_debug(_("\tIn Priority area"));
+    } else {
+        log_debug(_("\tNot in Priority area"));
+    }
     if (change_id > 0) {
         log_debug(_("\tChange ID: "), change_id);
     }
