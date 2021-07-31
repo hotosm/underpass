@@ -193,11 +193,11 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
 	aquery.erase(aquery.size() - 2);
 	aquery += ") ON CONFLICT (id) DO UPDATE SET";
     }
-    
+
     aquery += " updated_at = \'" + to_simple_string(now) + "\'";
     aquery += " WHERE changesets.id=" + std::to_string(change.change_id);
 
-    log_debug(_("QUERY stats: %1%"), aquery);
+    // log_debug(_("QUERY stats: %1%"), aquery);
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(aquery);
 
@@ -214,7 +214,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     std::string query = "INSERT INTO users VALUES(";
     query += std::to_string(change.uid) + ",\'" + sdb->esc(change.user);
     query += "\') ON CONFLICT DO NOTHING;";
-    log_debug(_("QUERY: %1%"), query);
+    // log_debug(_("QUERY: %1%"), query);
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     //worker.commit();
@@ -292,7 +292,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     }
     // a changeset with a single node in it doesn't draw a line
     if (change.max_lon < 0 && change.min_lat < 0) {
-        log_error(_("WARNING: single point! %1%"), change.id);
+        // log_error(_("WARNING: single point! %1%"), change.id);
 	min_lat = change.min_lat + (fudge/2);
 	max_lat = change.max_lat + (fudge/2);
 	min_lon = change.min_lon - (fudge/2);
@@ -300,7 +300,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
         //return false;
     }
     if (max_lon == min_lon || max_lat == min_lat) {
-        log_error(_("WARNING: not a line! %1%"), change.id);
+        // log_error(_("WARNING: not a line! %1%"), change.id);
 	min_lat = change.min_lat + (fudge/2);
 	max_lat = change.max_lat + (fudge/2);
 	min_lon = change.min_lon - (fudge/2);
@@ -308,7 +308,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
 	// return false;
     }
     if (max_lon < 0 && min_lat < 0) {
-        log_error(_("WARNING: single point! "), change.id);
+        // log_error(_("WARNING: single point! "), change.id);
 	min_lat = change.min_lat + (fudge/2);
 	max_lat = change.max_lat + (fudge/2);
 	min_lon = change.min_lon - (fudge/2);
@@ -426,7 +426,7 @@ QueryOSMStats::getRawChangeSets(std::vector<long> &changeset_ids)
     }
     sql += "]);";
 
-    log_debug(_("QUERY: %1%"), sql);
+    // log_debug(_("QUERY: %1%"), sql);
     pqxx::result result = worker.exec(sql);
     //OsmStats stats(result);
     worker.commit();
