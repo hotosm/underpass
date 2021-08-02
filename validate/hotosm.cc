@@ -37,19 +37,35 @@
 #include <string>
 #include <iostream>
 
+#include <boost/dll/alias.hpp>
+#include <boost/function.hpp>
+#include <boost/config.hpp>
+
+#include "data/yaml.hh"
 #include "hotosm.hh"
 #include "validate.hh"
+#include "osmstats/osmchange.hh"
 #include "log.hh"
-
-namespace hotosm {
+#include <boost/dll/shared_library.hpp>
+#include <boost/dll/shared_library_load_mode.hpp>
 
 using namespace logger;
 
-logger::LogFile& dbglogfile = logger::LogFile::getDefaultInstance();
+namespace hotosm {
+
+LogFile& dbglogfile = LogFile::getDefaultInstance();
 
 // FIXME: things to look for
 // Villages, hamlets, neigborhoods, towns, or cities added without a name
 
+Hotosm::Hotosm(void)
+{
+    yaml::Yaml yaml;
+    yaml.read("/home/rob/projects/HOT/underpass.git/validate/validate/buildings.yaml");
+    // yaml.dump();
+}
+
+#if 0
 Hotosm::Hotosm(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
 {
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
@@ -77,6 +93,7 @@ Hotosm::Hotosm(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
         }
     }
 }
+#endif
 
 // Check a POI for tags. A node that is part of a way shouldn't have any
 // tags, this is to check actual POIs, like a school.
@@ -118,15 +135,25 @@ Hotosm::checkWay(osmobjects::OsmWay *way)
 bool
 Hotosm::checkTag(const std::string &key, const std::string &value)
 {
+    log_trace("Hotosm::checkTag(%1%, %2%)", key, value);
     // Check for an empty value
-    if (value.empty() && !key.empty()) {
-        log_error(_("WARNING: empty value for tag \"%1%\""), key);
-        return false;
+    if (!key.empty() && value.empty()) {
+        log_debug(_("WARNING: empty value for tag \"%1%\""), key);
+        return true;
     }
-    
     // Check for a space in the tag key
     if (key.find(' ') != std::string::npos) {
         log_error(_("WARNING: spaces in tag key \"%1%\""), key);
+        return false;
+    }
+    // Check for single quotes in the tag value
+    if (value.find('\'') != std::string::npos) {
+        log_error(_("WARNING: single quote in tag value \"%1%\""), value);
+        return false;
+    }
+    // Check for single quotes in the tag value
+    if (value.find('\"') != std::string::npos) {
+        log_error(_("WARNING: double quote in tag value \"%1%\""), value);
         return false;
     }
 
@@ -134,6 +161,7 @@ Hotosm::checkTag(const std::string &key, const std::string &value)
 }
 
 };      // EOF hotosm namespace
+
 #endif  // EOF __HOTOSM_H__
 
 // Local Variables:

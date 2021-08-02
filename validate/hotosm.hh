@@ -42,43 +42,62 @@
 #include <memory>
 #include <iostream>
 
+#include <boost/config.hpp>
+#include <boost/dll/alias.hpp>
+#include <boost/filesystem/path.hpp>
 #include <boost/date_time.hpp>
-#include "boost/date_time/posix_time/posix_time.hpp"
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/dll/runtime_symbol_info.hpp>
 using namespace boost::posix_time;
 using namespace boost::gregorian;
+
+// MinGW related workaround
+#define BOOST_DLL_FORCE_ALIAS_INSTANTIATION
 
 #include "validate.hh"
 
 namespace hotosm {
 
-using namespace validate;
-
-class BOOST_SYMBOL_VISIBLE Hotosm
+class Hotosm : public Validate
 {
 public:
-  Hotosm(void) {};
+    Hotosm(void);
+    ~Hotosm(void) {  };
+    // Hotosm(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes);
 
-  ~Hotosm(void) {};
-  Hotosm(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes);
+    /// Check a POI for tags. A node that is part of a way shouldn't have any
+    /// tags, this is to check actual POIs, like a school.
+    bool checkPOI(osmobjects::OsmNode *node);
 
-  /// Check a POI for tags. A node that is part of a way shouldn't have any
-  /// tags, this is to check actual POIs, like a school.
-  bool checkPOI(osmobjects::OsmNode *node);
+    /// This checks a way. A way should always have some tags. Often a polygon
+    /// is a building
+    bool checkWay(osmobjects::OsmWay *way);
 
-  /// This checks a way. A way should always have some tags. Often a polygon
-  /// is a building 
-  bool checkWay(osmobjects::OsmWay *way);
-
-  bool checkTag(const std::string &key, const std::string &value);
-
+    bool checkTag(const std::string &key, const std::string &value);
+    // Factory method
+    static std::shared_ptr<Hotosm> create(void) {
+	return std::make_shared<Hotosm>();
+    };
+    // virtual boost::filesystem::path location() const = 0;
+//    boost::filesystem::path location() const {
+//      return boost::dll::this_line_location();
+//  }
 private:
     std::vector<long> buildings;       ///< 
     std::vector<long> node_errors;     ///< 
     std::vector<long> way_errors;      ///< 
-    std::vector<long> relation_errors; ///< 
+    std::vector<long> relation_errors; ///<
+    std::map<std::string, std::vector<std::string>> tests;
 };
 
+BOOST_DLL_ALIAS(Hotosm::create, create_plugin)
+
 } // EOF hotosm namespace
+
+// Factory method. Returns *simple pointer*!
+//SharedRef *create(void) {
+//    return new SharedRef();
+//}
 
 #endif  // EOF __HOTOSM_HH__
 
