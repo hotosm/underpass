@@ -1,9 +1,9 @@
 # Mainpage
 
-Underpass is a C++ API and utility programs for mainipulating
+Underpass is a C++ API and utility programs for manipulating
 OpenStreetMap data at the database and raw data file level. It can
 download replication files from the OSM planet server and use these
-files to update a local copy of the OSM database, or analysze the
+files to update a local copy of the OSM database, or analyze the
 changes to generate statistics. It is designed to be high
 performance on modest hardware.
 
@@ -69,7 +69,7 @@ dependencies. Underpass also uses the ranges-v3 library. This will be
 in the 2020 C++ standard, but hasn't been released yet.
 
 Fedora 33, Debian Buster, and Ubuntu Groovy contain a package for
-libranges-v3, which is the code base for what will be in
+librange-v3, which is the code base for what will be in
 C++ 2020. Both Debian Buster and Ubuntu Groovy ship *libpqxx 6.x*,
 which has a bug which has been fixed in *libpqxx 7.x*. Fedora 33 ships
 the newer version.
