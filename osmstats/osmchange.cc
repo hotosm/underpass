@@ -409,6 +409,7 @@ OsmChangeFile::dump(void)
 bool
 OsmChangeFile::areaFilter(const multipolygon_t &poly)
 {
+    // log_debug(_("Pre filtering size is %1%"), changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
         OsmChange *change = it->get();
 	for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
@@ -424,8 +425,8 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
 	    if (!boost::geometry::within(node->point, poly)) {
 		// log_debug(_("Validating Node %1% is not in a priority area"), node->change_id);
 		node->priority = false;
-		change->nodes.erase(nit--);
-		// changes.erase(it--);
+		// change->nodes.erase(nit--);
+		changes.erase(it--);
 		break;
 	    } else {
 		// log_debug(_("Validating Node %1% is in a priority area"), node->change_id);
@@ -433,6 +434,7 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
 		node->priority = true;
 	    }
 	}
+	//log_debug(_("Post filtering size is %1%"), changes.size());
 	for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
 	    OsmWay *way = wit->get();
 	    if (way->action ==  osmobjects::remove) {

@@ -183,6 +183,7 @@ ChangeSetFile::readChanges(const std::string &file)
 bool
 ChangeSetFile::areaFilter(const multipolygon_t &poly)
 {
+    // log_debug(_("Pre filtering changeset size is %1%"), changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
         ChangeSet *change = it->get();
         point_t pt;
@@ -201,6 +202,7 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly)
             change->priority = true;
         }
     }
+    // log_debug(_("Post filtering changeset size is %1%"), changeset->changes.size());
 }
 
 void
