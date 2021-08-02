@@ -54,12 +54,7 @@ main(int argc, char* argv[])
     // Read a single polygon
     // tgu.readFile(basedir + "/include.osm", false);
     // Read a multipolygon
-    tgu.startTimer();
-    tgu.readFile(basedir + "/data/geoboundaries.osm", true);
-    tgu.endTimer();
-
-    // See if it worked, which it needs to if any other tests will work
-    tgu.dump();
+    // tgu.readFile(basedir + "/data/geoboundaries.osm", true);
 
     // Changesets have a bounding box, so we want to find the
     // country the changes were made in.
@@ -68,14 +63,5 @@ main(int argc, char* argv[])
     double max_lat = -2.7699398;
     double max_lon = 29.6012844;
 
-    tgu.startTimer();
-    GeoCountry &country = tgu.inCountry(max_lat, max_lon, min_lat, min_lon);
-    tgu.endTimer();
-    if (country.getName() == "Rwanda" || country.getAbbreviation(2) == "RW") {
-        runtest.pass("GeoUtil::inCountry()");
-    } else {
-        runtest.fail("GeoUtil::inCountry()");
-    }
-    country.dump();
 };
 

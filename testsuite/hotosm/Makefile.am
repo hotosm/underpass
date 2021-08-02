@@ -28,10 +28,10 @@ check_PROGRAMS =  \
 	tm-test \
 	stats-test \
 	change-test \
-	geo-test \
 	val-test \
 	rep-test \
 	under-test
+#	geo-test 
 
 BOOST_LIBS = \
 	$(BOOST_DATE_TIME_LIB) \
@@ -43,10 +43,15 @@ BOOST_LIBS = \
 	$(BOOST_THREAD_LIB) \
 	$(BOOST_LOCALE_LIB)
 
-geo_test_SOURCES = geo-test.cc
-geo_test_LDFLAGS = -L../..
-geo_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
-geo_test_LDADD = -lpqxx -lhotosm $(BOOST_LIBS)
+AM_CXXFLAGS = \
+        -DPKGLIBDIR=\"$(pkglibdir)\" \
+        -DTOPSRCDIR=\"$(top_srcdir)\" \
+        -DSRCDIR=\"$(srcdir)\"
+
+# _test_SOURCES = geo-test.cc
+# geo_test_LDFLAGS = -L../..
+# geo_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
+# geo_test_LDADD = -lpqxx -lhotosm $(BOOST_LIBS)
 
 val_test_SOURCES = val-test.cc
 val_test_LDFLAGS = -L../..

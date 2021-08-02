@@ -23,7 +23,7 @@
 #include <pqxx/pqxx>
 #include <cmath>
 
-#include "hottm.hh"
+#include "data/geoutil.hh"
 #include "osmstats/osmstats.hh"
 #include "osmstats/changeset.hh"
 #include "osmstats/osmchange.hh"
@@ -142,7 +142,12 @@ main(int argc, char* argv[])
     //
     // Modify
     // 2 place nodes get name added
-    auto stats = testco.collectStats();
+    std::string testdata = TOPSRCDIR;
+    testdata += "/data/priority.geojson";
+    geoutil::GeoUtil geou;
+    geou.readFile(testdata);
+
+    auto stats = testco.collectStats(geou.boundary);
     std::cout << "Operation collect stats took " << timer.endTimer() << " milliseconds" << std::endl;
 
 #if 0
