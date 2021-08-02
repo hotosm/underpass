@@ -42,12 +42,13 @@
 
 #include <boost/config.hpp>
 #include <boost/date_time.hpp>
-#include "boost/date_time/posix_time/posix_time.hpp"
+#include <boost/filesystem/path.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/dll/runtime_symbol_info.hpp>
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "data/osmobjects.hh"
-#include "osmstats/osmchange.hh"
 
 /// \file validate.hh
 /// \brief This class tries to validate the OSM objects
@@ -81,39 +82,30 @@ using namespace boost::gregorian;
 //   
 //
 
-/// \namespace validate
-namespace validate {
-
 typedef enum {notags, isbuilding } errortype_t;
 
 class BOOST_SYMBOL_VISIBLE Validate
 {
 public:
-  Validate(void) {};
-  virtual ~Validate(void) {};
-  Validate(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes) {};
+    virtual ~Validate(void) {};
+    // Validate(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes) {};
 
-  /// Check a POI for tags. A node that is part of a way shouldn't have any
-  /// tags, this is to check actual POIs, like a school.
-  virtual bool checkPOI(osmobjects::OsmNode *node);
+    /// Check a POI for tags. A node that is part of a way shouldn't have any
+    /// tags, this is to check actual POIs, like a school.
+    virtual bool checkPOI(osmobjects::OsmNode *node) = 0;
 
-  /// This checks a way. A way should always have some tags. Often a polygon
-  /// is a building 
-  virtual bool checkWay(osmobjects::OsmWay *way);
-
-  virtual bool checkTags (std::map<std::string, std::string> tags) {
-      bool result;
-      for (auto it = std::begin(tags); it != std::end(tags); ++it) {
-          result = checkTag(it->first, it->second);
-      }
-      return result;
-  };
-
-  virtual bool checkTag(const std::string &key, const std::string &value);
-
+    /// This checks a way. A way should always have some tags. Often a polygon
+    /// is a building
+    virtual bool checkWay(osmobjects::OsmWay *way) = 0;
+    bool checkTags (std::map<std::string, std::string> tags) {
+        bool result;
+        for (auto it = std::begin(tags); it != std::end(tags); ++it) {
+            result = checkTag(it->first, it->second);
+        }
+        return result;
+    };
+    virtual bool checkTag(const std::string &key, const std::string &value) = 0;
 };
-
-} // EOF validate namespace
 
 #endif  // EOF __VALIDATE_HH__
 
