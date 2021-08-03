@@ -2,14 +2,20 @@ load_lib "dejagnu.exp"
 
 verbose "Testing Underpass!" 2
 
-set tests [glob *-test]
+if { [file tail $objdir] == "libunderpass.all"} {
+    set node "./"
+} else {
+    set node "libunderpass.all"
+}
 
-verbose "Testing $tests" 2
+set tests [glob $node/*-test]
+
+verbose "Running $tests" 2
 
 foreach test $tests {
     # exec ./$test
     # Execute the test case, and analyse the output
-    catch [host_execute ./$test] ne ""
+    catch [host_execute $test] ne ""
     verbose "$ne"
     # perror "$test had an execution error" 0
 }
