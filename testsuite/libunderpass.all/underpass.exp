@@ -1,0 +1,9 @@
+verbose "Testing Underpass!" 2
+
+set tests [glob *-test]
+
+verbose "Testing $tests" 2
+
+foreach test $tests {
+    exec ./$test
+}
