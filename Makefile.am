@@ -29,7 +29,7 @@ MAINTAINERCLEANFILES = revno.h .lastmod
 
 SUBDIRS = testsuite
 
-lib_LTLIBRARIES = libhotosm.la
+lib_LTLIBRARIES = libunderpass.la
 instdir = /tmp
 
 BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
@@ -50,7 +50,7 @@ SQL_FILES = \
 	data/geoboundaries.sql
 
 # inst_HEADERS = hotosm.hh hottm.hh
-libhotosm_la_SOURCES = \
+libunderpass_la_SOURCES = \
 	timer.hh \
 	log.cc log.hh \
 	dsodefs.hh gettext.h \
@@ -72,11 +72,11 @@ libhotosm_la_SOURCES = \
 	data/underpass.cc data/underpass.hh \
 	data/setupdb.sh
 
-libhotosm_la_LDFLAGS = -avoid-version
+libunderpass_la_LDFLAGS = -avoid-version
 
 bin_PROGRAMS = replicator
 replicator_SOURCES = replicator.cc
-replicator_LDADD = libhotosm.la $(BOOST_LIBS)
+replicator_LDADD = libunderpass.la $(BOOST_LIBS)
 
 AM_CXXFLAGS = -DPKGLIBDIR=\"$(pkglibdir)\" -DSRCDIR=\"$(srcdir)\"
 
@@ -89,6 +89,8 @@ EXTRA_DIST = \
 	doc \
 	debian \
 	redhat
+
+DEJATOOL = libunderpass
 
 # if ENABLE_SWIG
 # SWIGdir = swig
