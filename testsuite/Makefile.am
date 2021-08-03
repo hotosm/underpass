@@ -19,7 +19,7 @@
 
 AUTOMAKE_OPTIONS = dejagnu
 
-SUBDIRS = hotosm
+SUBDIRS = libunderpass.all
 
 all:
 	@echo "Nothing to be done for all"
