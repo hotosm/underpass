@@ -77,6 +77,6 @@ the newer version.
 # More Information
 
 If you want to know more about Underpass, the [project
-Documentation](https://robsavoye.github.io/underpass/pages.html) is
+Documentation](https://hotosm.github.io/underpass/index.html) is
 here. This includes the internal documentation of all the classes. The
 source code is [available here](https://github.com/robsavoye/underpass).
