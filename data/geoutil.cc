@@ -47,7 +47,7 @@ using namespace boost::gregorian;
 #include "osmstats/osmstats.hh"
 #include "osmstats/changeset.hh"
 #include "data/geoutil.hh"
-#include <gdal/ogrsf_frmts.h>
+#include <ogrsf_frmts.h>
 #include <ogr_geometry.h>
 
 #include "log.hh"

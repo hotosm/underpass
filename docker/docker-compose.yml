@@ -1,0 +1,39 @@
+version: "3"
+
+services:
+  # PostGIS stock image
+  postgis:
+    image: postgis/postgis:11-2.5-alpine
+    ports:
+      - "5439:5432"
+    environment:
+      - POSTGRES_DB=underpass_test
+      - POSTGRES_USER=underpass_test
+      - POSTGRES_PASSWORD=underpass_test
+    restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    networks:
+      internal:
+
+  # Underpass build dependencies
+  underpass-build-deps:
+    # Pre-built for speed:
+    image: elpaso/underpass-build-deps:focal
+    # Build recipe:
+    #build:
+    #  context: .
+    #  dockerfile: underpass-build-deps.dockerfile
+    command: tail -f /dev/null
+    volumes:
+      - ../:/code/
+    depends_on:
+      - postgis
+    networks:
+      internal:
+
+networks:
+  internal:
