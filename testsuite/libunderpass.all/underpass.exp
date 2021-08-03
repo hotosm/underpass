@@ -1,3 +1,5 @@
+load_lib "dejagnu.exp"
+
 verbose "Testing Underpass!" 2
 
 set tests [glob *-test]
@@ -5,5 +7,9 @@ set tests [glob *-test]
 verbose "Testing $tests" 2
 
 foreach test $tests {
-    exec ./$test
+    # exec ./$test
+    # Execute the test case, and analyse the output
+    catch [host_execute ./$test] ne ""
+    verbose "$ne"
+    # perror "$test had an execution error" 0
 }
