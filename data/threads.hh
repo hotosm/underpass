@@ -112,7 +112,7 @@ extern std::shared_ptr<osmchange::OsmChangeFile> threadOsmChange(const replicati
 /// This updates several fields in the raw_changesets table, which are part of
 /// the changeset file, and don't need to be calculated.
 //extern bool threadChangeSet(const std::string &file);
-extern std::shared_ptr<replication::StateFile> threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly);
+extern std::shared_ptr<changeset::ChangeSetFile> threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly);
 // extern bool threadChangeSet(const std::string &file, std::promise<bool> && result);
 
 /// This updates the calculated fields in the raw_changesets table, based on
