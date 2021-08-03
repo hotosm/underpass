@@ -249,7 +249,7 @@ po/Makefile.in
 Makefile
 doc/Doxyfile
 testsuite/Makefile
-testsuite/hotosm/Makefile
+testsuite/libunderpass.all/Makefile
 redhat/underpass.spec
 ])
 
