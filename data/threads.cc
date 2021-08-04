@@ -140,33 +140,42 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly)
 	    }
         }
 #endif
-	remote.dump();
+	// remote.dump();
         if (remote.frequency == replication::changeset) {
             Timer timer;
             timer.startTimer();
-            auto found = threadChangeSet(remote, poly);
-            if (!found) {
-                // planet->disconnectServer();
+	    osmstats::QueryOSMStats ostats;
+	    ostats.connect();
+            auto changefile = threadChangeSet(remote, poly);
+	    for (auto it = std::begin(changefile->changes); it != std::end(changefile->changes); ++it) {
+		ostats.applyChange(*it->get());
+	    }
+	    ptime now = boost::posix_time::microsec_clock::local_time();
+	    boost::posix_time::time_duration delta;
+	    if (changefile->changes.size() > 0) {
+		delta = now - changefile->changes.front()->created_at;
+		// log_debug("DELTA: %1%", (delta.hours()*60) + delta.minutes());
+	    }
+            if ((delta.hours()*60) + delta.minutes() <= 1) {
 		std::this_thread::sleep_for(std::chrono::minutes{1});
-                // planet.reset(new replication::Planet);
             } else {
                 log_debug(_("Processed ChangeSet: %1%"), remote.url);
             }
             timer.endTimer("changeSet");
         } else {
             std::string file = remote.url + ".osc.gz";
-	    boost::posix_time::time_duration delta;
 	    ptime now = boost::posix_time::microsec_clock::local_time();
             Timer timer;
             timer.startTimer();
-            auto changefile = threadOsmChange(remote, poly, ostats, validator);
+            auto osmchange = threadOsmChange(remote, poly, ostats, validator);
 	    // FIXME: There is probably a better way to determine when to delay,
 	    // or when to just keep processing files when catching up.
-	    if (changefile->changes.size() > 0) {
-		// delta = now - changefile->changes[0]->nodes[0]->timestamp;
+	    boost::posix_time::time_duration delta;
+	    if (osmchange->changes.size() > 0) {
+		delta = now - osmchange->changes.front()->nodes.back()->timestamp;
+		log_debug("DELTA: %1%", (delta.hours()*60) + delta.minutes());
 	    }
-            //if (!delta.minutes() <= 1) {
-	    if (false) {
+            if ((delta.hours()*60) + delta.minutes() <= 1) {
                 // planet->disconnectServer();
                 if (remote.frequency == replication::minutely) {
                     std::this_thread::sleep_for(std::chrono::minutes{1});
@@ -375,13 +384,10 @@ threadOsmChange(const replication::RemoteURL &remote,
     }
     //timer.stop();
     // log_debug("Took %1% to process validation", timer.wall);
-
     Timer timer;
     timer.startTimer();
-    log_debug(_("Pre filtering size is %1%"), osmchanges->changes.size());
     osmchanges->areaFilter(poly);
-    log_debug(_("Post filtering size is %1%"), osmchanges->changes.size());
-    timer.endTimer("areaFilter");
+    timer.endTimer("osmchanges::areaFilter");
     
     timer.startTimer();
     // These stats are for the entire file
@@ -403,11 +409,10 @@ threadOsmChange(const replication::RemoteURL &remote,
 // This updates several fields in the changesets table, which are part of
 // the changeset file, and don't need to be calculated.
 //void threadChangeSet(const std::string &file, std::promise<bool> &&result)
-std::shared_ptr<replication::StateFile>
+std::shared_ptr<changeset::ChangeSetFile>
 threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly)
 {
-    changeset::ChangeSetFile changeset;
-
+    auto changeset = std::make_shared<changeset::ChangeSetFile>();
     auto state = std::make_shared<replication::StateFile>();
     auto data = std::make_shared<std::vector<unsigned char>>();
     // FIXME: this this be the datadir from the command line
@@ -435,7 +440,7 @@ threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly
     if (data->size() == 0) {
         log_error(_("ChangeSet file not found: %1%"), remote.url);
         //result.set_value(false);
-        return state;
+        return changeset;
     } else {
         //result.set_value(true);
         // XML parsers expect every line to have a newline, including the end of file
@@ -457,7 +462,7 @@ threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly
             inbuf.push(arrs);
             std::istream instream(&inbuf);
             try {
-                changeset.readXML(instream);
+                changeset->readXML(instream);
             } catch (std::exception& e) {
                 log_error(_("Couldn't parse: %1% %2%"), remote.url, e.what());
                 // return false;
@@ -469,15 +474,21 @@ threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly
         }
     }
 
+    Timer timer;
+    timer.startTimer();
+    changeset->areaFilter(poly);
+    timer.endTimer("changeset::areaFilter");
+
+#if 0
     // Create a stubbed state file to update the underpass database with more
     // accurate timestamps, also used if there is no state.txt file.
-    if (changeset.changes.size() > 0) {
-        state->timestamp = changeset.changes.begin()->created_at;
-        state->created_at = changeset.changes.begin()->created_at;
-        state->closed_at = changeset.changes.end()->created_at;
+    if (changeset->changes.size() > 0) {
+        state->timestamp = changeset->changes.begin()->created_at;
+        state->created_at = changeset->changes.begin()->created_at;
+        state->closed_at = changeset->changes.end()->created_at;
     }
-    
-    return state;
+#endif
+    return changeset;
 }
 
 // This updates the calculated fields in the raw_changesets table, based on
