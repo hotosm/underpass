@@ -68,8 +68,8 @@ class QueryDB
 
     pqxx::result query(std::string &select);
     bool connect(std::string &database);
-    pqxx::connection *db;
-    pqxx::work *worker;
+    pqxx::connection *db = nullptr;
+    pqxx::work *worker = nullptr;
 protected:
     std::array<std::string, 16> keywords;
 };

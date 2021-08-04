@@ -27,6 +27,7 @@
 #include <array>
 #include <memory>
 #include <iostream>
+#include <assert.h>
 #include <pqxx/pqxx>
 #include "pqxx/nontransaction"
 
@@ -119,7 +120,7 @@ QueryOSMStats::connect(const std::string &dburl)
     }
     std::string args = dbhost + " " + dbname + " " + dbuser + " " + dbpass;
     // log_debug(args);
-    
+
     try {
 	sdb = std::make_shared<pqxx::connection>(args);
 	if (sdb->is_open()) {
@@ -131,7 +132,7 @@ QueryOSMStats::connect(const std::string &dburl)
     } catch (const std::exception &e) {
 	log_error(_(" Couldn't open database connection to %1% %2%"), dburl, e.what());
 	return false;
-   }    
+   }
 }
 
 // long
@@ -222,7 +223,7 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
 	aquery.erase(aquery.size() - 2);
 	aquery += ") ON CONFLICT (id) DO UPDATE SET";
     }
-    
+
     aquery += " closed_at = \'" + to_simple_string(change.closed_at) + "\',";
     aquery += " updated_at = \'" + to_simple_string(now) + "\'";
     aquery += " WHERE changesets.id=" + std::to_string(change.change_id);
@@ -272,7 +273,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
 
     query = "INSERT INTO changesets (id, editor, user_id, created_at";
     if (change.hashtags.size() > 0) {
-        query += ", hashtags ";        
+        query += ", hashtags ";
     }
     if (!change.source.empty()) {
         query += ", source ";
