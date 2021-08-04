@@ -233,6 +233,8 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
     pqxx::result result = worker.exec(aquery);
 
     worker.commit();
+
+    // FIXME: return something
 }
 
 bool
