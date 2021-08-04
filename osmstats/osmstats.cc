@@ -413,7 +413,7 @@ QueryOSMStats::getLastUpdate(void)
 {
     std::string query = "SELECT MAX(created_at) FROM changesets;";
     // log_debug(_("QUERY: %1%"), query);
-    // auto worker = std::make_shared<pqxx::work>(*db);
+    // auto worker = std::make_shared<pqxx::work>(*sdb);
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     worker.commit();
