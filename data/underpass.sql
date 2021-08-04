@@ -13,20 +13,6 @@ CREATE TABLE public.states (
 );
 ALTER TABLE states ADD PRIMARY KEY (path, timestamp);
 
-CREATE TABLE public.creators (
-    user_id bigint NOT NULL,
-    change_id bigint NOT NULL,
-    editor text NOT NULL
-);
-
-CREATE TABLE public.geoboundaries (
-    cid text,
-    name character varying,
-    other_tags public.hstore,
-    focus boolean,
-    wkb public.geometry(GeometryCollection,4326)
-);
-
 CREATE TABLE public.way_nodes (
     way_id bigint NOT NULL,
     node_id bigint NOT NULL,

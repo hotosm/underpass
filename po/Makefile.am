@@ -20,10 +20,12 @@ AUTOMAKE_OPTIONS = -Wno-portability
 
 POFILES = AUTO
 
-translations = cs da de en_GB es fi fr it ja el km nb ne ru zh_CN zh_TW
+# Same list as Tasking manager
+ translations = bn de fa_IR gl it lt nl_NL pt sl vi cs en fi hu ja mg pl ru ta  zh_TW
 
+# translations = de fr
 
-# This is GNU make specific, so if you are building Gnash on a BSD
+# This is GNU make specific, so if you are building on a BSD
 # machine, you probably want to install GNU make in additional to
 # BSD make.
 pofiles := $(patsubst %,%.po,$(translations))
@@ -32,16 +34,19 @@ gmofiles := $(patsubst %,%.gmo,$(translations))
 CLEANFILES = \
 	$(gmofiles) 
 
-dirs =  osmstats data validate
+dirs = \
+	validate \
+	osmstats \
+	data
 
-EXTRA_DIST = $(pofiles) underpass.pot 
+EXTRA_DIST = $(underpass.pot)
 
 all: $(gmofiles)
 
 if HAS_GETTEXT
 
-SRCS = $(shell find $(patsubst %,../%,$(dirs)) -name '*.cpp')
-gnash.pot: $(SRCS)
+SRCS = $(shell find $(patsubst %,../%,$(dirs)) -name '*.cc')
+underpass.pot: $(SRCS)
 	cd $(top_srcdir); \
 	pwd; \
 	rm -f po/POTFILES; \
@@ -49,17 +54,17 @@ gnash.pot: $(SRCS)
 	  echo "$$i" |sed 's%../%%' >> $@;\
 	done; \
 	$(XGETTEXT) --language=C++ --files-from=po/POTFILES \
-	  -o po/gnash.pot \
-	  --default-domain=gnash --force \
+	  -o po/underpass.pot \
+	  --default-domain=underpass --force \
 	  --flag=_:1:pass-c-format --keyword=_ --keyword=_q \
-	  --copyright-holder='Free Software Foundation, Inc.';  \
+	  --copyright-holder='Humanitarian OpenStreetMap Team';  \
 	rm -f po/POTFILES
 
 update-po: 
-	$(MAKE) gnash.pot
+	$(MAKE) underpass.pot
 	for i in $(pofiles); do \
 	  echo "Merging $$i..." ; \
-	  $(MSGMERGE) --update $(srcdir)/$$i $(srcdir)/gnash.pot; \
+	  $(MSGMERGE) --update $(srcdir)/$$i $(srcdir)/underpass.pot; \
 	done
 
 SUFFIXES = .po .gmo
@@ -78,16 +83,16 @@ endif # not HAS_GETTEXT
 
 force:
 
-# install-hook: rename the .gmo files to gnash.mo at installation time
+# install-hook: rename the .gmo files to underpass.mo at installation time
 install-data-hook: $(gmofiles)
 	@for i in $(translations); do \
 	  $(mkinstalldirs) "$(DESTDIR)$(datadir)/locale/$$i/LC_MESSAGES/"; \
 	  if test -f $$i.gmo; then \
-	    $(INSTALL_DATA) $$i.gmo $(DESTDIR)$(datadir)/locale/$$i/LC_MESSAGES/gnash.mo; \
+	    $(INSTALL_DATA) $$i.gmo $(DESTDIR)$(datadir)/locale/$$i/LC_MESSAGES/underpass.mo; \
 	  fi; \
 	done
 
 uninstall-hook:
 	for i in $(translations); do \
-	  rm -f "$(DESTDIR)$(datadir)/locale/$$i/LC_MESSAGES/gnash.mo"; \
+	  rm -f "$(DESTDIR)$(datadir)/locale/$$i/LC_MESSAGES/underpass.mo"; \
 	done

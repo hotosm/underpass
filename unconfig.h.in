@@ -124,6 +124,9 @@
 /* Store downloaded files to disk */
 #undef USE_CACHE
 
+/* Do additional conflation calculations */
+#undef USE_CONFLATION
+
 /* Use multiple threads */
 #undef USE_MULTI
 

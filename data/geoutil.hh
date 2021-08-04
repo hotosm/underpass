@@ -39,7 +39,6 @@ using namespace boost::gregorian;
 #include <ogrsf_frmts.h>
 #include <ogr_geometry.h>
 
-#include "hotosm.hh"
 #include "osmstats/osmstats.hh"
 #include "data/osmobjects.hh"
 

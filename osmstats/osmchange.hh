@@ -30,6 +30,8 @@
 #include <array>
 #include <memory>
 #include <iostream>
+#include <list>
+
 //#include <pqxx/pqxx>
 #ifdef LIBXML
 # include <libxml++/libxml++.h>
@@ -41,10 +43,9 @@ using namespace boost::gregorian;
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 #include <boost/progress.hpp>
 
-#include "hotosm.hh"
+#include "validate/validate.hh"
 #include "data/osmobjects.hh"
 #include "osmstats/osmchange.hh"
-
 #include <ogr_geometry.h>
 
 // forward declare geometry typedefs
@@ -170,6 +171,7 @@ public:
         return tmp;
     };
 
+#if 0
     /// Get a specific node in this change
     std::shared_ptr<osmobjects::OsmNode> getNode(int index) { return nodes[index]; };
     /// Get the current node in this change
@@ -178,12 +180,12 @@ public:
     std::shared_ptr<osmobjects::OsmWay> getWay(int index) { return ways[index]; };
     /// Get a specific relation in this change
     std::shared_ptr<osmobjects::OsmRelation> getRelation(int index) { return relations[index]; };
-
+#endif
     osmobjects::action_t action = osmobjects::none;      ///< The change action
     osmtype_t type;                                      ///< The OSM object type
-    std::vector<std::shared_ptr<osmobjects::OsmNode>> nodes;         ///< The nodes in this change
-    std::vector<std::shared_ptr<osmobjects::OsmWay>> ways;           ///< The ways in this change
-    std::vector<std::shared_ptr<osmobjects::OsmRelation>> relations; ///< The relations in this change
+    std::list<std::shared_ptr<osmobjects::OsmNode>> nodes;         ///< The nodes in this change
+    std::list<std::shared_ptr<osmobjects::OsmWay>> ways;           ///< The ways in this change
+    std::list<std::shared_ptr<osmobjects::OsmRelation>> relations; ///< The relations in this change
     std::shared_ptr<osmobjects::OsmObject> obj;
 };
 
@@ -205,23 +207,28 @@ public:
 
     /// Read a changeset file from disk or memory into internal storage
     bool readChanges(const std::string &osc);
-    
+
+    bool areaFilter(const multipolygon_t &poly);
+
 #ifdef LIBXML
     /// Called by libxml++ for each element of the XML file
     void on_start_element(const Glib::ustring& name,
                           const AttributeList& properties) override;
-
 #endif
     /// Read an istream of the data and parse the XML
     bool readXML(std::istream & xml);
 
     std::map<long, std::shared_ptr<ChangeStats>> userstats; ///< User statistics for this file
     
-    std::vector<std::shared_ptr<OsmChange>> changes; ///< All the changes in this file
+    std::list<std::shared_ptr<OsmChange>> changes; ///< All the changes in this file
     std::map<long, point_t> nodecache;
 
     /// Collect statistics for each user
-    std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>> collectStats(const multipolygon_t &poly);
+    std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>> collectStats(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin);
+
+    bool validateNodes(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin);
+
+    bool validateWays(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin);
 
     std::shared_ptr<std::vector<std::string>> scanTags(std::map<std::string, std::string> tags);
 

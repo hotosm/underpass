@@ -34,6 +34,7 @@
 #include <future>
 #include <unistd.h>
 
+#include <boost/dll/import.hpp>
 #include <boost/format.hpp>
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
@@ -58,6 +59,11 @@ namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
 namespace http = beast::http;       // from <boost/beast/http.hpp>
 using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 
+#include <boost/config.hpp>
+#include <boost/dll/shared_library.hpp>
+#include <boost/dll/runtime_symbol_info.hpp>
+#include <boost/function.hpp>
+
 #include "timer.hh"
 #include "data/threads.hh"
 #include "osmstats/osmstats.hh"
@@ -65,7 +71,8 @@ using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 #include "osmstats/changeset.hh"
 #include "osmstats/replication.hh"
 #include "data/underpass.hh"
-#include "data/validate.hh"
+#include "data/osmobjects.hh"
+#include "validate/validate.hh"
 #include "log.hh"
 
 std::mutex stream_mutex;
@@ -90,6 +97,21 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
     replication::RemoteURL remote = inr;
     auto planet = std::make_shared<replication::Planet>(remote);
     bool mainloop = true;
+
+    boost::dll::fs::path lib_path("validate/.libs");
+    boost::function<plugin_t> creator;
+    try {
+	creator = boost::dll::import_alias<plugin_t>(
+	    lib_path / "libhotosm", "create_plugin",
+	    boost::dll::load_mode::append_decorations
+	    );
+	std::cerr << "Loaded plugin hotosm!" << std::endl;
+    } catch (std::exception& e) {
+	std::cerr << "Couldn't load plugin! %1%" << e.what() << std::endl;
+	exit(0);
+    }
+    auto validator = creator();
+
     while (mainloop) {
         // Look for the statefile first
 #if 0
@@ -108,25 +130,42 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
 	    }
         }
 #endif
-	remote.dump();
+	// remote.dump();
         if (remote.frequency == replication::changeset) {
             Timer timer;
             timer.startTimer();
-            auto found = threadChangeSet(remote, poly, ostats);
-            if (!found) {
-                // planet->disconnectServer();
+	    osmstats::QueryOSMStats ostats;
+	    ostats.connect();
+            auto changefile = threadChangeSet(remote, poly);
+	    for (auto it = std::begin(changefile->changes); it != std::end(changefile->changes); ++it) {
+		ostats.applyChange(*it->get());
+	    }
+	    ptime now = boost::posix_time::microsec_clock::local_time();
+	    boost::posix_time::time_duration delta;
+	    if (changefile->changes.size() > 0) {
+		delta = now - changefile->changes.front()->created_at;
+		// log_debug("DELTA: %1%", (delta.hours()*60) + delta.minutes());
+	    }
+            if ((delta.hours()*60) + delta.minutes() <= 1) {
 		std::this_thread::sleep_for(std::chrono::minutes{1});
-                // planet.reset(new replication::Planet);
             } else {
                 log_debug(_("Processed ChangeSet: %1%"), remote.url);
             }
             timer.endTimer("changeSet");
         } else {
             std::string file = remote.url + ".osc.gz";
+	    ptime now = boost::posix_time::microsec_clock::local_time();
             Timer timer;
             timer.startTimer();
-            bool found = threadOsmChange(remote, poly, ostats);
-            if (!found) {
+            auto osmchange = threadOsmChange(remote, poly, ostats, validator);
+	    // FIXME: There is probably a better way to determine when to delay,
+	    // or when to just keep processing files when catching up.
+	    boost::posix_time::time_duration delta;
+	    if (osmchange->changes.size() > 0) {
+		delta = now - osmchange->changes.front()->nodes.back()->timestamp;
+		log_debug("DELTA: %1%", (delta.hours()*60) + delta.minutes());
+	    }
+            if ((delta.hours()*60) + delta.minutes() <= 1) {
                 // planet->disconnectServer();
                 if (remote.frequency == replication::minutely) {
                     std::this_thread::sleep_for(std::chrono::minutes{1});
@@ -244,13 +283,15 @@ startStateThreads(const std::string &base, const std::string &file)
 }
 
 // This thread get started for every osmChange file
-bool
+std::shared_ptr<osmchange::OsmChangeFile>
 threadOsmChange(const replication::RemoteURL &remote,
-		const multipolygon_t &poly, osmstats::QueryOSMStats &ostats)
+		const multipolygon_t &poly,
+		osmstats::QueryOSMStats &ostats,
+		std::shared_ptr<Validate> &plugin)
 {
     // osmstats::QueryOSMStats ostats;
     std::vector<std::string> result;
-    osmchange::OsmChangeFile osmchanges;
+    auto osmchanges = std::make_shared<osmchange::OsmChangeFile>();
 
     auto data = std::make_shared<std::vector<unsigned char>>();
     // If the file is stored on disk, read it in instead of downloading
@@ -276,7 +317,7 @@ threadOsmChange(const replication::RemoteURL &remote,
     }
     if (data->size() == 0) {
         log_error(_("osmChange file not found: %1% %2%"), remote.url, ".osc.gz");
-        return false;
+        return osmchanges;
     } else {
 #ifdef USE_CACHE
         if (!boost::filesystem::exists(remote.destdir)) {
@@ -294,7 +335,7 @@ threadOsmChange(const replication::RemoteURL &remote,
             inbuf.push(arrs);
             std::istream instream(&inbuf);
             try {
-                osmchanges.readXML(instream);
+                osmchanges->readXML(instream);
             } catch (std::exception& e) {
                 log_error(_("Couldn't parse: %1%"), remote.url);
                 std::cerr << e.what() << std::endl;
@@ -308,10 +349,8 @@ threadOsmChange(const replication::RemoteURL &remote,
         }
     }
 
-    // Apply the changes to the database
 #if 0
-//    osmstats::QueryOSMStats ostats;
-//    ostats.connect();
+    // Apply the changes to the database
     underpass::Underpass under;
     under.connect();
     replication::StateFile state;
@@ -323,8 +362,26 @@ threadOsmChange(const replication::RemoteURL &remote,
 	under.writeState(state);
     }
 #endif
+    //boost::timer::cpu_timer timer;
+    for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
+	osmchange::OsmChange *change = it->get();
+        for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
+	    osmobjects::OsmNode *node = it->get();
+	}
+	for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
+            osmobjects::OsmWay *way = it->get();
+	}
+    }
+    //timer.stop();
+    // log_debug("Took %1% to process validation", timer.wall);
+    Timer timer;
+    timer.startTimer();
+    osmchanges->areaFilter(poly);
+    timer.endTimer("osmchanges::areaFilter");
+    
+    timer.startTimer();
     // These stats are for the entire file
-    auto stats = osmchanges.collectStats(poly);
+    auto stats = osmchanges->collectStats(poly, plugin);
     for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
 	if (it->second->added.size() == 0 && it->second->modified.size() == 0) {
 	    continue;
@@ -332,21 +389,23 @@ threadOsmChange(const replication::RemoteURL &remote,
         it->second->dump();
         ostats.applyChange(*it->second);
     }
+    timer.endTimer("collectStats");
 
-    validate::Validate validator(osmchanges.changes);
-
-    return true;
+    timer.startTimer();
+    osmchanges->validateNodes(poly, plugin);
+    osmchanges->validateWays(poly, plugin);
+    timer.endTimer("validate");
+    
+    return osmchanges;
 }
 
 // This updates several fields in the changesets table, which are part of
 // the changeset file, and don't need to be calculated.
 //void threadChangeSet(const std::string &file, std::promise<bool> &&result)
-std::shared_ptr<replication::StateFile>
-threadChangeSet(const replication::RemoteURL &remote,
-		const multipolygon_t &poly, osmstats::QueryOSMStats &ostats)
+std::shared_ptr<changeset::ChangeSetFile>
+threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly)
 {
-    changeset::ChangeSetFile changeset;
-
+    auto changeset = std::make_shared<changeset::ChangeSetFile>();
     auto state = std::make_shared<replication::StateFile>();
     auto data = std::make_shared<std::vector<unsigned char>>();
     // FIXME: this this be the datadir from the command line
@@ -374,7 +433,7 @@ threadChangeSet(const replication::RemoteURL &remote,
     if (data->size() == 0) {
         log_error(_("ChangeSet file not found: %1%"), remote.url);
         //result.set_value(false);
-        return state;
+        return changeset;
     } else {
         //result.set_value(true);
         // XML parsers expect every line to have a newline, including the end of file
@@ -396,7 +455,7 @@ threadChangeSet(const replication::RemoteURL &remote,
             inbuf.push(arrs);
             std::istream instream(&inbuf);
             try {
-                changeset.readXML(instream);
+                changeset->readXML(instream);
             } catch (std::exception& e) {
                 log_error(_("Couldn't parse: %1% %2%"), remote.url, e.what());
                 // return false;
@@ -413,15 +472,21 @@ threadChangeSet(const replication::RemoteURL &remote,
     }
     changeset.dump();
 
+    Timer timer;
+    timer.startTimer();
+    changeset->areaFilter(poly);
+    timer.endTimer("changeset::areaFilter");
+
+#if 0
     // Create a stubbed state file to update the underpass database with more
     // accurate timestamps, also used if there is no state.txt file.
-    if (changeset.changes.size() > 0) {
-        state->timestamp = changeset.changes.begin()->created_at;
-        state->created_at = changeset.changes.begin()->created_at;
-        state->closed_at = changeset.changes.end()->created_at;
+    if (changeset->changes.size() > 0) {
+        state->timestamp = changeset->changes.begin()->created_at;
+        state->created_at = changeset->changes.begin()->created_at;
+        state->closed_at = changeset->changes.end()->created_at;
     }
-    
-    return state;
+#endif
+    return changeset;
 }
 
 // This updates the calculated fields in the raw_changesets table, based on

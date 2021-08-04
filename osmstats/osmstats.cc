@@ -47,8 +47,6 @@ using namespace boost::gregorian;
 #include "data/osmobjects.hh"
 #include "data/underpass.hh"
 
-using namespace apidb;
-
 #include "log.hh"
 using namespace logger;
 
@@ -222,8 +220,6 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
 	aquery.erase(aquery.size() - 2);
 	aquery += ") ON CONFLICT (id) DO UPDATE SET";
     }
-    
-    aquery += " closed_at = \'" + to_simple_string(change.closed_at) + "\',";
     aquery += " updated_at = \'" + to_simple_string(now) + "\'";
     aquery += " WHERE changesets.id=" + std::to_string(change.change_id);
 
@@ -333,7 +329,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
 	// return false;
     }
     if (max_lon < 0 && min_lat < 0) {
-        log_error(_("WARNING: single point! "), change.id);
+        // log_error(_("WARNING: single point! "), change.id);
 	min_lat = change.min_lat + (fudge/2);
 	max_lat = change.max_lat + (fudge/2);
 	min_lon = change.min_lon - (fudge/2);

@@ -132,11 +132,27 @@ AC_ARG_ENABLE(parser,
   done]
 ])
 
+dnl Conflation can be a computationally expensive calulation,
+dnl so make it optional. Works best with smaller datasets.
+conflation=no
+AC_ARG_ENABLE(conflation,
+  AS_HELP_STRING([--enable-conflation], [Enable support for expensive conflation (default=no)]),
+  [case "${enableval}" in
+     yes) conflation=yes ;;
+     no)  conflation=no ;;
+     *)   AC_MSG_ERROR([bad value ${enableval} for enable-conflation option]) ;;
+   esac], conflation=no
+)
+if test x"${conflation}" = x"yes"; then
+  AC_DEFINE(USE_CONFLATION, [1], [Do additional conflation calculations ])
+fi
+
 dnl range-v3
 CPPFLAGS+=" $(pkg-config --cflags libpqxx)"
 CPPFLAGS+=" $(pkg-config --cflags gumbo)"
 CPPFLAGS+=" $(pkg-config --cflags gdal)"
 CPPFLAGS+=" $(pkg-config --cflags ompi)"
+CPPFLAGS+=" $(pkg-config --cflags yaml-cpp)"
 
 dnl This is a C++ project only
 AC_LANG_PUSH(C++)
@@ -156,6 +172,7 @@ LIBS+=" $(pkg-config --libs gumbo)"
 LIBS+=" $(pkg-config --libs zlib)"
 LIBS+=" $(pkg-config --libs gdal)"
 LIBS+=" $(pkg-config --libs ompi)"
+LIBS+=" $(pkg-config --libs yaml-cpp)"
 if test x"${build_libxml}" = x"yes"; then
 dnl Debian Buster and Ubuntu Focal ship 2.6, Fedora ships 3,.0
 dnl The version in Focal is broken, so either build libxml++-3.0
@@ -243,14 +260,17 @@ PCH_FLAGS="-include all-includes.h -Winvalid-pch"
 AC_SUBST(PCH_FLAGS)
 
 AM_GNU_GETTEXT([external])
+AM_CONDITIONAL([HAS_GETTEXT], [test x"$gt_use_preinstalled_gnugettext" != x"no"])
+AC_SUBST([POMAKEFILEDEPS])
 
 AC_CONFIG_FILES([
-po/Makefile.in
+validate/Makefile
 Makefile
 doc/Doxyfile
 testsuite/Makefile
 testsuite/libunderpass.all/Makefile
 redhat/underpass.spec
+po/Makefile
 ])
 
 AC_OUTPUT

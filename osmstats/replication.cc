@@ -71,7 +71,6 @@ namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
 namespace http = beast::http;       // from <boost/beast/http.hpp>
 using tcp = net::ip::tcp;           // from <boost/asio/ip/tcp.hpp>
 
-#include "hotosm.hh"
 #include "osmstats/replication.hh"
 #include "osmstats/changeset.hh"
 #include "data/underpass.hh"

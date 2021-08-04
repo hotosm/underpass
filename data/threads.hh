@@ -58,6 +58,7 @@ using tcp = net::ip::tcp;
 
 #include "osmstats/replication.hh"
 #include "osmstats/osmstats.hh"
+#include "validate/validate.hh"
 #include <ogr_geometry.h>
 
 namespace replication {
@@ -65,6 +66,7 @@ class StateFile;
 class RemoteURL;
 };
 
+typedef std::shared_ptr<Validate>(plugin_t)();
 
 /// \file threads.hh
 /// \brief Threads for monitoring the OSM planet server for replication files.
@@ -92,15 +94,16 @@ extern std::shared_ptr<replication::StateFile> threadStateFile(ssl::stream<tcp::
 
 /// Updates the raw_hashtags, raw_users, and raw_changesets_countries tables
 /// from a changeset file
-extern bool threadOsmChange(const replication::RemoteURL &remote,
+extern std::shared_ptr<osmchange::OsmChangeFile> threadOsmChange(const replication::RemoteURL &remote,
                             const multipolygon_t &poly,
-                            osmstats::QueryOSMStats &ostats);
+                            osmstats::QueryOSMStats &ostats,
+                            std::shared_ptr<Validate> &plugin);
 
 /// This updates several fields in the raw_changesets table, which are part of
 /// the changeset file, and don't need to be calculated.
 //extern bool threadChangeSet(const std::string &file);
-extern std::shared_ptr<replication::StateFile> threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly, osmstats::QueryOSMStats &ostats
-);
+extern std::shared_ptr<changeset::ChangeSetFile> threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly);
+
 // extern bool threadChangeSet(const std::string &file, std::promise<bool> && result);
 
 /// This updates the calculated fields in the raw_changesets table, based on

@@ -27,7 +27,9 @@ CLEANFILES = \
 DISTCLEANFILES = doc/html doc/latex .lastmod
 MAINTAINERCLEANFILES = revno.h .lastmod
 
-SUBDIRS = testsuite
+SUBDIRS = \
+	validate
+# 	po
 
 lib_LTLIBRARIES = libunderpass.la
 instdir = /tmp
@@ -53,8 +55,7 @@ SQL_FILES = \
 libunderpass_la_SOURCES = \
 	timer.hh \
 	log.cc log.hh \
-	dsodefs.hh gettext.h \
-	hotosm.cc hotosm.hh \
+	dsodefs.hh gettest.h \
 	hottm.cc hottm.hh \
 	hottm/tmusers.cc hottm/tmusers.hh \
 	hottm/tmteams.cc hottm/tmteams.hh \
@@ -67,10 +68,11 @@ libunderpass_la_SOURCES = \
 	data/pgsnapshot.cc data/pgsnapshot.hh\
 	data/import.cc data/import.hh \
 	data/osmobjects.cc data/osmobjects.hh \
-	data/validate.cc data/validate.hh \
 	data/threads.cc data/threads.hh \
 	data/underpass.cc data/underpass.hh \
 	data/setupdb.sh
+	data/yaml.hh data/yaml.cc
+#	plugins.cc plugins.hh
 
 libunderpass_la_LDFLAGS = -avoid-version
 
@@ -78,7 +80,10 @@ bin_PROGRAMS = replicator
 replicator_SOURCES = replicator.cc
 replicator_LDADD = libunderpass.la $(BOOST_LIBS)
 
-AM_CXXFLAGS = -DPKGLIBDIR=\"$(pkglibdir)\" -DSRCDIR=\"$(srcdir)\"
+AM_CXXFLAGS = \
+	-rdynamic \
+	-DPKGLIBDIR=\"$(pkglibdir)\" \
+	-DSRCDIR=\"$(srcdir)\"
 
 pkgdata_DATA = $(SQL_FILES) data/priority.geojson data/setupdb.sh
 
@@ -163,7 +168,6 @@ PCHFLAGS = \
         -I$(top_srcdir)/hottm
 
 PCHHEADERS = \
-        $(top_srcdir)/hotosm.hh \
         $(top_srcdir)/timer.hh \
         $(top_srcdir)/hottm.hh \
         $(top_srcdir)/osmstats/osmstats.hh \

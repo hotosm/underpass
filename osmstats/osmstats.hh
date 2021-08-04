@@ -38,11 +38,8 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
-// #include "hotosm.hh"
 #include "osmstats/changeset.hh"
 #include "osmstats/osmchange.hh"
-
-using namespace apidb;
 
 // Forward declarations
 namespace changeset {
@@ -146,7 +143,7 @@ class RawHashtag
 /// This class handles all the queries to the OSM Stats database.
 /// This includes querying the database for existing data, as
 /// well as updating the data whenh applying a replication file.
-class QueryOSMStats : public apidb::QueryStats
+class QueryOSMStats
 {
   public:
     QueryOSMStats(void);

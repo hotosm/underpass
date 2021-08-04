@@ -36,7 +36,6 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
-#include "hotosm.hh"
 #include "data/pgsnapshot.hh"
 #include "log.hh"
 using namespace logger;

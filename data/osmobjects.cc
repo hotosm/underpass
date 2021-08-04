@@ -43,7 +43,6 @@ using namespace boost::gregorian;
 // typedef boost::geometry::model::multi_polygon<polygon_t> multipolygon_t;
 // typedef boost::geometry::model::linestring<point_t> linestring_t;
 
-#include "hotosm.hh"
 #include "data/osmobjects.hh"
 
 #include "log.hh"
@@ -70,12 +69,17 @@ OsmObject::dump(void)
     } else if (type == relation) {
         log_debug(_("\tType: OsmRelation"));
     }
-    
-    log_debug(_("\tID: %1%"), std::to_string(id));
-    log_debug(_("\tVersion: %1%"), std::to_string(version));
-    log_debug(_("\tTimestamp: %1%"), to_simple_string(timestamp));
-    log_debug(_("\tUID: %1%"), std::to_string(uid));
+    log_debug(_("\tID: %1%"), id);
+    log_debug(_("\tVersion: %1%"), version);
+    log_debug(_("\tTimestamp: %1%"), timestamp);
+    log_debug(_("\tUID: %1%"), uid);
+
     log_debug(_("\tUser: %1%"), user);
+    if (priority) {
+        log_debug(_("\tIn Priority area"));
+    } else {
+        log_debug(_("\tNot in Priority area"));
+    }
     if (change_id > 0) {
         log_debug(_("\tChange ID: "), std::to_string(change_id));
     }

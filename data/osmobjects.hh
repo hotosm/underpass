@@ -82,6 +82,7 @@ class OsmObject
     long change_id = 0;         ///< The changeset ID this object is contained in
     std::map<std::string, std::string> tags; ///< OSM metadata tags
 
+    bool priority = false;      ///< Whether it's in the priority area
     /// Dump internal data to the terminal, only for debugging
     void dump(void);
 };

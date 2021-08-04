@@ -51,7 +51,6 @@ using namespace boost::gregorian;
 #include <boost/asio/connect.hpp>
 namespace ssl = boost::asio::ssl;   // from <boost/asio/ssl.hpp>
 
-#include "hotosm.hh"
 #include "timer.hh"
 #include "data/threads.hh"
 #include "osmstats/changeset.hh"
