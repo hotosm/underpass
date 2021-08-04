@@ -302,7 +302,14 @@ main(int argc, char *argv[])
      // osmstats::QueryOSMStats ostats;
      // ostats.connect();
      underpass::Underpass under;
-     under.connect();
+     std::string upurl;
+     if (!dburl.empty()) {
+         upurl = dburl.substr(0, dburl.find('/'));
+         upurl += "/underpass";
+     } else {
+         upurl = "localhost/underpass";
+     }
+     under.connect(upurl);
      replication::Planet planet(remote);
      std::string last;
      std::string clast;
