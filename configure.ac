@@ -142,7 +142,7 @@ dnl This is a C++ project only
 AC_LANG_PUSH(C++)
 
 dnl pqxx requires C++17
-CXXFLAGS="-std=c++17 -g -O2"
+CXXFLAGS+=" -std=c++17 "
 
 dnl Osmium headers
 AC_CHECK_HEADERS([osmium/osm/node.hpp])
