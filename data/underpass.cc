@@ -95,41 +95,59 @@ Underpass::connect(void)
 }
 
 bool
-Underpass::connect(const std::string &dbname)
+Underpass::connect(const std::string &dburl)
 {
-    if (dbname.empty()) {
-	log_error(_("ERROR: need to specify database name!"));
+    if (dburl.empty()) {
+	log_error(_(" need to specify URL connection string!"));
     }
-    try {
-        std::string args = "dbname = " + dbname;
-        sdb = std::make_shared<pqxx::connection>(args);
-        if (sdb->is_open()) {
-            log_debug(_("Opened database connection to %1%"), dbname);
-            return true;
-        } else {
-            return false;
-        }
-    } catch (const std::exception &e) {
-	log_error(_("Couldn't open database connection to %1% %2%"), dbname, e.what());
-	return false;
-    }
-}
 
-// Update the creator table to track editor statistics
-bool
-Underpass::updateCreator(long user_id, long change_id, const std::string &editor)
-{
-    std::string query = "INSERT INTO creators(user_id, change_id, editor) VALUES(";
-    query += std::to_string(user_id) + "," + std::to_string(change_id);
-    query += ",\'" + changeset::fixString(editor);
-    query += "\') ON CONFLICT DO NOTHING;";
-    log_debug(_("QUERY: %1%"), query);
-#if 0
-    pqxx::work worker(*sdb);
-    pqxx::result result = worker.exec(query);
-    worker.commit();
-#endif
-    return false;
+    std::string dbuser;
+    std::string dbpass;
+    std::string dbhost;
+    std::string dbname = "dbname=";
+    std::size_t apos = dburl.find('@');
+    if (apos != std::string::npos) {
+	dbuser = "user=";
+	std::size_t cpos = dburl.find(':');
+	if (cpos != std::string::npos) {
+	    dbuser += dburl.substr(0, cpos);
+	    dbpass = "password=";
+	    dbpass += dburl.substr(cpos+1, apos-cpos-1);
+	} else {
+	    dbuser += dburl.substr(0, apos);
+	}
+    }
+
+    std::vector<std::string> result;
+    if (apos != std::string::npos) {
+	boost::split(result, dburl.substr(apos+1), boost::is_any_of("/"));
+    } else {
+	boost::split(result, dburl, boost::is_any_of("/"));
+    }
+    if (result.size() == 1) {
+	dbname += result[0];
+	dbhost = "host=localhost";
+    } else if (result.size() == 2) {
+	if (result[0] != "localhost") {
+	    dbhost = "host=";
+	    dbhost += result[0];
+	}
+	dbname += result[1];
+    }
+    std::string args = dbhost + " " + dbname + " " + dbuser + " " + dbpass;
+    // log_debug(args);
+    try {
+	sdb = std::make_shared<pqxx::connection>(args);
+	if (sdb->is_open()) {
+            log_debug(_("Opened database connection to %1%"), dburl);
+	    return true;
+	} else {
+	    return false;
+	}
+    } catch (const std::exception &e) {
+	log_error(_(" Couldn't open database connection to %1% %2%"), dburl, e.what());
+	return false;
+   }    
 }
 
 std::shared_ptr<replication::StateFile>
@@ -330,34 +348,6 @@ Underpass::getFirstState(replication::frequency_t freq)
     worker.commit();
 
     return first;
-}
-
-std::shared_ptr<osmstats::RawCountry>
-Underpass::getCountry(double max_lat, double max_lon, double min_lat, double min_lon)
-{
-    std::string query = "SELECT cid,name,other_tags->\'name:iso_w2\' FROM geoboundaries WHERE ST_WITHIN(";
-    query += "ST_MakePolygon(ST_GeomFromText(\'LINESTRING(";
-    query += std::to_string(min_lon) + " " + std::to_string(max_lat);
-    query += "," + std::to_string(max_lon) + " " + std::to_string(max_lat);
-    query += "," + std::to_string(max_lon) + " " + std::to_string(min_lat);
-    query += "," + std::to_string(min_lon) + " " + std::to_string(min_lat);
-    query += "," + std::to_string(min_lon) + " " + std::to_string(max_lat);
-    query += ")\', 4326)), wkb)";
-    log_debug(_("QUERY: %1%"), query);
-#if 0
-    pqxx::work worker(*sdb);
-    pqxx::result result = worker.exec(query);
-    worker.commit();
-    if (result.size() > 0) {
-        return std::make_shared<osmstats::RawCountry>(result[0][0].as(int(0)),
-                                                      result[0][1].c_str(),
-                                                      result[0][2].c_str());
-    } else {
-        return std::make_shared<osmstats::RawCountry>();
-    }
-#else
-    return std::make_shared<osmstats::RawCountry>();
-#endif
 }
 
 } // EOF replication namespace
