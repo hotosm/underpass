@@ -126,4 +126,4 @@ In the near future, Changes will also be applied to a standard OSM
 database so it can be quered for data extracts.
 
 &nbsp;
-![Flow Chart](https://github.com/hotosm/underpass/blob/master/doc/dataflow.png)
+![Flow Chart](https://raw.githubusercontent.com/hotosm/underpass/master/doc/dataflow.png)
