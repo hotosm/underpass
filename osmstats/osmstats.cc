@@ -130,13 +130,8 @@ QueryOSMStats::connect(const std::string &dburl)
             return false;
         }
     } catch (const std::exception &e) {
-<<<<<<< HEAD
-	log_error(_(" Couldn't open database connection to %1% %2%"), dburl, e.what());
-	return false;
-=======
-        log_error(_(" Couldn't open database connection to %1% %2%"), dburl, e.what());
-        return false;
->>>>>>> Fix crash when *db is not initialized
+	    log_error(_(" Couldn't open database connection to %1% %2%"), dburl, e.what());
+	    return false;
    }
 }
 
