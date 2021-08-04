@@ -313,7 +313,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     // changeset files, but for now ignore these.
     double fff = relative_difference(max_lon, min_lon);
     //std::cout << "FIXME: Float diff " << fff << std::endl;
-    int fudge = 0.0001;
+    const double fudge { 0.0001 };
     if (fff < fudge) {
         log_debug(_("FIXME: line too short! "), fff);
         return false;
