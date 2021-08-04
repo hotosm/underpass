@@ -94,38 +94,6 @@ public:
     long operator[](const std::string &key) { return counters[key]; };
 };
 
-/// \class RawCountry
-/// \brief Stores the data from the raw countries table
-///
-/// The raw_countries table is used to correlate a country ID with
-/// with it's name. This stores the data as parsed from the database.
-class RawCountry
-{
-  public:
-    RawCountry(void) {};
-    /// Instantiate the Country data from an iterator
-    RawCountry(pqxx::const_result_iterator &res) {
-        id = res[0].as(int(0));
-        name = res[1].c_str();
-        abbrev = res[2].c_str();
-    }
-    /// Instantiate the Country data
-    RawCountry(int cid, const std::string &country, const std::string &code) {
-        id = cid;
-        name = country;
-        abbrev = code;
-    }
-
-    void dump(void) {
-        std::cout << "County ID:\t" << id << std::endl;
-        std::cout << "Name:\t\t" << name << std::endl;
-        std::cout << "Abbreviation:\t" << abbrev << std::endl;
-    };
-    int id = 0;                 ///< The Country ID column
-    std::string name;           ///< The Country name column
-    std::string abbrev;         ///< The 3 letter ISO abbreviation for the country
-};
-
 /// \class RawUser
 /// \brief Stores the data from the raw user table
 ///
@@ -208,12 +176,6 @@ class QueryOSMStats : public apidb::QueryStats
         users.push_back(ru);
         return users.size();
     };
-    /// Add a country to the internal data store
-    int addCountry(long id, const std::string &name, const std::string &code) {
-        RawCountry rc(id, name, code);
-        countries.push_back(rc);
-        return countries.size();
-    };
     /// Add a hashtag to the internal data store
     int addHashtag(int id, const std::string &tag) {
         RawHashtag rh(id, tag);
@@ -224,56 +186,14 @@ class QueryOSMStats : public apidb::QueryStats
     /// Add a comment and their ID to the database
     int addComment(long id, const std::string &user);
 
-    /// Write the list of hashtags to the database
-    int updateRawHashtags(void);
-
-    /// Populate the raw_country database from the data file of
-    /// of boundaries
-    int updateCountries(std::vector<RawCountry> &countries);
-
-    // Accessor classes to extract country data from the database
-
-    /// Get the country ID. name, and ISO abbreviation from the
-    // raw_countries table.
-    RawCountry &getCountryData(long id) { return countries[id]; }
-    RawUser &getUserData(long id) { return users[id]; }
-    // RawHashtag &getHashtag(long id) { return hashtags.find(id); }
-    long getHashtagID(const std::string name) { return hashtags[name].id; }
-
     /// Apply a change to the database
     bool applyChange(changeset::ChangeSet &change);
     bool applyChange(osmchange::ChangeStats &change);
-
     int lookupHashtag(const std::string &hashtag);
-
     bool hasHashtag(long changeid);
-    RawChangeset &operator[](int index){ return ostats[index]; }
-
-    /// Dump internal data, debugging usage only!
-    void dump(void);
-
     // Get the timestamp of the last update in the database
     ptime getLastUpdate(void);
 //private:
-    bool updateCounters(long cid, std::map<std::string, long> data);
-    bool updateChangeset(const RawChangeset &stats);
-
-    // Subqueries take too much time, it's faster to query the data field we
-    // need and update it.
-    long getRoadsAdded(long uid) { return queryData(uid, "roads_added"); };
-    long getRoadsModified(long uid) { return queryData(uid, "roads_modified"); };
-    long getRoadsKMAdded(long uid) { return queryData(uid, "roads_km_added"); };
-    long getRoadsKMModified(long uid) { return queryData(uid, "roads_km_modified"); };
-
-    long getWaterwaysAdded(long uid) { return queryData(uid, "waterways_added"); };
-    long getWaterwaysModified(long uid) { return queryData(uid, "waterways_modified"); };
-    long getWaterwaysKMAdded(long uid) { return queryData(uid, "waterways_km_added"); };
-    long getWaterwaysKMModified(long uid) { return queryData(uid, "waterewsys_km_modified"); };
-
-    long getBuildingsAdded(long uid) { return queryData(uid, "buildings_added"); };
-    long getBuildingsModified(long uid)  { return queryData(uid, "buildings_modifed"); };
-    long getPOIsAdded(long uid);
-    long getPOIsModified(long uid);
 
     long queryData(long cid, const std::string &column) {
         std::string query = "SELECT " + column + " FROM raw_changesets";
@@ -286,23 +206,8 @@ class QueryOSMStats : public apidb::QueryStats
         // FIXME: this should return a real value
         return 0;
     }
-
-    long updateData(long uid, const std::string &column, long value) {
-        std::string query = "UPDATE raw_changesets SET " + column + "=";
-        query += std::to_string(value) + " WHERE id=" + std::to_string(uid);
-        std::cout << "QUERY: " << query << std::endl;
-        pqxx::work worker(*sdb);
-        pqxx::result result = worker.exec(query);
-        worker.commit();
-
-        // FIXME: this should return a real value
-        return 0;
-    }
-
     std::string db_url;
     std::shared_ptr<pqxx::connection> sdb;
-    std::vector<RawChangeset> ostats;  ///< All the raw changset data
-    std::vector<RawCountry> countries; ///< All the raw country data
     std::vector<RawUser> users;        ///< All the raw user data
     std::map<std::string, RawHashtag> hashtags;
 };

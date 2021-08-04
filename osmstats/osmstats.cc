@@ -387,70 +387,6 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     return true;
 }
 
-// Populate internal storage of a few heavily used data, namely
-// the indexes for each user, country, or hashtag.
-bool
-QueryOSMStats::populate(void)
-{
-    // Get the country ID from the raw_countries table
-    std::string query = "SELECT id,name,code FROM raw_countries;";
-    pqxx::work worker(*db);
-    pqxx::result result = worker.exec(query);
-    for (auto it = std::begin(result); it != std::end(result); ++it) {
-        RawCountry rc(it);
-        // addCountry(rc);
-        // long id = std::stol(it[0].c_str());
-        countries.push_back(rc);
-    };
-
-    query = "SELECT id,name FROM users;";
-    pqxx::work worker2(*db);
-    result = worker2.exec(query);
-    for (auto it = std::begin(result); it != std::end(result); ++it) {
-        RawUser ru(it);
-        users.push_back(ru);
-    };
-
-#if 0
-    query = "SELECT id,hashtag FROM raw_hashtags;";
-    result = worker.exec(query);
-    for (auto it = std::begin(result); it != std::end(result); ++it) {
-        RawHashtag rh(it);
-        hashtags[rh.name] = rh;
-    };
-#endif
-    worker2.commit();
-
-    return true;
-};
-
-bool
-QueryOSMStats::getRawChangeSets(std::vector<long> &changeset_ids)
-{
-    pqxx::work worker(*db);
-    std::string sql = "SELECT id,road_km_added,road_km_modified,waterway_km_added,waterway_km_modified,roads_added,roads_modified,waterways_added,waterways_modified,buildings_added,buildings_modified,pois_added,pois_modified,editor,user_id,created_at,closed_at,verified,augmented_diffs,updated_at FROM changesets WHERE id=ANY(ARRAY[";
-    // Build an array string of the IDs
-    for (auto it = std::begin(changeset_ids); it != std::end(changeset_ids); ++it) {
-        sql += std::to_string(*it);
-        if (*it != changeset_ids.back()) {
-            sql += ",";
-        }
-    }
-    sql += "]);";
-
-    // log_debug(_("QUERY: %1%"), sql);
-    pqxx::result result = worker.exec(sql);
-    //OsmStats stats(result);
-    worker.commit();
-
-    for (auto it = std::begin(result); it != std::end(result); ++it) {
-        RawChangeset os(it);
-        ostats.push_back(os);
-    }
-
-    return true;
-}
-
 bool
 QueryOSMStats::hasHashtag(long changeid)
 {
@@ -485,56 +421,6 @@ QueryOSMStats::getLastUpdate(void)
         return last;
     }
     return not_a_date_time;
-}
-
-void
-QueryOSMStats::dump(void)
-{
-    for (auto it = std::begin(ostats); it != std::end(ostats); ++it) {
-        it->dump();
-    }
-}
-
-// Write the list of hashtags to the database
-int
-QueryOSMStats::updateRawHashtags(void)
-{
-//    INSERT INTO keys(name, value) SELECT 'blah', 'true' WHERE NOT EXISTS (SELECT 1 FROM keys WHERE name='blah');
-
-#if 0
-    std::string query = "INSERT INTO raw_hashtags(hashtag) VALUES(";
-    // query += "nextval('raw_hashtags_id_seq'), \'" + tag;
-    // query += "\'" + tag;
-    query += "\') ON CONFLICT DO NOTHING";
-    //log_debug(_("QUERY: %1%", query);
-    pqxx::work worker(*db);
-    pqxx::result result = worker.exec(query);
-    worker.commit();
-    return result.size();
-#endif
-}
-
-RawChangeset::RawChangeset(pqxx::const_result_iterator &res)
-{
-    id = std::stol(res[0].c_str());
-    for (auto it = std::begin(res); it != std::end(res); ++it) {
-        if (it->type() == 20 || it->type() == 23) {
-            if (it->name() != "id" && it->name() != "user_id") {
-                counters[it->name()] = it->as(long(0));
-            }
-            // FIXME: why are there doubles in the schema at all ? It's
-            // a counter, so should always be an integer or long
-        } else if (it->type() == 701) { // double
-            counters[it->name()] = it->as(double(0));
-        }
-    }
-    editor = pqxx::to_string(res[13]);
-    user_id = std::stol(res[14].c_str());
-    created_at = time_from_string(pqxx::to_string(res[15]));
-    closed_at = time_from_string(pqxx::to_string(res[16]));
-    // verified = res[17].bool();
-    // augmented_diffs = res[18].num();
-    updated_at = time_from_string(pqxx::to_string(res[19]));
 }
 
 void
