@@ -1,3 +1,5 @@
+![CI Build and Testing](https://github.com/hotosm/underpass/actions/workflows/run_tests.yml/badge.svg)
+
 # Mainpage
 
 Underpass is a C++ API and utility programs for manipulating
