@@ -16,6 +16,9 @@ jobs:
       - name: Start Docker Compose
         run: cd docker && docker-compose up -d
 
-      - name: Build Underpass
+      - name: Build Underpass Library and Binaries
         run: docker-compose -f docker/docker-compose.yml exec -T underpass-build-deps sh -c "cd /code && ./autogen.sh && mkdir build && cd build && ../configure && make -j `nproc`"
+
+      - name: Build and Run Underpass Tests
+        run: docker-compose -f docker/docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build && make check -j `nproc`"
 

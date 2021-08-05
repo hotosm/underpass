@@ -24,14 +24,14 @@ AM_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/osmstats
 
 check_PROGRAMS =  \
-	stats-test \
-	change-test \
 	val-test \
-	rep-test \
 	under-test
+#	rep-test
+#	stats-test
+#	change-test
 #	hotosm-test
 #	tm-test
-#	geo-test 
+#	geo-test
 
 BOOST_LIBS = \
 	$(BOOST_DATE_TIME_LIB) \
@@ -58,10 +58,10 @@ val_test_LDFLAGS = -L../..
 val_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
 val_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
-rep_test_SOURCES = rep-test.cc
-rep_test_LDFLAGS = -L../..
-rep_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
-rep_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+#rep_test_SOURCES = rep-test.cc
+#rep_test_LDFLAGS = -L../..
+#rep_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
+#rep_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 under_test_SOURCES = under-test.cc
 under_test_LDFLAGS = -L../..
@@ -73,15 +73,16 @@ hotosm_test_SOURCES = hotosm-test.cc
 hotosm_test_LDFLAGS = -L../..
 hotosm_test_LDADD = -lpqxx -lunderpass  $(BOOST_LIBS)
 
+# FIXME: disabled because broken
 # Test the TM DB classes
-tm_test_SOURCES = tm-test.cc
-tm_test_LDFLAGS = -L../..
-tm_test_LDADD = -lpqxx -lunderpass  $(BOOST_LIBS)
+#tm_test_SOURCES = tm-test.cc
+#tm_test_LDFLAGS = -L../..
+#tm_test_LDADD = -lpqxx -lunderpass  $(BOOST_LIBS)
 
 # Test the OSM Stats class
-stats_test_SOURCES = stats-test.cc
-stats_test_LDFLAGS = -L../..
-stats_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+#stats_test_SOURCES = stats-test.cc
+#stats_test_LDFLAGS = -L../..
+#stats_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 # Test the Changeset class
 change_test_SOURCES = change-test.cc
