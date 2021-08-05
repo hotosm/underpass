@@ -26,9 +26,9 @@ AM_CPPFLAGS = -I$(top_srcdir) \
 check_PROGRAMS =  \
 	stats-test \
 	change-test \
-	val-test \
 	rep-test \
 	under-test
+#	val-test
 #	hotosm-test
 #	tm-test
 #	geo-test 
