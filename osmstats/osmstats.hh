@@ -79,7 +79,7 @@ public:
     std::map<std::string, long> counters;
     long id;                    ///< The change ID
     std::string editor;         ///< The editor used for this change
-    long user_id;               ///< The user ID 
+    long user_id;               ///< The user ID
     ptime created_at;           ///< The starting timestamp
     ptime closed_at;            ///< The finished timestamp
     bool verified;              ///< Whether this change has been validated
@@ -114,7 +114,7 @@ class RawUser
         name = tag;
     }
     int id;                     ///< The users OSM ID
-    std::string name;           ///< The users OSM username 
+    std::string name;           ///< The users OSM username
 };
 
 /// \class RawHashtag

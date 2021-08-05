@@ -39,6 +39,9 @@ RUN apt-get update \
     && ./configure --enable-shared \
     && make \
     && make install \
+    && cd .. \
+    && rm -rf libpqxx-7.3.1 \
+    && rm 7.3.1.zip \
     && rm -rf /var/lib/apt/lists/*
 
 COPY bzip2.pc /usr/lib/x86_64-linux-gnu/pkgconfig/bzip2.pc
