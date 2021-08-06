@@ -94,15 +94,19 @@ extern std::shared_ptr<replication::StateFile> threadStateFile(ssl::stream<tcp::
 
 /// Updates the raw_hashtags, raw_users, and raw_changesets_countries tables
 /// from a changeset file
-extern std::shared_ptr<osmchange::OsmChangeFile> threadOsmChange(const replication::RemoteURL &remote,
-                            const multipolygon_t &poly,
-                            osmstats::QueryOSMStats &ostats,
-                            std::shared_ptr<Validate> &plugin);
+extern std::shared_ptr<osmchange::OsmChangeFile> threadOsmChange(
+    const replication::RemoteURL &remote,
+    const multipolygon_t &poly,
+    osmstats::QueryOSMStats &ostats,
+    std::shared_ptr<Validate> &plugin);
 
 /// This updates several fields in the raw_changesets table, which are part of
 /// the changeset file, and don't need to be calculated.
 //extern bool threadChangeSet(const std::string &file);
-extern std::shared_ptr<changeset::ChangeSetFile> threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly);
+extern std::shared_ptr<changeset::ChangeSetFile> threadChangeSet(
+    const replication::RemoteURL &remote,
+    const multipolygon_t &poly,
+    osmstats::QueryOSMStats &ostats);
 
 // extern bool threadChangeSet(const std::string &file, std::promise<bool> && result);
 
