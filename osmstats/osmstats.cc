@@ -155,7 +155,7 @@ QueryOSMStats::lookupHashtag(const std::string &hashtag)
 bool
 QueryOSMStats::applyChange(osmchange::ChangeStats &change)
 {
-    std::cout << "Applying OsmChange data" << std::endl;
+    // std::cout << "Applying OsmChange data" << std::endl;
 
     if (hasHashtag(change.change_id)) {
         std::cout << "Has hashtag for id: " << change.change_id << std::endl;
@@ -233,8 +233,8 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
 bool
 QueryOSMStats::applyChange(changeset::ChangeSet &change)
 {
-    log_debug(_("Applying ChangeSet data"));
-    change.dump();
+    // log_debug(_("Applying ChangeSet data"));
+    // change.dump();
 
     // Some old changefiles have no user information
     std::string query = "INSERT INTO users VALUES(";
@@ -374,7 +374,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change)
     // 	query += "\', closed_at=\'" + to_simple_string(change.closed_at);
     // }
     query += "\', bbox=" + bbox.substr(2) + ")'))";
-    log_debug(_("QUERY: %1%"), query);
+    // log_debug(_("QUERY: %1%"), query);
     result = worker.exec(query);
 
     // Commit the results to the database
