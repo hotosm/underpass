@@ -163,7 +163,7 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
 	    boost::posix_time::time_duration delta;
 	    if (osmchange->changes.size() > 0) {
 		delta = now - osmchange->changes.front()->nodes.back()->timestamp;
-		log_debug("DELTA: %1%", (delta.hours()*60) + delta.minutes());
+		// log_debug("DELTA: %1%", (delta.hours()*60) + delta.minutes());
 	    }
             if ((delta.hours()*60) + delta.minutes() <= 1) {
                 // planet->disconnectServer();
@@ -375,13 +375,13 @@ threadOsmChange(const replication::RemoteURL &remote,
     //timer.stop();
     // log_debug("Took %1% to process validation", timer.wall);
     Timer timer;
-    timer.startTimer();
+    //timer.startTimer();
     osmchanges->areaFilter(poly);
-    timer.endTimer("osmchanges::areaFilter");
+    //timer.endTimer("osmchanges::areaFilter");
     
     timer.startTimer();
     // These stats are for the entire file
-    auto stats = osmchanges->collectStats(poly, plugin);
+    auto stats = osmchanges->collectStats(poly);
     for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
 	if (it->second->added.size() == 0 && it->second->modified.size() == 0) {
 	    continue;
@@ -467,15 +467,22 @@ threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly
         }
     }
     // Apply the changes to the database
-    for (auto it = std::begin(changeset.changes); it != std::end(changeset.changes); ++it) {
-        ostats.applyChange(*it);
-    }
-    changeset.dump();
+    // for (auto it = std::begin(changeset.changes); it != std::end(changeset.changes); ++it) {
+    //     ostats.applyChange(*it);
+    // }
+    // changeset.dump();
 
-    Timer timer;
-    timer.startTimer();
+    //Timer timer;
+    //timer.startTimer();
     changeset->areaFilter(poly);
-    timer.endTimer("changeset::areaFilter");
+    //timer.endTimer("changeset::areaFilter");
+
+    // Apply the changes to the database
+//     for (auto it = std::begin(changeset.changes); it != std::end(changeset.chan
+// ges); ++it) {
+//         ostats.applyChange(*it);
+//     }
+//     changeset.dump();
 
 #if 0
     // Create a stubbed state file to update the underpass database with more
