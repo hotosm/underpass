@@ -29,7 +29,7 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/date_time/gregorian/gregorian.hpp"
 
-#include "data/validate.hh"
+#include "validate/validate.hh"
 #include "data/osmobjects.hh"
 #include "timer.hh"
 
