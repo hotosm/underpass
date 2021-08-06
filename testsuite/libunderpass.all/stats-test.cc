@@ -63,10 +63,6 @@ main(int argc, char *argv[])
     cids.push_back(69365434);
     cids.push_back(69365911);
 
-    timer.startTimer();
-    testos.getRawChangeSets(cids);
-    std::cout << "Operation took " << timer.endTimer() << " milliseconds" << std::endl;
-
     // modify a counter
     // osmstats::OsmStats os = testos[2];
     // os.updateCounter("roads_added", 12345);
@@ -80,52 +76,6 @@ main(int argc, char *argv[])
     
     // testos.updateRawHashtags("/work/Mapping/HOT/changesets-reduced.osm");
     // testos.updateRawUsers("/work/Mapping/HOT/changesets-reduced.osm");
-
-    // extract some data from the database to store in memory for
-    // better performance
-    timer.startTimer();
-    testos.populate();
-    timer.endTimer();
-
-    // Test if the Country data works
-    RawCountry rc = testos.getCountryData(73);
-    if (rc.id == 73) {
-        runtest.pass("Country ID");
-    } else {
-        runtest.fail("Country ID");        
-    }
-    
-    if (rc.name == "Belize") {
-        runtest.pass("Country Name");
-    } else {
-        runtest.fail("Country Name");
-    }
-    
-    if (rc.abbrev == "BLZ") {
-        runtest.pass("Country Code");
-    } else {
-        runtest.fail("Country Code");
-    }
-
-    // Test if the User data works
-    RawUser ru = testos.getUserData(154981);
-    if (ru.id == 154981) {
-        runtest.pass("User ID");
-    } else {
-        runtest.fail("User ID");
-    }
-    if (ru.name == "Bogmen") {
-        runtest.pass("User Name");
-    } else {
-        runtest.fail("User Name");
-    }
-
-    long id = testos.getHashtagID("logging-roads-6");
-    if (id == 73) {
-        runtest.pass("Hashtag ID");
-    } else {
-        runtest.fail("Hashtag ID");
-    }
 
     // Changesets have a bounding box, so we want to find the
     // country the changes were made in.
