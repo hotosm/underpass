@@ -70,7 +70,7 @@ libunderpass_la_SOURCES = \
 	data/osmobjects.cc data/osmobjects.hh \
 	data/threads.cc data/threads.hh \
 	data/underpass.cc data/underpass.hh \
-	data/setupdb.sh
+	data/setupdb.sh \
 	data/yaml.hh data/yaml.cc
 #	plugins.cc plugins.hh
 
