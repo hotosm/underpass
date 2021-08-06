@@ -5,7 +5,7 @@ verbose "Testing Underpass!" 2
 if { [file tail $objdir] == "libunderpass.all"} {
     set node "./"
 } else {
-    set node "libunderpass.all"
+    set node "testsuite/libunderpass.all"
 }
 
 set tests [glob $node/*-test]
