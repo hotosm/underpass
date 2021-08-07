@@ -27,5 +27,3 @@ Commands can be executed from the host in the containers, for example you can op
 ```bash
 $ docker-compose -f docker/docker-compose.yml exec bash
 ```
-
-

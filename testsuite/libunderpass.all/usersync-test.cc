@@ -1,0 +1,258 @@
+//
+// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+//
+// This file is part of Underpass.
+//
+//     Underpass is free software: you can redistribute it and/or modify
+//     it under the terms of the GNU General Public License as published by
+//     the Free Software Foundation, either version 3 of the License, or
+//     (at your option) any later version.
+//
+//     Underpass is distributed in the hope that it will be useful,
+//     but WITHOUT ANY WARRANTY; without even the implied warranty of
+//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//     GNU General Public License for more details.
+//
+//     You should have received a copy of the GNU General Public License
+//     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
+//
+
+#include <dejagnu.h>
+#include <iostream>
+#include <pqxx/pqxx>
+#include <string>
+
+#include "hottm.hh"
+#include "osmstats/osmstats.hh"
+
+#include "boost/date_time/gregorian/gregorian.hpp"
+#include "boost/date_time/posix_time/posix_time.hpp"
+#include "boost/filesystem/path.hpp"
+#include <boost/date_time.hpp>
+
+using namespace tmdb;
+using namespace osmstats;
+using namespace boost::posix_time;
+using namespace boost::gregorian;
+using namespace boost::filesystem;
+
+TestState runtest;
+
+class TestOSMStats : public QueryOSMStats
+{
+  public:
+    //! Clear the test DB and fill it with with initial test data
+    bool
+    init_test_case() {
+        const auto dbconn{getenv("UNDERPASS_TEST_DB_CONN")
+                              ? std::string(getenv("UNDERPASS_TEST_DB_CONN"))
+                              : ""};
+        const auto source_tree_root{
+            std::string(getenv("UNDERPASS_SOURCE_TREE_ROOT")
+                            ? getenv("UNDERPASS_SOURCE_TREE_ROOT")
+                            : ".")};
+
+        std::string test_db{"taskingmanager_usersync_test"};
+
+        {
+            pqxx::connection conn{dbconn};
+            pqxx::nontransaction worker{conn};
+            worker.exec0("DROP DATABASE IF EXISTS " + test_db);
+            worker.exec0("CREATE DATABASE " + test_db);
+            worker.commit();
+        }
+
+        {
+            pqxx::connection conn{dbconn + " dbname=" + test_db};
+            pqxx::nontransaction worker{conn};
+            worker.exec0("CREATE EXTENSION postgis");
+
+            // Create schema
+            // TODO: get absolute base path
+            const path base_path{source_tree_root / "testsuite"};
+            const auto schema_path{base_path / "testdata" /
+                                   "taskingmanager_schema.sql"};
+            std::ifstream schema_definition(schema_path);
+            std::string sql((std::istreambuf_iterator<char>(schema_definition)),
+                            std::istreambuf_iterator<char>());
+
+            assert(!sql.empty());
+            worker.exec0(sql);
+
+            // Load a minimal data set for testing
+            const auto data_path{base_path / "testdata" /
+                                 "taskingmanager_test_data.sql"};
+            std::ifstream data_definition(data_path);
+            std::string data_sql(
+                (std::istreambuf_iterator<char>(data_definition)),
+                std::istreambuf_iterator<char>());
+
+            assert(!data_sql.empty());
+            worker.exec0(data_sql);
+        }
+
+        // Prepare OSMStats test database
+        test_db = "osmstats_usersync_test";
+
+        {
+            pqxx::connection conn{dbconn};
+            pqxx::nontransaction worker{conn};
+            worker.exec0("DROP DATABASE IF EXISTS " + test_db);
+            worker.exec0("CREATE DATABASE " + test_db);
+            worker.commit();
+        }
+
+        {
+            pqxx::connection conn{dbconn + " dbname=" + test_db};
+            pqxx::nontransaction worker{conn};
+            worker.exec0("CREATE EXTENSION postgis");
+
+            // Create schema
+            // TODO: get absolute base path
+            const path base_path{source_tree_root / "data"};
+            const auto schema_path{base_path / "osmstats.sql"};
+            std::ifstream schema_definition(schema_path);
+            std::string sql((std::istreambuf_iterator<char>(schema_definition)),
+                            std::istreambuf_iterator<char>());
+
+            assert(!sql.empty());
+            worker.exec0(sql);
+        }
+
+        return true;
+    };
+};
+
+int
+main(int argc, char *argv[]) {
+
+    // Test preconditions
+    TestOSMStats testosm;
+
+    testosm.init_test_case();
+
+    // Retrieve users from test DB
+    TaskingManager tm;
+    assert(tm.connect("taskingmanager_usersync_test"));
+
+    auto users{tm.getUsers()};
+    assert(users.size() == 2);
+
+    // Start the real test
+
+    TestOSMStats testosmstats;
+
+    // The logic in QueryOSMStats::connect() adds "localhost" and breaks the
+    // tests let's add the real host from env if set.
+    // USER:PASSSWORD@HOST/DATABASE
+    const std::string test_db_name{"osmstats_usersync_test"};
+    std::string conn;
+    if (getenv("PGHOST") && getenv("PGUSER") && getenv("PGPASSWORD")) {
+        conn = std::string(getenv("PGUSER")) + ":" +
+               std::string(getenv("PGPASSWORD")) + "@" +
+               std::string(getenv("PGHOST")) + "/" + test_db_name;
+    } else {
+        conn = test_db_name;
+    }
+
+    if (testosmstats.connect(conn)) {
+        runtest.pass("QueryOSMStats::connect()");
+    } else {
+        runtest.fail("QueryOSMStats::connect()");
+        exit(1);
+    }
+
+    // Sync
+    auto result{testosmstats.syncUsers(users)};
+
+    if (result.created == 2 && result.updated == 0 && result.deleted == 0) {
+        runtest.pass("QueryOSMStats::syncUsers() - create");
+    } else {
+        runtest.fail("QueryOSMStats::syncUsers() - create");
+    }
+
+    // Check that the users were really added
+    // TODO: add an API method to retrieve this list?
+    std::vector<TMUser> osmstats_users;
+    // Execute in a scope to prevent error: "Started new transaction while
+    // transaction was still active."
+    {
+        pqxx::nontransaction worker{*testosmstats.sdb};
+        const auto users_result{worker.exec("SELECT * FROM users ORDER BY id")};
+        pqxx::result::const_iterator it;
+
+        for (it = users_result.begin(); it != users_result.end(); ++it) {
+            TMUser user(it);
+            osmstats_users.push_back(user);
+        }
+    }
+
+    TMUser expectedAlice;
+    expectedAlice.id = 21792;
+    expectedAlice.username = "alice";
+    expectedAlice.name = "Alice";
+    expectedAlice.role = TMUser::Role::MAPPER;
+    expectedAlice.mapping_level = TMUser::MappingLevel::BEGINNER;
+    expectedAlice.tasks_mapped = 9;
+    expectedAlice.tasks_validated = 0;
+    expectedAlice.tasks_invalidated = 0;
+    expectedAlice.projects_mapped = {135};
+    expectedAlice.last_validation_date =
+        time_from_string("2021-03-12 06:51:12.813");
+    expectedAlice.date_registered = time_from_string("2020-09-21 09:44:40.180");
+    expectedAlice.gender = TMUser::Gender::FEMALE;
+
+    TMUser expectedBob;
+    expectedBob.id = 95488;
+    expectedBob.username = "bob";
+    expectedBob.name = "";
+    expectedBob.role = TMUser::Role::UNSET;
+    expectedBob.mapping_level = TMUser::MappingLevel::ADVANCED;
+    expectedBob.tasks_mapped = 20;
+    expectedBob.tasks_validated = 329;
+    expectedBob.tasks_invalidated = 60;
+    expectedBob.projects_mapped = {135, 272};
+    expectedBob.last_validation_date =
+        time_from_string("2020-11-04 02:20:28.209");
+    expectedBob.date_registered = time_from_string("2013-01-04 02:01:04.405");
+    expectedBob.gender = TMUser::Gender::UNSET;
+
+    if (osmstats_users.size() == 2 && osmstats_users.at(0) == expectedAlice &&
+        osmstats_users.at(1) == expectedBob) {
+        runtest.pass("QueryOSMStats::syncUsers() - check create");
+    } else {
+        runtest.fail("QueryOSMStats::syncUsers() - check create");
+    }
+
+    // Test update
+    expectedBob.name = "Bob";
+    expectedAlice.name = "Alice in Wonderland";
+    users.at(0).name = users.at(0).id == 95488 ? "Bob" : "Alice in Wonderland";
+    users.at(1).name = users.at(1).id == 95488 ? "Bob" : "Alice in Wonderland";
+
+    result = testosmstats.syncUsers(users);
+
+    // Execute in a scope to prevent error: "Started new transaction while
+    // transaction was still active."
+    osmstats_users.clear();
+    {
+        pqxx::nontransaction worker{*testosmstats.sdb};
+        const auto users_result{worker.exec("SELECT * FROM users ORDER BY id")};
+        pqxx::result::const_iterator it;
+
+        for (it = users_result.begin(); it != users_result.end(); ++it) {
+            TMUser user(it);
+            osmstats_users.push_back(user);
+        }
+    }
+
+    if (result.updated == 2 && result.created == 0 && result.deleted == 0 &&
+        osmstats_users.size() == 2 && osmstats_users.at(0) == expectedAlice &&
+        osmstats_users.at(1) == expectedBob) {
+        runtest.pass("QueryOSMStats::syncUsers() - update");
+    } else {
+        runtest.fail("QueryOSMStats::syncUsers() - update");
+    }
+
+    // TODO: test delete
+}
