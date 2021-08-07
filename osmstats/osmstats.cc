@@ -156,13 +156,6 @@ bool
 QueryOSMStats::applyChange(osmchange::ChangeStats &change)
 {
     // std::cout << "Applying OsmChange data" << std::endl;
-
-    if (hasHashtag(change.change_id)) {
-        std::cout << "Has hashtag for id: " << change.change_id << std::endl;
-    } else {
-        std::cerr << "No hashtag for id: " << change.change_id << std::endl;
-    }
-
     std::string ahstore;
     if (change.added.size() > 0) {
 	ahstore = "HSTORE(ARRAY[";
