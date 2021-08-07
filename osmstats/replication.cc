@@ -202,18 +202,14 @@ StateFile::dump(void)
 
 // parse a replication file containing changesets
 bool
-Replication::readChanges(const std::string &file, osmstats::QueryOSMStats &ostats)
+Replication::readChanges(const std::string &file)
 {
     changeset::ChangeSetFile changeset;
     std::ifstream stream;
     stream.open(file, std::ifstream::in);
     changeset.readXML(stream);
 
-    // Apply the changes to the database
-    for (auto it = std::begin(changeset.changes); it != std::end(changeset.changes); ++it) {
-        ostats.applyChange(*it);
-    }
-   return true;
+    return true;
 }
 
 // Add this replication data to the changeset database
