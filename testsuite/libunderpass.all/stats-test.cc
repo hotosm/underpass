@@ -63,25 +63,11 @@ main(int argc, char *argv[])
     cids.push_back(69365434);
     cids.push_back(69365911);
 
-    // modify a counter
-    // osmstats::OsmStats os = testos[2];
-    // os.updateCounter("roads_added", 12345);
-    // if (os["roads_added"] == 12345) {
-    //     runtest.pass("OsmStats::updateCounter()");
-    // } else {
-    //     runtest.fail("OsmStats::updateCounter()");
-    // }
-    // testos.endTimer();
-    //testos.dump();
-    
-    // testos.updateRawHashtags("/work/Mapping/HOT/changesets-reduced.osm");
-    // testos.updateRawUsers("/work/Mapping/HOT/changesets-reduced.osm");
-
     // Changesets have a bounding box, so we want to find the
     // country the changes were made in.
     double min_lat = -2.8042325;
     double min_lon = 29.5842812;
     double max_lat = -2.7699398;
     double max_lon = 29.6012844;
-    
+#endif
 }

@@ -10,6 +10,8 @@ services:
       - POSTGRES_DB=underpass_test
       - POSTGRES_USER=underpass_test
       - POSTGRES_PASSWORD=underpass_test
+    volumes:
+      - ../:/code/
     restart: on-failure
     logging:
       driver: "json-file"
