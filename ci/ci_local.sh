@@ -29,7 +29,7 @@ ${DOCKER_BASE_COMMAND} up -d
 ${DOCKER_BASE_COMMAND} exec -T underpass-build-deps sh -c "cd /code && ./autogen.sh && (rm -rf build || true) && mkdir build && cd build && ../configure && make -j `nproc`"
 
 # Build and Run Underpass Tests - broken: alway succeeds
-${DOCKER_BASE_COMMAND} exec -T underpass-build-deps sh -c "cd /code/build && make check -j `nproc`"
+${DOCKER_BASE_COMMAND} exec -T underpass-build-deps sh -c "cd /code/build/testsuite/libunderpass.all && make check -j `nproc`"
 
 # Comment the cleanup lines below or exit here if you want to run additional
 # tests from a console in the temp container, for instance with:
