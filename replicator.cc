@@ -246,11 +246,16 @@ main(int argc, char *argv[])
      
      Replicator replicator;
      if (vm.count("changefile")) {
-         osmstats::QueryOSMStats ostats;
-         ostats.connect(dburl);
          std::string file = vm["changefile"].as<std::string>();
          std::cout << "Importing change file " << file << std::endl;
-         replicator.readChanges(file, ostats);
+         auto changeset = std::make_shared<changeset::ChangeSetFile>();
+         changeset->readChanges(file);
+         changeset->areaFilter(geou.boundary);
+         osmstats::QueryOSMStats ostats;
+         ostats.connect(dburl);
+         for (auto it = std::begin(changeset->changes); it != std::end(changeset->changes); ++it) {
+             ostats.applyChange(*it->get());
+         }
          exit(0);
      }
 
