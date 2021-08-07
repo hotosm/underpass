@@ -34,6 +34,8 @@
 #include <thread>
 #include <mutex>
 #include <boost/format.hpp>
+#include <boost/filesystem/operations.hpp>
+
 #include <cstdint>
 
 #include <unistd.h> // for getpid
@@ -448,8 +450,9 @@ LogFile::openLog(const std::string& filespec)
         _state = CLOSED;
     }
 
-    // Append, don't truncate, the log file
-    _outstream.open(filespec.c_str(), std::ios::app|std::ios::out); // ios::out
+    boost::filesystem::resize_file(filespec, 0);
+    // FIXME: Append, don't truncate, the log file
+    _outstream.open(filespec, std::ios::app|std::ios::out); // ios::out
     if( _outstream.fail() ) {
     // Can't use log_error here...
         std::cout << "ERROR: can't open debug log file " << filespec << 
