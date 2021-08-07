@@ -224,7 +224,7 @@ public:
     std::map<long, point_t> nodecache;
 
     /// Collect statistics for each user
-    std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>> collectStats(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin);
+    std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>> collectStats(const multipolygon_t &poly);
 
     bool validateNodes(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin);
 

@@ -141,9 +141,11 @@ OsmChangeFile::readXML(std::istream &xml)
         timer.startTimer();
         parse_stream(xml);
         timer.endTimer("libxml++");
-    }
-    catch(const xmlpp::exception& ex) {
-        log_error(_("libxml++ exception: %1%"), ex.what());
+    } catch(const xmlpp::exception& ex) {
+        // FIXME: files downloaded seem to be missing a trailing \n,
+        // so produce an error, but we can ignore this as the file is
+        // processed correctly.
+        // log_error(_("libxml++ exception: %1%"), ex.what());
         // log_debug(xml.rdbuf());
         int return_code = EXIT_FAILURE;
     }
@@ -444,7 +446,7 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
 }
 
 std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>>
-OsmChangeFile::collectStats(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin)
+OsmChangeFile::collectStats(const multipolygon_t &poly)
 {
     // FIXME: stuff to extract for MERL
     // names added to villages, neigborhood, or citys
@@ -455,16 +457,6 @@ OsmChangeFile::collectStats(const multipolygon_t &poly, std::shared_ptr<Validate
 
     // log_debug(_("Collecting Statistics for: %1%"), changes.size());
 
-    // std::map<long, point_t> nodecache;
-    if (nodecache.size() > 10000) {
-	std::map<long, point_t>::iterator it;
-	log_debug(_("Truncating node cache"));
-	int i = 0;
-	while (i<1000) {
-	    nodecache.erase(it);
-	    i++;
-	}
-    }
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
 	// nodecache.clear();
         OsmChange *change = it->get();
@@ -531,7 +523,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly, std::shared_ptr<Validate
 	    } else {
 		// log_debug(_("Changeset with way %1% is in a priority area"), way->change_id);
 	    }
->>>>>>> validate
+
 	    // Some older ways in a way wound up with this one tag, which nobody noticed,
 	    // so ignore it.
 	    if (way->tags.size() == 1 && way->tags.find("created_at") != way->tags.end()) {
@@ -768,10 +760,10 @@ bool OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Va
 		if (tit->first == "building") {
 		    bool ret = plugin->checkTag("building", "yes");
 		    if (ret) {	// FIXME: obviously a debug test
-			std::cerr << "Building is YYESS" << std::endl;
+			// std::cerr << "Building is YYESS" << std::endl;
 			node->dump();
 		    } else {
-			std::cerr << "Building is NNOO" << std::endl;
+			// std::cerr << "Building is NNOO" << std::endl;
 		    }
 		}
 //		bool ret = plugin->checkTag("building:material", "yes");
@@ -799,10 +791,10 @@ bool OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Val
 		if (tit->first == "highway") {
 		    bool ret = plugin->checkTag("highway", "yes");
 		    if (ret) {
-			std::cerr << "Highway is YYESS" << std::endl;
+			// std::cerr << "Highway is YYESS" << std::endl;
 			way->dump();
 		    } else {
-			std::cerr << "Highway is NNOO" << std::endl;
+			// std::cerr << "Highway is NNOO" << std::endl;
 		    }
 		}
 	    }
