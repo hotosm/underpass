@@ -24,9 +24,6 @@ jobs:
         run: docker-compose -f docker/docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build/testsuite/libunderpass.all && make check -j `nproc`"
 
       # Workaround for broken make check which never fails: run the tests manually
-      - name: Run Test val-test
-        run: docker-compose -f docker/docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build && testsuite/libunderpass.all/val-test"
-
       - name: Run Test tm-test
         run: docker-compose -f docker/docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build && testsuite/libunderpass.all/tm-test"
 
