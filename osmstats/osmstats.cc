@@ -214,11 +214,7 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change)
         aquery.erase(aquery.size() - 2);
         aquery += ") ON CONFLICT (id) DO UPDATE SET";
     }
-<<<<<<< HEAD
-=======
-
     aquery += " closed_at = \'" + to_simple_string(change.closed_at) + "\',";
->>>>>>> 7a507b87ac37dc7d9d97ed081d237374749488b8
     aquery += " updated_at = \'" + to_simple_string(now) + "\'";
     aquery += " WHERE changesets.id=" + std::to_string(change.change_id);
 
