@@ -483,14 +483,10 @@ RawChangeset::dump(void) {
 }
 
 QueryOSMStats::SyncResult
-QueryOSMStats::syncUsers(const std::vector<TMUser> &users) {
+QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool deleteMissing) {
     // Preconditions:
     assert(sdb);
 
-    // For some reason this class uses it's own connection (sdb) instead of the
-    // base class's one (db), and it does override connect() without calling the
-    // base class implementation, base class 'db' is nullptr and 'worker' cannot
-    // be used so we need to create a new one.
     pqxx::work worker(*sdb);
 
     SyncResult syncResult;
@@ -598,6 +594,29 @@ QueryOSMStats::syncUsers(const std::vector<TMUser> &users) {
                 }
             } catch (std::exception const &e) {
                 log_error(_("Couldn't update user record: %1%"), e.what());
+            }
+        }
+    }
+
+    if (deleteMissing) {
+        std::vector<TaskingManagerIdType> deletedIds;
+        std::set_difference(currentIds.begin(), currentIds.end(),
+                            updatedIds.begin(), updatedIds.end(),
+                            std::inserter(deletedIds, deletedIds.begin()));
+        if (!deletedIds.empty()) {
+            std::string sql{"DELETE FROM users WHERE id IN ("};
+            for (auto it = deletedIds.cbegin(); it != deletedIds.cend(); ++it) {
+                if (it != deletedIds.cbegin()) {
+                    sql += ",";
+                }
+                sql += std::to_string(*it);
+            }
+            sql += ")";
+            try {
+                const auto result{worker.exec0(sql)};
+                syncResult.deleted = deletedIds.size();
+            } catch (std::exception const &e) {
+                log_error(_("Couldn't delete user records: %1%"), e.what());
             }
         }
     }

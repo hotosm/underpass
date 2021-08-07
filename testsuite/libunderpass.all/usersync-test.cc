@@ -173,19 +173,18 @@ main(int argc, char *argv[]) {
 
     // Check that the users were really added
     // TODO: add an API method to retrieve this list?
-    std::vector<TMUser> osmstats_users;
-    // Execute in a scope to prevent error: "Started new transaction while
-    // transaction was still active."
-    {
+    const auto get_users = [=]() -> std::vector<TMUser> {
+        std::vector<TMUser> users;
         pqxx::nontransaction worker{*testosmstats.sdb};
         const auto users_result{worker.exec("SELECT * FROM users ORDER BY id")};
         pqxx::result::const_iterator it;
 
         for (it = users_result.begin(); it != users_result.end(); ++it) {
             TMUser user(it);
-            osmstats_users.push_back(user);
+            users.push_back(user);
         }
-    }
+        return users;
+    };
 
     TMUser expectedAlice;
     expectedAlice.id = 21792;
@@ -217,6 +216,7 @@ main(int argc, char *argv[]) {
     expectedBob.date_registered = time_from_string("2013-01-04 02:01:04.405");
     expectedBob.gender = TMUser::Gender::UNSET;
 
+    auto osmstats_users{get_users()};
     if (osmstats_users.size() == 2 && osmstats_users.at(0) == expectedAlice &&
         osmstats_users.at(1) == expectedBob) {
         runtest.pass("QueryOSMStats::syncUsers() - check create");
@@ -232,20 +232,7 @@ main(int argc, char *argv[]) {
 
     result = testosmstats.syncUsers(users);
 
-    // Execute in a scope to prevent error: "Started new transaction while
-    // transaction was still active."
-    osmstats_users.clear();
-    {
-        pqxx::nontransaction worker{*testosmstats.sdb};
-        const auto users_result{worker.exec("SELECT * FROM users ORDER BY id")};
-        pqxx::result::const_iterator it;
-
-        for (it = users_result.begin(); it != users_result.end(); ++it) {
-            TMUser user(it);
-            osmstats_users.push_back(user);
-        }
-    }
-
+    osmstats_users = get_users();
     if (result.updated == 2 && result.created == 0 && result.deleted == 0 &&
         osmstats_users.size() == 2 && osmstats_users.at(0) == expectedAlice &&
         osmstats_users.at(1) == expectedBob) {
@@ -254,5 +241,17 @@ main(int argc, char *argv[]) {
         runtest.fail("QueryOSMStats::syncUsers() - update");
     }
 
-    // TODO: test delete
+    // Test delete
+    // Remove bob
+    users.erase(std::remove_if(users.begin(), users.end(),
+                               [](TMUser user) { return user.id == 95488; }));
+    result = testosmstats.syncUsers(users, true);
+    osmstats_users = get_users();
+
+    if (result.updated == 1 && result.created == 0 && result.deleted == 1 &&
+        osmstats_users.size() == 1 && osmstats_users.at(0) == expectedAlice) {
+        runtest.pass("QueryOSMStats::syncUsers() - delete");
+    } else {
+        runtest.fail("QueryOSMStats::syncUsers() - delete");
+    }
 }

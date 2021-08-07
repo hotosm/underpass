@@ -239,11 +239,13 @@ class QueryOSMStats
     };
 
     /**
-     * \brief syncUsers synchronize users from TM DB into Underpass DB
+     * \brief syncUsers synchronize users from TM DB into Underpass DB.
      * \param users list of users from TM DB to be synced.
-     * \return a SyncResult object
+     * \param deleteMissing, default false, if TRUE, users missing from the \a
+     * user list will be deleted. \return a SyncResult object .
      */
-    SyncResult syncUsers(const std::vector<TMUser> &users);
+    SyncResult syncUsers(const std::vector<TMUser> &users,
+                         bool deleteMissing = false);
 
     std::string db_url;
     std::shared_ptr<pqxx::connection> sdb;

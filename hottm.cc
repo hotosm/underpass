@@ -123,16 +123,14 @@ TaskingManager::getUsers(TaskingManagerIdType userId) {
                         u.mapping_level,
                         u.projects_mapped
                       FROM users u
+                      ORDER BY u.id
                       )sql"};
 
     if (userId > 0) {
         sql += " WHERE u.id = " + std::to_string(userId);
     }
 
-    std::cout << "QUERY: " << sql << std::endl;
     pqxx::result result = worker->exec(sql);
-    std::cout << "SIZE: " << result.size() << std::endl;
-
     pqxx::result::const_iterator it;
 
     for (it = result.begin(); it != result.end(); ++it) {

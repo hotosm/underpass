@@ -48,7 +48,7 @@ namespace tmdb {
 struct TMUser {
 
     /**
-     * @brief The Gender enum maps the TM database numeric gender.
+     * \brief The Gender enum maps the TM database numeric gender.
      */
     enum class Gender : int
     {
@@ -60,7 +60,7 @@ struct TMUser {
     };
 
     /**
-     * @brief The Role enum maps the TM database numeric role.
+     * \brief The Role enum maps the TM database numeric role.
      */
     enum class Role : int
     {
@@ -71,7 +71,7 @@ struct TMUser {
     };
 
     /**
-     * @brief The MappingLevel enum maps the TM database numeric level.
+     * \brief The MappingLevel enum maps the TM database numeric level.
      */
     enum class MappingLevel : int
     {

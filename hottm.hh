@@ -44,16 +44,19 @@ using namespace boost::gregorian;
 
 namespace tmdb {
 
+/**
+ * \brief The TaskingManager class connects to the TM DB.
+ */
 class TaskingManager
 {
   public:
     bool connect(const std::string &database);
 
     /**
-     * @brief Retrieve the users from TM DB.
-     * @param userId, optional user id, default value of 0 synchronizes all
+     * \brief Retrieve the users from TM DB.
+     * \param userId, optional user id, default value of 0 synchronizes all
      * users.
-     * @return a vector of TMUser objects.
+     * \return a vector of TMUser objects.
      */
     std::vector<TMUser> getUsers(TaskingManagerIdType userId = 0);
 
@@ -76,8 +79,8 @@ class TaskingManager
     std::vector<TMProject> getProjects(TaskingManagerIdType projectid);
 
     /**
-     * @brief getWorker
-     * @return the (possibly NULL) pointer to the worker, mainly for testing
+     * \brief getWorker
+     * \return the (possibly NULL) pointer to the worker, mainly for testing
      * purposes.
      */
     pqxx::work *getWorker() const;
