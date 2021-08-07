@@ -450,7 +450,9 @@ LogFile::openLog(const std::string& filespec)
         _state = CLOSED;
     }
 
-    boost::filesystem::resize_file(filespec, 0);
+    if (boost::filesystem::exists(filespec)){
+        boost::filesystem::resize_file(filespec, 0);
+    }
     // FIXME: Append, don't truncate, the log file
     _outstream.open(filespec, std::ios::app|std::ios::out); // ios::out
     if( _outstream.fail() ) {
