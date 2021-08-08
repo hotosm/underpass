@@ -54,7 +54,7 @@ public:
     bool parseURL(const std::string &query);
     void dump(void);
 
-protected:
+//protected:
     std::shared_ptr<pqxx::connection> sdb;
     pqxx::result result;
     std::string host;
