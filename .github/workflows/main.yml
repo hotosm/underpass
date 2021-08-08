@@ -20,8 +20,11 @@ jobs:
     # job can access it
     - uses: actions/checkout@v2
 
+    - name: Start Docker Compose
+      run: cd docker && docker-compose up -d
+
     - name: Create Doxyfile
-      run: ./autogen.sh && ./configure && make doc/Doxyfile
+      run: docker-compose -f docker/docker-compose.yml exec -T underpass-build-deps sh -c "cd /code && ./autogen.sh && ./configure && make doc/Doxyfile -j `nproc`"
 
     - name: Doxygen Action
       uses: mattnotmitt/doxygen-action@v1.1.0
