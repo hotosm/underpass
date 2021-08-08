@@ -170,7 +170,7 @@ main(int argc, char *argv[])
     ptime starttime(not_a_date_time);
     ptime endtime(not_a_date_time);
     std::string url;
-    std::string dburl = "localhost";
+    std::string dburl = "localhost/osmstats";
     // std::string pserver = "https://download.openstreetmap.fr";
     // std::string pserver = "https://planet.openstreetmap.org";
     std::string pserver = "https://planet.maps.mail.ru";
