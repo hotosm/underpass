@@ -25,7 +25,8 @@ AM_CPPFLAGS = -I$(top_srcdir) \
 
 check_PROGRAMS =  \
 	val-test \
-	under-test
+	under-test \
+	pq-test
 #	rep-test
 #	stats-test
 #	change-test
@@ -47,6 +48,11 @@ AM_CXXFLAGS = \
         -DPKGLIBDIR=\"$(pkglibdir)\" \
         -DTOPSRCDIR=\"$(top_srcdir)\" \
         -DSRCDIR=\"$(srcdir)\"
+
+pq_test_SOURCES = pq-test.cc
+pq_test_LDFLAGS = -L../..
+pq_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
+pq_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 # _test_SOURCES = geo-test.cc
 # geo_test_LDFLAGS = -L../..
