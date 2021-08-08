@@ -58,87 +58,10 @@ QueryOSMStats::QueryOSMStats(void)
 {
 }
 
-QueryOSMStats::QueryOSMStats(const std::string &dbname)
+QueryOSMStats::QueryOSMStats(const std::string &dburl)
 {
-    if (dbname.empty()) {
-        // Validate environment variable is defined.
-        char *tmp = std::getenv("STATS_DB_URL");
-        db_url = tmp;
-    } else {
-        db_url = "dbname = " + dbname;
-    }
-    connect(dbname);
+    connect(dburl);
 };
-
-bool
-QueryOSMStats::connect(void)
-{
-    return connect("localhost/osmstats");
-}
-
-bool
-QueryOSMStats::connect(const std::string &dburl)
-{
-    if (dburl.empty()) {
-        log_error(_(" need to specify URL connection string!"));
-    }
-
-    std::string dbuser;
-    std::string dbpass;
-    std::string dbhost;
-    std::string dbname = "dbname=";
-    std::size_t apos = dburl.find('@');
-    if (apos != std::string::npos) {
-        dbuser = "user=";
-        std::size_t cpos = dburl.find(':');
-        if (cpos != std::string::npos) {
-            dbuser += dburl.substr(0, cpos);
-            dbpass = "password=";
-            dbpass += dburl.substr(cpos+1, apos-cpos-1);
-        } else {
-            dbuser += dburl.substr(0, apos);
-        }
-    }
-
-    std::vector<std::string> result;
-    if (apos != std::string::npos) {
-        boost::split(result, dburl.substr(apos+1), boost::is_any_of("/"));
-    } else {
-        boost::split(result, dburl, boost::is_any_of("/"));
-    }
-    if (result.size() == 1) {
-        dbname += result[0];
-        dbhost = "host=localhost";
-    } else if (result.size() == 2) {
-        if (result[0] != "localhost") {
-            dbhost = "host=";
-            dbhost += result[0];
-        }
-        dbname += result[1];
-    }
-    std::string args = dbhost + " " + dbname + " " + dbuser + " " + dbpass;
-    // log_debug(args);
-
-    try {
-        sdb = std::make_shared<pqxx::connection>(args);
-        if (sdb->is_open()) {
-            log_debug(_("Opened database connection to %1%"), dburl);
-            return true;
-        } else {
-            return false;
-        }
-    } catch (const std::exception &e) {
-	    log_error(_(" Couldn't open database connection to %1% %2%"), dburl, e.what());
-	    return false;
-   }
-}
-
-// long
-// QueryOSMStats::updateCounters(std::map<const std::string &, long> data)
-// {
-//     for (auto it = std::begin(data); it != std::end(data); ++it) {
-//     }
-// }
 
 int
 QueryOSMStats::lookupHashtag(const std::string &hashtag)
