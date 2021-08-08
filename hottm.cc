@@ -26,6 +26,9 @@
 #include <vector>
 
 #include "hottm.hh"
+#include "log.hh"
+
+using namespace logger;
 
 namespace tmdb {
 
@@ -42,7 +45,6 @@ TaskingManager::connect(const std::string &database) {
         db = std::make_unique<pqxx::connection>(args);
 
         if (db->is_open()) {
-            worker = std::make_unique<pqxx::work>(*db);
             return true;
         } else {
             return false;
@@ -64,13 +66,19 @@ TaskingManager::getTeams(TaskingManagerIdType teamid) {
     }
 
     std::cout << "QUERY: " << sql << std::endl;
-    pqxx::result result = worker->exec(sql);
 
-    pqxx::result::const_iterator it;
+    auto worker{getWorker()};
+    if (!worker) {
+        log_error(_("NULL worker in getTeams()"));
+    } else {
+        pqxx::result result = worker->exec(sql);
 
-    for (it = result.begin(); it != result.end(); ++it) {
-        TMTeam team(it);
-        teams.push_back(team);
+        pqxx::result::const_iterator it;
+
+        for (it = result.begin(); it != result.end(); ++it) {
+            TMTeam team(it);
+            teams.push_back(team);
+        }
     }
 
     return teams;
@@ -87,14 +95,19 @@ TaskingManager::getTeamMembers(TaskingManagerIdType teamid, bool active) {
         sql += " AND active='t'";
     }
 
-    pqxx::result result = worker->exec(sql);
-    // pqxx::array_parser parser = result[0][0].as_array();
-    pqxx::result::const_iterator rit;
+    auto worker{getWorker()};
+    if (!worker) {
+        log_error(_("NULL worker in getTeamMembers()"));
+    } else {
+        pqxx::result result = worker->exec(sql);
+        // pqxx::array_parser parser = result[0][0].as_array();
+        pqxx::result::const_iterator rit;
 
-    for (rit = result.begin(); rit != result.end(); ++rit) {
-        // members->push_back(std::stol(rit));
-        long foo = rit[0].as(long(0));
-        members.push_back(foo);
+        for (rit = result.begin(); rit != result.end(); ++rit) {
+            // members->push_back(std::stol(rit));
+            long foo = rit[0].as(long(0));
+            members.push_back(foo);
+        }
     }
 
     return members;
@@ -130,12 +143,17 @@ TaskingManager::getUsers(TaskingManagerIdType userId) {
         sql += " WHERE u.id = " + std::to_string(userId);
     }
 
-    pqxx::result result = worker->exec(sql);
-    pqxx::result::const_iterator it;
+    auto worker{getWorker()};
+    if (!worker) {
+        log_error(_("NULL worker in getUsers()"));
+    } else {
+        pqxx::result result = worker->exec(sql);
+        pqxx::result::const_iterator it;
 
-    for (it = result.begin(); it != result.end(); ++it) {
-        TMUser user(it);
-        users.push_back(user);
+        for (it = result.begin(); it != result.end(); ++it) {
+            TMUser user(it);
+            users.push_back(user);
+        }
     }
 
     return users;
@@ -153,23 +171,31 @@ TaskingManager::getProjects(TaskingManagerIdType projectid) {
         sql += " WHERE id=" + std::to_string(projectid);
     }
 
-    std::cout << "QUERY: " << sql << std::endl;
-    pqxx::result result = worker->exec(sql);
-    std::cout << "SIZE: " << result.size() << std::endl;
+    auto worker{getWorker()};
+    if (!worker) {
+        log_error(_("NULL worker in getProjects()"));
+    } else {
+        std::cout << "QUERY: " << sql << std::endl;
+        pqxx::result result = worker->exec(sql);
+        std::cout << "SIZE: " << result.size() << std::endl;
 
-    pqxx::result::const_iterator it;
+        pqxx::result::const_iterator it;
 
-    for (it = result.begin(); it != result.end(); ++it) {
-        TMProject project(it);
-        projects.push_back(project);
+        for (it = result.begin(); it != result.end(); ++it) {
+            TMProject project(it);
+            projects.push_back(project);
+        }
     }
 
     return projects;
 }
 
-pqxx::work *
+std::unique_ptr<pqxx::work>
 TaskingManager::getWorker() const {
-    return worker.get();
+    if (!db) {
+        return nullptr;
+    }
+    return std::make_unique<pqxx::work>(*db);
 }
 
 std::vector<long>
@@ -179,13 +205,18 @@ TaskingManager::getProjectTeams(long projectid) {
     std::string sql = "SELECT team_id FROM project_teams WHERE project_id=";
     sql += std::to_string(projectid);
 
-    pqxx::result result = worker->exec(sql);
-    // pqxx::array_parser parser = result[0][0].as_array();
-    pqxx::result::const_iterator rit;
+    auto worker{getWorker()};
+    if (!worker) {
+        log_error(_("NULL worker in getProjectTeams()"));
+    } else {
+        pqxx::result result = worker->exec(sql);
+        // pqxx::array_parser parser = result[0][0].as_array();
+        pqxx::result::const_iterator rit;
 
-    for (rit = result.begin(); rit != result.end(); ++rit) {
-        const TaskingManagerIdType foo = rit[0].as(TaskingManagerIdType(0));
-        teams.push_back(foo);
+        for (rit = result.begin(); rit != result.end(); ++rit) {
+            const TaskingManagerIdType foo = rit[0].as(TaskingManagerIdType(0));
+            teams.push_back(foo);
+        }
     }
 
     return teams;

@@ -173,7 +173,7 @@ main(int argc, char *argv[]) {
 
     // Check that the users were really added
     // TODO: add an API method to retrieve this list?
-    const auto get_users = [=]() -> std::vector<TMUser> {
+    const auto get_users = [&]() -> std::vector<TMUser> {
         std::vector<TMUser> users;
         pqxx::nontransaction worker{*testosmstats.sdb};
         const auto users_result{worker.exec("SELECT * FROM users ORDER BY id")};

@@ -238,7 +238,8 @@ class QueryOSMStats : public pq::Pq
                          bool deleteMissing = false);
 
     std::string db_url;
-    std::vector<RawUser> users;        ///< All the raw user data
+    std::unique_ptr<pqxx::connection> sdb;
+    std::vector<RawUser> users; ///< All the raw user data
     std::map<std::string, RawHashtag> hashtags;
 };
 

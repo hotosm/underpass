@@ -79,15 +79,16 @@ class TaskingManager
     std::vector<TMProject> getProjects(TaskingManagerIdType projectid);
 
     /**
-     * \brief getWorker
-     * \return the (possibly NULL) pointer to the worker, mainly for testing
+     * \brief getWorker is a factory method that creates and returns
+     * a (possibly NULL) worker for the TM DB connection.
+     * \note Ownership is transfered to the caller. Mainly for testing
      * purposes.
+     * \return the (possibly NULL) unique pointer to the worker.
      */
-    pqxx::work *getWorker() const;
+    std::unique_ptr<pqxx::work> getWorker() const;
 
   private:
     std::unique_ptr<pqxx::connection> db;
-    std::unique_ptr<pqxx::work> worker;
 };
 
 } // namespace tmdb
