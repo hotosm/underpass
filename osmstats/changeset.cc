@@ -113,7 +113,7 @@ ChangeSetFile::importChanges(const std::string &file)
 #endif
 
     osmstats::QueryOSMStats ostats;
-    ostats.connect();
+    ostats.connect("osmstats");
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         //ostats.applyChange(*it);
     }
