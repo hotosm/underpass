@@ -105,7 +105,7 @@ bool
 Pq::parseURL(const std::string &dburl)
 {
     if (dburl.empty()) {
-        log_error(_("No database connection string!"));
+        // log_error(_("No database connection string!"));
         return false;
     }
 
@@ -151,7 +151,7 @@ Pq::connect(const std::string &dburl)
     std::string args;
 
     if (parseURL(dburl)) {
-        std::string args = host + " " + dbname + " " + user + " " + passwd;
+        args = host + " " + dbname + " " + user + " " + passwd;
     } else {
         return false;
     }
@@ -160,13 +160,13 @@ Pq::connect(const std::string &dburl)
     try {
 	sdb = std::make_shared<pqxx::connection>(args);
 	if (sdb->is_open()) {
-            log_debug(_("Opened database connection to %1%"), dburl);
+            log_debug(_("Opened database connection to %1%"), args);
 	    return true;
 	} else {
 	    return false;
 	}
     } catch (const std::exception &e) {
-	log_error(_(" Couldn't open database connection to %1% %2%"), dburl, e.what());
+	log_error(_(" Couldn't open database connection to %1% %2%"), args, e.what());
 	return false;
    }    
 }
