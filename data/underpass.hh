@@ -57,6 +57,7 @@ using tcp = net::ip::tcp;
 
 #include "osmstats/replication.hh"
 #include "osmstats/osmstats.hh"
+#include "data/pq.hh"
 
 namespace replication {
 class StateFile;
@@ -73,7 +74,7 @@ class StateFile;
 /// \namespace underpass
 namespace underpass {
 
-class Underpass
+class Underpass : public pq::Pq
 {
 public:
     /// Connect to the Underpass database
@@ -83,13 +84,8 @@ public:
         frequency_tags[replication::daily] = "day";
         frequency_tags[replication::changeset] = "changeset";
     };
-    Underpass(const std::string &dbname);
+    Underpass(const std::string &dburl);
     ~Underpass(void);
-
-    /// Connect to the Underpass database
-    bool connect(void);
-    bool connect(const std::string &dbname);
-
     void dump(void);
 
     /// Update the creator table to track editor statistics
@@ -123,7 +119,6 @@ public:
         return frequency_tags[tag];
     };
 // protected:
-    std::shared_ptr<pqxx::connection> sdb;
     std::map<replication::frequency_t, std::string> frequency_tags;
     std::string db_url;
 };
