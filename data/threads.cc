@@ -89,7 +89,7 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
 	     const std::string &dburl)
 {
     underpass::Underpass under;
-    under.connect();
+    under.connect(dburl);
 
     osmstats::QueryOSMStats ostats;
     ostats.connect(dburl);
