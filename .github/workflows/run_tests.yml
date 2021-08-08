@@ -16,16 +16,17 @@ jobs:
       - name: Start Docker Compose
         run: cd docker && docker-compose up -d
 
-      - name: Prepare Test Database
-        run: docker-compose -f docker/docker-compose.yml exec -T postgis psql -U underpass_test -f /code/ci/create_underpass_db.sql
-
       - name: Build Underpass Library and Binaries
         run: docker-compose -f docker/docker-compose.yml exec -T underpass-build-deps sh -c "cd /code && ./autogen.sh && mkdir build && cd build && ../configure && make -j `nproc`"
 
+      # Note:
       - name: Build and Run Underpass Tests (broken - it never fails)
-        run: docker-compose -f docker/docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build && make check -j `nproc`"
+        run: docker-compose -f docker/docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build/testsuite/libunderpass.all && make check -j `nproc`"
 
-      # Workaround for broken make check: run the tests manually (all tests except for val-test are broken)
-      - name: Run Test val-test
-        run: docker-compose -f docker/docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build && testsuite/libunderpass.all/val-test"
+      # Workaround for broken make check which never fails: run the tests manually
+      - name: Run Test tm-test
+        run: docker-compose -f docker/docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build && testsuite/libunderpass.all/tm-test"
+
+      - name: Run Test usersync-test
+        run: docker-compose -f docker/docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build && testsuite/libunderpass.all/usersync-test"
 

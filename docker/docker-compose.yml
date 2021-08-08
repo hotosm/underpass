@@ -29,6 +29,11 @@ services:
     #build:
     #  context: .
     #  dockerfile: underpass-build-deps.dockerfile
+    environment:
+      - PGHOST=postgis
+      - PGUSER=underpass_test
+      - PGPASSWORD=underpass_test
+      - UNDERPASS_SOURCE_TREE_ROOT=/code
     command: tail -f /dev/null
     volumes:
       - ../:/code/

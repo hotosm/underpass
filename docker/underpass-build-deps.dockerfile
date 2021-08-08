@@ -26,6 +26,7 @@ RUN apt-get update \
         libopenmpi-dev \
         libboost-all-dev \
         librange-v3-dev \
+        libyaml-cpp-dev \
         dejagnu \
         wget \
         unzip \
