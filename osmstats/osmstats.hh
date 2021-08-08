@@ -226,6 +226,16 @@ class QueryOSMStats : public pq::Pq
             return created == other.created && updated == other.updated &&
                    deleted == other.deleted;
         }
+
+        /**
+         * \brief clear the sync result setting all counters to 0.
+         */
+        void
+        clear() {
+            created = 0;
+            updated = 0;
+            deleted = 0;
+        }
     };
 
     /**

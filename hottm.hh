@@ -50,7 +50,12 @@ namespace tmdb {
 class TaskingManager
 {
   public:
-    bool connect(const std::string &database);
+    /**
+     * \brief connect to the DB specified with \a dburl.
+     * \param dburl DB server connection: HOST or
+     * USER:PASSSWORD@HOST/DATABASENAME \return TRUE on success.
+     */
+    bool connect(const std::string &dburl);
 
     /**
      * \brief Retrieve the users from TM DB.

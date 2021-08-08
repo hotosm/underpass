@@ -404,19 +404,24 @@ QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool deleteMissing) {
     // Preconditions:
     assert(sdb);
 
-    pqxx::work worker(*sdb);
-
-    SyncResult syncResult;
-    std::vector<TaskingManagerIdType> updatedIds;
     std::vector<TaskingManagerIdType> currentIds;
 
+    pqxx::work worker(*sdb);
     pqxx::result result = worker.exec("SELECT id FROM users");
 
     for (const auto &row : std::as_const(result)) {
         currentIds.push_back(row.at(0).as(TaskingManagerIdType(0)));
     }
 
+    SyncResult syncResult;
+    std::vector<TaskingManagerIdType> updatedIds;
+
+    bool hasError{false};
+
     for (const auto &user : std::as_const(users)) {
+        if (hasError) {
+            break;
+        }
         const TaskingManagerIdType currentUserId{user.id};
 
         const auto username{worker.conn().quote(user.username)};
@@ -477,7 +482,8 @@ QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool deleteMissing) {
                     updatedIds.push_back(user.id);
                 }
             } catch (std::exception const &e) {
-                log_error(_("Couldn't create user record: %1%"), e.what());
+                log_error(_("Couldn't create update record: %1%"), e.what());
+                hasError = true;
             }
         } else {
             const std::string sql{str(boost::format(R"sql(
@@ -510,12 +516,15 @@ QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool deleteMissing) {
                     syncResult.created++;
                 }
             } catch (std::exception const &e) {
-                log_error(_("Couldn't update user record: %1%"), e.what());
+                log_error(_("Couldn't create user record: %1%"), e.what());
+                std::cout << "Couldn't create user record: " << e.what() << sql
+                          << std::endl;
+                hasError = true;
             }
         }
     }
 
-    if (deleteMissing) {
+    if (deleteMissing && !hasError) {
         std::vector<TaskingManagerIdType> deletedIds;
         std::set_difference(currentIds.begin(), currentIds.end(),
                             updatedIds.begin(), updatedIds.end(),
@@ -534,11 +543,22 @@ QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool deleteMissing) {
                 syncResult.deleted = deletedIds.size();
             } catch (std::exception const &e) {
                 log_error(_("Couldn't delete user records: %1%"), e.what());
+                hasError = true;
             }
         }
     }
 
-    worker.commit();
+    if (!hasError) {
+        try {
+            worker.commit();
+        } catch (std::exception const &e) {
+            log_error(_("Couldn't commit user record operations: %1%"),
+                      e.what());
+            syncResult.clear();
+        }
+    } else {
+        syncResult.clear();
+    }
 
     return syncResult;
 };
