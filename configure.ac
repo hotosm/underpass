@@ -152,7 +152,6 @@ CPPFLAGS+=" $(pkg-config --cflags libpqxx)"
 CPPFLAGS+=" $(pkg-config --cflags gumbo)"
 CPPFLAGS+=" $(pkg-config --cflags gdal)"
 CPPFLAGS+=" $(pkg-config --cflags ompi)"
-CPPFLAGS+=" $(pkg-config --cflags yaml-cpp)"
 
 dnl This is a C++ project only
 AC_LANG_PUSH(C++)
@@ -172,7 +171,6 @@ LIBS+=" $(pkg-config --libs gumbo)"
 LIBS+=" $(pkg-config --libs zlib)"
 LIBS+=" $(pkg-config --libs gdal)"
 LIBS+=" $(pkg-config --libs ompi)"
-LIBS+=" $(pkg-config --libs yaml-cpp)"
 if test x"${build_libxml}" = x"yes"; then
 dnl Debian Buster and Ubuntu Focal ship 2.6, Fedora ships 3,.0
 dnl The version in Focal is broken, so either build libxml++-3.0
