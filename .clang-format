@@ -1,0 +1,27 @@
+
+BasedOnStyle: LLVM
+AlwaysBreakAfterDefinitionReturnType: All
+AlwaysBreakTemplateDeclarations: No
+AlwaysBreakAfterReturnType: TopLevel
+ReflowComments: false
+IndentWidth: 4
+IndentCaseLabels: true
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel:  true
+  AfterClass:      true
+  AfterControlStatement: false
+  AfterEnum:       false
+  AfterFunction:   true
+  AfterNamespace:  false
+  AfterObjCDeclaration: true
+  AfterStruct:     false
+  AfterUnion:      false
+  AfterExternBlock: true
+  BeforeCatch:     false
+  BeforeElse:      false
+  IndentBraces:    false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+
