@@ -55,8 +55,9 @@ SQL_FILES = \
 libunderpass_la_SOURCES = \
 	timer.hh \
 	log.cc log.hh \
-	dsodefs.hh gettest.h \
+	dsodefs.hh gettext.h \
 	hottm.cc hottm.hh \
+	hottm/tmdefs.hh \
 	hottm/tmusers.cc hottm/tmusers.hh \
 	hottm/tmteams.cc hottm/tmteams.hh \
 	hottm/tmprojects.cc hottm/tmprojects.hh \
