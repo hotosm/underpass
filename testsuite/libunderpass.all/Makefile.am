@@ -27,7 +27,8 @@ check_PROGRAMS =  \
 	tm-test \
         under-test \
         usersync-test
-#       val-test
+	under-test \
+	pq-test
 #	rep-test
 #	stats-test
 #	change-test
@@ -49,7 +50,12 @@ AM_CXXFLAGS = \
         -DTOPSRCDIR=\"$(top_srcdir)\" \
         -DSRCDIR=\"$(srcdir)\"
 
-# geo_test_SOURCES = geo-test.cc
+pq_test_SOURCES = pq-test.cc
+pq_test_LDFLAGS = -L../..
+pq_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
+pq_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+
+# _test_SOURCES = geo-test.cc
 # geo_test_LDFLAGS = -L../..
 # geo_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
 # geo_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)

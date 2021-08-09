@@ -29,7 +29,7 @@ configure: config-stamp
 config-stamp:
 	dh_testdir
 	@printf "\n == CONFIGURE ==\n\n"
-	dh_auto_configure -- --disable-shared
+	dh_auto_configure
 	touch $@
 
 build: build-stamp

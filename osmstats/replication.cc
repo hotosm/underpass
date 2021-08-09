@@ -483,17 +483,17 @@ Planet::findData(frequency_t freq, ptime tstamp)
     };
     // Changeset files don't have an associated state.txt till
     // this first one: .../replication/changesets/002/007/990.state.txt
-    underpass::Underpass under;
-    under.connect();
-    auto state = std::make_shared<replication::StateFile>();
-    // boost::local_time::local_time_period lp(states[0]);
     boost::posix_time::time_duration delta1, delta2;
     int minutes1 = 0;
     int minutes2 = 0;
     std::string major;
     std::string minor;
     std::string index;
+    auto state = std::make_shared<replication::StateFile>();
 #if 0
+    underpass::Underpass under;
+    under.connect("underpass"); // FIXME: this shouldn't be hardcoded
+    // boost::local_time::local_time_period lp(states[0]);
     auto data = downloadFile(newpath + ".state.txt");
     if (data->size() == 0) {
         log_error(_("StateFile not found: %1%"),newpath);

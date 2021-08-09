@@ -59,16 +59,9 @@ namespace underpass {
 //     frequency_tags[replication::changeset] = "changeset";
 // }
 
-Underpass::Underpass(const std::string &dbname)
+Underpass::Underpass(const std::string &dburl)
 {
-    if (dbname.empty()) {
-        // Validate environment variable is defined.
-        char *tmp = std::getenv("UNDERPASS_DB_URL");
-        db_url = tmp;
-    } else {
-        db_url = "dbname = " + dbname;
-    }
-    connect(dbname);
+    connect(dburl);
 };
 
 Underpass::~Underpass(void)
@@ -88,74 +81,15 @@ Underpass::dump(void)
     log_debug(_("Database url: %1%"), db_url);
 }
 
-bool
-Underpass::connect(void)
-{
-    return connect("underpass");
-}
-
-bool
-Underpass::connect(const std::string &dburl)
-{
-    if (dburl.empty()) {
-	log_error(_(" need to specify URL connection string!"));
-    }
-
-    std::string dbuser;
-    std::string dbpass;
-    std::string dbhost;
-    std::string dbname = "dbname=";
-    std::size_t apos = dburl.find('@');
-    if (apos != std::string::npos) {
-	dbuser = "user=";
-	std::size_t cpos = dburl.find(':');
-	if (cpos != std::string::npos) {
-	    dbuser += dburl.substr(0, cpos);
-	    dbpass = "password=";
-	    dbpass += dburl.substr(cpos+1, apos-cpos-1);
-	} else {
-	    dbuser += dburl.substr(0, apos);
-	}
-    }
-
-    std::vector<std::string> result;
-    if (apos != std::string::npos) {
-	boost::split(result, dburl.substr(apos+1), boost::is_any_of("/"));
-    } else {
-	boost::split(result, dburl, boost::is_any_of("/"));
-    }
-    if (result.size() == 1) {
-	dbname += result[0];
-	dbhost = "host=localhost";
-    } else if (result.size() == 2) {
-	if (result[0] != "localhost") {
-	    dbhost = "host=";
-	    dbhost += result[0];
-	}
-	dbname += result[1];
-    }
-    std::string args = dbhost + " " + dbname + " " + dbuser + " " + dbpass;
-    // log_debug(args);
-    try {
-	sdb = std::make_shared<pqxx::connection>(args);
-	if (sdb->is_open()) {
-            log_debug(_("Opened database connection to %1%"), dburl);
-	    return true;
-	} else {
-	    return false;
-	}
-    } catch (const std::exception &e) {
-	log_error(_(" Couldn't open database connection to %1% %2%"), dburl, e.what());
-	return false;
-   }    
-}
-
 std::shared_ptr<replication::StateFile>
 Underpass::getState(replication::frequency_t freq, const std::string &path)
 {
     auto state = std::make_shared<replication::StateFile>();
-    if (!sdb->is_open()) {
+    if (sdb == 0) {
         log_error(_("database not connected!"));
+        return state;
+    } else if (!sdb->is_open()) {
+        log_error(_("database not open!!"));
         return state;
     }
     std::vector<std::string> nodes;

@@ -42,6 +42,7 @@ using namespace boost::gregorian;
 #include "hottm/tmusers.hh"
 #include "osmstats/changeset.hh"
 #include "osmstats/osmchange.hh"
+#include "data/pq.hh"
 
 using namespace tmdb;
 
@@ -151,29 +152,18 @@ class RawHashtag
 /// This class handles all the queries to the OSM Stats database.
 /// This includes querying the database for existing data, as
 /// well as updating the data whenh applying a replication file.
-class QueryOSMStats
+class QueryOSMStats : public pq::Pq
 {
   public:
     QueryOSMStats(void);
-    QueryOSMStats(const std::string &dbname);
+    QueryOSMStats(const std::string &dburl);
     /// close the database connection
-    ~QueryOSMStats(void) {
-        if (sdb)
-            disconnect();
-    };
-    void
-    disconnect(void) {
-        sdb->close();
-    };
+    ~QueryOSMStats(void) {};
 
     bool
     readGeoBoundaries(const std::string &rawfile) {
         return false;
     };
-
-    /// Connect to the database
-    bool connect(void);
-    bool connect(const std::string &dburl);
 
     /// Populate internal storage of a few heavily used data, namely
     /// the indexes for each user, country, or hashtag.
@@ -248,8 +238,7 @@ class QueryOSMStats
                          bool deleteMissing = false);
 
     std::string db_url;
-    std::shared_ptr<pqxx::connection> sdb;
-    std::vector<RawUser> users; ///< All the raw user data
+    std::vector<RawUser> users;        ///< All the raw user data
     std::map<std::string, RawHashtag> hashtags;
 };
 

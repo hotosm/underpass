@@ -89,7 +89,7 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
 	     const std::string &dburl)
 {
     underpass::Underpass under;
-    under.connect();
+    under.connect(dburl);
 
     osmstats::QueryOSMStats ostats;
     ostats.connect(dburl);
@@ -159,7 +159,7 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
 	    // or when to just keep processing files when catching up.
             timer.endTimer("osmChange");
 	    boost::posix_time::time_duration delta;
-	    if (osmchange->changes.size() > 0) {
+	    if (osmchange->changes.size() > 0 && osmchange->changes.front()->nodes.size() > 0) {
 		delta = now - osmchange->changes.front()->nodes.back()->timestamp;
 		// log_debug("DELTA: %1%", (delta.hours()*60) + delta.minutes());
 	    }
