@@ -5,14 +5,12 @@ Tested in operating system Ubuntu 20.04
 ## Install binary dependencies
 
 ```sh
-$ sudo apt-get update && apt-get install -y \
+$ sudo apt-get update && sudo apt-get install -y \
 		autotools-dev \
 		swig \
-		python3 \
 		python3-dev \
 		libgdal-dev \
 		pkg-config \
-		gcc \
 		openjdk-11-jdk \
 		build-essential \
 		libosmium2-dev \
@@ -37,7 +35,7 @@ $ mkdir /libpqxx && cd /libpqxx
 ### Download source dode
 
 ```sh
-$ wget https://github.com/jtv/libpqxx/archive/7.3.1.zip && unzip 7.3.1.zip && cd libpqxx-7.3.1
+$ wget https://github.com/jtv/libpqxx/archive/7.5.2.zip && unzip 7.5.2.zip && cd libpqxx-7.5.2
 ```
 
 ### Compile as shared library
