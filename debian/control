@@ -45,25 +45,22 @@ Build-Depends: dpkg-dev (>= 1.13.19),
 	       libosmium2-dev,
 	       bzip2,
 	       openssl,
+	       libpqxx-7.6,
      	       libxml++2.6-dev | libxml++-3.0,
-# FIXME: For now, pqxx is built from source nd statically linked in as
-# Debian/Ubuntu haven't released the newer version yet that is required.
-# libpqxx-dev,
 
 Package: underpass
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
-	 debconf (>= 0.5) | debconf-2.0,
 	 libboost-filesystem-dev (>= 1.69),	 
 	 libboost-program-options-dev (>= 1.69),
 	 libboost-locale-dev (>= 1.69),
 	 libboost-iostreams-dev (>= 1.69),
 	 libgdal28 | libgdal26,
 	 libxml++2.6-dev | libxml++3.0-dev,
+	 libpqxx-7.6,
 	 bzip2,
 	 openssl,
-	 postgis,
-	 postgresql-all
+	 postgis
 Description: A daemon for processing OSM replication files.
 
 # Package: underpass-dbg
