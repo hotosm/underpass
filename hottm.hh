@@ -53,41 +53,34 @@ class TaskingManager
     /**
      * \brief connect to the DB specified with \a dburl.
      * \param dburl DB server connection: HOST or
-     * USER:PASSSWORD@HOST/DATABASENAME \return TRUE on success.
+     *        USER:PASSSWORD@HOST/DATABASENAME
+     * \return TRUE on success.
      */
     bool connect(const std::string &dburl);
 
     /**
      * \brief Retrieve the users from TM DB.
-     * \param userId, optional user id, default value of 0 synchronizes all
-     * users.
+     * \param userId, optional user id, default value of 0 synchronizes all users.
      * \return a vector of TMUser objects.
      */
     std::vector<TMUser> getUsers(TaskingManagerIdType userId = 0);
 
-    std::vector<TMTeam>
-    getTeams(void) {
-        return getTeams(0);
-    };
+    std::vector<TMTeam> getTeams(void) { return getTeams(0); };
 
     std::vector<TMTeam> getTeams(long teamid);
 
     std::vector<TaskingManagerIdType> getTeamMembers(long teamid, bool active);
 
-    std::vector<TMProject>
-    getProjects(void) {
-        return getProjects(0);
-    };
+    std::vector<TMProject> getProjects(void) { return getProjects(0); };
 
     std::vector<TaskingManagerIdType> getProjectTeams(long projectid);
 
     std::vector<TMProject> getProjects(TaskingManagerIdType projectid);
 
     /**
-     * \brief getWorker is a factory method that creates and returns
-     * a (possibly NULL) worker for the TM DB connection.
-     * \note Ownership is transfered to the caller. Mainly for testing
-     * purposes.
+     * \brief getWorker is a factory method that creates and returns a
+     *        (possibly NULL) worker for the TM DB connection.
+     * \note Ownership is transfered to the caller.
      * \return the (possibly NULL) unique pointer to the worker.
      */
     std::unique_ptr<pqxx::work> getWorker() const;

@@ -72,13 +72,7 @@ using namespace tmdb;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
-enum pathMatches
-{
-    ROOT,
-    DIRECTORY,
-    SUBDIRECTORY,
-    FILEPATH
-};
+enum pathMatches { ROOT, DIRECTORY, SUBDIRECTORY, FILEPATH };
 
 using namespace logger;
 
@@ -88,8 +82,7 @@ class ChangeSet;
 };
 
 /// A helper function to simplify the main part.
-template <class T>
-std::ostream &
+template <class T> std::ostream &
 operator<<(std::ostream &os, const std::vector<T> &v) {
     copy(v.begin(), v.end(), std::ostream_iterator<T>(os, " "));
     return os;
@@ -110,9 +103,8 @@ class Replicator : public replication::Replication
 
     /// Initialize the raw_user, raw_hashtags, and raw_changeset tables
     /// in the OSM stats database from a changeset file
-    bool
-    initializeRaw(std::vector<std::string> &rawfile,
-                  const std::string &database) {
+    bool initializeRaw(std::vector<std::string> &rawfile,
+                       const std::string &database) {
         for (auto it = std::begin(rawfile); it != std::end(rawfile); ++it) {
             changes->importChanges(*it);
         }
@@ -131,9 +123,7 @@ class Replicator : public replication::Replication
     // osmstats::RawCountry & findCountry() {
     //     geou.inCountry();
 
-    enum pathMatches
-    matchUrl(const std::string &url)
-    {
+    enum pathMatches matchUrl(const std::string &url) {
         boost::regex test{"([0-9]{3})"};
 
         boost::sregex_token_iterator iter(url.begin(), url.end(), test, 0);
@@ -147,18 +137,18 @@ class Replicator : public replication::Replication
 
         pathMatches match;
         switch (dirs.size()) {
-        default:
-            match = pathMatches::ROOT;
-            break;
-        case 1:
-            match = pathMatches::DIRECTORY;
-            break;
-        case 2:
-            match = pathMatches::SUBDIRECTORY;
-            break;
-        case 3:
-            match = pathMatches::FILEPATH;
-            break;
+            default:
+                match = pathMatches::ROOT;
+                break;
+            case 1:
+                match = pathMatches::DIRECTORY;
+                break;
+            case 2:
+                match = pathMatches::SUBDIRECTORY;
+                break;
+            case 3:
+                match = pathMatches::FILEPATH;
+                break;
         }
 
         return match;

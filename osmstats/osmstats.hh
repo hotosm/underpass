@@ -88,16 +88,12 @@ class RawChangeset
     std::vector<long> augmented_diffs; ///< The diffs, currently unused
     ptime updated_at;                  ///< Time this change was updated
     //
-    long
-    updateCounter(const std::string &key, long value) {
+    long updateCounter(const std::string &key, long value) {
         counters[key] = value;
         // FIXME: this should return a real value
         return 0;
     };
-    long
-    operator[](const std::string &key) {
-        return counters[key];
-    };
+    long operator[](const std::string &key) { return counters[key]; };
 };
 
 /// \class RawUser
@@ -160,10 +156,7 @@ class QueryOSMStats : public pq::Pq
     /// close the database connection
     ~QueryOSMStats(void) {};
 
-    bool
-    readGeoBoundaries(const std::string &rawfile) {
-        return false;
-    };
+    bool readGeoBoundaries(const std::string &rawfile) { return false; };
 
     /// Populate internal storage of a few heavily used data, namely
     /// the indexes for each user, country, or hashtag.
@@ -173,15 +166,13 @@ class QueryOSMStats : public pq::Pq
     bool getRawChangeSets(std::vector<long> &changeset_id);
 
     /// Add a user to the internal data store
-    int
-    addUser(long id, const std::string &user) {
+    int addUser(long id, const std::string &user) {
         RawUser ru(id, user);
         users.push_back(ru);
         return users.size();
     };
     /// Add a hashtag to the internal data store
-    int
-    addHashtag(int id, const std::string &tag) {
+    int addHashtag(int id, const std::string &tag) {
         RawHashtag rh(id, tag);
         hashtags[tag] = rh;
         return hashtags.size();
@@ -199,8 +190,7 @@ class QueryOSMStats : public pq::Pq
     ptime getLastUpdate(void);
     // private:
 
-    long
-    queryData(long cid, const std::string &column) {
+    long queryData(long cid, const std::string &column) {
         std::string query = "SELECT " + column + " FROM raw_changesets";
         query += " WHERE id=" + std::to_string(cid);
         std::cout << "QUERY: " << query << std::endl;
@@ -213,16 +203,15 @@ class QueryOSMStats : public pq::Pq
     }
 
     /**
-     * \brief The SyncResult struct represents the result of a synchronization
-     * operation.
+     * \brief The SyncResult struct represents the result of a
+     *        synchronization operation.
      */
     struct SyncResult {
         unsigned long created = 0;
         unsigned long updated = 0;
         unsigned long deleted = 0;
 
-        bool
-        operator==(const SyncResult &other) const {
+        bool operator==(const SyncResult &other) const {
             return created == other.created && updated == other.updated &&
                    deleted == other.deleted;
         }
@@ -230,8 +219,7 @@ class QueryOSMStats : public pq::Pq
         /**
          * \brief clear the sync result by resetting all counters to 0.
          */
-        void
-        clear() {
+        void clear() {
             created = 0;
             updated = 0;
             deleted = 0;
@@ -242,8 +230,8 @@ class QueryOSMStats : public pq::Pq
      * \brief syncUsers synchronize users from TM DB into Underpass DB.
      * \param users list of users from TM DB to be synced.
      * \param purge default to FALSE, if TRUE users that are not in \a users but
-     * still present in the OSMStats DB will be deleted. \return a SyncResult
-     * object .
+     *        still present in the OSMStats DB will be deleted.
+     * \return a SyncResult object.
      */
     SyncResult syncUsers(const std::vector<TMUser> &users, bool purge = false);
 
