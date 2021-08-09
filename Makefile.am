@@ -90,6 +90,7 @@ pkgdata_DATA = $(SQL_FILES) data/priority.geojson data/setupdb.sh
 
 EXTRA_DIST = \
 	$(SQL_FILES) \
+	testsuite \
 	data/priority.geojson \
 	po \
 	doc \
