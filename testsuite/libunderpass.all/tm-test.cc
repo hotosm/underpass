@@ -42,49 +42,67 @@ class TestTM : public TaskingManager
     //! Clear the test DB and fill it with with initial test data
     bool
     init_test_case() {
-        const auto dbconn{getenv("UNDERPASS_TEST_DB_CONN")
-                              ? getenv("UNDERPASS_TEST_DB_CONN")
-                              : ""};
-        const auto source_tree_root{
-            std::string(getenv("UNDERPASS_SOURCE_TREE_ROOT")
-                            ? getenv("UNDERPASS_SOURCE_TREE_ROOT")
-                            : ".")};
 
-        const std::string test_db{"taskingmanager_tm_test"};
+        const std::string dbconn{getenv("UNDERPASS_TEST_DB_CONN")
+                                     ? getenv("UNDERPASS_TEST_DB_CONN")
+                                     : ""};
+        const std::string source_tree_root{
+            getenv("UNDERPASS_SOURCE_TREE_ROOT")
+                ? getenv("UNDERPASS_SOURCE_TREE_ROOT")
+                : "."};
+
+        const std::string test_tm_db_name{"taskingmanager_tm_test"};
 
         {
             pqxx::connection conn{dbconn};
             pqxx::nontransaction worker{conn};
-            worker.exec0("DROP DATABASE IF EXISTS " + test_db);
-            worker.exec0("CREATE DATABASE " + test_db);
+            worker.exec0("DROP DATABASE IF EXISTS " + test_tm_db_name);
+            worker.exec0("CREATE DATABASE " + test_tm_db_name);
             worker.commit();
         }
 
+        {
+            pqxx::connection conn{dbconn + " dbname=" + test_tm_db_name};
+            pqxx::nontransaction worker{conn};
+            worker.exec0("CREATE EXTENSION postgis");
+
+            // Create schema
+            const path base_path{source_tree_root / "testsuite"};
+            const auto schema_path{base_path / "testdata" /
+                                   "taskingmanager_schema.sql"};
+            std::ifstream schema_definition(schema_path);
+            std::string sql((std::istreambuf_iterator<char>(schema_definition)),
+                            std::istreambuf_iterator<char>());
+
+            assert(!sql.empty());
+            worker.exec0(sql);
+
+            // Load a minimal data set for testing
+            const auto data_path{base_path / "testdata" /
+                                 "taskingmanager_test_data.sql"};
+            std::ifstream data_definition(data_path);
+            std::string data_sql(
+                (std::istreambuf_iterator<char>(data_definition)),
+                std::istreambuf_iterator<char>());
+
+            assert(!data_sql.empty());
+            worker.exec0(data_sql);
+        }
+
+        // The logic in connect() adds "localhost" and breaks the
+        // tests let's add the real host from env if set.
+        // USER:PASSSWORD@HOST/DATABASE
+        std::string tm_conn;
+        if (getenv("PGHOST") && getenv("PGUSER") && getenv("PGPASSWORD")) {
+            tm_conn = std::string(getenv("PGUSER")) + ":" +
+                      std::string(getenv("PGPASSWORD")) + "@" +
+                      std::string(getenv("PGHOST")) + "/" + test_tm_db_name;
+        } else {
+            tm_conn = test_tm_db_name;
+        }
+
         // Connect
-        assert(connect(test_db));
-
-        getWorker()->exec0("CREATE EXTENSION postgis");
-
-        // Create schema
-        const path base_path{source_tree_root / "testsuite"};
-        const auto schema_path{base_path / "testdata" /
-                               "taskingmanager_schema.sql"};
-        std::ifstream schema_definition(schema_path);
-        std::string sql((std::istreambuf_iterator<char>(schema_definition)),
-                        std::istreambuf_iterator<char>());
-
-        assert(!sql.empty());
-        getWorker()->exec0(sql);
-
-        // Load a minimal data set for testing
-        const auto data_path{base_path / "testdata" /
-                             "taskingmanager_test_data.sql"};
-        std::ifstream data_definition(data_path);
-        std::string data_sql((std::istreambuf_iterator<char>(data_definition)),
-                             std::istreambuf_iterator<char>());
-
-        assert(!data_sql.empty());
-        getWorker()->exec0(data_sql);
+        assert(connect(tm_conn));
 
         return true;
     };
