@@ -51,6 +51,8 @@ using namespace boost::gregorian;
 #include "log.hh"
 using namespace logger;
 
+std::once_flag prepare_user_statement_flag;
+
 /// \namespace osmstats
 namespace osmstats {
 
@@ -400,46 +402,74 @@ RawChangeset::dump(void) {
 }
 
 QueryOSMStats::SyncResult
-QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool deleteMissing) {
+QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool purge) {
     // Preconditions:
     assert(sdb);
 
     std::vector<TaskingManagerIdType> currentIds;
 
     pqxx::work worker(*sdb);
-    pqxx::result result = worker.exec("SELECT id FROM users");
+    const auto result{worker.exec("SELECT id FROM users")};
 
     for (const auto &row : std::as_const(result)) {
         currentIds.push_back(row.at(0).as(TaskingManagerIdType(0)));
     }
+
+    log_debug(_("OSMStats users count: %1%"), currentIds.size());
 
     SyncResult syncResult;
     std::vector<TaskingManagerIdType> updatedIds;
 
     bool hasError{false};
 
+    // Prepare statements for insert and update
+    std::call_once(prepare_user_statement_flag, [this]() {
+        const std::string insertSql{R"sql(
+                          INSERT INTO users (
+                            id,
+                            username,
+                            name,
+                            date_registered,
+                            last_validation_date,
+                            tasks_mapped,
+                            tasks_validated,
+                            tasks_invalidated,
+                            projects_mapped,
+                            mapping_level,
+                            gender,
+                            role
+                          )
+                          VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12 )
+                        )sql"};
+        const std::string updateSql{R"sql(
+              UPDATE users SET
+                  username = $2,
+                  name = $3,
+                  date_registered = $4,
+                  last_validation_date = $5,
+                  tasks_mapped = $6,
+                  tasks_validated = $7,
+                  tasks_invalidated = $8,
+                  projects_mapped = $9,
+                  mapping_level = $10,
+                  gender = $11,
+                  "role" = $12
+              WHERE id = $1
+            )sql"};
+
+        sdb->prepare("insert_osmstats_user", insertSql);
+        sdb->prepare("update_osmstats_user", updateSql);
+    });
+
     for (const auto &user : std::as_const(users)) {
         if (hasError) {
             break;
         }
-        const TaskingManagerIdType currentUserId{user.id};
-
-        const auto username{worker.conn().quote(user.username)};
-        const auto name{worker.conn().quote(user.name)};
-        const auto date_registered{
-            worker.conn().quote(to_iso_string(user.date_registered))};
-        const auto last_validation_date{
-            worker.conn().quote(to_iso_string(user.last_validation_date))};
-        const auto task_mapped{worker.conn().quote(user.tasks_mapped)};
-        const auto task_validated{worker.conn().quote(user.tasks_validated)};
-        const auto task_invalidated{
-            worker.conn().quote(user.tasks_invalidated)};
         const int mapping_level{static_cast<int>(user.mapping_level)};
         const int gender{static_cast<int>(user.gender)};
         const int role{static_cast<int>(user.role)};
-        std::string projects_mapped{"'{"};
+        std::string projects_mapped{"{"};
 
-        // TODO: use prepared stmt
         for (const auto &elem : std::as_const(user.projects_mapped)) {
             projects_mapped += std::to_string(elem);
 
@@ -448,84 +478,79 @@ QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool deleteMissing) {
             }
         }
 
-        projects_mapped += "}'";
+        projects_mapped += "}";
 
         // If the id exists it is an update
         if (std::find(currentIds.begin(), currentIds.end(), user.id) !=
             currentIds.end()) {
-            const std::string sql{str(boost::format(R"sql(
-                  UPDATE users SET
-                      username = %2%,
-                      name = %3%,
-                      date_registered = %4%,
-                      last_validation_date = %5%,
-                      tasks_mapped = %6%,
-                      tasks_validated = %7%,
-                      tasks_invalidated = %8%,
-                      projects_mapped = %9%,
-                      mapping_level = %10%,
-                      gender = %11%,
-                      "role" = %12%
-                  WHERE id = %1%
-                )sql") % currentUserId %
-                                      username % name % date_registered %
-                                      last_validation_date % task_mapped %
-                                      task_validated % task_invalidated %
-                                      projects_mapped % mapping_level % gender %
-                                      role)};
-
             try {
-                const auto result{worker.exec0(sql)};
 
+                // clang-format off
+                const auto result{
+                    worker.exec_prepared0("update_osmstats_user",
+                       user.id,
+                       user.username,
+                       user.name,
+                       to_iso_string(user.date_registered),
+                       to_iso_string(user.last_validation_date),
+                       user.tasks_mapped,
+                       user.tasks_validated,
+                       user.tasks_invalidated,
+                       projects_mapped,
+                       mapping_level,
+                       gender,
+                       role
+                )};
+                // clang-format on
                 if (result.affected_rows() == 1) {
                     syncResult.updated++;
                     updatedIds.push_back(user.id);
+                    if (syncResult.updated % 1000 == 0) {
+                        // log_debug(_("Users updated: %1%"),
+                        // syncResult.updated);
+                    }
                 }
             } catch (std::exception const &e) {
-                log_error(_("Couldn't create update record: %1%"), e.what());
+                log_error(_("Couldn't update user record: %1%"), e.what());
                 hasError = true;
             }
         } else {
-            const std::string sql{str(boost::format(R"sql(
-                  INSERT INTO users (
-                    id,
-                    username,
-                    name,
-                    date_registered,
-                    last_validation_date,
-                    tasks_mapped,
-                    tasks_validated,
-                    tasks_invalidated,
-                    projects_mapped,
-                    mapping_level,
-                    gender,
-                    role
-                  )
-                  VALUES ( %1%, %2%, %3%, %4%, %5%, %6%, %7%, %8%, %9%, %10%, %11%, %12% )
-                )sql") % currentUserId %
-                                      username % name % date_registered %
-                                      last_validation_date % task_mapped %
-                                      task_validated % task_invalidated %
-                                      projects_mapped % mapping_level % gender %
-                                      role)};
-
             try {
-                const auto result{worker.exec0(sql)};
-
+                // clang-format off
+                const auto result{
+                    worker.exec_prepared0("insert_osmstats_user",
+                       user.id,
+                       user.username,
+                       user.name,
+                       to_iso_string(user.date_registered),
+                       to_iso_string(user.last_validation_date),
+                       user.tasks_mapped,
+                       user.tasks_validated,
+                       user.tasks_invalidated,
+                       projects_mapped,
+                       mapping_level,
+                       gender,
+                       role
+                )};
+                // clang-format on
                 if (result.affected_rows() == 1) {
                     syncResult.created++;
+                    if (syncResult.created % 1000 == 0) {
+                        // log_debug(_("Users created: %1%"),
+                        // syncResult.created);
+                    }
                 }
             } catch (std::exception const &e) {
                 log_error(_("Couldn't create user record: %1%"), e.what());
-                std::cout << "Couldn't create user record: " << e.what() << sql
-                          << std::endl;
                 hasError = true;
             }
         }
     }
 
-    if (deleteMissing && !hasError) {
+    if (purge && !hasError) {
         std::vector<TaskingManagerIdType> deletedIds;
+        std::sort(currentIds.begin(), currentIds.end());
+        std::sort(updatedIds.begin(), updatedIds.end());
         std::set_difference(currentIds.begin(), currentIds.end(),
                             updatedIds.begin(), updatedIds.end(),
                             std::inserter(deletedIds, deletedIds.begin()));
@@ -540,6 +565,7 @@ QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool deleteMissing) {
             sql += ")";
             try {
                 const auto result{worker.exec0(sql)};
+                // log_debug(_("Users deleted %1%"), deletedIds.size());
                 syncResult.deleted = deletedIds.size();
             } catch (std::exception const &e) {
                 log_error(_("Couldn't delete user records: %1%"), e.what());
@@ -552,8 +578,7 @@ QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool deleteMissing) {
         try {
             worker.commit();
         } catch (std::exception const &e) {
-            log_error(_("Couldn't commit user record operations: %1%"),
-                      e.what());
+            log_error(_("Couldn't commit user record changes: %1%"), e.what());
             syncResult.clear();
         }
     } else {

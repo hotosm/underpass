@@ -228,7 +228,7 @@ class QueryOSMStats : public pq::Pq
         }
 
         /**
-         * \brief clear the sync result setting all counters to 0.
+         * \brief clear the sync result by resetting all counters to 0.
          */
         void
         clear() {
@@ -241,11 +241,11 @@ class QueryOSMStats : public pq::Pq
     /**
      * \brief syncUsers synchronize users from TM DB into Underpass DB.
      * \param users list of users from TM DB to be synced.
-     * \param deleteMissing, default false, if TRUE, users missing from the \a
-     * user list will be deleted. \return a SyncResult object .
+     * \param purge default to FALSE, if TRUE users that are not in \a users but
+     * still present in the OSMStats DB will be deleted. \return a SyncResult
+     * object .
      */
-    SyncResult syncUsers(const std::vector<TMUser> &users,
-                         bool deleteMissing = false);
+    SyncResult syncUsers(const std::vector<TMUser> &users, bool purge = false);
 
     std::string db_url;
     std::unique_ptr<pqxx::connection> sdb;
