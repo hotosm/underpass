@@ -263,94 +263,6 @@ main(int argc, char *argv[]) {
         }
     }
 
-    // //////////////////////////////////////////////////////////////
-    // Tasking Manager user sync
-
-    // Thread safe flag to exit the periodic sync loop
-    std::atomic<bool> tmUserSyncIsActive{true};
-
-    // The user sync function: to be exectuted in a separate thread
-    auto userSyncFunc = [&tmUserSyncIsActive, tmDbUrl, osmStatsDbUrl,
-                         tmusersfrequency]() {
-        // There is a lot of DB URI manipulations in this program, if the URL
-        // contains a plain hostname we need to add a database name too
-        // FIXME: handle all DB URIs in a consistent and documented way
-        auto osmStatsDbUrlWithDbName{osmStatsDbUrl};
-        if (osmStatsDbUrl.find('/') == std::string::npos) {
-            osmStatsDbUrlWithDbName.append("/osmstats");
-        }
-        auto osmStats{QueryOSMStats()};
-        // Connection errors are fatal: exit!
-        if (!osmStats.connect(osmStatsDbUrlWithDbName)) {
-            // FIXME: Not sure if log_error is thread safe...
-            log_error(
-                "ERROR: couldn't connect to OSM Stats Underpass server: %1%!",
-                osmStatsDbUrlWithDbName);
-            return;
-        }
-
-        TaskingManager taskingManager;
-        // FIXME: handle all DB URIs in a consistent and documented way
-        auto tmDbUrlWithDbName{tmDbUrl};
-        if (tmDbUrl.find('/') == std::string::npos) {
-            tmDbUrlWithDbName.append("/taskingmanager");
-        }
-
-        if (!taskingManager.connect(tmDbUrlWithDbName)) {
-            // FIXME: Not sure if log_error is thread safe...
-            log_error("ERROR: couldn't connect to Tasking Manager server: %1%!",
-                      tmDbUrlWithDbName);
-            return;
-        }
-
-        do {
-
-            auto start{std::chrono::system_clock::now()};
-            const auto users{taskingManager.getUsers()};
-            // Sync and delete missing
-            const auto results{osmStats.syncUsers(users, true)};
-
-            // Log something?
-            std::cout << "User sync results: created: " << results.created
-                      << ", updated: " << results.updated
-                      << ", deleted: " << results.deleted << std::endl;
-
-            if (tmusersfrequency > 0) {
-                auto end{std::chrono::system_clock::now()};
-                auto elapsed{std::chrono::duration_cast<std::chrono::seconds>(
-                    end - start)};
-                if (elapsed.count() < tmusersfrequency) {
-                    std::cout << "Sleeping for "
-                              << std::chrono::seconds(tmusersfrequency -
-                                                      elapsed.count())
-                                     .count()
-                              << " seconds..." << std::endl;
-                    std::this_thread::sleep_for(std::chrono::seconds(
-                        tmusersfrequency - elapsed.count()));
-                }
-            }
-
-        } while (tmusersfrequency > 0 && tmUserSyncIsActive);
-    };
-
-    // RIIA Custom deleter because of multiple exit points
-    auto stopTmUserSyncMonitor = [&tmUserSyncIsActive](std::thread *ptr) {
-        if (ptr->joinable() && tmUserSyncIsActive) {
-            tmUserSyncIsActive = false;
-            ptr->join();
-        }
-        delete ptr;
-    };
-
-    std::unique_ptr<std::thread, decltype(stopTmUserSyncMonitor)>
-        tmUserSyncMonitorThread(nullptr, stopTmUserSyncMonitor);
-    if (tmusersfrequency >= 0) {
-        tmUserSyncMonitorThread.reset(new std::thread(userSyncFunc));
-    }
-
-    // End of Tasking Manager user sync setup
-    // //////////////////////////////////////////////////////////////
-
     if (vm.count("boundary")) {
         boundary = vm["boundary"].as<std::string>();
     }
@@ -382,6 +294,94 @@ main(int argc, char *argv[]) {
         priority += "/" + boundary;
         geou.readFile(priority);
     }
+
+    // //////////////////////////////////////////////////////////////
+    // Tasking Manager user sync cron-like implementation.
+    // The synchronization is executed in a separate thread,
+    // the frequency is determined by tmusersfrequency, if it is == 0
+    // the synchronization is executed only once.
+
+    // Thread safe flag to exit the periodic sync loop
+    std::atomic<bool> tmUserSyncIsActive{true};
+
+    // The user sync function: to be exectuted in a separate thread
+    auto userSyncFunc = [&tmUserSyncIsActive, tmDbUrl, osmStatsDbUrl,
+                         tmusersfrequency]() {
+        // There is a lot of DB URI manipulations in this program, if the URL
+        // contains a plain hostname we need to add a database name too
+        // FIXME: handle all DB URIs in a consistent and documented way
+        auto osmStatsDbUrlWithDbName{osmStatsDbUrl};
+        if (osmStatsDbUrl.find('/') == std::string::npos) {
+            osmStatsDbUrlWithDbName.append("/osmstats");
+        }
+        auto osmStats{QueryOSMStats()};
+        // Connection errors are fatal: exit!
+        if (!osmStats.connect(osmStatsDbUrlWithDbName)) {
+            log_error(
+                "ERROR: couldn't connect to OSM Stats Underpass server: %1%!",
+                osmStatsDbUrlWithDbName);
+            return;
+        }
+
+        TaskingManager taskingManager;
+        // FIXME: handle all DB URIs in a consistent and documented way
+        auto tmDbUrlWithDbName{tmDbUrl};
+        if (tmDbUrl.find('/') == std::string::npos) {
+            tmDbUrlWithDbName.append("/taskingmanager");
+        }
+
+        if (!taskingManager.connect(tmDbUrlWithDbName)) {
+            log_error("ERROR: couldn't connect to Tasking Manager server: %1%!",
+                      tmDbUrlWithDbName);
+            return;
+        }
+
+        do {
+
+            auto start{std::chrono::system_clock::now()};
+            const auto users{taskingManager.getUsers()};
+            // Sync and delete missing
+            const auto results{osmStats.syncUsers(users, true)};
+            auto end{std::chrono::system_clock::now()};
+            auto elapsed{
+                std::chrono::duration_cast<std::chrono::seconds>(end - start)};
+
+            log_debug("Users sync TM->OS executed in %1% seconds.",
+                      elapsed.count());
+            log_debug("Users created: %1%, updated: %2%, deleted: %3%",
+                      results.created, results.updated, results.deleted);
+
+            if (tmusersfrequency > 0) {
+                if (elapsed.count() < tmusersfrequency) {
+                    log_debug(
+                        "Users sync TM->OS sleeping for %1% seconds...",
+                        std::chrono::seconds(tmusersfrequency - elapsed.count())
+                            .count());
+                    std::this_thread::sleep_for(std::chrono::seconds(
+                        tmusersfrequency - elapsed.count()));
+                }
+            }
+
+        } while (tmusersfrequency > 0 && tmUserSyncIsActive);
+    };
+
+    // RIIA Custom deleter because of multiple exit points
+    auto stopTmUserSyncMonitor = [&tmUserSyncIsActive](std::thread *ptr) {
+        if (ptr->joinable() && tmUserSyncIsActive) {
+            tmUserSyncIsActive = false;
+            ptr->join();
+        }
+        delete ptr;
+    };
+
+    std::unique_ptr<std::thread, decltype(stopTmUserSyncMonitor)>
+        tmUserSyncMonitorThread(nullptr, stopTmUserSyncMonitor);
+    if (tmusersfrequency >= 0) {
+        tmUserSyncMonitorThread.reset(new std::thread(userSyncFunc));
+    }
+
+    // End of Tasking Manager user sync setup
+    // //////////////////////////////////////////////////////////////
 
     Replicator replicator;
     if (vm.count("changefile")) {

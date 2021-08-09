@@ -23,6 +23,7 @@
 #include <string>
 
 #include "hottm.hh"
+#include "log.hh"
 #include "osmstats/osmstats.hh"
 
 #include "boost/date_time/gregorian/gregorian.hpp"
@@ -128,6 +129,11 @@ main(int argc, char *argv[]) {
 
     // Test preconditions
     TestOSMStats testosm;
+
+    logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
+    // dbglogfile.setWriteDisk(true);
+    dbglogfile.setLogFilename("");
+    dbglogfile.setVerbosity();
 
     testosm.init_test_case();
 
