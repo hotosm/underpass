@@ -25,10 +25,11 @@ AM_CPPFLAGS = -I$(top_srcdir) \
 
 check_PROGRAMS =  \
 	tm-test \
-        under-test \
-        usersync-test
+    under-test \
+    usersync-test \
 	under-test \
 	pq-test
+
 #	rep-test
 #	stats-test
 #	change-test
