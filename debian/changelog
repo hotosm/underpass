@@ -1,6 +1,12 @@
+underpass (20210810) unstable; urgency=low
+
+  * Install validation plugin correctly.
+
+ -- Rob Savoye <rob.savoye@hotosm.org>  Mon,  10 Aug 2021 10:05:01 -0600
+
 underpass (20210809) unstable; urgency=low
 
-  * New debian package support
+  * Improve package building
 
  -- Rob Savoye <rob.savoye@hotosm.org>  Mon,  09 Aug 2021 15:45:01 -0600
 
