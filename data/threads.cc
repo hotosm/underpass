@@ -79,6 +79,8 @@ std::mutex stream_mutex;
 
 using namespace logger;
 
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 namespace threads {
 
 // logger::LogFile& dbglogfile = logger::LogFile::getDefaultInstance();
@@ -98,16 +100,22 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
     auto planet = std::make_shared<replication::Planet>(remote);
     bool mainloop = true;
 
-    boost::dll::fs::path lib_path("validate/.libs");
+    std::string plugins;
+    if (boost::filesystem::exists("validate/.libs")) {
+	plugins = "validate/.libs";
+    } else {
+	plugins = PKGLIBDIR;
+    }
+    boost::dll::fs::path lib_path(plugins);
     boost::function<plugin_t> creator;
     try {
 	creator = boost::dll::import_alias<plugin_t>(
 	    lib_path / "libhotosm", "create_plugin",
 	    boost::dll::load_mode::append_decorations
 	    );
-	std::cerr << "Loaded plugin hotosm!" << std::endl;
+	// std::cerr << "Loaded plugin hotosm!" << std::endl;
     } catch (std::exception& e) {
-	std::cerr << "Couldn't load plugin! %1%" << e.what() << std::endl;
+	log_debug(_("Couldn't load plugin! %1%"), e.what());
 	exit(0);
     }
     auto validator = creator();
