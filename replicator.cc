@@ -173,13 +173,13 @@ main(int argc, char *argv[]) {
     ptime starttime(not_a_date_time);
     ptime endtime(not_a_date_time);
     std::string url;
-    std::string dburl = "localhost/osmstats";
+    std::string osmStatsDbUrl = "localhost/osmstats";
     // std::string pserver = "https://download.openstreetmap.fr";
     // std::string pserver = "https://planet.openstreetmap.org";
     std::string pserver = "https://planet.maps.mail.ru";
     // Tasking Manager DB server connection: HOST or
     // USER:PASSSWORD@HOST/DATABASENAME
-    std::string tmDbUrl{"localhost"};
+    std::string tmDbUrl = "localhost";
     // Tasking Manager user sync frequency in seconds (-1 -> disabled, 0 ->
     // single shot, > 0 -> interval)
     long tmusersfrequency{-1};
