@@ -40,8 +40,8 @@ class TestTM : public TaskingManager
 {
   public:
     //! Clear the test DB and fill it with with initial test data
-    bool
-    init_test_case() {
+    bool init_test_case()
+    {
 
         const std::string dbconn{getenv("UNDERPASS_TEST_DB_CONN")
                                      ? getenv("UNDERPASS_TEST_DB_CONN")
@@ -89,9 +89,6 @@ class TestTM : public TaskingManager
             worker.exec0(data_sql);
         }
 
-        // The logic in connect() adds "localhost" and breaks the
-        // tests let's add the real host from env if set.
-        // USER:PASSSWORD@HOST/DATABASE
         std::string tm_conn;
         if (getenv("PGHOST") && getenv("PGUSER") && getenv("PGPASSWORD")) {
             tm_conn = std::string(getenv("PGUSER")) + ":" +
@@ -109,7 +106,8 @@ class TestTM : public TaskingManager
 };
 
 int
-main(int argc, char *argv[]) {
+main(int argc, char *argv[])
+{
     TestTM testtm;
 
     testtm.init_test_case();

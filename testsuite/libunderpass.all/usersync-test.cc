@@ -43,8 +43,8 @@ class TestOSMStats : public QueryOSMStats
 {
   public:
     //! Clear the test DB and fill it with with initial test data
-    bool
-    init_test_case() {
+    bool init_test_case()
+    {
 
         const std::string dbconn{getenv("UNDERPASS_TEST_DB_CONN")
                                      ? getenv("UNDERPASS_TEST_DB_CONN")
@@ -125,21 +125,18 @@ class TestOSMStats : public QueryOSMStats
 };
 
 int
-main(int argc, char *argv[]) {
+main(int argc, char *argv[])
+{
 
     // Test preconditions
     TestOSMStats testosm;
 
     logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
-    // dbglogfile.setWriteDisk(true);
     dbglogfile.setLogFilename("");
     dbglogfile.setVerbosity();
 
     testosm.init_test_case();
 
-    // The logic in QueryOSMStats::connect() adds "localhost" and breaks the
-    // tests let's add the real host from env if set.
-    // USER:PASSSWORD@HOST/DATABASE
     const std::string test_osmstats_db_name{"osmstats_usersync_test"};
     const std::string test_tm_db_name{"taskingmanager_usersync_test"};
     std::string osmstats_conn;

@@ -23,7 +23,7 @@ AM_CPPFLAGS = -I$(top_srcdir) \
         -I$(top_srcdir)/hottm
 
 
-check_PROGRAMS =  \
+check_PROGRAMS = \
 	tm-test \
     under-test \
     usersync-test \
