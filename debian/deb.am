@@ -33,7 +33,8 @@ DEB_BUILD_OPTIONS ?= $(shell echo $DEB_BUILD_OPTIONS)
 # Build the package. debuild would also work. This requires all
 # the file editing to be done
 snapshot-deb:
-	cd $(distdir) ; \
+	mv $(distdir) $(PACKAGE)-$(NOW)
+	cd  $(PACKAGE)-$(NOW) ; \
 	dpkg-buildpackage -rfakeroot
 
 .PHONY : deb snapshot-deb
