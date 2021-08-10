@@ -43,3 +43,6 @@ AM_CXXFLAGS = \
 	-DPKGLIBDIR=\"$(pkglibdir)\" \
 	-DSRCDIR=\"$(srcdir)\"
 
+install-data-hook:
+	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
+	cp -uvp .libs/libhotosm.so $(DESTDIR)/$(pkglibdir)
