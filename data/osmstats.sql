@@ -74,7 +74,7 @@ CREATE TABLE public.ground_data (
 );
 
 CREATE TABLE public.users (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     username varchar,
     name varchar,
     date_registered timestamp,

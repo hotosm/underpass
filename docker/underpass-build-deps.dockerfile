@@ -34,15 +34,15 @@ RUN apt-get update \
         vim \
         wait-for-it \
     && mkdir /libpqxx && cd /libpqxx \
-    && wget https://github.com/jtv/libpqxx/archive/7.3.1.zip \
-    && unzip 7.3.1.zip \
-    && cd libpqxx-7.3.1 \
+    && wget https://github.com/jtv/libpqxx/archive/7.6.1.zip \
+    && unzip 7.6.1.zip \
+    && cd libpqxx-7.6.1 \
     && ./configure --enable-shared \
     && make \
     && make install \
     && cd .. \
-    && rm -rf libpqxx-7.3.1 \
-    && rm 7.3.1.zip \
+    && rm -rf libpqxx-7.6.1 \
+    && rm 7.6.1.zip \
     && rm -rf /var/lib/apt/lists/*
 
 COPY bzip2.pc /usr/lib/x86_64-linux-gnu/pkgconfig/bzip2.pc

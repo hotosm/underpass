@@ -23,6 +23,7 @@
 #include <string>
 
 #include "hottm.hh"
+#include "log.hh"
 #include "osmstats/osmstats.hh"
 
 #include "boost/date_time/gregorian/gregorian.hpp"
@@ -42,33 +43,33 @@ class TestOSMStats : public QueryOSMStats
 {
   public:
     //! Clear the test DB and fill it with with initial test data
-    bool
-    init_test_case() {
-        const auto dbconn{getenv("UNDERPASS_TEST_DB_CONN")
-                              ? std::string(getenv("UNDERPASS_TEST_DB_CONN"))
-                              : ""};
-        const auto source_tree_root{
-            std::string(getenv("UNDERPASS_SOURCE_TREE_ROOT")
-                            ? getenv("UNDERPASS_SOURCE_TREE_ROOT")
-                            : ".")};
+    bool init_test_case()
+    {
 
-        std::string test_db{"taskingmanager_usersync_test"};
+        const std::string dbconn{getenv("UNDERPASS_TEST_DB_CONN")
+                                     ? getenv("UNDERPASS_TEST_DB_CONN")
+                                     : ""};
+        const std::string source_tree_root{
+            getenv("UNDERPASS_SOURCE_TREE_ROOT")
+                ? getenv("UNDERPASS_SOURCE_TREE_ROOT")
+                : "."};
+
+        const std::string test_tm_db_name{"taskingmanager_usersync_test"};
 
         {
             pqxx::connection conn{dbconn};
             pqxx::nontransaction worker{conn};
-            worker.exec0("DROP DATABASE IF EXISTS " + test_db);
-            worker.exec0("CREATE DATABASE " + test_db);
+            worker.exec0("DROP DATABASE IF EXISTS " + test_tm_db_name);
+            worker.exec0("CREATE DATABASE " + test_tm_db_name);
             worker.commit();
         }
 
         {
-            pqxx::connection conn{dbconn + " dbname=" + test_db};
+            pqxx::connection conn{dbconn + " dbname=" + test_tm_db_name};
             pqxx::nontransaction worker{conn};
             worker.exec0("CREATE EXTENSION postgis");
 
             // Create schema
-            // TODO: get absolute base path
             const path base_path{source_tree_root / "testsuite"};
             const auto schema_path{base_path / "testdata" /
                                    "taskingmanager_schema.sql"};
@@ -92,18 +93,18 @@ class TestOSMStats : public QueryOSMStats
         }
 
         // Prepare OSMStats test database
-        test_db = "osmstats_usersync_test";
+        const std::string test_osmstats_db_name{"osmstats_usersync_test"};
 
         {
             pqxx::connection conn{dbconn};
             pqxx::nontransaction worker{conn};
-            worker.exec0("DROP DATABASE IF EXISTS " + test_db);
-            worker.exec0("CREATE DATABASE " + test_db);
+            worker.exec0("DROP DATABASE IF EXISTS " + test_osmstats_db_name);
+            worker.exec0("CREATE DATABASE " + test_osmstats_db_name);
             worker.commit();
         }
 
         {
-            pqxx::connection conn{dbconn + " dbname=" + test_db};
+            pqxx::connection conn{dbconn + " dbname=" + test_osmstats_db_name};
             pqxx::nontransaction worker{conn};
             worker.exec0("CREATE EXTENSION postgis");
 
@@ -124,16 +125,38 @@ class TestOSMStats : public QueryOSMStats
 };
 
 int
-main(int argc, char *argv[]) {
+main(int argc, char *argv[])
+{
 
     // Test preconditions
     TestOSMStats testosm;
 
+    logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
+    dbglogfile.setLogFilename("");
+    dbglogfile.setVerbosity();
+
     testosm.init_test_case();
+
+    const std::string test_osmstats_db_name{"osmstats_usersync_test"};
+    const std::string test_tm_db_name{"taskingmanager_usersync_test"};
+    std::string osmstats_conn;
+    std::string tm_conn;
+    if (getenv("PGHOST") && getenv("PGUSER") && getenv("PGPASSWORD")) {
+        osmstats_conn = std::string(getenv("PGUSER")) + ":" +
+                        std::string(getenv("PGPASSWORD")) + "@" +
+                        std::string(getenv("PGHOST")) + "/" +
+                        test_osmstats_db_name;
+        tm_conn = std::string(getenv("PGUSER")) + ":" +
+                  std::string(getenv("PGPASSWORD")) + "@" +
+                  std::string(getenv("PGHOST")) + "/" + test_tm_db_name;
+    } else {
+        osmstats_conn = test_osmstats_db_name;
+        tm_conn = test_tm_db_name;
+    }
 
     // Retrieve users from test DB
     TaskingManager tm;
-    assert(tm.connect("taskingmanager_usersync_test"));
+    assert(tm.connect(tm_conn));
 
     auto users{tm.getUsers()};
     assert(users.size() == 2);
@@ -142,20 +165,7 @@ main(int argc, char *argv[]) {
 
     TestOSMStats testosmstats;
 
-    // The logic in QueryOSMStats::connect() adds "localhost" and breaks the
-    // tests let's add the real host from env if set.
-    // USER:PASSSWORD@HOST/DATABASE
-    const std::string test_db_name{"osmstats_usersync_test"};
-    std::string conn;
-    if (getenv("PGHOST") && getenv("PGUSER") && getenv("PGPASSWORD")) {
-        conn = std::string(getenv("PGUSER")) + ":" +
-               std::string(getenv("PGPASSWORD")) + "@" +
-               std::string(getenv("PGHOST")) + "/" + test_db_name;
-    } else {
-        conn = test_db_name;
-    }
-
-    if (testosmstats.connect(conn)) {
+    if (testosmstats.connect(osmstats_conn)) {
         runtest.pass("QueryOSMStats::connect()");
     } else {
         runtest.fail("QueryOSMStats::connect()");
@@ -173,7 +183,7 @@ main(int argc, char *argv[]) {
 
     // Check that the users were really added
     // TODO: add an API method to retrieve this list?
-    const auto get_users = [=]() -> std::vector<TMUser> {
+    const auto get_users = [&]() -> std::vector<TMUser> {
         std::vector<TMUser> users;
         pqxx::nontransaction worker{*testosmstats.sdb};
         const auto users_result{worker.exec("SELECT * FROM users ORDER BY id")};
