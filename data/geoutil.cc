@@ -81,8 +81,10 @@ GeoUtil::readFile(const std::string &filespec)
         for (auto& feature: layer) {
             const OGRGeometry* geom = feature->GetGeometryRef();
             const OGRMultiPolygon *mp = geom->toMultiPolygon();
-            std::string wkt = mp->exportToWkt();
+            char *wkt = NULL;
+            int bar = mp->exportToWkt(&wkt);
             boost::geometry::read_wkt(wkt, boundary);
+            CPLFree(wkt);
         }
     }
 
