@@ -41,13 +41,15 @@ update*. Your /etc/apt/sources.list file should now look like this:
 
 deb http://archive.ubuntu.com/ubuntu focal main universe
 
-Finally edit  *~/.bashrc* and add these two lines at the bottom. One
+Finally edit  *~/.bashrc* and add these three lines at the bottom. One
 specifies the path to a file pkg-config needs, but isn't always
 distributed, so it's included. The other is for *locale*, so it stops
 clutterin the terminal with warnings.
 
 - export PKG_CONFIG_PATH=/home/rob/underpass/m4
 - export LANG=C
+- export GPG_TTY=$(tty)
+
 
 To create signed packages, you need a *GPG* key pair setup, so mjight
 as well do that now. Type *gpg --full-generate-key*, and answer the
@@ -81,7 +83,7 @@ libboost-regex1.71-dev libboost-log1.71-dev
 libboost-program-options1.71-dev libboost-iostreams1.71-dev
 libosmium2-dev librange-v3-dev libboost-locale1.71-dev libtool-bin
 libzip-dev gpg ccache git libpq-dev make debhelper devscripts
-python3-all doxygen pkg-config librange-v3-dev libxml++-2.6-dev
+python3-all doxygen pkg-config librange-v3-dev libpq-dev
 libgdal-dev libssl-dev libtool-bin libltdl-dev libgumbo-dev 
 
 
