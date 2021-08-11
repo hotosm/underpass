@@ -3,8 +3,10 @@
 name: Doxygen Action
 
 # Controls when the action will run. Triggers the workflow on push
-# or pull request
-on: [push, pull_request]
+# for master branch only
+on:
+  push:
+    branches: [ master ]
 
 # A workflow run is made up of one or more jobs that can run
 # sequentially or in parallel

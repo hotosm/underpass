@@ -1,4 +1,5 @@
 ![CI Build and Testing](https://github.com/hotosm/underpass/actions/workflows/run_tests.yml/badge.svg)
+![Doxygen](https://github.com/hotosm/underpass/actions/workflows/main.yml/badge.svg)
 
 # Mainpage
 
