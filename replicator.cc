@@ -193,32 +193,24 @@ main(int argc, char *argv[])
     opts::variables_map vm;
     try {
         opts::options_description desc("Allowed options");
-        desc.add_options()("help,h", "display help")(
-            "server,s", opts::value<std::string>(),
-            "Database server (defaults to localhost)")(
-            "tmserver", opts::value<std::string>(),
-            "Tasking Manager database server (defaults to localhost), can be a "
-            "hostname or a full connection string "
-            "USER:PASSSWORD@HOST/DATABASENAME")(
-            "tmusersfrequency", opts::value<std::string>(),
-            "Frequency in seconds for the Tasking Manager database users "
-            "synchronization: -1 -> disabled, 0 -> single shot, > 0 interval "
-            "in seconds")(
-            "planet,p", opts::value<std::string>(),
-            "Replication server (defaults to planet.openstreetmap.org)")(
-            "url,u", opts::value<std::string>(),
-            "Starting URL (ex. 000/075/000)")("monitor,m", "Starting monitor")(
-            "frequency,f", opts::value<std::string>(),
-            "Update frequency (hour, daily), default minute)")(
-            "timestamp,t", opts::value<std::vector<std::string>>(),
-            "Starting timestamp")("import,i", opts::value<std::string>(),
-                                  "Initialize OSM database with datafile")(
-            "boundary,b", opts::value<std::string>(),
-            "Boundary polygon file name")(
-            "datadir,i", opts::value<std::string>(),
-            "Base directory for cached files")("verbose,v", "Enable verbosity")(
-            "changefile,c", opts::value<std::string>(), "Import change file")(
-            "debug,d", "Enable debug messages for developers");
+        // clang-format off
+        desc.add_options()("help,h", "display help")
+            ("server,s", opts::value<std::string>(), "Database server (defaults to localhost)")
+            ("tmserver", opts::value<std::string>(), "Tasking Manager database server (defaults to localhost), "
+                                                     "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
+            ("tmusersfrequency", opts::value<std::string>(), "Frequency in seconds for the Tasking Manager database users "
+                                                             "synchronization: -1 -> disabled, 0 -> single shot, > 0 interval in seconds")
+            ("planet,p", opts::value<std::string>(), "Replication server (defaults to planet.openstreetmap.org)")
+            ("url,u", opts::value<std::string>(), "Starting URL (ex. 000/075/000)")("monitor,m", "Starting monitor")
+            ("frequency,f", opts::value<std::string>(), "Update frequency (hour, daily), default minute)")
+            ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp")
+            ("import,i", opts::value<std::string>(), "Initialize OSM database with datafile")
+            ("boundary,b", opts::value<std::string>(), "Boundary polygon file name")
+            ("datadir,i", opts::value<std::string>(), "Base directory for cached files")
+            ("verbose,v", "Enable verbosity")
+            ("changefile,c", opts::value<std::string>(), "Import change file")
+            ("debug,d", "Enable debug messages for developers");
+        // clang-format on
 
         opts::store(opts::command_line_parser(argc, argv)
                         .options(desc)
