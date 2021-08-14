@@ -35,6 +35,6 @@ DEB_BUILD_OPTIONS ?= $(shell echo $DEB_BUILD_OPTIONS)
 snapshot-deb:
 	mv $(distdir) $(PACKAGE)-$(NOW)
 	cd  $(PACKAGE)-$(NOW) ; \
-	dpkg-buildpackage -rfakeroot -d
+	dpkg-buildpackage -rfakeroot -d -b
 
 .PHONY : deb snapshot-deb
