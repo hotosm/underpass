@@ -1,4 +1,4 @@
-**# Building Packages  in a Chroot
+# Building Packages  in a Chroot
 
 To distribute binary packages for a variety of potforms of varying
 versions, it's common to use a *chroot* to build in. This is to make
