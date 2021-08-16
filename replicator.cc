@@ -57,9 +57,7 @@ namespace opts = boost::program_options;
 
 // #include "hotosm.hh"
 #include "data/geoutil.hh"
-#include "hottm.hh"
 #include "osmstats/changeset.hh"
-#include "osmstats/osmstats.hh"
 // #include "osmstats/replication.hh"
 #include "data/import.hh"
 #include "data/threads.hh"
@@ -68,7 +66,6 @@ namespace opts = boost::program_options;
 #include "timer.hh"
 
 using namespace osmstats;
-using namespace tmdb;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
@@ -83,7 +80,8 @@ class ChangeSet;
 
 /// A helper function to simplify the main part.
 template <class T> std::ostream &
-operator<<(std::ostream &os, const std::vector<T> &v) {
+operator<<(std::ostream &os, const std::vector<T> &v)
+{
     copy(v.begin(), v.end(), std::ostream_iterator<T>(os, " "));
     return os;
 }
@@ -97,14 +95,16 @@ class Replicator : public replication::Replication
 {
   public:
     /// Create a new instance, and read in the geoboundaries file.
-    Replicator(void) {
+    Replicator(void)
+    {
         auto hashes = std::make_shared<std::map<std::string, int>>();
     };
 
     /// Initialize the raw_user, raw_hashtags, and raw_changeset tables
     /// in the OSM stats database from a changeset file
     bool initializeRaw(std::vector<std::string> &rawfile,
-                       const std::string &database) {
+                       const std::string &database)
+    {
         for (auto it = std::begin(rawfile); it != std::end(rawfile); ++it) {
             changes->importChanges(*it);
         }
@@ -123,7 +123,8 @@ class Replicator : public replication::Replication
     // osmstats::RawCountry & findCountry() {
     //     geou.inCountry();
 
-    enum pathMatches matchUrl(const std::string &url) {
+    enum pathMatches matchUrl(const std::string &url)
+    {
         boost::regex test{"([0-9]{3})"};
 
         boost::sregex_token_iterator iter(url.begin(), url.end(), test, 0);
@@ -163,7 +164,8 @@ class Replicator : public replication::Replication
 };
 
 int
-main(int argc, char *argv[]) {
+main(int argc, char *argv[])
+{
     // Store the file names for replication files
     std::string changeset;
     std::string osmchange;
@@ -191,32 +193,24 @@ main(int argc, char *argv[]) {
     opts::variables_map vm;
     try {
         opts::options_description desc("Allowed options");
-        desc.add_options()("help,h", "display help")(
-            "server,s", opts::value<std::string>(),
-            "Database server (defaults to localhost)")(
-            "tmserver", opts::value<std::string>(),
-            "Tasking Manager database server (defaults to localhost), can be a "
-            "hostname or a full connection string "
-            "USER:PASSSWORD@HOST/DATABASENAME")(
-            "tmusersfrequency", opts::value<std::string>(),
-            "Frequency in seconds for the Tasking Manager database users "
-            "synchronization: -1 -> disabled, 0 -> single shot, > 0 interval "
-            "in seconds")(
-            "planet,p", opts::value<std::string>(),
-            "Replication server (defaults to planet.openstreetmap.org)")(
-            "url,u", opts::value<std::string>(),
-            "Starting URL (ex. 000/075/000)")("monitor,m", "Starting monitor")(
-            "frequency,f", opts::value<std::string>(),
-            "Update frequency (hour, daily), default minute)")(
-            "timestamp,t", opts::value<std::vector<std::string>>(),
-            "Starting timestamp")("import,i", opts::value<std::string>(),
-                                  "Initialize OSM database with datafile")(
-            "boundary,b", opts::value<std::string>(),
-            "Boundary polygon file name")(
-            "datadir,i", opts::value<std::string>(),
-            "Base directory for cached files")("verbose,v", "Enable verbosity")(
-            "changefile,c", opts::value<std::string>(), "Import change file")(
-            "debug,d", "Enable debug messages for developers");
+        // clang-format off
+        desc.add_options()("help,h", "display help")
+            ("server,s", opts::value<std::string>(), "Database server (defaults to localhost)")
+            ("tmserver", opts::value<std::string>(), "Tasking Manager database server (defaults to localhost), "
+                                                     "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
+            ("tmusersfrequency", opts::value<std::string>(), "Frequency in seconds for the Tasking Manager database users "
+                                                             "synchronization: -1 -> disabled, 0 -> single shot, > 0 interval in seconds")
+            ("planet,p", opts::value<std::string>(), "Replication server (defaults to planet.openstreetmap.org)")
+            ("url,u", opts::value<std::string>(), "Starting URL (ex. 000/075/000)")("monitor,m", "Starting monitor")
+            ("frequency,f", opts::value<std::string>(), "Update frequency (hour, daily), default minute)")
+            ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp")
+            ("import,i", opts::value<std::string>(), "Initialize OSM database with datafile")
+            ("boundary,b", opts::value<std::string>(), "Boundary polygon file name")
+            ("datadir,i", opts::value<std::string>(), "Base directory for cached files")
+            ("verbose,v", "Enable verbosity")
+            ("changefile,c", opts::value<std::string>(), "Import change file")
+            ("debug,d", "Enable debug messages for developers");
+        // clang-format on
 
         opts::store(opts::command_line_parser(argc, argv)
                         .options(desc)
@@ -285,75 +279,10 @@ main(int argc, char *argv[]) {
         geou.readFile(priority);
     }
 
-    // //////////////////////////////////////////////////////////////
-    // Tasking Manager user sync cron-like implementation.
-    // The synchronization is executed in a separate thread,
-    // the frequency is determined by tmusersfrequency, if it is == 0
-    // the synchronization is executed only once.
+    // Tasking Manager users sync setup
 
     // Thread safe flag to exit the periodic sync loop
     std::atomic<bool> tmUserSyncIsActive{true};
-
-    // The user sync function: to be exectuted in a separate thread
-    auto userSyncFunc = [&tmUserSyncIsActive, tmDbUrl, osmStatsDbUrl,
-                         tmusersfrequency]() {
-        // There is a lot of DB URI manipulations in this program, if the URL
-        // contains a plain hostname we need to add a database name too
-        // FIXME: handle all DB URIs in a consistent and documented way
-        auto osmStatsDbUrlWithDbName{osmStatsDbUrl};
-        if (osmStatsDbUrl.find('/') == std::string::npos) {
-            osmStatsDbUrlWithDbName.append("/osmstats");
-        }
-        auto osmStats{QueryOSMStats()};
-        // Connection errors are fatal: exit!
-        if (!osmStats.connect(osmStatsDbUrlWithDbName)) {
-            log_error(
-                "ERROR: couldn't connect to OSM Stats Underpass server: %1%!",
-                osmStatsDbUrlWithDbName);
-            return;
-        }
-
-        TaskingManager taskingManager;
-        // FIXME: handle all DB URIs in a consistent and documented way
-        auto tmDbUrlWithDbName{tmDbUrl};
-        if (tmDbUrl.find('/') == std::string::npos) {
-            tmDbUrlWithDbName.append("/taskingmanager");
-        }
-
-        if (!taskingManager.connect(tmDbUrlWithDbName)) {
-            log_error("ERROR: couldn't connect to Tasking Manager server: %1%!",
-                      tmDbUrlWithDbName);
-            return;
-        }
-
-        do {
-
-            auto start{std::chrono::system_clock::now()};
-            const auto users{taskingManager.getUsers()};
-            // Sync and delete missing
-            const auto results{osmStats.syncUsers(users, true)};
-            auto end{std::chrono::system_clock::now()};
-            auto elapsed{
-                std::chrono::duration_cast<std::chrono::seconds>(end - start)};
-
-            log_debug("Users sync TM->OS executed in %1% seconds.",
-                      elapsed.count());
-            log_debug("Users created: %1%, updated: %2%, deleted: %3%",
-                      results.created, results.updated, results.deleted);
-
-            if (tmusersfrequency > 0) {
-                if (elapsed.count() < tmusersfrequency) {
-                    log_debug(
-                        "Users sync TM->OS sleeping for %1% seconds...",
-                        std::chrono::seconds(tmusersfrequency - elapsed.count())
-                            .count());
-                    std::this_thread::sleep_for(std::chrono::seconds(
-                        tmusersfrequency - elapsed.count()));
-                }
-            }
-
-        } while (tmusersfrequency > 0 && tmUserSyncIsActive);
-    };
 
     // RIIA Custom deleter because of multiple exit points
     auto stopTmUserSyncMonitor = [&tmUserSyncIsActive](std::thread *ptr) {
@@ -367,11 +296,12 @@ main(int argc, char *argv[]) {
     std::unique_ptr<std::thread, decltype(stopTmUserSyncMonitor)>
         tmUserSyncMonitorThread(nullptr, stopTmUserSyncMonitor);
     if (tmusersfrequency >= 0) {
-        tmUserSyncMonitorThread.reset(new std::thread(userSyncFunc));
+        tmUserSyncMonitorThread.reset(new std::thread(
+            threads::threadTMUsersSync, std::ref(tmUserSyncIsActive), tmDbUrl,
+            osmStatsDbUrl, tmusersfrequency));
     }
 
     // End of Tasking Manager user sync setup
-    // //////////////////////////////////////////////////////////////
 
     Replicator replicator;
     if (vm.count("changefile")) {
