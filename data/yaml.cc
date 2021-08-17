@@ -72,9 +72,10 @@ Yaml::read(const std::string &fspec)
         }
         pos1 = line.find('-');
         pos2 = line.rfind(':');
-        if (pos2 != std::string::npos) {
+        if (line.back() == ':') {
+	    line.pop_back();
             if (pos1 != std::string::npos) {
-                key = line.substr(pos1+2, pos2+2);
+                key = line.substr(pos1+2);
             }
             pos2 = key.rfind(':');
             if (pos2 != std::string::npos && pos2 == key.size()-1) {
@@ -110,3 +111,7 @@ void Yaml::dump(void)
 
 } // EOF yaml namespace
 
+// Local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:
