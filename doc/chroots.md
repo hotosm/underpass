@@ -1,4 +1,4 @@
-**# Building Packages  in a Chroot
+# Building Packages  in a Chroot
 
 To distribute binary packages for a variety of potforms of varying
 versions, it's common to use a *chroot* to build in. This is to make
@@ -48,7 +48,7 @@ clutterin the terminal with warnings.
 
 - export PKG_CONFIG_PATH=/home/rob/underpass/m4
 - export LANG=C
-- export GPG_TTY=$(tty)
+- export GPG_TTY="$(tty)"
 
 
 To create signed packages, you need a *GPG* key pair setup, so mjight
