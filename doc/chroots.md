@@ -58,9 +58,6 @@ documented above.
 
 ## For Debian
 
-Here's is the command I use to 
- sudo /usr/sbin/debootstrap --arch amd64 bullseye bullseye/ http://deb.debian.org/debian/
-
 Start by installing packages needed to build Underpass.
 
 apt install gcc g++ pkg-config libboost-all-dev libgdal-dev git
