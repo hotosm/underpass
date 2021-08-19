@@ -25,6 +25,9 @@
 #include <memory>
 #include <string>
 #include <iostream>
+#include <filesystem>
+#include <algorithm>
+#include <iterator>
 
 #include <boost/dll/alias.hpp>
 #include <boost/function.hpp>
@@ -49,9 +52,6 @@ LogFile& dbglogfile = LogFile::getDefaultInstance();
 
 Hotosm::Hotosm(void)
 {
-    yaml::Yaml yaml;
-    yaml.read("/home/rob/projects/HOT/underpass.git/validate/validate/buildings.yaml");
-    // yaml.dump();
 }
 
 #if 0
@@ -86,67 +86,105 @@ Hotosm::Hotosm(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
 
 // Check a POI for tags. A node that is part of a way shouldn't have any
 // tags, this is to check actual POIs, like a school.
-bool
-Hotosm::checkPOI(osmobjects::OsmNode *node)
+std::shared_ptr<ValidateStatus>
+Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
 {
-    if (node->tags.size() == 0) {
-        log_error(_("WARNING: POI %1% has no tags!"), node->id);
-        node_errors.push_back(node->id);
-        return false;
+    auto status = std::make_shared<ValidateStatus>(node);
+    status->status.clear();
+    if (yamls.size() == 0) {
+	log_error(_("No config files!"));
+	return status;
+    }
+    if (node.tags.size() == 0) {
+	status->status.push_back(notags);
+	return status;
     }
 
-    return true;
+    yaml::Yaml tests = yamls[type];
+    int count = 0;
+    std::string key;
+    int keyexists = 0;
+    int valexists = 0;
+
+    for (auto vit = std::begin(node.tags); vit != std::end(node.tags); ++vit) {
+	if (tests.containsKey(vit->first)) {
+	    // std::cerr << "Matched key " << vit->first << "!" << std::endl;
+	    keyexists++;
+	} else {
+	    status->status.push_back(incomplete);
+	}
+	if (tests.containsValue(vit->first, vit->second)) {
+	    // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
+	    valexists++;
+	} else {
+	    status->status.push_back(badvalue);
+	}
+    }
+    // std::cerr << keyexists << " : " << valexists << " : " << tests.config.size() << std::endl;
+
+    if (keyexists == tests.config.size() && valexists == tests.config.size()) {
+	status->status.clear();
+	status->status.push_back(complete);
+    } else {
+	status->status.push_back(incomplete);
+    }
+    return status;
 }
 
 // This checks a way. A way should always have some tags. Often a polygon
 // with no tags is a building.
-bool
-Hotosm::checkWay(osmobjects::OsmWay *way)
+std::shared_ptr<ValidateStatus>
+Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 {
-    bool result = true;
-    for (auto it = std::begin(way->tags); it != std::end(way->tags); ++it) {
-        result = checkTag(it->first, it->second);
-        if (!result) {
-            return result;
-        }
+    auto status = std::make_shared<ValidateStatus>(way);
+
+    for (auto it = std::begin(way.tags); it != std::end(way.tags); ++it) {
+	// FIXME: temporarily disabled
+        // result = checkTag(it->first, it->second);
+        //if (!result) {
+        //    return status;
+	// }
     }
 
-    if (way->numPoints() == 5 && way->isClosed() && way->tags.size() == 0) {
-        log_error(_("WARNING: %1% might be a building!"), way->id);
-        buildings.push_back(way->id);
-        return false;
+    if (way.refs.size() == 5 && way.tags.size() == 0) {
+    // if (way.numPoints() == 5 && way.isClosed() && way.tags.size() == 0) {
+	log_error(_("WARNING: %1% might be a building!"), way.id);
+	buildings.push_back(way.id);
+	return status;
     }
     
-    return true;
+    return status;
 }
 
 // Check a tag for typical errors
-bool
+std::shared_ptr<ValidateStatus>
 Hotosm::checkTag(const std::string &key, const std::string &value)
 {
+    auto status = std::make_shared<ValidateStatus>();
+
     log_trace("Hotosm::checkTag(%1%, %2%)", key, value);
     // Check for an empty value
     if (!key.empty() && value.empty()) {
         log_debug(_("WARNING: empty value for tag \"%1%\""), key);
-        return true;
+        return status;
     }
     // Check for a space in the tag key
     if (key.find(' ') != std::string::npos) {
         log_error(_("WARNING: spaces in tag key \"%1%\""), key);
-        return false;
+        return status;
     }
     // Check for single quotes in the tag value
     if (value.find('\'') != std::string::npos) {
         log_error(_("WARNING: single quote in tag value \"%1%\""), value);
-        return false;
+        return status;
     }
     // Check for single quotes in the tag value
     if (value.find('\"') != std::string::npos) {
         log_error(_("WARNING: double quote in tag value \"%1%\""), value);
-        return false;
+        return status;
     }
 
-    return true;
+    return status;
 }
 
 };      // EOF hotosm namespace
