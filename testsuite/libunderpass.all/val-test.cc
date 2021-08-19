@@ -92,10 +92,10 @@ main(int argc, char *argv[])
     node.addTag("building", "yes");
     status = plugin->checkPOI(node, "building");
     // status->dump();
-    if (status->osm_id == 11111 && status->hasStatus(incomplete)) {
-        runtest.pass("Validate::checkPOI(incomplete tagging)");
+    if (status->osm_id == 11111 && status->hasStatus(correct)) {
+        runtest.pass("Validate::checkPOI(incomplete but correct tagging)");
     } else {
-        runtest.fail("Validate::checkPOI(incomplete tagging)");
+        runtest.fail("Validate::checkPOI(incomplete but correct tagging)");
     }
 
     node.addTag("building:material", "sponge");
@@ -119,41 +119,30 @@ main(int argc, char *argv[])
         runtest.fail("Validate::checkPOI(complete)");
     }
     
-#if 0
-    if (plugin->checkPOI(node, "building") == true) {
-        runtest.pass("Validate::checkPOI(tag)");
-    } else {
-        runtest.fail("Validate::checkPOI(tag)");
-    }
-    if (tv.checkTag("building", "yes") == true) {
+    status = plugin->checkTag("building", "yes");
+    if (status->hasStatus(correct)) {
         runtest.pass("Validate::checkTag(good tag)");
     } else {
         runtest.fail("Validate::checkTag(good tag)");
-    }
-
-    if (tv.checkTag("building", "") == false) {
+    } 
+    status = plugin->checkTag("building", "");
+    if (status->hasStatus(badvalue)) {
         runtest.pass("Validate::checkTag(empty value)");
     } else {
         runtest.fail("Validate::checkTag(empty value)");
     }
 
-    if (tv.checkTag("foo bar", "bar") == false) {
-        runtest.pass("Validate::checkTag(space)");
+    status = plugin->checkTag("foo bar", "bar");
+    if (status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkTag(space in key)");
     } else {
-        runtest.fail("Validate::checkTag(space)");
+        runtest.fail("Validate::checkTag(space in key)");
     }
 
-    osmobjects::OsmNode node;
-    node.addTag("traffic-light", "yes");
-    if (tv.checkPOI(&node)) {
-        runtest.pass("Validate::checkNode(tag)");
-    } else {
-        runtest.fail("Validate::checkNode(tag)");
-    }
-
+#if 0
     osmobjects::OsmWay way(11111);
     way.addTag("building", "yes");
-    if (tv.checkWay(&way)) {
+    if (plugin->checkWay(&way)) {
         runtest.pass("Validate::checkWay(empty way)");
     } else {
         runtest.fail("Validate::checkWay(empty way)");
@@ -165,7 +154,7 @@ main(int argc, char *argv[])
     way.addRef(456);
     way.addRef(1234);
     timer.startTimer();
-    if (tv.checkWay(&way)) {
+    if (plugin->checkWay(&way)) {
         runtest.pass("Validate::checkWay(building with tags)");
     } else {
         runtest.fail("Validate::checkWay(building with tags)");
@@ -173,27 +162,27 @@ main(int argc, char *argv[])
     timer.endTimer();
     way.tags.clear();
     timer.startTimer();
-    if (tv.checkWay(&way) == false) {
+    if (plugin->checkWay(&way) == false) {
         runtest.pass("Validate::checkWay(not building)");
     } else {
         runtest.fail("Validate::checkWay(not building)");
     }
     timer.endTimer();
     
-    if (tv.checkWay(&way) == false) {
+    if (plugin->checkWay(&way) == false) {
         runtest.pass("Validate::checkWay(no tags)");
     } else {
         runtest.fail("Validate::checkWay(no tags)");
     }
 
     way.addTag("building", "");
-    if (tv.checkWay(&way) == false) {
+    if (plugin->checkWay(&way) == false) {
         runtest.pass("Validate::checkWay(empty value)");
     } else {
         runtest.fail("Validate::checkWay(empty value)");
     }
     way.addTag("foo bar", "yes");
-    if (tv.checkWay(&way) == false) {
+    if (plugin->checkWay(&way) == false) {
         runtest.pass("Validate::checkWay(space)");
     } else {
         runtest.fail("Validate::checkWay(space)");
