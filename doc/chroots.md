@@ -48,7 +48,7 @@ clutterin the terminal with warnings.
 
 - export PKG_CONFIG_PATH=/home/rob/underpass/m4
 - export LANG=C
-- export GPG_TTY=$(tty)
+- export GPG_TTY="$(tty)"
 
 
 To create signed packages, you need a *GPG* key pair setup, so mjight
@@ -58,8 +58,7 @@ documented above.
 
 ## For Debian
 
-Here's is the command I use to 
- sudo /usr/sbin/debootstrap --arch amd64 bullseye bullseye/ http://deb.debian.org/debian/
+sudo /usr/sbin/debootstrap --arch amd64 bullseye bullseye/ http://deb.debian.org/debian/
 
 Start by installing packages needed to build Underpass.
 

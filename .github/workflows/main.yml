@@ -33,6 +33,10 @@ jobs:
       with:
           doxyfile-path: ./doc/Doxyfile
           working-directory: .
+
+    - name: Debug
+      run: ls -la ./doc/html
+
     - name: Deploy HTML
       uses: peaceiris/actions-gh-pages@v3
       with:
