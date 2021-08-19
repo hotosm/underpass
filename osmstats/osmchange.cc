@@ -747,8 +747,6 @@ bool OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Va
         OsmChange *change = it->get();
 	for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
 	    OsmNode *node = nit->get();
-	    // nodecache[node->id] = node->point;
-//	    if (!boost::geometry::within(node->point, poly)) {
 	    if (!node->priority) {
 		log_debug(_("Validating Node %1% is not in a priority area"), node->id);
 		continue;
@@ -762,10 +760,12 @@ bool OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Va
 		    continue;
 		}
 		auto status = plugin->checkPOI(*node, *tit);
-		if (status->hasStatus(complete)) {
-		    std::cerr << "Building is complete!" << std::endl;
+		if (status->hasStatus(correct) && status->hasStatus(incomplete)) {
+		    std::cerr << "Node " << node->id << " is correct but incomplete!" << std::endl;
+		} else if (status->hasStatus(complete)) {
+		    std::cerr << "Node " << node->id << " is complete" << std::endl;
 		} else {
-		    std::cerr << "Building is not complete" << std::endl;
+		    std::cerr << "Node " << node->id << " is not complete" << std::endl;
 		}
 	    }
 	}
@@ -778,39 +778,27 @@ bool OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Val
         OsmChange *change = it->get();
 	for (auto nit = std::begin(change->ways); nit != std::end(change->ways); ++nit) {
 	    OsmWay *way = nit->get();
-	    // int middle = way->refs.size()/2;
-	    // if (!boost::geometry::within(nodecache[middle], poly)) {
 	    if (!way->priority) {
 		// log_debug(_("Validating Way %1% is not in a priority area"), way->id);
 		continue;
 	    } else {
 		// log_debug(_("Validating Way %1% is in a priority area"), way->id);
 	    }
-#if 0
-	    std::vector<std::string> way_tests = { "highway", "building", "waterway"};
-	    for (auto wit = way_tests.begin(); wit != node_tests.end(); ++wit) {
-		auto match = std::find(way->tags.begin(), way->tags.end(), *wit);
-		if (match != way->tags.end()) {
-		    auto status = plugin->checkPOI(node, *wit);
-		    if (status->hasStatus(complete)) {
-			// std::cerr << "Building is YYESS" << std::endl;
-			way->dump();
-		    } else {
-			// std::cerr << "Building is NNOO" << std::endl;
-		    }
+
+	    std::vector<std::string> way_tests = { "building", "highway", "waterway"};
+	    // FIXME: place
+
+	    for (auto wit = way_tests.begin(); wit != way_tests.end(); ++wit) {
+		if (!way->containsKey(*wit)) {
+		    continue;
 		}
-	    }
-#endif
-	    for (auto tit = std::begin(way->tags); tit != std::end(way->tags); ++tit) {
-		// Filter data by polygon
-		if (tit->first == "highway") {
-		    auto status = plugin->checkTag("highway", "yes");
-		    if (status) {
-			// std::cerr << "Highway is YYESS" << std::endl;
-			way->dump();
-		    } else {
-			// std::cerr << "Highway is NNOO" << std::endl;
-		    }
+		auto status = plugin->checkWay(*way, *wit);
+		if (status->hasStatus(correct) && status->hasStatus(incomplete)) {
+		    std::cerr << "Way " << way->id << " is correct but incomplete!" << std::endl;
+		} else if (status->hasStatus(complete)) {
+		    std::cerr << "Way " << way->id << " is complete" << std::endl;
+		} else {
+		    std::cerr << "Way " << way->id << " is not complete" << std::endl;
 		}
 	    }
 	}
