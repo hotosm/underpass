@@ -327,3 +327,7 @@ revno.h:
 .configline: revno.h
 	-@rm -f .configline
 	@head config.log | grep " .*/configure " | sed -e 's:^	. .*configure ::' > .configline
+
+check: all
+	cd testsuite; \
+	$(MAKE) check $(RUNTESTFLAGS)

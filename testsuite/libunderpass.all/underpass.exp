@@ -4,12 +4,11 @@ verbose "Testing Underpass!" 2
 
 set current_dir [pwd]
 
-
 if { [file tail $current_dir] == "libunderpass.all"} {
     set node "."
-} else {
-    set node "testsuite/libunderpass.all"
-}
+} elseif { [file tail $current_dir] == "testsuite"} {
+    set node "libunderpass.all"
+}    
 
 set tests [glob $node/*-test]
 

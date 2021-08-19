@@ -27,3 +27,9 @@ all:
 RUNTESTDEFAULTFLAGS = --xml
 
 CLEANFILES = *.log *.sum site.bak
+
+check:
+	cd libunderpass.all; \
+	$(MAKE) check $(RUNTESTFLAGS)
+
+.PHONY: check
