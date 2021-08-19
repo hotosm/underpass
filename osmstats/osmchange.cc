@@ -766,7 +766,6 @@ bool OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Va
 		    std::cerr << "Building is complete!" << std::endl;
 		} else {
 		    std::cerr << "Building is not complete" << std::endl;
-		    node->dump();
 		}
 	    }
 	}
