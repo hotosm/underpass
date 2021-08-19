@@ -755,18 +755,19 @@ bool OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Va
 	    } else {
 		// log_debug(_("Validating Node %1% is in a priority area"), node->id);
 	    }
-	    for (auto tit = std::begin(node->tags); tit != std::end(node->tags); ++tit) {
-		// Filter data by polygon
-		if (tit->first == "building") {
-		    bool ret = plugin->checkTag("building", "yes");
-		    if (ret) {	// FIXME: obviously a debug test
-			// std::cerr << "Building is YYESS" << std::endl;
-			node->dump();
-		    } else {
-			// std::cerr << "Building is NNOO" << std::endl;
-		    }
+	    std::vector<std::string> node_tests = { "building", "place" "amenity"};
+	    // "wastepoint";
+	    for (auto tit = std::begin(node_tests); tit != std::end(node_tests); ++tit) {
+		if (!node->containsKey(*tit)) {
+		    continue;
 		}
-//		bool ret = plugin->checkTag("building:material", "yes");
+		auto status = plugin->checkPOI(*node, *tit);
+		if (status->hasStatus(complete)) {
+		    std::cerr << "Building is complete!" << std::endl;
+		} else {
+		    std::cerr << "Building is not complete" << std::endl;
+		    node->dump();
+		}
 	    }
 	}
     }
@@ -786,11 +787,26 @@ bool OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Val
 	    } else {
 		// log_debug(_("Validating Way %1% is in a priority area"), way->id);
 	    }
+#if 0
+	    std::vector<std::string> way_tests = { "highway", "building", "waterway"};
+	    for (auto wit = way_tests.begin(); wit != node_tests.end(); ++wit) {
+		auto match = std::find(way->tags.begin(), way->tags.end(), *wit);
+		if (match != way->tags.end()) {
+		    auto status = plugin->checkPOI(node, *wit);
+		    if (status->hasStatus(complete)) {
+			// std::cerr << "Building is YYESS" << std::endl;
+			way->dump();
+		    } else {
+			// std::cerr << "Building is NNOO" << std::endl;
+		    }
+		}
+	    }
+#endif
 	    for (auto tit = std::begin(way->tags); tit != std::end(way->tags); ++tit) {
 		// Filter data by polygon
 		if (tit->first == "highway") {
-		    bool ret = plugin->checkTag("highway", "yes");
-		    if (ret) {
+		    auto status = plugin->checkTag("highway", "yes");
+		    if (status) {
 			// std::cerr << "Highway is YYESS" << std::endl;
 			way->dump();
 		    } else {
