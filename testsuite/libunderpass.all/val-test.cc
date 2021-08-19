@@ -22,16 +22,21 @@
 #include <string>
 #include <pqxx/pqxx>
 
-#include "hottm.hh"
+#include "validate/hotosm.hh"
+#include "validate/validate.hh"
 #include "osmstats/osmstats.hh"
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/date_time/gregorian/gregorian.hpp"
+#include <boost/dll/import.hpp>
 
 #include "validate/validate.hh"
 #include "data/osmobjects.hh"
 #include "timer.hh"
+#include "log.hh"
+
+using namespace logger;
 
 using namespace boost::posix_time;
 using namespace boost::gregorian;
@@ -39,19 +44,87 @@ using namespace osmstats;
 
 TestState runtest;
 
-class TestVal : public validate::Validate
-{
-public:
-    TestVal(void) {};
-};
+typedef std::shared_ptr<Validate>(plugin_t)();
 
 int
 main(int argc, char *argv[])
 {
-
-    TestVal tv;
     Timer timer;
+
+    logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
+    dbglogfile.setWriteDisk(true);
+    dbglogfile.setLogFilename("val-test.log");
+    dbglogfile.setVerbosity(3);
+
+#if 1
+    std::string plugins;
+    if (boost::filesystem::exists("../../validate/.libs")) {
+	plugins = "../../validate/.libs";
+    }
+    boost::dll::fs::path lib_path(plugins);
+    boost::function<plugin_t> creator;
+    try {
+	creator = boost::dll::import_alias<plugin_t>(
+	    lib_path / "libhotosm", "create_plugin",
+	    boost::dll::load_mode::append_decorations
+	    );
+	log_debug(_("Loaded plugin hotosm!"));
+    } catch (std::exception& e) {
+	log_debug(_("Couldn't load plugin! %1%"), e.what());
+	exit(0);
+    }
+    auto plugin = creator();
+#else
+    auto plugin = std::make_shared<hotosm::Hotosm>();
+#endif
+    // plugin->dump();
+
+    osmobjects::OsmNode node;
+    node.id = 11111;
+    node.change_id = 22222;
+    auto status = plugin->checkPOI(node, "buildings");
+    if (status->osm_id == 11111 && status->hasStatus(notags)) {
+        runtest.pass("Validate::checkPOI(no tags)");
+    } else {
+        runtest.fail("Validate::checkPOI(no tags)");
+    }
+
+    node.addTag("building", "yes");
+    status = plugin->checkPOI(node, "buildings");
+    // status->dump();
+    if (status->osm_id == 11111 && status->hasStatus(incomplete)) {
+        runtest.pass("Validate::checkPOI(incomplete tagging)");
+    } else {
+        runtest.fail("Validate::checkPOI(incomplete tagging)");
+    }
+
+    node.addTag("building:material", "sponge");
+    status = plugin->checkPOI(node, "buildings");
+    // status->dump();
+    if (status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkPOI(bad value)");
+    } else {
+        runtest.fail("Validate::checkPOI(bad value)");
+    }
+
+    node.addTag("building:material", "wood");
+    node.addTag("building:levels", "3");
+    node.addTag("building:roof", "tiles");
+
+    status = plugin->checkPOI(node, "buildings");
+    // status->dump();
+    if (status->hasStatus(complete)) {
+        runtest.pass("Validate::checkPOI(complete)");
+    } else {
+        runtest.fail("Validate::checkPOI(complete)");
+    }
     
+#if 0
+    if (plugin->checkPOI(node, "buildings") == true) {
+        runtest.pass("Validate::checkPOI(tag)");
+    } else {
+        runtest.fail("Validate::checkPOI(tag)");
+    }
     if (tv.checkTag("building", "yes") == true) {
         runtest.pass("Validate::checkTag(good tag)");
     } else {
@@ -125,4 +198,5 @@ main(int argc, char *argv[])
     } else {
         runtest.fail("Validate::checkWay(space)");
     }
+#endif
 }
