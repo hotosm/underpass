@@ -29,6 +29,7 @@
 #include <vector>
 #include <map>
 #include <iostream>
+#include <boost/algorithm/string.hpp>
 
 /// \file yaml.hh
 /// \brief Simple YAML file reader.
@@ -40,11 +41,36 @@ class Yaml {
 public:
     void read(const std::string &filespec);
     void dump(void);
+    std::vector<std::string> &operator[](const std::string &key) {
+        return config[key];
+    };
+    std::map<std::string, std::vector<std::string>> config;
+
+    bool containsKey(const std::string &key) {
+	return config.count(key);
+    };
+    bool containsValue(const std::string &key, const std::string &value) {
+	std::string lower = boost::algorithm::to_lower_copy(value);
+	if (config[key].size() == 0 ) {
+	    return true;
+	}
+	auto match = std::find(config[key].begin(), config[key].end(), lower);
+	if (match != config[key].end()) {
+	    return true;
+	}
+	return false;
+    };
 private:
     std::string filespec;
-    std::map<std::string, std::vector<std::string>> config;    
+    // yaml::Yaml &operator[](const std::string &key) { return config[key]; };
+    // std::string &operator[](const std::string &key) { return config[key]; };
 };
     
 } // EOF yaml namespace
 
 #endif  // EOF __YAML_HH__
+
+// Local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:
