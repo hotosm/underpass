@@ -116,6 +116,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
 	if (tests.containsValue(vit->first, vit->second)) {
 	    // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
 	    valexists++;
+	    status->status.push_back(correct);
 	} else {
 	    status->status.push_back(badvalue);
 	}
