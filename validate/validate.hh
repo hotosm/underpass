@@ -76,7 +76,7 @@ using namespace logger;
 //   
 //
 
-typedef enum {notags, complete, incomplete, badvalue } valerror_t;
+typedef enum {notags, complete, incomplete, badvalue, correct } valerror_t;
 
 class ValidateStatus {
 public:
@@ -115,6 +115,7 @@ public:
 	results[complete] = "Tags are complete";
 	results[incomplete] = "Tags are incomplete";
 	results[badvalue] = "Bad tag value";
+	results[correct] = "Correct tag value";
 	for (auto it = std::begin(status); it != std::end(status); ++it) {
 	    std::cerr << "\tResult: " << results[*it] << std::endl;
 	}
