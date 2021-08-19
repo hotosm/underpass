@@ -78,11 +78,30 @@ main(int argc, char *argv[])
     auto plugin = std::make_shared<hotosm::Hotosm>();
 #endif
     // plugin->dump();
+    auto status = plugin->checkTag("building", "yes");
+    if (status->hasStatus(correct)) {
+        runtest.pass("Validate::checkTag(good tag)");
+    } else {
+        runtest.fail("Validate::checkTag(good tag)");
+    }
+    status = plugin->checkTag("building", "");
+    if (status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkTag(empty value)");
+    } else {
+        runtest.fail("Validate::checkTag(empty value)");
+    }
+
+    status = plugin->checkTag("foo bar", "bar");
+    if (status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkTag(space in key)");
+    } else {
+        runtest.fail("Validate::checkTag(space in key)");
+    }
 
     osmobjects::OsmNode node;
     node.id = 11111;
     node.change_id = 22222;
-    auto status = plugin->checkPOI(node, "building");
+    status = plugin->checkPOI(node, "building");
     if (status->osm_id == 11111 && status->hasStatus(notags)) {
         runtest.pass("Validate::checkPOI(no tags)");
     } else {
@@ -118,74 +137,48 @@ main(int argc, char *argv[])
     } else {
         runtest.fail("Validate::checkPOI(complete)");
     }
-    
-    status = plugin->checkTag("building", "yes");
-    if (status->hasStatus(correct)) {
-        runtest.pass("Validate::checkTag(good tag)");
-    } else {
-        runtest.fail("Validate::checkTag(good tag)");
-    } 
-    status = plugin->checkTag("building", "");
-    if (status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkTag(empty value)");
-    } else {
-        runtest.fail("Validate::checkTag(empty value)");
-    }
 
-    status = plugin->checkTag("foo bar", "bar");
-    if (status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkTag(space in key)");
-    } else {
-        runtest.fail("Validate::checkTag(space in key)");
-    }
-
-#if 0
-    osmobjects::OsmWay way(11111);
-    way.addTag("building", "yes");
-    if (plugin->checkWay(&way)) {
-        runtest.pass("Validate::checkWay(empty way)");
-    } else {
-        runtest.fail("Validate::checkWay(empty way)");
-    }
-
+    osmobjects::OsmWay way;
+    way.id = 333333;
     way.addRef(1234);
     way.addRef(234);
     way.addRef(345);
     way.addRef(456);
     way.addRef(1234);
-    timer.startTimer();
-    if (plugin->checkWay(&way)) {
-        runtest.pass("Validate::checkWay(building with tags)");
-    } else {
-        runtest.fail("Validate::checkWay(building with tags)");
-    }
-    timer.endTimer();
-    way.tags.clear();
-    timer.startTimer();
-    if (plugin->checkWay(&way) == false) {
-        runtest.pass("Validate::checkWay(not building)");
-    } else {
-        runtest.fail("Validate::checkWay(not building)");
-    }
-    timer.endTimer();
-    
-    if (plugin->checkWay(&way) == false) {
+    status = plugin->checkWay(way, "building");
+    if (status->hasStatus(notags)) {
         runtest.pass("Validate::checkWay(no tags)");
     } else {
         runtest.fail("Validate::checkWay(no tags)");
+        way.dump();
     }
 
-    way.addTag("building", "");
-    if (plugin->checkWay(&way) == false) {
-        runtest.pass("Validate::checkWay(empty value)");
+    way.addTag("building", "yes");
+    status = plugin->checkWay(way, "building");
+    if (status->hasStatus(correct)) {
+        runtest.pass("Validate::checkWay(incomplete but correct tagging)");
     } else {
-        runtest.fail("Validate::checkWay(empty value)");
+        runtest.fail("Validate::checkWay(incomplete but incorrect tagging)");
     }
-    way.addTag("foo bar", "yes");
-    if (plugin->checkWay(&way) == false) {
-        runtest.pass("Validate::checkWay(space)");
+
+    way.addTag("building:material", "sponge");
+    status = plugin->checkWay(way, "building");
+    // status->dump();
+    if (status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkWay(bad value)");
     } else {
-        runtest.fail("Validate::checkWay(space)");
+        runtest.fail("Validate::checkWay(bad value)");
     }
-#endif
+
+    way.addTag("building:material", "wood");
+    way.addTag("building:levels", "3");
+    way.addTag("building:roof", "tiles");
+
+    status = plugin->checkWay(way, "building");
+    // status->dump();
+    if (status->hasStatus(complete)) {
+        runtest.pass("Validate::checkWay(complete)");
+    } else {
+        runtest.fail("Validate::checkWay(complete)");
+    }
 }
