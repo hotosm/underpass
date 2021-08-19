@@ -82,7 +82,7 @@ main(int argc, char *argv[])
     osmobjects::OsmNode node;
     node.id = 11111;
     node.change_id = 22222;
-    auto status = plugin->checkPOI(node, "buildings");
+    auto status = plugin->checkPOI(node, "building");
     if (status->osm_id == 11111 && status->hasStatus(notags)) {
         runtest.pass("Validate::checkPOI(no tags)");
     } else {
@@ -90,7 +90,7 @@ main(int argc, char *argv[])
     }
 
     node.addTag("building", "yes");
-    status = plugin->checkPOI(node, "buildings");
+    status = plugin->checkPOI(node, "building");
     // status->dump();
     if (status->osm_id == 11111 && status->hasStatus(incomplete)) {
         runtest.pass("Validate::checkPOI(incomplete tagging)");
@@ -99,7 +99,7 @@ main(int argc, char *argv[])
     }
 
     node.addTag("building:material", "sponge");
-    status = plugin->checkPOI(node, "buildings");
+    status = plugin->checkPOI(node, "building");
     // status->dump();
     if (status->hasStatus(badvalue)) {
         runtest.pass("Validate::checkPOI(bad value)");
@@ -111,7 +111,7 @@ main(int argc, char *argv[])
     node.addTag("building:levels", "3");
     node.addTag("building:roof", "tiles");
 
-    status = plugin->checkPOI(node, "buildings");
+    status = plugin->checkPOI(node, "building");
     // status->dump();
     if (status->hasStatus(complete)) {
         runtest.pass("Validate::checkPOI(complete)");
@@ -120,7 +120,7 @@ main(int argc, char *argv[])
     }
     
 #if 0
-    if (plugin->checkPOI(node, "buildings") == true) {
+    if (plugin->checkPOI(node, "building") == true) {
         runtest.pass("Validate::checkPOI(tag)");
     } else {
         runtest.fail("Validate::checkPOI(tag)");
