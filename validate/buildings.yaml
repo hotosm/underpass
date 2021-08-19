@@ -36,6 +36,7 @@ tags:
       - stone
 
   - building:
+      - yes
       - residential
       - commercial
       - retail
