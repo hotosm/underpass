@@ -1,6 +1,7 @@
 tags:
     - opening_hours
-    - recyling
+
+    - recyling:
         - hazardous_waste
         - car_batteries
         - cardboard
@@ -10,12 +11,14 @@ tags:
         - electrical
         - bottles
         - cans
-    - toilets::disposal
+
+    - toilets::disposal:
         - flush
         - pitlatrine
         - bucket
         - chemical
-     - operator:type
+
+     - operator:type:
         - government
         - ngo
         - community
