@@ -100,9 +100,12 @@ public:
 	return false;
     }
     std::vector<valerror_t> status;
+    osmobjects::osmtype_t objtype;
     long osm_id = 0;
     long user_id = 0;
     long change_id = 0;
+    ptime timestamp;
+    point_t center;
 
     void dump(void) {
 	std::cerr << "Dumping Validation Statistics" << std::endl;
