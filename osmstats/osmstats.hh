@@ -38,6 +38,7 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
+#include "validate/validate.hh"
 #include "data/pq.hh"
 #include "hottm/tmdefs.hh"
 #include "hottm/tmusers.hh"
@@ -191,6 +192,8 @@ class QueryOSMStats : public pq::Pq
     /// Apply a change to the database
     bool applyChange(changeset::ChangeSet &change);
     bool applyChange(osmchange::ChangeStats &change);
+    bool applyChange(ValidateStatus &validation);
+
     int lookupHashtag(const std::string &hashtag);
     bool hasHashtag(long changeid);
     // Get the timestamp of the last update in the database

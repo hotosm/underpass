@@ -47,7 +47,7 @@ using namespace boost::gregorian;
 #include "data/underpass.hh"
 #include "osmstats/changeset.hh"
 #include "osmstats/osmstats.hh"
-
+#include "validate/validate.hh"
 #include "log.hh"
 using namespace logger;
 
@@ -351,6 +351,44 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change) {
     worker.commit();
 
     return true;
+}
+
+bool
+QueryOSMStats::applyChange(ValidateStatus &validation)
+{
+    log_debug(_("Applying Validation data"));
+    validation.dump();
+
+    std::map<osmobjects::osmtype_t, std::string> objtypes = { {osmobjects::empty, "empty" },
+							   { osmobjects::node, "node"},
+							   { osmobjects::way, "way"},
+							   { osmobjects::relation, "relation"}
+    };
+    std::map<valerror_t, std::string> status = { {notags, "notags" },
+						{ complete, "complete"},
+						{ incomplete, "incomplete"},
+						{ badvalue, "badvalue"},
+						{ correct, "correct"}
+    };
+    std::string query = "INSERT INTO validation (osm_id, type, status, timestamp, location) VALUES(";
+    boost::format fmt("\'%s\', \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\')");
+    fmt % validation.osm_id;
+    fmt % objtypes[validation.objtype];
+    std::string tmp;
+    for (auto it = validation.status.begin(); it != validation.status.end(); ++it) {
+	tmp += " \'" + status[*it] + "\',";
+    }
+    tmp.pop_back();
+    fmt % tmp;
+    fmt % to_simple_string(validation.timestamp);
+    fmt % "POINT(-105.5238863 39.95427102)";
+    query += fmt.str();
+    query += ") ON CONFLICT (osm_id) DO UPDATE ";
+    query += " SET status = ARRAY[" + tmp + " ]::status[]";
+    log_debug(_("QUERY: %1%"), query);
+    pqxx::work worker(*sdb);
+    pqxx::result result = worker.exec(query);
+    worker.commit();
 }
 
 bool
