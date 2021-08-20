@@ -761,11 +761,12 @@ bool OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Va
 		}
 		auto status = plugin->checkPOI(*node, *tit);
 		if (status->hasStatus(correct) && status->hasStatus(incomplete)) {
-		    std::cerr << "Node " << node->id << " is correct but incomplete!" << std::endl;
+		    //std::cerr << *tit << " Node " << node->id << " is correct but incomplete!" << std::endl;
 		} else if (status->hasStatus(complete)) {
-		    std::cerr << "Node " << node->id << " is complete" << std::endl;
+		    //std::cerr << *tit << " Node " << node->id << " is complete" << std::endl;
 		} else {
-		    std::cerr << "Node " << node->id << " is not complete" << std::endl;
+		    //std::cerr << *tit << " Node " << node->id << " is not complete" << std::endl;
+		    node->dump();
 		}
 	    }
 	}
@@ -794,11 +795,12 @@ bool OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Val
 		}
 		auto status = plugin->checkWay(*way, *wit);
 		if (status->hasStatus(correct) && status->hasStatus(incomplete)) {
-		    std::cerr << "Way " << way->id << " is correct but incomplete!" << std::endl;
+		    //std::cerr << *wit << " Way " << way->id << " is correct but incomplete!" << std::endl;
 		} else if (status->hasStatus(complete)) {
-		    std::cerr << "Way " << way->id << " is complete" << std::endl;
+		    //std::cerr << *wit << " Way " << way->id << " is complete" << std::endl;
 		} else {
-		    std::cerr << "Way " << way->id << " is not complete" << std::endl;
+		    //std::cerr << *wit << " Way " << way->id << " is not complete" << std::endl;
+		    way->dump();
 		}
 	    }
 	}
