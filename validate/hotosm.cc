@@ -138,22 +138,50 @@ std::shared_ptr<ValidateStatus>
 Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 {
     auto status = std::make_shared<ValidateStatus>(way);
-
-    for (auto it = std::begin(way.tags); it != std::end(way.tags); ++it) {
-	// FIXME: temporarily disabled
-        // result = checkTag(it->first, it->second);
-        //if (!result) {
-        //    return status;
-	// }
+    status->status.clear();
+    if (yamls.size() == 0) {
+	log_error(_("No config files!"));
+	return status;
+    }
+    if (way.tags.size() == 0) {
+	status->status.push_back(notags);
+	return status;
     }
 
+    yaml::Yaml tests = yamls[type];
+    int count = 0;
+    std::string key;
+    int keyexists = 0;
+    int valexists = 0;
+
+    for (auto vit = std::begin(way.tags); vit != std::end(way.tags); ++vit) {
+	if (tests.containsKey(vit->first)) {
+	    // std::cerr << "Matched key " << vit->first << "!" << std::endl;
+	    keyexists++;
+	} else {
+	    status->status.push_back(incomplete);
+	}
+	if (tests.containsValue(vit->first, vit->second)) {
+	    // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
+	    valexists++;
+	    status->status.push_back(correct);
+	} else {
+	    status->status.push_back(badvalue);
+	}
+    }
     if (way.refs.size() == 5 && way.tags.size() == 0) {
     // if (way.numPoints() == 5 && way.isClosed() && way.tags.size() == 0) {
 	log_error(_("WARNING: %1% might be a building!"), way.id);
-	buildings.push_back(way.id);
+	// buildings.push_back(way.id);
 	return status;
     }
-    
+
+    if (keyexists == tests.config.size() && valexists == tests.config.size()) {
+	status->status.clear();
+	status->status.push_back(complete);
+    } else {
+	status->status.push_back(incomplete);
+    }
     return status;
 }
 
@@ -164,25 +192,26 @@ Hotosm::checkTag(const std::string &key, const std::string &value)
     auto status = std::make_shared<ValidateStatus>();
 
     log_trace("Hotosm::checkTag(%1%, %2%)", key, value);
+    status->status.push_back(correct);
     // Check for an empty value
     if (!key.empty() && value.empty()) {
         log_debug(_("WARNING: empty value for tag \"%1%\""), key);
-        return status;
+	status->status.push_back(badvalue);
     }
     // Check for a space in the tag key
     if (key.find(' ') != std::string::npos) {
         log_error(_("WARNING: spaces in tag key \"%1%\""), key);
-        return status;
+	status->status.push_back(badvalue);
     }
     // Check for single quotes in the tag value
     if (value.find('\'') != std::string::npos) {
         log_error(_("WARNING: single quote in tag value \"%1%\""), value);
-        return status;
+	status->status.push_back(badvalue);
     }
     // Check for single quotes in the tag value
     if (value.find('\"') != std::string::npos) {
         log_error(_("WARNING: double quote in tag value \"%1%\""), value);
-        return status;
+	status->status.push_back(badvalue);
     }
 
     return status;
