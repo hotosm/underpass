@@ -99,6 +99,12 @@ Pq::dump(void)
 }
 
 bool
+Pq::isOpen()
+{
+    return static_cast<bool>(sdb) && sdb->is_open();
+}
+
+bool
 Pq::parseURL(const std::string &dburl)
 {
     if (dburl.empty()) {

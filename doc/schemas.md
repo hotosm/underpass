@@ -19,6 +19,9 @@ geospatial data, it’s a compact and easily queried schema. It lacks
 any knowledge of relations, which isn’t usually a problem unless you
 want to do deeper analysis of the data.
 
+osm2pgsql has the ability to import `.osc` change files and update an
+existing database.
+
 &nbsp;
 
 Table | Description |
@@ -49,9 +52,11 @@ can store additional keyword/value pairs. The columns are:
 
 [Ogr and GDAL](https://www.osgeo.org/projects/gdal/) are the basis for
 many GIS projects, but has [minimal
-OSM](https://gdal.org/drivers/vector/osm.html) support. It can read 
+OSM](https://gdal.org/drivers/vector/osm.html) support. It can read
 the OSM XML and PBF formats, and can import into a database. It uses a
 different schema for each table.
+
+osm2pgsql does not support updating from `.osc` change files.
 
 &nbsp;
 
@@ -199,3 +204,10 @@ way_nodes | tbd
 way_tags | tbd
 ways | tbd
 
+## Schema Comparison
+
+Name        | Tool Language | OSC Support | Geometry in the main table |
+------------|---------------|-------------|----------------------------|
+osm2pgsql   | C++           | yes         | yes                        |
+ogr2ogr     | C++           | no          | yes                        |
+pgsnapshot  | --            | yes         | no                         |

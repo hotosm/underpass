@@ -52,6 +52,7 @@ class Pq
     pqxx::result query(const std::string &query);
     bool parseURL(const std::string &query);
     void dump(void);
+    bool isOpen();
 
     //protected:
     std::unique_ptr<pqxx::connection> sdb;

@@ -31,8 +31,10 @@ RUN apt-get update \
         wget \
         unzip \
         libxml++2.6-dev && rm -rf /var/lib/apt/lists/* \
+        liblua5.3-dev \
         vim \
         wait-for-it \
+        cmake \
     && mkdir /libpqxx && cd /libpqxx \
     && wget https://github.com/jtv/libpqxx/archive/7.6.0.zip \
     && unzip 7.6.0.zip \
@@ -42,7 +44,21 @@ RUN apt-get update \
     && make install \
     && cd .. \
     && rm -rf libpqxx-7.6.0 \
-    && rm 7.6.0.zip \
+    && rm 7.6.0.zip
+
+RUN apt-get update -y \
+    && apt-get install -y  cmake \
+    liblua5.3-dev \
+    && wget https://github.com/openstreetmap/osm2pgsql/archive/refs/tags/1.5.1.zip \
+    && unzip 1.5.1.zip \
+    && cd osm2pgsql-1.5.1 \
+    && mkdir build \
+    && cd build \
+    && cmake .. \
+    && make \
+    && make install \
+    && cd ../.. \
+    && rm -rf osm2pgsql-1.5.1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY bzip2.pc /usr/lib/x86_64-linux-gnu/pkgconfig/bzip2.pc

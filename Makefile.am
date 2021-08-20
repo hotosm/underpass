@@ -69,6 +69,7 @@ libunderpass_la_SOURCES = \
 	data/pgsnapshot.cc data/pgsnapshot.hh\
 	data/import.cc data/import.hh \
 	data/osmobjects.cc data/osmobjects.hh \
+	data/osm2pgsql.cc data/osm2pgsql.hh \
 	data/threads.cc data/threads.hh \
 	data/underpass.cc data/underpass.hh \
 	data/yaml.hh data/yaml.cc \
@@ -180,6 +181,7 @@ PCHHEADERS = \
         $(top_srcdir)/data/validate.hh \
         $(top_srcdir)/data/pgsnapshot.hh \
         $(top_srcdir)/data/osmobjects.hh \
+        $(top_srcdir)/data/osm2pgsql.hh \
         $(top_srcdir)/data/geoutil.hh \
         $(top_srcdir)/data/threads.hh \
         $(top_srcdir)/data/underpass.hh \
