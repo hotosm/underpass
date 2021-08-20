@@ -96,7 +96,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
 	return status;
     }
     if (node.tags.size() == 0) {
-	status->status.push_back(notags);
+	status->status.insert(notags);
 	return status;
     }
 
@@ -111,23 +111,23 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
 	    // std::cerr << "Matched key " << vit->first << "!" << std::endl;
 	    keyexists++;
 	} else {
-	    status->status.push_back(incomplete);
+	    status->status.insert(incomplete);
 	}
 	if (tests.containsValue(vit->first, vit->second)) {
 	    // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
 	    valexists++;
-	    status->status.push_back(correct);
+	    status->status.insert(correct);
 	} else {
-	    status->status.push_back(badvalue);
+	    status->status.insert(badvalue);
 	}
     }
     // std::cerr << keyexists << " : " << valexists << " : " << tests.config.size() << std::endl;
 
     if (keyexists == tests.config.size() && valexists == tests.config.size()) {
 	status->status.clear();
-	status->status.push_back(complete);
+	status->status.insert(complete);
     } else {
-	status->status.push_back(incomplete);
+	status->status.insert(incomplete);
     }
     return status;
 }
@@ -144,7 +144,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 	return status;
     }
     if (way.tags.size() == 0) {
-	status->status.push_back(notags);
+	status->status.insert(notags);
 	return status;
     }
 
@@ -159,14 +159,14 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 	    // std::cerr << "Matched key " << vit->first << "!" << std::endl;
 	    keyexists++;
 	} else {
-	    status->status.push_back(incomplete);
+	    status->status.insert(incomplete);
 	}
 	if (tests.containsValue(vit->first, vit->second)) {
 	    // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
 	    valexists++;
-	    status->status.push_back(correct);
+	    status->status.insert(correct);
 	} else {
-	    status->status.push_back(badvalue);
+	    status->status.insert(badvalue);
 	}
     }
     if (way.refs.size() == 5 && way.tags.size() == 0) {
@@ -178,9 +178,9 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 
     if (keyexists == tests.config.size() && valexists == tests.config.size()) {
 	status->status.clear();
-	status->status.push_back(complete);
+	status->status.insert(complete);
     } else {
-	status->status.push_back(incomplete);
+	status->status.insert(incomplete);
     }
     return status;
 }
@@ -192,26 +192,26 @@ Hotosm::checkTag(const std::string &key, const std::string &value)
     auto status = std::make_shared<ValidateStatus>();
 
     log_trace("Hotosm::checkTag(%1%, %2%)", key, value);
-    status->status.push_back(correct);
+    status->status.insert(correct);
     // Check for an empty value
     if (!key.empty() && value.empty()) {
         log_debug(_("WARNING: empty value for tag \"%1%\""), key);
-	status->status.push_back(badvalue);
+	status->status.insert(badvalue);
     }
     // Check for a space in the tag key
     if (key.find(' ') != std::string::npos) {
         log_error(_("WARNING: spaces in tag key \"%1%\""), key);
-	status->status.push_back(badvalue);
+	status->status.insert(badvalue);
     }
     // Check for single quotes in the tag value
     if (value.find('\'') != std::string::npos) {
         log_error(_("WARNING: single quote in tag value \"%1%\""), value);
-	status->status.push_back(badvalue);
+	status->status.insert(badvalue);
     }
     // Check for single quotes in the tag value
     if (value.find('\"') != std::string::npos) {
         log_error(_("WARNING: double quote in tag value \"%1%\""), value);
-	status->status.push_back(badvalue);
+	status->status.insert(badvalue);
     }
 
     return status;
