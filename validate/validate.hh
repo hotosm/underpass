@@ -29,6 +29,7 @@
 #include <vector>
 #include <iostream>
 #include <filesystem>
+#include <unordered_set>
 
 #include <boost/config.hpp>
 #include <boost/date_time.hpp>
@@ -85,13 +86,17 @@ public:
 	osm_id = node.id;
 	user_id = node.uid;
 	change_id = node.change_id;
+	objtype = osmobjects::node;
+	timestamp = node.timestamp;
     }
     ValidateStatus(const osmobjects::OsmWay &way) {
 	osm_id = way.id;
 	user_id = way.uid;
 	change_id = way.change_id;
+	objtype = osmobjects::way;
+	timestamp = way.timestamp;
     }
-    valerror_t operator[](int index){ return status[index]; };
+    //valerror_t operator[](int index){ return status[index]; };
     bool hasStatus(const valerror_t &val) {
 	auto match = std::find(status.begin(), status.end(), val);
 	if (match != status.end()) {
@@ -99,7 +104,7 @@ public:
 	}
 	return false;
     }
-    std::vector<valerror_t> status;
+    std::unordered_set<valerror_t> status;
     osmobjects::osmtype_t objtype;
     long osm_id = 0;
     long user_id = 0;
