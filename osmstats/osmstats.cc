@@ -385,7 +385,7 @@ QueryOSMStats::applyChange(ValidateStatus &validation)
     query += fmt.str();
     query += ") ON CONFLICT (osm_id) DO UPDATE ";
     query += " SET status = ARRAY[" + tmp + " ]::status[]";
-    log_debug(_("QUERY: %1%"), query);
+    // log_debug(_("QUERY: %1%"), query);
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     worker.commit();
