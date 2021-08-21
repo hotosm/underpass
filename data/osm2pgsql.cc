@@ -22,13 +22,16 @@
 #include "unconfig.h"
 #endif
 
-#include "log.hh"
-#include "osm2pgsql.hh"
-using namespace logger;
-#include <boost/process.hpp>
-#include <string>
-using namespace boost::process;
 #include <chrono>
+#include <string>
+
+#include <boost/process.hpp>
+using namespace boost::process;
+
+#include "osm2pgsql.hh"
+
+#include "log.hh"
+using namespace logger;
 
 namespace osm2pgsql {
 
