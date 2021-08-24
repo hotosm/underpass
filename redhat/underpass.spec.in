@@ -20,7 +20,7 @@ Underpass is a system daemon that process replication files from the OpenStreetM
 
 %build
 echo "FIXME: make $RPM_BUILD_ROOT  %{_arch}"
-./configure --prefix ${RPM_BUILD_ROOT}/usr
+./configure --prefix ${RPM_BUILD_ROOT}/usr CXXFLAGS="-std=c++17 -g -O0" CXX="ccache g++"
 make
 
 %install
@@ -31,26 +31,36 @@ make install
 rm -rf $RPM_BUILD_ROOT
 
 %files
+/usr/share/underpass/geoboundaries.sql
+/usr/share/underpass/osmstats.sql
+/usr/share/underpass/underpass.sql
+/usr/share/underpass/pgsnapshot.sql
+/usr/lib/underpass/priority.geojson
+/usr/share/underpass/priority.geojson
+/usr/share/underpass/setupdb.sh
+
 %doc
 /usr/share/doc/underpass/changefile.md
 /usr/share/doc/underpass/dataflow.md
 /usr/share/doc/underpass/install.md
+/usr/share/doc/underpass/chroots.md
 /usr/share/doc/underpass/osmstats.md
 /usr/share/doc/underpass/replication.md
 /usr/share/doc/underpass/replicator.md
 /usr/share/doc/underpass/schemas.md
 /usr/share/doc/underpass/statistics.md
 /usr/share/doc/underpass/utility.md
-/usr/share/underpass/geoboundaries.sql
-/usr/share/underpass/osmstats.sql
-/usr/share/underpass/underpass.sql
-/usr/share/underpass/priority.geojson
+/usr/share/doc/underpass/validation.md
 
 %defattr(755,root,root)
 /usr/bin/replicator
+/usr/lib/underpass/libhotosm.so
 /usr/lib/libhotosm.so
 /usr/lib/libhotosm.la
 /usr/lib/libhotosm.a
+/usr/lib/libunderpass.so
+/usr/lib/libunderpass.la
+/usr/lib/libunderpass.a
 
 %pre
 
