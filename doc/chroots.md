@@ -83,8 +83,16 @@ libboost-program-options1.71-dev libboost-iostreams1.71-dev
 libosmium2-dev librange-v3-dev libboost-locale1.71-dev libtool-bin
 libzip-dev gpg ccache git libpq-dev make debhelper devscripts
 python3-all doxygen pkg-config librange-v3-dev libpq-dev
-libgdal-dev libssl-dev libtool-bin libltdl-dev libgumbo-dev 
+libgdal-dev libssl-dev libtool-bin libltdl-dev libgumbo-dev
+osmium-tool
 
+## Ubuntu Groovy (20.10)
+
+Same as above except the version of boost is not 1.74 instead of 1.71.
+
+## Ubuntu Hirsute (21.04)
+
+Same as above except the version of boost is not 1.74 instead of 1.71.
 
 # Building Libpqxx Packages
 
