@@ -53,40 +53,40 @@ namespace osmobjects {
 void
 OsmObject::dump(void)
 {
-    log_debug(_("Dumping OsmObject()"));
+    std::cerr << "Dumping OsmObject()" << std::endl;
     if (action == create) {
-        log_debug(_("\tAction: Create"));
+        std::cerr << "\tAction: Create" << std::endl;
     } else if (action == modify) {
-        log_debug(_("\tAction: Modify"));
+        std::cerr << "\tAction: Modify" << std::endl;
     } else if (action == remove) {
-        log_debug(_("\tAction: Delete"));
+        std::cerr << "\tAction: Delete" << std::endl;
     }
     
     if (type == node) {
-        log_debug(_("\tType: OsmNode"));
+        std::cerr << "\tType: OsmNode" << std::endl;
     } else if (type == way) {
-        log_debug(_("\tType: OsmWay"));
+        std::cerr << "\tType: OsmWay" << std::endl;
     } else if (type == relation) {
-        log_debug(_("\tType: OsmRelation"));
+        std::cerr << "\tType: OsmRelation" << std::endl;
     }
-    log_debug(_("\tID: %1%"), id);
-    log_debug(_("\tVersion: %1%"), version);
-    log_debug(_("\tTimestamp: %1%"), timestamp);
-    log_debug(_("\tUID: %1%"), uid);
+    std::cerr << "\tID: " << std::to_string(id) << std::endl;
+    std::cerr << "\tVersion: " << std::to_string(version) << std::endl;
+    std::cerr << "\tTimestamp: " <<  to_simple_string(timestamp) << std::endl;
+    std::cerr << "\tUID: " << std::to_string(uid) << std::endl;
 
-    log_debug(_("\tUser: %1%"), user);
+    std::cerr << "\tUser: " << user << std::endl;
     if (priority) {
-        log_debug(_("\tIn Priority area"));
+        std::cerr << "\tIn Priority area" << std::endl;
     } else {
-        log_debug(_("\tNot in Priority area"));
+        std::cerr << "\tNot in Priority area" << std::endl;
     }
     if (change_id > 0) {
-        log_debug(_("\tChange ID: "), std::to_string(change_id));
+        std::cerr << "\tChange ID: " << std::to_string(change_id) << std::endl;
     }
     if (tags.size() > 0) {
-        log_debug(_("\tTags: %1%"), tags.size());
+        std::cerr << "\tTags: " << tags.size() << std::endl;
         for (auto it = std::begin(tags); it != std::end(tags); ++it) {
-            log_debug("\t\t %1% : %2%", it->first, it->second);
+            std::cerr << "\t\t" << it->first << ":" << it->second  << std::endl;
         }
     }
 };
@@ -109,12 +109,12 @@ void
 OsmWay::dump(void){
     OsmObject::dump();
     if (refs.size() > 0) {
-        log_debug(_("\tRefs: "), refs.size());
+        std::cerr << "\tRefs: " << refs.size() << std::endl;
         std::string tmp;
         for (auto it = std::begin(refs); it != std::end(refs); ++it) {
             tmp += std::to_string(*it) + ",";
         }
-        log_debug("\t%1%", tmp);
+        std::cerr <<"\t" << tmp << std::endl;
     }
 };
 
