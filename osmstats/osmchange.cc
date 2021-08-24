@@ -486,7 +486,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 	    ostats = (*mstats)[node->change_id];
 	    if (ostats.get() == 0) {
 		ostats = std::make_shared<ChangeStats>();
-		ostats->change_id = node->id;
+		ostats->change_id = node->change_id;
 		ostats->user_id = node->uid;
 		ostats->username = node->user;
 		//ostats->created_at = change->created_at;
@@ -507,16 +507,13 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
             OsmWay *way = it->get();
 	    // If there are no tags, assume it's part of a relation
             if (way->tags.size() == 0) {
+		log_debug(_("change %1% has no tags!"), way->change_id);
 		continue;
 	    }
-	    if (way->polygon.outer().size() == 0) {
-		log_error(_("ERROR: change %1% has no points"), way->change_id);
-		// continue;
-	    }
-	    // Filter data by polygon
-	    // point_t pt;
-	    // boost::geometry::centroid(way->polygon, pt);
-	    // if (!boost::geometry::within(pt, poly)) {
+	    // if (way->polygon.outer().size() == 0) {
+	    // 	log_error(_("change %1% has no points"), way->change_id);
+	    // 	continue;
+	    // }
 	    if (!way->priority) {
 		log_debug(_("Changeset with way %1% is not in a priority area"), way->change_id);
 		continue;
@@ -532,7 +529,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 	    ostats = (*mstats)[way->change_id];
 	    if (ostats.get() == 0) {
 		ostats = std::make_shared<ChangeStats>();
-		ostats->change_id = way->id;
+		ostats->change_id = way->change_id;
 		ostats->user_id = way->uid;
 		ostats->username = way->user;
 		//ostats->created_at = change->created_at;
@@ -542,7 +539,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 	    auto hits = scanTags(way->tags);
 	    for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
 		// log_debug("FIXME way: ", *hit, (int)way->action);
-		way->dump();
+		// way->dump();
 		if (*hit == "highway" || *hit == "waterway") {
 		    // Get the geometry behind each reference
 		    boost::geometry::model::linestring<sphere_t> globe;
