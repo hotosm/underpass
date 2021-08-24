@@ -19,20 +19,17 @@
 
 AUTOMAKE_OPTIONS = dejagnu
 
-AM_CPPFLAGS = -I$(top_srcdir) \
-        -I$(top_srcdir)/hottm
-
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/hottm
 
 check_PROGRAMS = \
 	tm-test \
-    under-test \
-    usersync-test \
+	usersync-test \
 	under-test \
-	pq-test
+	pq-test \
+	change-test
 
 #	rep-test
 #	stats-test
-#	change-test
 #	hotosm-test
 #	geo-test
 
@@ -56,10 +53,10 @@ pq_test_LDFLAGS = -L../..
 pq_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
 pq_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
-# _test_SOURCES = geo-test.cc
-# geo_test_LDFLAGS = -L../..
-# geo_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
-# geo_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+geo_test_SOURCES = geo-test.cc
+geo_test_LDFLAGS = -L../..
+geo_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
+geo_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 #val_test_SOURCES = val-test.cc
 #val_test_LDFLAGS = -L../..
@@ -92,10 +89,10 @@ tm_test_LDADD = -lpqxx -lunderpass  $(BOOST_LIBS)
 #stats_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 # Test the Changeset class
-#change_test_SOURCES = change-test.cc
-#change_test_CPPFLAGS = -DDATADIR=\"$(srcdir)\" -I$(top_srcdir)
-#change_test_LDFLAGS = -L../..
-#change_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+change_test_SOURCES = change-test.cc
+change_test_CPPFLAGS = -DDATADIR=\"$(srcdir)\" -I$(top_srcdir)
+change_test_LDFLAGS = -L../..
+change_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 # Test the usersync class
 usersync_test_SOURCES = usersync-test.cc
@@ -103,5 +100,13 @@ usersync_test_CPPFLAGS = -DDATADIR=\"$(srcdir)\" -I$(top_srcdir)
 usersync_test_LDFLAGS = -L../..
 usersync_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
+CLEANFILES = \
+	underpass.log \
+	tm-test.log \
+	usersync-test.log \
+	under-test.log \
+	pq-test.log \
+	change-test.log \
+	geo-test.log
 
 RUNTESTFLAGS = -xml
