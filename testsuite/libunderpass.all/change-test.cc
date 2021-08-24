@@ -28,11 +28,13 @@
 #include "osmstats/changeset.hh"
 #include "osmstats/osmchange.hh"
 #include "osmstats/replication.hh"
+#include "log.hh"
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/date_time/gregorian/gregorian.hpp"
 
+using namespace logger;
 using namespace changeset;
 using namespace boost::posix_time;
 using namespace boost::gregorian;
@@ -68,214 +70,97 @@ public:
 int
 main(int argc, char* argv[])
 {
+    logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
+    dbglogfile.setWriteDisk(true);
+    dbglogfile.setLogFilename("change-test.log");
+    dbglogfile.setVerbosity(3);
+
     std::string basedir = DATADIR;
-    Timer timer;
 
-#if 0
     // Read the changeset state file
-    std::string buf = "---\nlast_run: 2020-10-08 22:30:01.737719000 +00:00\nsequence: 4139993\n";
     TestStateFile statefile(basedir + "/993.state.txt", false);
-    if (statefile.getSequence() == 4139992) {
-        runtest.pass("Changeset state file from disk");
+    // statefile.dump();
+    if (statefile.getSequence() == 4517993 && to_simple_string(statefile.getTimestamp()) == "2021-Apr-28 03:03:09") {
+        runtest.pass("StateFile::Statefile(disk)");
     } else {
-        runtest.fail("Changeset state file from disk");
+        runtest.fail("StateFile::Statefile(disk)");
     }
 
+    std::string buf = "---\nlast_run: 2020-10-08 22:30:01.737719000 +00:00\nsequence: 4139993\n";
     TestStateFile mem(buf, true);
-    if (mem.getSequence() == 4139993) {
-        runtest.pass("Changeset state file from memory");
+    // mem.dump();
+    if (mem.getSequence() == 4139993 && to_simple_string(statefile.getTimestamp()) == "2021-Apr-28 03:03:09") {
+        runtest.pass("StateFile::Statefile(buffer)");
     } else {
-        runtest.fail("Changeset state file from memory");
+        runtest.fail("StateFile::Statefile(buffer)");
     }
 
-    // Read a change file state file
-    TestStateFile minstate(basedir + "/996.state.txt", false);
-    if (minstate.getSequence() == 4230996) {
-        runtest.pass("Change file state file from disk");
-    } else {
-        runtest.fail("Change file state file from disk");
-    }
-
-    TestCS tests;
-    // auto geou = std::make_shared<geoutil::GeoUtil>();
-
-    // geou->readFile(basedir + "/../../data/geoboundaries.osm", true);
-    // tests.setupBoundaries(geou);            
-
-    // tests.importChanges(basedir + "/foo.osm");
-    std::cout << "Operation took " << timer.endTimer() << " milliseconds" << std::endl;
-
-    timer.startTimer();
-    tests.readChanges(basedir + "/changeset-data.osm");
-    std::cout << "Operation readChanges(uncompressed) took " << timer.endTimer() << " milliseconds" << std::endl;
-    if (tests[3].id > 0) {
-        runtest.pass("ChangeSetFile::readChanges(uncompressed)");
-    } else {
-        runtest.fail("ChangeSetFile::readChanges(uncompressed)");
-    }
-    auto rc = tests.readChanges(basedir + "/changeset-data2.osm.gz");
-    std::cout << "Operation readChanges(compressed) took " << timer.endTimer() << " milliseconds" << std::endl;
-    if (tests[3].id > 0) {
-        runtest.pass("ChangeSetFile::readChanges(compressed)");
-    } else {
-        runtest.fail("ChangeSetFile::readChanges(compressed)");
-    }
-#endif
     TestCO testco;
-    timer.startTimer();
     // testco.readChanges("/tmp/y");
     testco.readChanges(basedir + "/123.osc");
-    std::cout << "Operation read osc took " << timer.endTimer() << " milliseconds" << std::endl;
-
-    if (testco.changes.size() >= 3) {
-        runtest.pass("ChangeSetFile::readChanges()");
+    // testco.dump();
+    if (testco.changes.size() >= 1) {
+        runtest.pass("ChangeSetFile::readChanges(parsed file)");
     } else {
-        runtest.fail("ChangeSetFile::readChanges()");
+        runtest.fail("ChangeSetFile::readChanges(parsed file)");
+    }
+
+    auto tf = testco.changes.front();
+    auto tnf = tf->nodes.front();
+    if (tnf->change_id == 99069702 && tnf->id == 5776216755) {
+        runtest.pass("ChangeSetFile::readChanges(first change, first node)");
+    } else {
+        runtest.fail("ChangeSetFile::readChanges(first change, first node)");
+    }
+    auto twf = tf->ways.front();
+    // twf->dump();
+    if (twf->change_id ==  99069879 && twf->id == 474556695 &&  twf->uid == 1041828) {
+        runtest.pass("ChangeSetFile::readChanges(first change, first way)");
+    } else {
+        runtest.fail("ChangeSetFile::readChanges(first change, first way)");
+    }
+    auto tnb = tf->nodes.back();
+    // tnb->dump();
+    if (tnb->change_id == 94802322 && tnb->id == 289112823) {
+        runtest.pass("ChangeSetFile::readChanges(first change, last node)");
+    } else {
+        runtest.fail("ChangeSetFile::readChanges(first change, last node)");
+    }
+    auto twb = tf->ways.back();
+    // twb->dump();
+    if (twb->change_id == 99063443 && twb->id == 67365141 &&  twb->uid == 1137406) {
+        runtest.pass("ChangeSetFile::readChanges(first change, last way)");
+    } else {
+        runtest.fail("ChangeSetFile::readChanges(first change, last way)");
     }
     
-    testco.dump();
-    timer.startTimer();
-    // Create 
-    // 2 hospital nodes, 1 hospital way
-    // 2 school nodes, 1 school way
-    // 1 place way
-    //
-    // Modify
-    // 2 place nodes get name added
-    std::string testdata = TOPSRCDIR;
-    testdata += "/data/priority.geojson";
-    geoutil::GeoUtil geou;
-    geou.readFile(testdata);
-
-    auto stats = testco.collectStats(geou.boundary);
-    std::cout << "Operation collect stats took " << timer.endTimer() << " milliseconds" << std::endl;
-
+    auto tb = testco.changes.back();
+    // tb->dump();
+    if (tb) {
+        runtest.pass("ChangeSetFile::readChanges(last change)");
+    } else {
+        runtest.fail("ChangeSetFile::readChanges(last change)");
+    }
+    
 #if 0
-    if (stats->added["school"] == 3) {
-        runtest.pass("school added");
-    } else {
-        runtest.fail("schools added");
-    }
+    tests.readChanges(basedir + "/changeset-data.osm");
+    tests.dump();
+    
+    // if (tests[3].id > 0) {
+    //     runtest.pass("ChangeSetFile::readChanges(uncompressed)");
+    // } else {
+    //     runtest.fail("ChangeSetFile::readChanges(uncompressed)");
+    // }
+    auto rc = tests.readChanges(basedir + "/changeset-data2.osm.gz");
+    tests.dump();
+    // if (tests[3].id > 0) {
+    //     runtest.pass("ChangeSetFile::readChanges(compressed)");
+    // } else {
+    //     runtest.fail("ChangeSetFile::readChanges(compressed)");
+    // }
+
 #endif
-    std::map<std::string, int> hits;
-    for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
-        it->second->dump();
-        // New feature statistics
-        std::map<std::string, int> tmp = it->second->added;
-        for (auto sit = std::begin(tmp); sit != std::end(tmp); ++sit) {
-            hits[sit->first] += sit->second;
-        }
-    }
-
-    if (hits["city"] == 1) {
-        runtest.pass("ChangeSetFile::collectStats(cities added)");
-    } else {
-        runtest.fail("ChangeSetFile::collectStats(cities added)");
-    }
-
-    if (hits["town"] == 0) {
-        runtest.pass("ChangeSetFile::collectStats(town added)");
-    } else {
-        runtest.fail("ChangeSetFile::collectStats(town added)");
-    }
-
-    // hamlet is only in modified, so this should be 0
-    if (hits["hamlet"] == 0) {
-        runtest.pass("ChangeSetFile::collectStats(hamlet added)");
-    } else {
-        runtest.fail("ChangeSetFile::collectStats(hamlet added)");
-    }
-
-    if (hits["village"] == 1) {
-        runtest.pass("ChangeSetFile::collectStats(village added)");
-    } else {
-        runtest.fail("ChangeSetFile::collectStats(village added)");
-    }
-
-    if (hits["school"] == 3) {
-        runtest.pass("ChangeSetFile::collectStats(schools added)");
-    } else {
-        runtest.fail("ChangeSetFile::collectStats(schools added)");
-    }
-
-    if (hits["hospital"] == 3) {
-        runtest.pass("ChangeSetFile::collectStats(hospitals added)");
-    } else {
-        runtest.fail("ChangeSetFile::collectStats(hospitals added)");
-    }
-
-    if (hits["building"] == 8) {
-        runtest.pass("ChangeSetFile::collectStats(buildings added)");
-    } else {
-        runtest.fail("ChangeSetFile::collectStats(buildings added)");
-    }
-
-    if (hits["place"] == 2) {
-        runtest.pass("ChangeSetFile::collectStats(places added)");
-    } else {
-        runtest.fail("ChangeSetFile::collectStats(places added)");
-    }
     
-    if (hits["highway"] == 1) {
-        runtest.pass("ChangeSetFile::collectStats(highway added)");
-    } else {
-        runtest.fail("ChangeSetFile::collectStats(highway added)");
-    }
-
-    if (hits["waterway"] == 1) {
-        runtest.pass("ChangeSetFile::collectStats(waterway added)");
-    } else {
-        runtest.fail("ChangeSetFile::collectStats(waterway added)");
-    }
-
-    // distance are in meters, not kilometers for better accuracy
-    if (hits["highway_km"] == 4236) {
-        runtest.pass("ChangeSetFile::collectStats(highway length added)");
-    } else {
-        runtest.fail("ChangeSetFile::collectStats(highway length added)");
-    }
-
-    if (hits["waterway_km"] == 1980) {
-        runtest.pass("ChangeSetFile::collectStats(waterway length added)");
-    } else {
-        runtest.fail("ChangeSetFile::collectStats(waterway length added)");
-    }
-    
-    for (auto it = std::begin(hits); it != std::end(hits); ++it) {
-        std::cout << "Created: " << it->first << " = " <<  it->second << std::endl;
-    }
-
-    std::map<std::string, int> mods;
-    for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
-        it->second->dump();
-        // New feature statistics
-        std::map<std::string, int> tmp = it->second->modified;
-        for (auto sit = std::begin(tmp); sit != std::end(tmp); ++sit) {
-            mods[sit->first] += sit->second;
-        }
-    }
-    if (mods["place"] == 4) {
-        runtest.pass("ChangeSetFile::collectStats(place name modified)");
-    } else {
-        runtest.fail("ChangeSetFile::collectStats(place name modified)");
-    }
-
-    if (mods["village"] == 1) {
-        runtest.pass("ChangeSetFile::collectStats(village name modified)");
-    } else {
-        runtest.fail("ChangeSetFile::collectStats(village name modified)");
-    }
-
-    if (mods["town"] == 1) {
-        runtest.pass("ChangeSetFile::collectStats(town name modified)");
-    } else {
-        runtest.fail("ChangeSetFile::collectStats(town name modified)");
-    }
-
-    for (auto it = std::begin(mods); it != std::end(mods); ++it) {
-        std::cout << "Modified: " << it->first << " = " <<  it->second << std::endl;
-    }
-
     std::cout << "Done..." << std::endl;
 };
 
