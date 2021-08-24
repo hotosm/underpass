@@ -134,7 +134,7 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
 	    log_info(_("Downloading StateFile: %1% %2%"), remote.subpath ".state.txt");
 	    auto state = threadStateFile(planet->stream, remote.subpath + ".state.txt");
 	    if (state->timestamp != boost::posix_time::not_a_date_time && (state->sequence != 0 && state->path.size() != 0)) {
-		state->dump();
+		// state->dump();
 		under.writeState(*state);
 		break;
 	    }
@@ -379,6 +379,7 @@ threadOsmChange(const replication::RemoteURL &remote,
     for (auto it = std::begin(osmchanges->changes);
          it != std::end(osmchanges->changes); ++it) {
         osmchange::OsmChange *change = it->get();
+	// change->dump();
         for (auto it = std::begin(change->nodes); it != std::end(change->nodes);
              ++it) {
             osmobjects::OsmNode *node = it->get();
@@ -402,7 +403,7 @@ threadOsmChange(const replication::RemoteURL &remote,
         if (it->second->added.size() == 0 && it->second->modified.size() == 0) {
             continue;
         }
-        it->second->dump();
+        // it->second->dump();
         ostats.applyChange(*it->second);
     }
     timer.endTimer("collectStats");
