@@ -38,7 +38,7 @@ setup_libpqxx() {
     ./configure --enable-shared && make && sudo make install
 }
 
-setup_underpass() {
+setup_underpass_from_source() {
     cd ${working_dir}
     git clone https://github.com/hotosm/underpass.git
     export PKG_CONFIG_PATH=${working_dir}/underpass/m4/
@@ -52,8 +52,17 @@ setup_underpass() {
         make -j$(($(nproc) * 2))
 }
 
+setup_underpass_from_deb() {
+    if [[ -f /tmp/underpass_20210614_amd64.deb ]]; then
+        dpkg -i /tmp/underpass_20210614_amd64.deb
+    fi
+}
+setup_underpass_from_deb
+
 teardown() {
     rm -fr ${working_dir}
 }
 
-setup_underpass
+setup_libpqxx
+# setup_underpass_from_source
+setup_underpass_from_deb
