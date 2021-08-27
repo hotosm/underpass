@@ -263,9 +263,13 @@ Planet::downloadFile(const std::string &url)
     req.keep_alive();
     req.set(http::field::host, remote.domain);
     req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-
     // Send the HTTP request to the remote host
-    http::write(stream, req);
+    try {
+        http::write(stream, req);
+    } catch (boost::system::system_error ex) {
+        log_error(_("stream write failed: %1%"), ex.what());
+        return data;
+    }
 
     // This buffer is used for reading and must be persistant
     boost::beast::flat_buffer buffer;
@@ -273,7 +277,13 @@ Planet::downloadFile(const std::string &url)
     // Receive the HTTP response
     http::response_parser<http::string_body> parser;
     // read_header(stream, buffer, parser);
-    read(stream, buffer, parser);
+    try {
+        read(stream, buffer, parser);
+    } catch (boost::system::system_error ex) {
+        log_error(_("stream read failed: %1%"), ex.what());
+        return data;
+    }
+
     if (parser.get().result() == boost::beast::http::status::not_found) {
         log_error(_("Remote file not found: %1%"), url);
         exit(EXIT_FAILURE);
