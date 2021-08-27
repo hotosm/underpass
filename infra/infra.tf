@@ -21,6 +21,16 @@ data "aws_iam_policy_document" "assume-role-ec2" {
   }
 }
 
+data "aws_iam_policy_document" "instance-connect" {
+  statement {
+    actions = ["ec2-instance-connect:SendSSHPublicKey"]
+    resources = [
+      "arn:aws:ec2:region:account-id:instance/i-1234567890abcdef0",
+      "arn:aws:ec2:region:account-id:instance/i-0598c7d356eba48d7"
+    ]
+  }
+}
+
 data "aws_iam_policy" "metrics" {
   name = "CloudWatchAgentServerPolicy"
 }
@@ -89,7 +99,7 @@ resource "aws_iam_role" "underpass" {
 */
 resource "aws_instance" "file-processor" {
   ami           = data.aws_ami.ubuntu-latest.id
-  instance_type = var.app_instance_type
+  instance_type = var.file_processor_instance_type
 
   subnet_id              = aws_subnet.private[2].id
   vpc_security_group_ids = [aws_security_group.app.id]
@@ -102,7 +112,7 @@ resource "aws_instance" "file-processor" {
 
   ebs_block_device {
     device_name = "/dev/sdb"
-    volume_size = 100
+    volume_size = var.file_processor_ebs_size
     volume_type = "gp3"
     throughput  = 125
   }
@@ -114,7 +124,7 @@ resource "aws_instance" "file-processor" {
     Name = "underpass-processor-${count.index}"
   }
 
-  count = 2
+  count = var.file_processor_count
 
   // Install everything
   user_data = templatefile(
@@ -141,7 +151,7 @@ resource "aws_eip" "underpass" {
 */
 resource "aws_instance" "api" {
   ami           = data.aws_ami.ubuntu-latest.id
-  instance_type = var.api_instance_type
+  instance_type = var.api_server_instance_type
 
   subnet_id              = aws_subnet.private[2].id
   vpc_security_group_ids = [aws_security_group.api.id]
@@ -154,7 +164,7 @@ resource "aws_instance" "api" {
 
   ebs_block_device {
     device_name = "/dev/sdb"
-    volume_size = 100
+    volume_size = var.api_server_ebs_size
     volume_type = "gp3"
     throughput  = 125
   }
@@ -165,6 +175,8 @@ resource "aws_instance" "api" {
   tags = {
     Name = "underpass-api"
   }
+
+  count = var.api_server_count
 }
 
 resource "random_password" "underpass_database_password_string" {
@@ -208,16 +220,16 @@ resource "aws_secretsmanager_secret_version" "underpass_database_credentials" {
 }
 
 resource "aws_db_instance" "underpass" {
-  allocated_storage         = 100
-  max_allocated_storage     = 1000 # Storage auto-scaling
+  allocated_storage         = var.database_storage_min_capacity
+  max_allocated_storage     = var.database_storage_max_capacity # Storage auto-scaling
   engine                    = "postgres"
-  engine_version            = "12.7"
-  instance_class            = var.db_instance_type
-  name                      = "underpass"
-  username                  = "mineworker"
+  engine_version            = var.database_engine_version
+  instance_class            = var.database_instance_type
+  name                      = var.database_name
+  username                  = var.database_username
   password                  = random_password.underpass_database_password_string.result
   skip_final_snapshot       = true
-  final_snapshot_identifier = "bye-underpass"
+  final_snapshot_identifier = var.database_final_snapshot_identifier
 }
 
 data "aws_route53_zone" "hotosm-org" {
@@ -227,7 +239,7 @@ data "aws_route53_zone" "hotosm-org" {
 /**
 resource "aws_route53_record" "underpass" {
   zone_id = data.aws_route53_zone.hotosm-org.zone_id
-  name    = "underpass.${data.aws_route53_zone.hotosm-org.name}"
+  name    = "underpass-demo.${data.aws_route53_zone.hotosm-org.name}"
   type    = "A"
   ttl     = "300"
   records = [aws_eip.underpass.public_ip]
