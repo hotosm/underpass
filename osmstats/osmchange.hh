@@ -226,9 +226,9 @@ public:
     /// Collect statistics for each user
     std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>> collectStats(const multipolygon_t &poly);
 
-    bool validateNodes(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin);
+    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> validateNodes(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin);
 
-    bool validateWays(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin);
+    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> validateWays(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin);
 
     std::shared_ptr<std::vector<std::string>> scanTags(std::map<std::string, std::string> tags);
 

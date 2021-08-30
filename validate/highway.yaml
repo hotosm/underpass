@@ -7,3 +7,17 @@ tags:
         - residential
         - path
         - bridge
+
+    - smoothness:
+        - good
+        - bad
+        - very bad
+        - horrible
+        - impassable
+
+    - surface:
+        - dirt
+        - asphalt
+        - paved
+        - grassy
+        - unpaved

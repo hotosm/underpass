@@ -27,6 +27,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <boost/algorithm/string.hpp>
 
 #include "yaml.hh"
 #include "log.hh"
@@ -61,31 +62,32 @@ Yaml::read(const std::string &fspec)
     }
         
     while (getline(yaml, line)) {
-        // std::cerr << line << std::endl;
-        if (line.size() == 0) {
+	boost::algorithm::trim_left(line);
+	// boost::algorithm::trim(line);
+        // std::cerr << '\"' << line << '\"'<< std::endl;
+	// Ignore blank lines
+	if (line.empty()) {
+	    continue;
+	}
+	// Ignore comments
+        if (line.front() == '#') {
             continue;
         }
-        
-        pos1 = line.find('#');
-        if (pos1 != std::string::npos) {
+        if (line == "tags:") {
             continue;
         }
-        pos1 = line.find('-');
-        pos2 = line.rfind(':');
-        if (pos2 != std::string::npos) {
-            if (pos1 != std::string::npos) {
-                key = line.substr(pos1+2, pos2+2);
-            }
-            pos2 = key.rfind(':');
-            if (pos2 != std::string::npos && pos2 == key.size()-1) {
-                key.erase(key.size()-1);
-            }
-            if (!key.empty()) {
-                config[key] = entries;
-            }
+	line.erase(0,2);
+	// std::cerr << '\"' << line << '\"'<< std::endl;
+	// It's a new keyword
+        if (line.back() == ':') {
+	    line.pop_back();
+	    key = line;
         } else {
-            value = line.substr(pos1 + 2);
-            config[key].push_back(value);
+	    if (key.empty()) {
+		config[line] = entries;
+	    } else {
+		config[key].push_back(line);
+	    }
         }
     }
 }
@@ -95,12 +97,12 @@ void Yaml::dump(void)
     std::cerr << std::endl << "Dumping yaml file: " << filespec << std::endl;
     
     for (auto cit = std::begin(config); cit != std::end(config); ++cit) {
-	std::cerr << "\t\tKey: " << cit->first << std::endl;
+	std::cerr << "\tKey: " << cit->first << std::endl;
         if ( cit->second.size() == 0) {
             continue;
         }
         std::vector<std::string> value = cit->second;
-        std::cerr << "\t\t\t\tValues: ";
+        std::cerr << "\t\tValues: ";
         for (auto vit = std::begin(value); vit != std::end(value); ++vit) {
             std::cerr << *vit << ", ";
         }
@@ -110,3 +112,7 @@ void Yaml::dump(void)
 
 } // EOF yaml namespace
 
+// Local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

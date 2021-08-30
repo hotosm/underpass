@@ -85,6 +85,21 @@ class OsmObject
     bool priority = false;      ///< Whether it's in the priority area
     /// Dump internal data to the terminal, only for debugging
     void dump(void);
+    bool containsKey(const std::string &key) {
+	return tags.count(key);
+    };
+    bool containsValue(const std::string &key, const std::string &value) {
+	std::string lower = boost::algorithm::to_lower_copy(value);
+	if (tags[key].size() == 0 ) {
+	    return true;
+	}
+        for (auto it = tags.begin();  it != tags.end(); ++it) {
+            if (it->second == value) {
+                return true;
+            }
+        }
+	return false;
+    };
 };
 
 /// \class OsmNode
@@ -135,9 +150,12 @@ public:
     std::vector<long> refs;     ///< Store all the nodes by reference ID
     linestring_t linestring;    ///< Store the node as a linestring
     polygon_t polygon;          ///< Store the nodes as a polygon
+    point_t center;             ///< Store the centroid of the way
 
     /// Add a reference to a node to this way
-    void addRef(long ref) { refs.push_back(ref); };
+    void addRef(long ref) {
+        refs.push_back(ref);
+    };
 
     /// Polygons are closed objects, like a building, while a highway
     /// is a linestring

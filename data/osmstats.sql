@@ -39,10 +39,14 @@ CREATE TABLE public.changesets (
 ALTER TABLE ONLY public.changesets
     ADD CONSTRAINT changesets_pkey PRIMARY KEY (id);
 
+CREATE TYPE objtype AS ENUM ('node', 'way', 'relation');
+CREATE TYPE status AS ENUM ('notags', 'complete', 'incomplete', 'badvalue', 'correct', 'badgeom');
+
 CREATE TABLE public.validation (
     osm_id integer,
-    issue text,
-    found timestamp with time zone,
+    type objtype,
+    status status[],
+    timestamp timestamp with time zone,
     location public.geometry(Geometry,4326)
 );
 ALTER TABLE ONLY public.validation

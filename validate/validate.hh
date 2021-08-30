@@ -28,6 +28,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <filesystem>
+#include <unordered_set>
 
 #include <boost/config.hpp>
 #include <boost/date_time.hpp>
@@ -38,6 +40,10 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "data/osmobjects.hh"
+#include "data/yaml.hh"
+#include "log.hh"
+
+using namespace logger;
 
 /// \file validate.hh
 /// \brief This class tries to validate the OSM objects
@@ -71,29 +77,119 @@ using namespace boost::gregorian;
 //   
 //
 
-typedef enum {notags, isbuilding } errortype_t;
+typedef enum {notags, complete, incomplete, badvalue, correct, badgeom } valerror_t;
+
+class ValidateStatus {
+public:
+    ValidateStatus(void) {};
+    ValidateStatus(const osmobjects::OsmNode &node) {
+	osm_id = node.id;
+	user_id = node.uid;
+	change_id = node.change_id;
+	objtype = osmobjects::node;
+	timestamp = node.timestamp;
+    }
+    ValidateStatus(const osmobjects::OsmWay &way) {
+	osm_id = way.id;
+	user_id = way.uid;
+	change_id = way.change_id;
+	objtype = osmobjects::way;
+	timestamp = way.timestamp;
+    }
+    //valerror_t operator[](int index){ return status[index]; };
+    bool hasStatus(const valerror_t &val) {
+	auto match = std::find(status.begin(), status.end(), val);
+	if (match != status.end()) {
+	    return true;
+	}
+	return false;
+    }
+    std::unordered_set<valerror_t> status;
+    osmobjects::osmtype_t objtype;
+    long osm_id = 0;
+    long user_id = 0;
+    long change_id = 0;
+    ptime timestamp;
+    point_t center;
+
+    void dump(void) {
+	std::cerr << "Dumping Validation Statistics" << std::endl;
+	std::cerr << "\tOSM ID: " << osm_id << std::endl;
+	std::cerr << "\tUser ID: " << user_id << std::endl;
+	std::cerr << "\tChange ID: " << change_id << std::endl;
+
+	std::map<valerror_t, std::string> results;
+	results[notags] = "No tags";
+	results[complete] = "Tags are complete";
+	results[incomplete] = "Tags are incomplete";
+	results[badvalue] = "Bad tag value";
+	results[correct] = "Correct tag value";
+	results[badgeom] = "Bad geometry";
+	for (auto it = std::begin(status); it != std::end(status); ++it) {
+	    std::cerr << "\tResult: " << results[*it] << std::endl;
+	}
+    }
+};
 
 class BOOST_SYMBOL_VISIBLE Validate
 {
 public:
+    Validate(void) {
+	std::string dir = SRCDIR;
+	if (!boost::filesystem::exists(dir)) {
+	    dir = PKGLIBDIR;
+	    if (!boost::filesystem::exists(dir)) {
+		log_error(_("No validation config files in %1%!"), dir);
+	    }
+	}
+	for (auto& file : std::filesystem::recursive_directory_iterator(dir)) {
+	    std::filesystem::path config = file.path();
+	    if (config.extension() == ".yaml") {
+		log_debug("Loading: %s", config.stem());
+		yaml::Yaml yaml;
+		yaml.read(config.string());
+		if (!config.stem().empty()) {
+		    yamls[config.stem()] = yaml;
+		}
+	    }
+	}
+#if 0
+	Validate(const std::string &filespec) {
+	    yaml::Yaml yaml;
+	    yaml.read(filespec);
+	    if (!config.stem().empty()) {
+		yamls[config.stem()] = yaml;
+	    }
+	}
+#endif
+    };
     virtual ~Validate(void) {};
     // Validate(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes) {};
 
     /// Check a POI for tags. A node that is part of a way shouldn't have any
     /// tags, this is to check actual POIs, like a school.
-    virtual bool checkPOI(osmobjects::OsmNode *node) = 0;
+    virtual std::shared_ptr<ValidateStatus> checkPOI(const osmobjects::OsmNode &node, const std::string &type) = 0;
 
     /// This checks a way. A way should always have some tags. Often a polygon
     /// is a building
-    virtual bool checkWay(osmobjects::OsmWay *way) = 0;
-    bool checkTags (std::map<std::string, std::string> tags) {
+    virtual std::shared_ptr<ValidateStatus> checkWay(const osmobjects::OsmWay &way, const std::string &type) = 0;
+    std::shared_ptr<ValidateStatus> checkTags (std::map<std::string, std::string> tags) {
         bool result;
         for (auto it = std::begin(tags); it != std::end(tags); ++it) {
-            result = checkTag(it->first, it->second);
+	    // FIXME: temporarily disabled
+            // result = checkTag(it->first, it->second);
         }
-        return result;
+        // return result;
     };
-    virtual bool checkTag(const std::string &key, const std::string &value) = 0;
+    void dump(void) {
+	for (auto it = std::begin(yamls); it != std::end(yamls); ++it) {
+	    it->second.dump();
+	}
+    }
+    virtual std::shared_ptr<ValidateStatus> checkTag(const std::string &key, const std::string &value) = 0;
+    yaml::Yaml &operator[](const std::string &key) { return yamls[key]; };
+  protected:
+    std::map<std::string, yaml::Yaml> yamls;
 };
 
 #endif  // EOF __VALIDATE_HH__

@@ -19,14 +19,16 @@
 
 AUTOMAKE_OPTIONS = dejagnu
 
-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/hottm
-
 check_PROGRAMS = \
 	tm-test \
 	usersync-test \
 	under-test \
 	pq-test \
-	change-test
+	change-test \
+	val-test
+
+AM_CPPFLAGS = -I$(top_srcdir) -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)/hottm
+AM_LDFLAGS = -L../..
 
 #	rep-test
 #	stats-test
@@ -58,10 +60,11 @@ geo_test_LDFLAGS = -L../..
 geo_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
 geo_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
-#val_test_SOURCES = val-test.cc
-#val_test_LDFLAGS = -L../..
-#val_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
-#val_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+val_test_SOURCES = val-test.cc
+val_test_LDFLAGS = -L../..
+val_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS) ../../validate/hotosm.lo
+val_test_CPPFLAGS = -I$(top_srcdir) -DDATADIR=\"$(top_srcdir)\"
+
 
 #rep_test_SOURCES = rep-test.cc
 #rep_test_LDFLAGS = -L../..

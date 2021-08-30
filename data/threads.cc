@@ -86,8 +86,6 @@ using namespace tmdb;
 
 namespace threads {
 
-// logger::LogFile& dbglogfile = logger::LogFile::getDefaultInstance();
-
 // Starting with this URL, download the file, incrementing
 void
 startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
@@ -112,16 +110,16 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
     boost::dll::fs::path lib_path(plugins);
     boost::function<plugin_t> creator;
     try {
-        creator = boost::dll::import_alias<plugin_t>(
-            lib_path / "libhotosm", "create_plugin",
-            boost::dll::load_mode::append_decorations);
-        // std::cerr << "Loaded plugin hotosm!" << std::endl;
-    } catch (std::exception &e) {
-        log_debug(_("Couldn't load plugin! %1%"), e.what());
-        exit(0);
+	creator = boost::dll::import_alias<plugin_t>(
+	    lib_path / "libhotosm", "create_plugin",
+	    boost::dll::load_mode::append_decorations
+	    );
+	    log_debug(_("Loaded plugin hotosm!"));
+    } catch (std::exception& e) {
+	    log_debug(_("Couldn't load plugin! %1%"), e.what());
+	    exit(0);
     }
     auto validator = creator();
-
     while (mainloop) {
         // Look for the statefile first
 #if 0
@@ -412,7 +410,35 @@ threadOsmChange(const replication::RemoteURL &remote,
     osmchanges->validateNodes(poly, plugin);
     osmchanges->validateWays(poly, plugin);
     timer.endTimer("validate");
-
+#if 0
+    auto nodeval = osmchanges->validateNodes(poly, plugin);
+    std::cerr << "SIZE " << nodeval->size() << std::endl;
+    for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
+	ostats.applyChange(*it->get());
+    }
+#else
+    ValidateStatus vstat;
+    vstat.osm_id = 44444;
+    vstat.user_id = 12345;
+    vstat.change_id = 54321;
+    vstat.status.insert(incomplete);
+    vstat.timestamp = boost::posix_time::microsec_clock::local_time();
+    vstat.objtype = osmobjects::node;
+    // vstat.center = boost::geometry::wkt("POINT(-105.5238863 39.95427102)");
+    ostats.applyChange(vstat);
+#endif
+    timer.endTimer("validate nodes");
+    timer.startTimer();
+    auto wayval = osmchanges->validateWays(poly, plugin);
+#if 1
+    // std::cerr << "SIZE " << wayval->size() << std::endl;
+    for (auto it = wayval->begin(); it != wayval->end(); ++it) {
+	ostats.applyChange(*it->get());
+    }
+#endif
+    timer.endTimer("validate ways");
+    
+>>>>>>> val
     return osmchanges;
 }
 
