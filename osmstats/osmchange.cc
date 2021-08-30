@@ -336,15 +336,15 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
             // change->setChangeID(std::stol(attr_pair.value));
             change->obj->change_id = std::stol(attr_pair.value);
         } else if (attr_pair.name == "lat") {
-            foo = reinterpret_cast<OsmNode *>(change->obj.get());
-            foo->setLatitude(std::stod(attr_pair.value));
+            auto lat = reinterpret_cast<OsmNode *>(change->obj.get());
+            lat->setLatitude(std::stod(attr_pair.value));
+	    nodecache[lat->id] = lat->point;
         } else if (attr_pair.name == "lon") {
             // obj->setLongitude(std::stod(attr_pair.value));
-            foo = reinterpret_cast<OsmNode *>(change->obj.get());
-            foo->setLongitude(std::stod(attr_pair.value));
-	    // nodecache[foo->id] = foo->point;
+            auto lon = reinterpret_cast<OsmNode *>(change->obj.get());
+            lon->setLongitude(std::stod(attr_pair.value));
+	    nodecache[lon->id] = lon->point;
         }
-	nodecache[foo->id] = foo->point;
     }
 }
 #endif  // EOF LIBXML
