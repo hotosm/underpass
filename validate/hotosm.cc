@@ -28,18 +28,19 @@
 #include <filesystem>
 #include <algorithm>
 #include <iterator>
+#include <valarray>
 
 #include <boost/dll/alias.hpp>
 #include <boost/function.hpp>
 #include <boost/config.hpp>
+#include <boost/dll/shared_library.hpp>
+#include <boost/dll/shared_library_load_mode.hpp>
 
 #include "data/yaml.hh"
 #include "hotosm.hh"
 #include "validate.hh"
 #include "osmstats/osmchange.hh"
 #include "log.hh"
-#include <boost/dll/shared_library.hpp>
-#include <boost/dll/shared_library_load_mode.hpp>
 
 using namespace logger;
 
@@ -90,6 +91,7 @@ std::shared_ptr<ValidateStatus>
 Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
 {
     auto status = std::make_shared<ValidateStatus>(node);
+    status->timestamp = boost::posix_time::microsec_clock::local_time();
     status->status.clear();
     if (yamls.size() == 0) {
 	log_error(_("No config files!"));
@@ -120,6 +122,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
 	} else {
 	    status->status.insert(badvalue);
 	}
+	status->center = node.point;
     }
     // std::cerr << keyexists << " : " << valexists << " : " << tests.config.size() << std::endl;
 
@@ -138,6 +141,7 @@ std::shared_ptr<ValidateStatus>
 Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 {
     auto status = std::make_shared<ValidateStatus>(way);
+    status->timestamp = boost::posix_time::microsec_clock::local_time();
     status->status.clear();
     if (yamls.size() == 0) {
 	log_error(_("No config files!"));
@@ -168,14 +172,38 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 	} else {
 	    status->status.insert(badvalue);
 	}
+	boost::geometry::centroid(way.linestring, status->center);
     }
-    if (way.refs.size() == 5 && way.tags.size() == 0) {
-    // if (way.numPoints() == 5 && way.isClosed() && way.tags.size() == 0) {
-	log_error(_("WARNING: %1% might be a building!"), way.id);
-	// buildings.push_back(way.id);
+    // See if the way is a closed polygon
+    if (way.refs.front() == way.refs.back()) {
+	// If it's a building, check for square corners
+#if 0
+	for (int i=0; i<way.linestring.size()-1; i++) {
+	    double x1 = boost::geometry::get<0>(way.linestring[i]);
+	    double y1 = boost::geometry::get<1>(way.linestring[i]);
+	    double x2 = boost::geometry::get<0>(way.linestring[i+1]);
+	    double y2 = boost::geometry::get<1>(way.linestring[1+1]);
+	    double angle = std::atan2(y2 - y1, x2 - x1) * 180 / M_PI;
+	    std::cerr << "Angle for ID " << way.id <<  " is: " << angle << std::endl;
+	}
+#else
+	if (way.tags.count("building") || way.tags.count("amenity")) {
+	    double x1 = boost::geometry::get<0>(way.linestring[0]);
+	    double y1 = boost::geometry::get<1>(way.linestring[0]);
+	    double x2 = boost::geometry::get<0>(way.linestring[1]);
+	    double y2 = boost::geometry::get<1>(way.linestring[1]);
+	    double angle = std::atan2(y2 - y1, x2 - x1) * 180 / M_PI;
+	    if (angle !=90) {
+		// std::cerr << "Angle for ID " << way.id <<  " is: " << angle << std::endl;
+		status->status.insert(badgeom);
+	    }
+	} else if (way.refs.size() == 5 && way.tags.size() == 0) {
+	    // See if it's closed, has 4 corners, but no tags
+	    log_error(_("WARNING: %1% might be a building!"), way.id);
+	}
+#endif
 	return status;
     }
-
     if (keyexists == tests.config.size() && valexists == tests.config.size()) {
 	status->status.clear();
 	status->status.insert(complete);
@@ -191,7 +219,7 @@ Hotosm::checkTag(const std::string &key, const std::string &value)
 {
     auto status = std::make_shared<ValidateStatus>();
 
-    log_trace("Hotosm::checkTag(%1%, %2%)", key, value);
+    // log_trace("Hotosm::checkTag(%1%, %2%)", key, value);
     status->status.insert(correct);
     // Check for an empty value
     if (!key.empty() && value.empty()) {
