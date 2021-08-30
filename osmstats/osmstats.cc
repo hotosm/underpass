@@ -365,10 +365,11 @@ QueryOSMStats::applyChange(ValidateStatus &validation)
 							   { osmobjects::relation, "relation"}
     };
     std::map<valerror_t, std::string> status = { {notags, "notags" },
-						{ complete, "complete"},
-						{ incomplete, "incomplete"},
-						{ badvalue, "badvalue"},
-						{ correct, "correct"}
+						{ complete, "complete" },
+						{ incomplete, "incomplete" },
+						{ badvalue, "badvalue" },
+						{ correct, "correct" },
+						{ badgeom, "badgeom" }
     };
     std::string query = "INSERT INTO validation (osm_id, type, status, timestamp, location) VALUES(";
     boost::format fmt("\'%s\', \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\')");
@@ -381,7 +382,7 @@ QueryOSMStats::applyChange(ValidateStatus &validation)
     tmp.pop_back();
     fmt % tmp;
     fmt % to_simple_string(validation.timestamp);
-    fmt % "POINT(-105.5238863 39.95427102)";
+    fmt % boost::geometry::wkt(validation.center);
     query += fmt.str();
     query += ") ON CONFLICT (osm_id) DO UPDATE ";
     query += " SET status = ARRAY[" + tmp + " ]::status[]";
