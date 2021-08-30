@@ -407,38 +407,20 @@ threadOsmChange(const replication::RemoteURL &remote,
     timer.endTimer("collectStats");
 
     timer.startTimer();
-    osmchanges->validateNodes(poly, plugin);
-    osmchanges->validateWays(poly, plugin);
-    timer.endTimer("validate");
-#if 0
     auto nodeval = osmchanges->validateNodes(poly, plugin);
-    std::cerr << "SIZE " << nodeval->size() << std::endl;
+    // std::cerr << "SIZE " << nodeval->size() << std::endl;
     for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
 	ostats.applyChange(*it->get());
     }
-#else
-    ValidateStatus vstat;
-    vstat.osm_id = 44444;
-    vstat.user_id = 12345;
-    vstat.change_id = 54321;
-    vstat.status.insert(incomplete);
-    vstat.timestamp = boost::posix_time::microsec_clock::local_time();
-    vstat.objtype = osmobjects::node;
-    // vstat.center = boost::geometry::wkt("POINT(-105.5238863 39.95427102)");
-    ostats.applyChange(vstat);
-#endif
     timer.endTimer("validate nodes");
     timer.startTimer();
     auto wayval = osmchanges->validateWays(poly, plugin);
-#if 1
     // std::cerr << "SIZE " << wayval->size() << std::endl;
     for (auto it = wayval->begin(); it != wayval->end(); ++it) {
 	ostats.applyChange(*it->get());
     }
-#endif
     timer.endTimer("validate ways");
     
->>>>>>> val
     return osmchanges;
 }
 
