@@ -150,9 +150,12 @@ public:
     std::vector<long> refs;     ///< Store all the nodes by reference ID
     linestring_t linestring;    ///< Store the node as a linestring
     polygon_t polygon;          ///< Store the nodes as a polygon
+    point_t center;             ///< Store the centroid of the way
 
     /// Add a reference to a node to this way
-    void addRef(long ref) { refs.push_back(ref); };
+    void addRef(long ref) {
+        refs.push_back(ref);
+    };
 
     /// Polygons are closed objects, like a building, while a highway
     /// is a linestring
