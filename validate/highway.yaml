@@ -1,11 +1,13 @@
 tags:
     - highway
+        - trunk
         - tertiary
         - secondary
         - unclassified
         - track
         - residential
         - path
+        - service
         - bridge
 
     - smoothness:
@@ -14,6 +16,7 @@ tags:
         - very bad
         - horrible
         - impassable
+        - very_horrible
 
     - surface:
         - dirt
