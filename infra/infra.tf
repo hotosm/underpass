@@ -98,7 +98,8 @@ resource "aws_iam_role" "underpass" {
 * Add CloudWatchAgent
 */
 resource "aws_instance" "file-processor" {
-  ami           = data.aws_ami.ubuntu-latest.id
+  //ami           = data.aws_ami.ubuntu-latest.id
+  ami           = var.file_processor_ami
   instance_type = var.file_processor_instance_type
 
   subnet_id              = aws_subnet.private[2].id

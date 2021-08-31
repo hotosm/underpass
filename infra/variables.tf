@@ -37,6 +37,7 @@ variable "database_username" {
   default = "mineworker"
 }
 
+// Ubuntu Server 20.04 LTS (HVM)
 variable "database_storage_min_capacity" {
   type    = number
   default = 100
@@ -107,3 +108,7 @@ variable "libpqxx_version" {
   default = "7.6.1"
 }
 
+variable "file_processor_ami" {
+  type    = string
+  default = "ami-09e67e426f25ce0d7"
+}
