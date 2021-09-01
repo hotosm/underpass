@@ -399,10 +399,12 @@ OsmChangeFile::dump(void)
             stats->dump();
         }
     }
+#if 0
     std::cerr << "\tDumping nodecache:" << std::endl;
     for (auto it = std::begin(nodecache); it != std::end(nodecache); ++it) {
         std::cerr << "\t\t: " << it->first << ": " << boost::geometry::wkt(it->second) << std::endl;
     }
+#endif
 }
 
 bool
