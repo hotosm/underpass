@@ -44,6 +44,7 @@ CREATE TYPE status AS ENUM ('notags', 'complete', 'incomplete', 'badvalue', 'cor
 
 CREATE TABLE public.validation (
     osm_id bigint,
+    user_id bigint,
     type objtype,
     status status[],
     timestamp timestamp with time zone,
