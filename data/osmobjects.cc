@@ -112,10 +112,13 @@ OsmWay::dump(void){
         std::cerr << "\tRefs: " << refs.size() << std::endl;
         std::string tmp;
         for (auto it = std::begin(refs); it != std::end(refs); ++it) {
-            tmp += std::to_string(*it) + ",";
+            tmp += std::to_string(*it) + ", ";
         }
+        tmp.pop_back();
+        tmp.pop_back();
         std::cerr <<"\t" << tmp << std::endl;
     }
+    std::cerr << boost::geometry::wkt(linestring) << std::endl;
 };
 
 } // EOF namespace osmobjects
