@@ -13,6 +13,13 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
+  default_tags {
+    tags = {
+      Project       = "underpass"
+      Maintainer    = "Yogesh Girikumar"
+      Documentation = "underpass-doc-stub"
+    }
+  }
 }
 
 provider "random" {
