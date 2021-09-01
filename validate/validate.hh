@@ -188,6 +188,23 @@ public:
     }
     virtual std::shared_ptr<ValidateStatus> checkTag(const std::string &key, const std::string &value) = 0;
     yaml::Yaml &operator[](const std::string &key) { return yamls[key]; };
+
+    double cornerAngle(const linestring_t &way) {
+	// first segment
+	double x1 = boost::geometry::get<0>(way[0]);
+	double y1 = boost::geometry::get<1>(way[0]);
+	double x2 = boost::geometry::get<0>(way[1]);
+	double y2 = boost::geometry::get<1>(way[1]);
+
+	// Next segment that intersects
+	double x3 = boost::geometry::get<0>(way[2]);
+	double y3 = boost::geometry::get<1>(way[2]);
+
+	double s1 = (y2-y1)/(x2-x1);
+	double s2 = (y3-y2)/(x3-x2);
+	double angle = std::atan((s2-s1)/(1+(s2*s1))) * 180 / M_PI;
+	return angle;
+    };
   protected:
     std::map<std::string, yaml::Yaml> yamls;
 };
