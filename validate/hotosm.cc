@@ -118,7 +118,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
 	if (tests.containsValue(vit->first, vit->second)) {
 	    // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
 	    valexists++;
-	    status->status.insert(correct);
+	    // status->status.insert(correct);
 	} else {
 	    status->status.insert(badvalue);
 	}
@@ -168,40 +168,34 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 	if (tests.containsValue(vit->first, vit->second)) {
 	    // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
 	    valexists++;
-	    status->status.insert(correct);
+	    // status->status.insert(correct);
 	} else {
 	    status->status.insert(badvalue);
 	}
+	if (vit->first == "building" && vit->second == "residential" && !way.tags.count("name")) {
+	    status->status.insert(badvalue);
+	}
+
+	if (way.linestring.size() == 0) {
+	    return status;
+	}
 	boost::geometry::centroid(way.linestring, status->center);
+	// std::cerr << "Way ID: " << way.id << " " << boost::geometry::wkt(status->center) << std::endl;
     }
     // See if the way is a closed polygon
     if (way.refs.front() == way.refs.back()) {
 	// If it's a building, check for square corners
-#if 0
-	for (int i=0; i<way.linestring.size()-1; i++) {
-	    double x1 = boost::geometry::get<0>(way.linestring[i]);
-	    double y1 = boost::geometry::get<1>(way.linestring[i]);
-	    double x2 = boost::geometry::get<0>(way.linestring[i+1]);
-	    double y2 = boost::geometry::get<1>(way.linestring[1+1]);
-	    double angle = std::atan2(y2 - y1, x2 - x1) * 180 / M_PI;
-	    std::cerr << "Angle for ID " << way.id <<  " is: " << angle << std::endl;
-	}
-#else
 	if (way.tags.count("building") || way.tags.count("amenity")) {
-	    double x1 = boost::geometry::get<0>(way.linestring[0]);
-	    double y1 = boost::geometry::get<1>(way.linestring[0]);
-	    double x2 = boost::geometry::get<0>(way.linestring[1]);
-	    double y2 = boost::geometry::get<1>(way.linestring[1]);
-	    double angle = std::atan2(y2 - y1, x2 - x1) * 180 / M_PI;
-	    if (angle !=90) {
-		// std::cerr << "Angle for ID " << way.id <<  " is: " << angle << std::endl;
+	    double angle = cornerAngle(way.linestring);
+	    std::cerr << "Angle for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
+	    if ((std::abs(angle) >= 95.0 || std::abs(angle) <= 83.0) && way.refs.size() < 12) {
+		std::cerr << "Bad Geometry for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
 		status->status.insert(badgeom);
 	    }
 	} else if (way.refs.size() == 5 && way.tags.size() == 0) {
 	    // See if it's closed, has 4 corners, but no tags
 	    log_error(_("WARNING: %1% might be a building!"), way.id);
 	}
-#endif
 	return status;
     }
     if (keyexists == tests.config.size() && valexists == tests.config.size()) {
@@ -220,7 +214,7 @@ Hotosm::checkTag(const std::string &key, const std::string &value)
     auto status = std::make_shared<ValidateStatus>();
 
     // log_trace("Hotosm::checkTag(%1%, %2%)", key, value);
-    status->status.insert(correct);
+    // status->status.insert(correct);
     // Check for an empty value
     if (!key.empty() && value.empty()) {
         log_debug(_("WARNING: empty value for tag \"%1%\""), key);
