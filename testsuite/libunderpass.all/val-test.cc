@@ -21,19 +21,20 @@
 #include <iostream>
 #include <string>
 #include <pqxx/pqxx>
-
-#include "validate/hotosm.hh"
-#include "validate/validate.hh"
-#include "osmstats/osmstats.hh"
+#include <unistd.h>
+#include <fcntl.h>
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/date_time/gregorian/gregorian.hpp"
 #include <boost/dll/import.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/format.hpp>
 
+#include "validate/hotosm.hh"
 #include "validate/validate.hh"
+#include "osmstats/osmstats.hh"
 #include "data/osmobjects.hh"
-#include "timer.hh"
 #include "log.hh"
 
 using namespace logger;
@@ -45,6 +46,9 @@ using namespace osmstats;
 TestState runtest;
 
 typedef std::shared_ptr<Validate>(plugin_t)();
+
+void test_geom(std::shared_ptr<Validate> &plugin);
+void test_plugin(std::shared_ptr<Validate> &plugin);
 
 int
 main(int argc, char *argv[])
@@ -181,4 +185,27 @@ main(int argc, char *argv[])
     } else {
         runtest.fail("Validate::checkWay(complete)");
     }
+
+    test_geom(plugin);
+}
+
+void
+test_geom(std::shared_ptr<Validate> &plugin)
+{
+    osmchange::OsmChangeFile ocf;
+    std::string filespec = SRCDIR;
+    filespec += "/rect.osc";
+    ocf.readChanges(filespec);
+    ocf.dump();
+
+    auto change = ocf.changes.front();
+    auto way = change->ways.front();
+    plugin->checkWay(*way, "building");
+    plugin->cornerAngle(way->linestring);
+    ocf.changes.pop_front();
+
+    way = change->ways.front();
+    plugin->checkWay(*way, "building");
+    plugin->cornerAngle(way->linestring);
+    ocf.changes.pop_front();
 }
