@@ -62,12 +62,13 @@ public:
             // if (interval > 0) {
             //     std::cout << msg << ": Operation took " << average/interval << " milliseconds" << std::endl;
             // } else {
+#ifdef DEBUG_TIMING
             std::cout << msg << ": Operation took " << std::setprecision(3)
                 //<< std::to_string(delta.total_seconds())
                       << (double)delta.total_milliseconds()/1000
                       << " seconds" << std::endl;
             // }
-            
+#endif
             counter = 0;
             average = 0;
         }
@@ -85,6 +86,5 @@ private:
     int counter = 0;            ///< counter for printing collected statistics
     double average = 0.0;           ///< The average time in each interval
 };
-
 
 #endif  // EOF __TIMER_HH__
