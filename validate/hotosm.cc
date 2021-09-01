@@ -65,7 +65,7 @@ Hotosm::Hotosm(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
             for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
                 osmobjects::OsmNode *node = it->get();
                 if (node->tags.size() > 0) {
-                    log_debug(_("Validating New Node ID %1% has tags"), node->id);
+                    // log_debug(_("Validating New Node ID %1% has tags"), node->id);
                     checkPOI(node);
                 } else {
                     continue;
@@ -187,9 +187,9 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 	// If it's a building, check for square corners
 	if (way.tags.count("building") || way.tags.count("amenity")) {
 	    double angle = cornerAngle(way.linestring);
-	    std::cerr << "Angle for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
+	    // std::cerr << "Angle for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
 	    if ((std::abs(angle) >= 95.0 || std::abs(angle) <= 83.0) && way.refs.size() < 12) {
-		std::cerr << "Bad Geometry for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
+		// std::cerr << "Bad Geometry for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
 		status->status.insert(badgeom);
 	    }
 	} else if (way.refs.size() == 5 && way.tags.size() == 0) {
