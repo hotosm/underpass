@@ -123,6 +123,7 @@ resource "aws_instance" "file-processor" {
 
   tags = {
     Name = "underpass-processor-${count.index}"
+    Role = "Changefile processor server"
   }
 
   // Install everything
@@ -184,6 +185,7 @@ resource "aws_instance" "api" {
 
   tags = {
     Name = "underpass-api"
+    Role = "API Server"
   }
 
   count = var.api_server_count
@@ -213,7 +215,13 @@ resource "random_password" "underpass_database_password_string" {
 
 resource "aws_secretsmanager_secret" "underpass_database_credentials" {
   name = "underpass-db"
+
+  tags = {
+    name = "underpass"
+    Role = "Database access credentials"
+  }
 }
+
 resource "aws_secretsmanager_secret_version" "underpass_database_credentials" {
   secret_id = aws_secretsmanager_secret.underpass_database_credentials.id
   secret_string = jsonencode(zipmap(
@@ -249,6 +257,11 @@ resource "aws_db_instance" "underpass" {
   password                  = random_password.underpass_database_password_string.result
   skip_final_snapshot       = true
   final_snapshot_identifier = var.database_final_snapshot_identifier
+
+  tags = {
+    name = "underpass"
+    Role = "Database server"
+  }
 }
 
 data "aws_route53_zone" "hotosm-org" {
@@ -276,6 +289,7 @@ resource "aws_s3_bucket" "underpass" {
 
   tags = {
     name = "underpass"
+    Role = "Backup store"
   }
 
 }
