@@ -100,9 +100,9 @@ class StateFile
 public:
     StateFile(void) {
         //timestamp = boost::posix_time::second_clock::local_time();
-        timestamp == boost::posix_time::not_a_date_time;
-        created_at == boost::posix_time::not_a_date_time;
-        closed_at == boost::posix_time::not_a_date_time;
+        timestamp = boost::posix_time::not_a_date_time;
+        created_at = boost::posix_time::not_a_date_time;
+        closed_at = boost::posix_time::not_a_date_time;
         sequence = 0;
     };
 
