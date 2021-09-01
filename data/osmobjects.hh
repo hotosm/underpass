@@ -40,6 +40,7 @@ typedef boost::geometry::model::d2::point_xy<double> point_t;
 typedef boost::geometry::model::polygon<point_t> polygon_t;
 typedef boost::geometry::model::multi_polygon<polygon_t> multipolygon_t;
 typedef boost::geometry::model::linestring<point_t> linestring_t;
+typedef boost::geometry::model::segment<point_t> segment_t;
 typedef boost::geometry::model::point<double, 2, boost::geometry::cs::spherical_equatorial<boost::geometry::degree> > sphere_t;
 
 /// \namespace osmobjects
@@ -118,16 +119,16 @@ public:
     };
     /// Set the latitude of this node
     void setLatitude(double lat) {
-        point.set<0>(lat);
+        point.set<1>(lat);
     };
     /// Set the longitude of this node
     void setLongitude(double lon) {
-        point.set<1>(lon);
+        point.set<0>(lon);
     };
     /// Set the location of this node
     void setPoint(double lat, double lon) {
-        point.set<0>(lat);
-        point.set<1>(lon);
+        point.set<1>(lat);
+        point.set<0>(lon);
     };
 
     /// Dump internal data to the terminal, only for debugging
