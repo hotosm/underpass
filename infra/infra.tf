@@ -98,7 +98,8 @@ resource "aws_iam_role" "underpass" {
 * Add CloudWatchAgent
 */
 resource "aws_instance" "file-processor" {
-  ami           = data.aws_ami.ubuntu-latest.id
+  ami = data.aws_ami.ubuntu-latest.id
+  // ami           = var.file_processor_ami
   instance_type = var.file_processor_instance_type
 
   subnet_id              = aws_subnet.private[2].id
@@ -124,8 +125,6 @@ resource "aws_instance" "file-processor" {
     Name = "underpass-processor-${count.index}"
   }
 
-  count = var.file_processor_count
-
   // Install everything
   user_data = templatefile(
     "${path.module}/bootstrap.tpl",
@@ -134,6 +133,17 @@ resource "aws_instance" "file-processor" {
       libpqxx_version = var.libpqxx_version
     }
   )
+
+  count = var.file_processor_count
+
+  lifecycle {
+    create_before_destroy = false
+    prevent_destroy       = false
+    ignore_changes = [
+      # Ignore changes to AMI
+      ami,
+    ]
+  }
 }
 
 /*
@@ -177,6 +187,15 @@ resource "aws_instance" "api" {
   }
 
   count = var.api_server_count
+
+  lifecycle {
+    create_before_destroy = false
+    prevent_destroy       = false
+    ignore_changes = [
+      # Ignore changes to AMI
+      ami,
+    ]
+  }
 }
 
 resource "random_password" "underpass_database_password_string" {
