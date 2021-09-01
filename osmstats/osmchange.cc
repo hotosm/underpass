@@ -238,7 +238,7 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
 {
     // If a change is in progress, apply to to that instance
     std::shared_ptr<OsmChange> change;
-    // log_debug(_("NAME: %1%"), name));
+    // log_debug(_("NAME: %1%"), name);
     // Top level element can be ignored
     if (name == "osmChange") {
         return;
@@ -283,16 +283,14 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
     } else if (name == "nd") {
 	long ref = std::stol(attributes[0].value);
         changes.back()->addRef(ref);
-	if (nodecache[ref].get<0>() != 0) {
+	if (nodecache.count(ref)) {
 	    auto way = reinterpret_cast<OsmWay *>(change->obj.get());
 	    boost::geometry::append(way->linestring, nodecache[ref]);
-	    // boost::geometry::append(way->polygon.outer(), nodecache[ref]);
 	}
     }
 
     // process the attributes
     std::string cache;
-    OsmNode *foo;
     for (const auto& attr_pair : attributes) {
         // Sometimes the data string is unicode
         // std::wcout << "\tPAIR: " << attr_pair.name << " = " << attr_pair.value);
@@ -340,7 +338,6 @@ OsmChangeFile::on_start_element(const Glib::ustring& name,
             lat->setLatitude(std::stod(attr_pair.value));
 	    nodecache[lat->id] = lat->point;
         } else if (attr_pair.name == "lon") {
-            // obj->setLongitude(std::stod(attr_pair.value));
             auto lon = reinterpret_cast<OsmNode *>(change->obj.get());
             lon->setLongitude(std::stod(attr_pair.value));
 	    nodecache[lon->id] = lon->point;
@@ -402,6 +399,10 @@ OsmChangeFile::dump(void)
             stats->dump();
         }
     }
+    std::cerr << "\tDumping nodecache:" << std::endl;
+    for (auto it = std::begin(nodecache); it != std::end(nodecache); ++it) {
+        std::cerr << "\t\t: " << it->first << ": " << boost::geometry::wkt(it->second) << std::endl;
+    }
 }
 
 bool
@@ -412,6 +413,7 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
         OsmChange *change = it->get();
 	for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
 	    OsmNode *node = nit->get();
+	    nodecache[node->id] = node->point;
 	    // log_debug("ST_GeomFromEWKT(\'SRID=4326; %1%\'))", boost::geometry::wkt(node->point));
 	    if (!boost::geometry::within(node->point, poly)) {
 		// log_debug(_("Validating Node %1% is not in a priority area"), node->change_id);
@@ -421,7 +423,6 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
 		break;
 	    } else {
 		// log_debug(_("Validating Node %1% is in a priority area"), node->change_id);
-		// nodecache[node->id] = node->point;
 		node->priority = true;
 	    }
 	}
@@ -483,7 +484,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 	    // Filter data by polygon
 	    //if (!boost::geometry::within(node->point, poly)) {
 	    if (!node->priority) {
-		log_debug(_("Changeset with node %1% is not in a priority area"), node->change_id);
+		// log_debug(_("Changeset with node %1% is not in a priority area"), node->change_id);
 		continue;
 	    } else {
 		// log_debug(_("Changeset with node %1% is in a priority area"), node->change_id);
@@ -529,7 +530,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 		log_debug(_("Changeset with way %1% is not in a priority area"), way->change_id);
 		continue;
 	    } else {
-		// log_debug(_("Changeset with way %1% is in a priority area"), way->change_id);
+		log_debug(_("Changeset with way %1% is in a priority area"), way->change_id);
 	    }
 
 	    // Some older ways in a way wound up with this one tag, which nobody noticed,
@@ -564,7 +565,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 		    boost::geometry::centroid(way->linestring, pt);
 		    way->center = pt;
 		    if (!boost::geometry::within(pt, poly)) {
-			// log_debug(_("Changeset with way %1% is not in a priority area"), way->change_id);
+			log_debug(_("Changeset with way %1% is not in a priority area"), way->change_id);
 			continue;
 		    } else {
 			log_debug(_("Changeset with way %1% is in a priority area"), way->change_id);
@@ -831,7 +832,9 @@ OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate
 		    //std::cerr << *wit << " Way " << way->id << " is not complete" << std::endl;
 		    // way->dump();
 		}
-		totals->push_back(status);
+		if (status->status.size() > 0) {
+		    totals->push_back(status);
+		}
 	    }
 	}
     }
