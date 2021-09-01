@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version="0.6" generator="Osmosis 0.47.4">
+  <create>
+    <node id='-111678' lat='4.62042952837' lon='21.72600147299' />
+    <node id='-111679' lat='4.62042742837' lon='21.72608657299' />
+    <node id='-111680' lat='4.62036492836' lon='21.72608497299' />
+    <node id='-111681' lat='4.62036702836' lon='21.72599987299' />
+    <way id='-101790'>
+      <nd ref='-111678' />
+      <nd ref='-111679' />
+      <nd ref='-111680' />
+      <nd ref='-111681' />
+      <nd ref='-111678' />
+      <tag k='building' v='yes' />
+      <tag k='source' v='Bing' />
+      <tag k='note' v='Good rectangular building' />
+    </way>
+  </create>
+  <create>
+    <node id='-111736' lat='4.6242426163' lon='21.72599487546' />
+    <node id='-111737' lat='4.62422382239' lon='21.72606476442' />
+    <node id='-111738' lat='4.62414589783' lon='21.72605131779' />
+    <node id='-111739' lat='4.6241942' lon='21.7259707' />
+    <way id='-101806'>
+      <nd ref='-111736' />
+      <nd ref='-111737' />
+      <nd ref='-111738' />
+      <nd ref='-111739' />
+      <nd ref='-111736' />
+      <tag k='building' v='yes' />
+      <tag k='source' v='Bing' />
+      <tag k='note' v='Not a rectangular building' />
+    </way>
+  </create>
+</osmChange>
