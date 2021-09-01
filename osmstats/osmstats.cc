@@ -77,7 +77,7 @@ QueryOSMStats::lookupHashtag(const std::string &hashtag) {
 
 bool
 QueryOSMStats::applyChange(osmchange::ChangeStats &change) {
-    std::cout << "Applying OsmChange data" << std::endl;
+    // std::cout << "Applying OsmChange data" << std::endl;
 
     if (hasHashtag(change.change_id)) {
         std::cout << "Has hashtag for id: " << change.change_id << std::endl;
@@ -180,8 +180,8 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change) {
 
 bool
 QueryOSMStats::applyChange(changeset::ChangeSet &change) {
-    log_debug(_("Applying ChangeSet data"));
-    change.dump();
+    // log_debug(_("Applying ChangeSet data"));
+    // change.dump();
 
     // Some old changefiles have no user information
     std::string query = "INSERT INTO users VALUES(";
@@ -273,7 +273,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change) {
     const double fudge{0.0001};
 
     if (fff < fudge) {
-        log_debug(_("FIXME: line too short! "), fff);
+        // log_debug(_("FIXME: line too short! "), fff);
         return false;
     }
 
@@ -297,7 +297,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change) {
     }
 
     if (max_lon < 0 && min_lat < 0) {
-        log_error(_("WARNING: single point! "), change.id);
+        // log_error(_("WARNING: single point! "), change.id);
         min_lat = change.min_lat + (fudge / 2);
         max_lat = change.max_lat + (fudge / 2);
         min_lon = change.min_lon - (fudge / 2);
@@ -306,7 +306,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change) {
     }
 
     if (change.num_changes == 0) {
-        log_error(_("WARNING: no changes! "), change.id);
+        // log_error(_("WARNING: no changes! "), change.id);
         return false;
     }
 
@@ -344,7 +344,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change) {
     // 	query += "\', closed_at=\'" + to_simple_string(change.closed_at);
     // }
     query += "\', bbox=" + bbox.substr(2) + ")'))";
-    log_debug(_("QUERY: %1%"), query);
+    // log_debug(_("QUERY: %1%"), query);
     result = worker.exec(query);
 
     // Commit the results to the database
@@ -382,7 +382,15 @@ QueryOSMStats::applyChange(ValidateStatus &validation)
     tmp.pop_back();
     fmt % tmp;
     fmt % to_simple_string(validation.timestamp);
+    // Postgres wants the order of lat,lon reversed from how they
+    // are stored in the WKT.
+#if 0
+    std::string tmpp = "POINT(" + std::to_string(validation.center.get<1>());
+    tmpp += " " + std::to_string(validation.center.get<0>()) + ")";
+    fmt % tmpp;
+#else
     fmt % boost::geometry::wkt(validation.center);
+#endif
     query += fmt.str();
     query += ") ON CONFLICT (osm_id) DO UPDATE ";
     query += " SET status = ARRAY[" + tmp + " ]::status[]";
@@ -396,7 +404,7 @@ bool
 QueryOSMStats::hasHashtag(long changeid) {
 #if 0
     std::string query = "SELECT COUNT(hashtag_id) FROM changesets_hashtags WHERE changeset_id=" + std::to_string( changeid ) + ";";
-    log_debug( _( "QUERY: %1%" ), query );
+    // log_debug( _( "QUERY: %1%" ), query );
     pqxx::work worker( *sdb );
     pqxx::result result = worker.exec( query );
     worker.commit();
