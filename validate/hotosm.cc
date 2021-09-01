@@ -35,6 +35,8 @@
 #include <boost/config.hpp>
 #include <boost/dll/shared_library.hpp>
 #include <boost/dll/shared_library_load_mode.hpp>
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
 
 #include "data/yaml.hh"
 #include "hotosm.hh"
@@ -92,7 +94,8 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
 {
     auto status = std::make_shared<ValidateStatus>(node);
     status->timestamp = boost::posix_time::microsec_clock::local_time();
-    status->status.clear();
+    status->user_id = node.uid;
+
     if (yamls.size() == 0) {
 	log_error(_("No config files!"));
 	return status;
@@ -142,7 +145,8 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 {
     auto status = std::make_shared<ValidateStatus>(way);
     status->timestamp = boost::posix_time::microsec_clock::local_time();
-    status->status.clear();
+    status->user_id = way.uid;
+
     if (yamls.size() == 0) {
 	log_error(_("No config files!"));
 	return status;
@@ -182,13 +186,14 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 	boost::geometry::centroid(way.linestring, status->center);
 	// std::cerr << "Way ID: " << way.id << " " << boost::geometry::wkt(status->center) << std::endl;
     }
+    // boost::geometry::correct(way.polygon);
     // See if the way is a closed polygon
     if (way.refs.front() == way.refs.back()) {
 	// If it's a building, check for square corners
 	if (way.tags.count("building") || way.tags.count("amenity")) {
 	    double angle = cornerAngle(way.linestring);
 	    // std::cerr << "Angle for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
-	    if ((std::abs(angle) >= 95.0 || std::abs(angle) <= 83.0) && way.refs.size() < 12) {
+	    if ((std::abs(angle) >= 92.0 || std::abs(angle) <= 88.0) && way.refs.size() < 12) {
 		// std::cerr << "Bad Geometry for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
 		status->status.insert(badgeom);
 	    }

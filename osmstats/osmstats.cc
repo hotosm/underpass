@@ -371,9 +371,10 @@ QueryOSMStats::applyChange(ValidateStatus &validation)
 						{ correct, "correct" },
 						{ badgeom, "badgeom" }
     };
-    std::string query = "INSERT INTO validation (osm_id, type, status, timestamp, location) VALUES(";
-    boost::format fmt("\'%s\', \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)");
+    std::string query = "INSERT INTO validation (osm_id, user_id, type, status, timestamp, location) VALUES(";
+    boost::format fmt("%d, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)");
     fmt % validation.osm_id;
+    fmt % validation.user_id;
     fmt % objtypes[validation.objtype];
     std::string tmp;
     for (auto it = validation.status.begin(); it != validation.status.end(); ++it) {
