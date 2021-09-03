@@ -54,7 +54,7 @@ Osm2Pgsql::getLastUpdate()
 }
 
 bool
-Osm2Pgsql::updateDatabase(std::unique_ptr<std::istream> osm_changes)
+Osm2Pgsql::updateDatabase(std::shared_ptr<std::istream> osm_changes)
 {
     if (!sdb->is_open()) {
         log_error(

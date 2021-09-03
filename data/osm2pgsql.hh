@@ -48,10 +48,10 @@ class Osm2Pgsql : public pq::Pq
 
     ///
     /// \brief updateDatabase updates the DB with osm changes.
-    /// \param osm_changes input stream with osm changes, ownership is transferred.
+    /// \param osm_changes input stream with osm changes.
     /// \return TRUE on success, errors are logged.
     ///
-    bool updateDatabase(std::unique_ptr<std::istream> osm_changes);
+    bool updateDatabase(std::shared_ptr<std::istream> osm_changes);
 
     bool connect(const std::string &dburl);
 
