@@ -173,6 +173,30 @@ main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     } else {
         // Check for changes!
+        const auto results{
+            testosm2pgsql.query("SELECT name, ST_X(way) AS x FROM " +
+                                testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                ".planet_osm_point ORDER BY name")};
+        if (results.at(0)["name"]
+                .as(std::string())
+                .compare("Some interesting point new name") != 0) {
+            runtest.fail("Osm2Pgsql::updateDatabase() - retrieve 0");
+            exit(EXIT_FAILURE);
+        }
+        if (results.at(1)["name"]
+                .as(std::string())
+                .compare("Some other interesting point (44)") != 0) {
+            runtest.fail("Osm2Pgsql::updateDatabase() - retrieve 1");
+            exit(EXIT_FAILURE);
+        }
+        if (results.at(0)["x"].as(double()) != 3.12) {
+            runtest.fail("Osm2Pgsql::updateDatabase() - retrieve X 0");
+            exit(EXIT_FAILURE);
+        }
+        if (results.at(1)["x"].as(double()) != 3.0) {
+            runtest.fail("Osm2Pgsql::updateDatabase() - retrieve X 1");
+            exit(EXIT_FAILURE);
+        }
         runtest.pass("Osm2Pgsql::updateDatabase()");
     }
 }
