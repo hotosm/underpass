@@ -30,6 +30,7 @@
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/filesystem/path.hpp>
+#include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
@@ -49,6 +50,9 @@ class TestOsm2Pgsql : public Osm2Pgsql
     //! Clear the test DB and fill it with with initial test data
     bool init_test_case()
     {
+
+        logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
+        dbglogfile.setVerbosity();
 
         const std::string dbconn{getenv("UNDERPASS_TEST_DB_CONN")
                                      ? getenv("UNDERPASS_TEST_DB_CONN")
@@ -98,12 +102,26 @@ class TestOsm2Pgsql : public Osm2Pgsql
                                  std::istreambuf_iterator<char>());
             assert(!data_sql.empty());
             worker.exec0(data_sql);
+
+            // Load changes
+            const auto changes_data_path{base_path / "testdata" /
+                                         "simple_test.osc"};
+            std::ifstream osm_change(changes_data_path,
+                                     std::ios_base::in | std::ios_base::binary);
+            boost::iostreams::filtering_istream osm_change_inbuf;
+            osm_change_inbuf.push(osm_change);
+            std::stringstream sstream;
+            auto bytes_written =
+                boost::iostreams::copy(osm_change_inbuf, sstream);
+            osm_changes = sstream.str();
+            assert(bytes_written > 0);
         }
 
         return true;
     };
 
     std::string source_tree_root;
+    std::string osm_changes;
 };
 
 int
@@ -139,7 +157,7 @@ main(int argc, char *argv[])
     }
 
     const auto last_update{testosm2pgsql.getLastUpdate()};
-    // std::cout << "ts: " << to_iso_extended_string(last_update) << std::endl;
+    std::cout << "ts: " << to_iso_extended_string(last_update) << std::endl;
     if (!last_update.is_not_a_date_time() &&
         to_iso_extended_string(last_update).compare("2021-08-05T23:38:28") ==
             0) {
@@ -147,5 +165,14 @@ main(int argc, char *argv[])
     } else {
         runtest.fail("Osm2Pgsql::getLastUpdate()");
         exit(EXIT_FAILURE);
+    }
+
+    // Read the osm change from file and process it
+    if (!testosm2pgsql.updateDatabase(testosm2pgsql.osm_changes)) {
+        runtest.fail("Osm2Pgsql::updateDatabase()");
+        exit(EXIT_FAILURE);
+    } else {
+        // Check for changes!
+        runtest.pass("Osm2Pgsql::updateDatabase()");
     }
 }

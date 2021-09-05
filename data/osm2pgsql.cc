@@ -25,6 +25,7 @@
 #include <chrono>
 #include <string>
 
+#include <boost/iostreams/copy.hpp>
 #include <boost/process.hpp>
 using namespace boost::process;
 
@@ -35,9 +36,12 @@ using namespace logger;
 
 namespace osm2pgsql {
 
+const std::string Osm2Pgsql::OSM2PGSQL_DEFAULT_SCHEMA_NAME = "osm2pgsql_pgsql";
+
 logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
 
-Osm2Pgsql::Osm2Pgsql(const std::string &_dburl)
+Osm2Pgsql::Osm2Pgsql(const std::string &_dburl, const std::string &schema)
+    : schema(schema)
 {
     if (!connect(_dburl)) {
         log_error(_("Could not connect to osm2pgsql server %1%"), _dburl);
@@ -54,7 +58,7 @@ Osm2Pgsql::getLastUpdate()
 }
 
 bool
-Osm2Pgsql::updateDatabase(std::shared_ptr<std::istream> osm_changes)
+Osm2Pgsql::updateDatabase(const std::string &osm_changes)
 {
     if (!sdb->is_open()) {
         log_error(
@@ -62,23 +66,39 @@ Osm2Pgsql::updateDatabase(std::shared_ptr<std::istream> osm_changes)
             dburl);
         return false;
     }
-    ipstream out;
+    // -l for 4326
     std::string osm2pgsql_update_command{
-        "osm2pgsql --append -r xml -s -C 300 -G --hstore -d postgresql://"};
+        "osm2pgsql -l --append -r xml -s -C 300 -G --hstore --middle-schema=" +
+        schema + " --output-pgsql-schema=" + schema + " -d postgresql://"};
     // Append DB url in the form: postgresql://[user[:password]@][netloc][:port][,...][/dbname][?param1=value1&...]
     osm2pgsql_update_command.append(dburl);
-    boost::process::pipe inpipe;
-    // Fill the pipe
+    // Read from stdin
+    osm2pgsql_update_command.append(" -");
+
+    log_debug(_("Executing osm2pgsql, command: %1%"), osm2pgsql_update_command);
+
+    ipstream out;
+    ipstream err;
+    opstream in;
+
     child osm2pgsql_update_process(osm2pgsql_update_command, std_out > out,
-                                   std_in < inpipe);
-    std::thread pipe_writer([&] {
-        // FIXME: Fill the pipe here!
-    });
-    // Wait for 2 minutes
+                                   std_err > err, std_in < in);
+
+    in.write(osm_changes.data(), osm_changes.size());
+    in.close();
+    in.pipe().close();
+
     // FIXME: make wait_for duration an arg
-    bool result{osm2pgsql_update_process.wait_for(std::chrono::minutes{2})};
-    pipe_writer.join();
-    return result && osm2pgsql_update_process.exit_code() == EXIT_SUCCESS;
+    bool result{osm2pgsql_update_process.running() &&
+                osm2pgsql_update_process.wait_for(std::chrono::minutes{1}) &&
+                osm2pgsql_update_process.exit_code() == EXIT_SUCCESS};
+    if (!result) {
+        std::stringstream err_mesg;
+        boost::iostreams::copy(err, err_mesg);
+        log_error(_("Error running osm2pgsql command %1%\n%2%"),
+                  osm2pgsql_update_command, err_mesg.str());
+    }
+    return result;
 }
 
 bool

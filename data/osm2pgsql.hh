@@ -39,19 +39,21 @@ namespace osm2pgsql {
 
 class Osm2Pgsql : public pq::Pq
 {
-
   public:
+    static const std::string OSM2PGSQL_DEFAULT_SCHEMA_NAME;
+
     Osm2Pgsql() = default;
-    Osm2Pgsql(const std::string &dburl);
+    Osm2Pgsql(const std::string &dburl,
+              const std::string &schema = OSM2PGSQL_DEFAULT_SCHEMA_NAME);
 
     ptime getLastUpdate();
 
     ///
     /// \brief updateDatabase updates the DB with osm changes.
-    /// \param osm_changes input stream with osm changes.
+    /// \param osm_changes input data (decompressed) from an OSC file.
     /// \return TRUE on success, errors are logged.
     ///
-    bool updateDatabase(std::shared_ptr<std::istream> osm_changes);
+    bool updateDatabase(const std::string &osm_changes);
 
     bool connect(const std::string &dburl);
 
@@ -60,6 +62,7 @@ class Osm2Pgsql : public pq::Pq
 
     ptime last_update = not_a_date_time;
     std::string dburl;
+    std::string schema = OSM2PGSQL_DEFAULT_SCHEMA_NAME;
 };
 
 } // namespace osm2pgsql

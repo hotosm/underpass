@@ -23,13 +23,6 @@ SET row_security = off;
 CREATE SCHEMA osm2pgsql_pgsql;
 
 
---
--- Name: osm2pgsql_pgsql_middle; Type: SCHEMA; Schema: -; Owner: -
---
-
-CREATE SCHEMA osm2pgsql_pgsql_middle;
-
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -347,10 +340,10 @@ CREATE TABLE osm2pgsql_pgsql.planet_osm_roads (
 
 
 --
--- Name: planet_osm_nodes; Type: TABLE; Schema: osm2pgsql_pgsql_middle; Owner: -
+-- Name: planet_osm_nodes; Type: TABLE; Schema: osm2pgsql_pgsql; Owner: -
 --
 
-CREATE TABLE osm2pgsql_pgsql_middle.planet_osm_nodes (
+CREATE TABLE osm2pgsql_pgsql.planet_osm_nodes (
     id bigint NOT NULL,
     lat integer NOT NULL,
     lon integer NOT NULL
@@ -358,10 +351,10 @@ CREATE TABLE osm2pgsql_pgsql_middle.planet_osm_nodes (
 
 
 --
--- Name: planet_osm_rels; Type: TABLE; Schema: osm2pgsql_pgsql_middle; Owner: -
+-- Name: planet_osm_rels; Type: TABLE; Schema: osm2pgsql_pgsql; Owner: -
 --
 
-CREATE TABLE osm2pgsql_pgsql_middle.planet_osm_rels (
+CREATE TABLE osm2pgsql_pgsql.planet_osm_rels (
     id bigint NOT NULL,
     way_off smallint,
     rel_off smallint,
@@ -372,10 +365,10 @@ CREATE TABLE osm2pgsql_pgsql_middle.planet_osm_rels (
 
 
 --
--- Name: planet_osm_ways; Type: TABLE; Schema: osm2pgsql_pgsql_middle; Owner: -
+-- Name: planet_osm_ways; Type: TABLE; Schema: osm2pgsql_pgsql; Owner: -
 --
 
-CREATE TABLE osm2pgsql_pgsql_middle.planet_osm_ways (
+CREATE TABLE osm2pgsql_pgsql.planet_osm_ways (
     id bigint NOT NULL,
     nodes bigint[] NOT NULL,
     tags text[]
@@ -383,26 +376,26 @@ CREATE TABLE osm2pgsql_pgsql_middle.planet_osm_ways (
 
 
 --
--- Name: planet_osm_nodes planet_osm_nodes_pkey; Type: CONSTRAINT; Schema: osm2pgsql_pgsql_middle; Owner: -
+-- Name: planet_osm_nodes planet_osm_nodes_pkey; Type: CONSTRAINT; Schema: osm2pgsql_pgsql; Owner: -
 --
 
-ALTER TABLE ONLY osm2pgsql_pgsql_middle.planet_osm_nodes
+ALTER TABLE ONLY osm2pgsql_pgsql.planet_osm_nodes
     ADD CONSTRAINT planet_osm_nodes_pkey PRIMARY KEY (id);
 
 
 --
--- Name: planet_osm_rels planet_osm_rels_pkey; Type: CONSTRAINT; Schema: osm2pgsql_pgsql_middle; Owner: -
+-- Name: planet_osm_rels planet_osm_rels_pkey; Type: CONSTRAINT; Schema: osm2pgsql_pgsql; Owner: -
 --
 
-ALTER TABLE ONLY osm2pgsql_pgsql_middle.planet_osm_rels
+ALTER TABLE ONLY osm2pgsql_pgsql.planet_osm_rels
     ADD CONSTRAINT planet_osm_rels_pkey PRIMARY KEY (id);
 
 
 --
--- Name: planet_osm_ways planet_osm_ways_pkey; Type: CONSTRAINT; Schema: osm2pgsql_pgsql_middle; Owner: -
+-- Name: planet_osm_ways planet_osm_ways_pkey; Type: CONSTRAINT; Schema: osm2pgsql_pgsql; Owner: -
 --
 
-ALTER TABLE ONLY osm2pgsql_pgsql_middle.planet_osm_ways
+ALTER TABLE ONLY osm2pgsql_pgsql.planet_osm_ways
     ADD CONSTRAINT planet_osm_ways_pkey PRIMARY KEY (id);
 
 
@@ -463,17 +456,17 @@ CREATE INDEX planet_osm_roads_way_idx ON osm2pgsql_pgsql.planet_osm_roads USING 
 
 
 --
--- Name: planet_osm_rels_parts_idx; Type: INDEX; Schema: osm2pgsql_pgsql_middle; Owner: -
+-- Name: planet_osm_rels_parts_idx; Type: INDEX; Schema: osm2pgsql_pgsql; Owner: -
 --
 
-CREATE INDEX planet_osm_rels_parts_idx ON osm2pgsql_pgsql_middle.planet_osm_rels USING gin (parts) WITH (fastupdate=off);
+CREATE INDEX planet_osm_rels_parts_idx ON osm2pgsql_pgsql.planet_osm_rels USING gin (parts) WITH (fastupdate=off);
 
 
 --
--- Name: planet_osm_ways_nodes_idx; Type: INDEX; Schema: osm2pgsql_pgsql_middle; Owner: -
+-- Name: planet_osm_ways_nodes_idx; Type: INDEX; Schema: osm2pgsql_pgsql; Owner: -
 --
 
-CREATE INDEX planet_osm_ways_nodes_idx ON osm2pgsql_pgsql_middle.planet_osm_ways USING gin (nodes) WITH (fastupdate=off);
+CREATE INDEX planet_osm_ways_nodes_idx ON osm2pgsql_pgsql.planet_osm_ways USING gin (nodes) WITH (fastupdate=off);
 
 
 --

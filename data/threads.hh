@@ -56,6 +56,7 @@ namespace ssl = boost::asio::ssl;
 namespace http = beast::http;
 using tcp = net::ip::tcp;
 
+#include "data/osm2pgsql.hh"
 #include "osmstats/osmstats.hh"
 #include "osmstats/replication.hh"
 #include "validate/validate.hh"
@@ -92,7 +93,7 @@ startStateThreads(const std::string &base, const std::string &file);
 /// minutely change files and processes them.
 extern void
 startMonitor(const replication::RemoteURL &remote, const multipolygon_t &poly,
-             const std::string &dburl);
+             const std::string &dburl, const std::string &osm2pgsql_dburl);
 
 /// Updates the states table in the Underpass database
 extern std::shared_ptr<replication::StateFile>
@@ -103,6 +104,7 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file);
 extern std::shared_ptr<osmchange::OsmChangeFile>
 threadOsmChange(const replication::RemoteURL &remote,
                 const multipolygon_t &poly, osmstats::QueryOSMStats &ostats,
+                osm2pgsql::Osm2Pgsql &o2pgsql,
                 std::shared_ptr<Validate> &plugin);
 
 /// This updates several fields in the raw_changesets table, which are part of
