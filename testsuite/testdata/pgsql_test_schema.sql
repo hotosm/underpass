@@ -25,8 +25,6 @@ CREATE SCHEMA osm2pgsql_pgsql;
 
 SET default_tablespace = '';
 
-SET default_table_access_method = heap;
-
 --
 -- Name: planet_osm_line; Type: TABLE; Schema: osm2pgsql_pgsql; Owner: -
 --
