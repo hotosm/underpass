@@ -136,6 +136,10 @@ main(int argc, char *argv[])
 
     TestOsm2Pgsql testosm2pgsql;
 
+    // Test that default constructed object have a schema set
+    assert(testosm2pgsql.getSchema().compare(
+               testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME) == 0);
+
     testosm2pgsql.init_test_case();
 
     const std::string test_osm2pgsql_db_name{"osm2pgsql_test"};

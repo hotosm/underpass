@@ -41,7 +41,7 @@ const std::string Osm2Pgsql::OSM2PGSQL_DEFAULT_SCHEMA_NAME = "osm2pgsql_pgsql";
 logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
 
 Osm2Pgsql::Osm2Pgsql(const std::string &_dburl, const std::string &schema)
-    : schema(schema)
+    : pq::Pq(), schema(schema)
 {
     if (!connect(_dburl)) {
         log_error(_("Could not connect to osm2pgsql server %1%"), _dburl);
@@ -147,6 +147,18 @@ Osm2Pgsql::getLastUpdateFromDb()
     } else {
         return false;
     }
+}
+
+const std::string &
+Osm2Pgsql::getSchema() const
+{
+    return schema;
+}
+
+void
+Osm2Pgsql::setSchema(const std::string &newSchema)
+{
+    schema = newSchema;
 }
 
 } // namespace osm2pgsql
