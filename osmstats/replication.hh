@@ -50,6 +50,8 @@ using namespace boost::gregorian;
 #include <boost/asio/ssl/error.hpp>
 #include <boost/asio/ssl/stream.hpp>
 namespace ssl = boost::asio::ssl; // from <boost/asio/ssl.hpp>
+#include <boost/format.hpp>
+using boost::format;
 
 #include "data/threads.hh"
 #include "osmstats/changeset.hh"
@@ -98,6 +100,9 @@ typedef enum { minutely, hourly, daily, changeset } frequency_t;
 class StateFile
 {
   public:
+    ///
+    /// \brief constructs an invalid StateFile
+    /// \see isValid()
     StateFile(void)
     {
         //timestamp = boost::posix_time::second_clock::local_time();
@@ -135,11 +140,18 @@ class StateFile
         return std::stol(result[6]);
     };
 
+    ///
+    /// \brief isValid
+    /// \return TRUE if the StateFile is valid.
+    ///
+    bool isValid() const;
+
     // protected so testcases can access private data
     //protected:
     std::string path; ///< URL to this file
     ptime timestamp;  ///< The timestamp of the associated changeset file
     long sequence;    ///< The sequence number of the associated changeset file
+    // FIXME: frequency is stored as a string, an ENUM would be a better choice, DB schema should be changed accordingly,.
     std::string frequency; ///< The time interval of this change file
     /// These two values are updated after the changset is parsed
     ptime created_at; ///< The first timestamp in the changefile
@@ -221,6 +233,23 @@ class Planet
     std::shared_ptr<StateFile> findData(frequency_t freq, ptime starttime);
     std::shared_ptr<StateFile> findData(frequency_t freq,
                                         const std::string &path);
+
+    static std::string sequenceToPath(long sequence);
+
+    ///
+    /// \brief fetchData retrieves data from the cache or from the server.
+    /// \param freq frequency.
+    /// \param starttime timestamp.
+    /// \param underpass_dburl optional url for underpass DB where data are cached, an empty value means no cache will be used.
+    /// \return a (possibly invalid) StateFile record.
+    ///
+    std::shared_ptr<StateFile>
+    fetchData(frequency_t freq, ptime starttime,
+              const std::string &underpass_dburl = "");
+
+    std::shared_ptr<StateFile>
+    fetchData(frequency_t freq, long sequence,
+              const std::string &underpass_dburl = "");
 
     /// Dump internal data to the terminal, used only for debugging
     void dump(void);

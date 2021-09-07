@@ -48,6 +48,13 @@ class Pq
     /// Connect to the Pq database
     Pq(const std::string &dbname);
     bool connect(const std::string &args);
+
+    ///
+    /// \brief isOpen, checks if the DB is open.
+    /// \return TRUE if the DB is open.
+    ///
+    bool isOpen();
+
     /// Query the database
     pqxx::result query(const std::string &query);
     bool parseURL(const std::string &query);

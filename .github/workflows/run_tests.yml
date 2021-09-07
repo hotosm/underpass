@@ -36,3 +36,6 @@ jobs:
       - name: Run Test osm2pgsql-test
         run: docker-compose -f docker/docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build && testsuite/libunderpass.all/osm2pgsql-test"
 
+      - name: Run Test replication-test
+        run: docker-compose -f docker/docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build && testsuite/libunderpass.all/replication-test"
+

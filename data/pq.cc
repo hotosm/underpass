@@ -175,6 +175,12 @@ Pq::connect(const std::string &dburl)
     }
 }
 
+bool
+Pq::isOpen()
+{
+    return sdb && sdb->is_open();
+}
+
 pqxx::result
 Pq::query(const std::string &query)
 {

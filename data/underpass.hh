@@ -77,13 +77,7 @@ class Underpass : public pq::Pq
 {
   public:
     /// Connect to the Underpass database
-    Underpass(void)
-    {
-        frequency_tags[replication::minutely] = "minute";
-        frequency_tags[replication::hourly] = "hour";
-        frequency_tags[replication::daily] = "day";
-        frequency_tags[replication::changeset] = "changeset";
-    };
+    Underpass(void) = default;
     Underpass(const std::string &dburl);
     void dump(void);
 
@@ -101,6 +95,10 @@ class Underpass : public pq::Pq
     /// Get the state.txt date by timestamp
     std::shared_ptr<replication::StateFile>
     getState(replication::frequency_t freq, ptime &tstamp);
+
+    /// Get the state.txt date by sequence
+    std::shared_ptr<replication::StateFile>
+    getState(replication::frequency_t freq, long sequence);
 
     /// Get the maximum timestamp for the state.txt data
     std::shared_ptr<replication::StateFile>
@@ -120,12 +118,18 @@ class Underpass : public pq::Pq
         return url;
     };
 
-    std::string freq_to_string(replication::frequency_t tag)
+    ///
+    /// \brief freq_to_string returns a string representation of the given \a frequency.
+    /// \param frequency the frequency enum value.
+    /// \return a string representation of the frequency.
+    ///
+    static std::string freq_to_string(replication::frequency_t frequency)
     {
-        return frequency_tags[tag];
+        return frequency_tags[frequency];
     };
+
     // protected:
-    std::map<replication::frequency_t, std::string> frequency_tags;
+    static std::map<replication::frequency_t, std::string> frequency_tags;
     std::string db_url;
 };
 
