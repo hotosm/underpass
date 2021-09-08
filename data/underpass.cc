@@ -195,14 +195,14 @@ Underpass::writeState(replication::StateFile &state)
     std::string frequency{state.frequency};
     if (frequency.empty()) {
 
-        if (state.path.find("changeset") != std::string::npos) {
-            frequency = "changeset";
+        if (state.path.find("changesets") != std::string::npos) {
+            frequency = Underpass::freq_to_string(replication::changeset);
         } else if (state.path.find("minute") != std::string::npos) {
-            frequency = "minute";
+            frequency = Underpass::freq_to_string(replication::minutely);
         } else if (state.path.find("hour") != std::string::npos) {
-            frequency = "hour";
+            frequency = Underpass::freq_to_string(replication::hourly);
         } else if (state.path.find("day") != std::string::npos) {
-            frequency = "day";
+            frequency = Underpass::freq_to_string(replication::daily);
         }
     }
 
