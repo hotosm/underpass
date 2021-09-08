@@ -1106,7 +1106,7 @@ RemoteURL::parse(const std::string &rurl)
             minor = std::stoi(parts[6]);
             index = std::stoi(parts[7]);
         } catch (const std::exception &ex) {
-            log_error(_("Error parsing initial URL: %1%"), ex.what());
+            log_error(_("Error parsing URL: %1%"), ex.what());
         }
         if (frequency == replication::changeset) {
             filespec = rurl.substr(rurl.find(datadir)) + ".osm.gz";
