@@ -54,7 +54,7 @@ std::map<replication::frequency_t, std::string> Underpass::frequency_tags = {
     {replication::minutely, "minute"},
     {replication::hourly, "hour"},
     {replication::daily, "day"},
-    {replication::changeset, "changeset"}};
+    {replication::changeset, "changesets"}};
 
 Underpass::Underpass(const std::string &dburl) { connect(dburl); };
 

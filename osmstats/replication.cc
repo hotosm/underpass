@@ -566,8 +566,10 @@ Planet::sequenceToPath(long sequence)
 std::shared_ptr<StateFile>
 Planet::fetchDataLast(frequency_t freq, const std::string &underpass_dburl)
 {
-    const auto url{str(format("https://%1%/replication/%2%/state.txt") %
-                       remote.domain % Underpass::freq_to_string(freq))};
+    const bool is_changeset{freq == frequency_t::changeset};
+    const auto url{str(format("https://%1%/replication/%2%/state.%3%") %
+                       remote.domain % Underpass::freq_to_string(freq) %
+                       (is_changeset ? "yaml" : "txt"))};
     const auto last_state_info{downloadFile(url)};
     // Find sequence number
     if (last_state_info->size() == 0) {
@@ -577,9 +579,10 @@ Planet::fetchDataLast(frequency_t freq, const std::string &underpass_dburl)
         const std::string last_state_str(last_state_info->begin(),
                                          last_state_info->end());
         static const std::regex re{R"re([\s\S]*sequenceNumber=(\d+)[\s\S]*)re"};
+        static const std::regex yamlre{R"re([\s\S]*sequence: (\d+)[\s\S]*)re"};
         try {
-            const long last_sequence =
-                std::stol(std::regex_replace(last_state_str, re, "$1"));
+            const long last_sequence = std::stol(std::regex_replace(
+                last_state_str, is_changeset ? yamlre : re, "$1"));
             log_debug(_("Last sequence: %1%"), last_sequence);
             return fetchData(freq, last_sequence, underpass_dburl);
         } catch (const std::exception &ex) {
