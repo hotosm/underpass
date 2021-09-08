@@ -151,6 +151,9 @@ main(int argc, char *argv[])
         replication_conn = test_replication_db_name;
     }
 
+    // Add test for remote URL parse (test for segfault)
+    RemoteURL().parse("http://planet.maps.mail.ru/replication/");
+
     VERIFY(underpass.connect(replication_conn), "Underpass::connect()")
 
     // Connect to server

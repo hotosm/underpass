@@ -1093,29 +1093,33 @@ RemoteURL::parse(const std::string &rurl)
         log_error(_("URL is empty!"));
         return;
     }
-    std::map<std::string, replication::frequency_t> frequency_tags;
-    frequency_tags["minute"] = replication::minutely;
-    frequency_tags["hour"] = replication::hourly;
-    frequency_tags["day"] = replication::daily;
-    frequency_tags["changesets"] = replication::changeset;
 
     std::vector<std::string> parts;
     boost::split(parts, rurl, boost::is_any_of("/"));
-    domain = parts[2];
-    datadir = parts[3];
-    frequency = frequency_tags[parts[4]];
-    subpath = parts[5] + "/" + parts[6] + "/" + parts[7];
-    major = std::stoi(parts[5]);
-    minor = std::stoi(parts[6]);
-    index = std::stoi(parts[7]);
-    if (frequency == replication::changeset) {
-        filespec = rurl.substr(rurl.find(datadir)) + ".osm.gz";
-        url = rurl + ".osm.gz";
+    if (parts.size() == 8) {
+        domain = parts[2];
+        datadir = parts[3];
+        subpath = parts[5] + "/" + parts[6] + "/" + parts[7];
+        try {
+            frequency = Underpass::freq_from_string(parts[4]);
+            major = std::stoi(parts[5]);
+            minor = std::stoi(parts[6]);
+            index = std::stoi(parts[7]);
+        } catch (const std::exception &ex) {
+            log_error(_("Error parsing initial URL: %1%"), ex.what());
+        }
+        if (frequency == replication::changeset) {
+            filespec = rurl.substr(rurl.find(datadir)) + ".osm.gz";
+            url = rurl + ".osm.gz";
+        } else {
+            filespec = rurl.substr(rurl.find(datadir)) + ".osc.gz";
+            url = rurl + ".osc.gz";
+        }
+        destdir = datadir + "/" + parts[4] + "/" + parts[5] + "/" + parts[6];
     } else {
-        filespec = rurl.substr(rurl.find(datadir)) + ".osc.gz";
-        url = rurl + ".osc.gz";
+        log_error(_("Error parsing URL: not in the expected form "
+                    "(https://<server>/replication/<frequency>/000/000/001)"));
     }
-    destdir = datadir + "/" + parts[4] + "/" + parts[5] + "/" + parts[6];
 }
 
 void

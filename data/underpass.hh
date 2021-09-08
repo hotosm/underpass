@@ -144,6 +144,21 @@ class Underpass : public pq::Pq
         return frequency_tags[frequency];
     };
 
+    ///
+    /// \brief freq_from_string returns a frequency from its string representation \a frequency_str.
+    /// \param frequency_str the string representation.
+    /// \return the enum value for \a frequency_str.
+    /// \throws std::invalid_argument if the \a frequency_str is not a valid frequency.
+    ///
+    static replication::frequency_t
+    freq_from_string(const std::string &frequency_str)
+    {
+        for (const auto &[key, value] : frequency_tags)
+            if (value == frequency_str)
+                return key;
+        throw std::invalid_argument("Invalid frequency: " + frequency_str);
+    };
+
     // protected:
     static std::map<replication::frequency_t, std::string> frequency_tags;
     std::string db_url;
