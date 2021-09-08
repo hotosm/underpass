@@ -32,4 +32,101 @@
       <tag k='note' v='Not a rectangular building' />
     </way>
   </create>
+  <create>
+  <node id="7823909018" lat="18.0564167" lon="-76.8097006" version="2" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77"/>
+  <node id="7823909019" lat="18.0562397" lon="-76.8095771" version="2" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77"/>
+  <node id="7823909020" lat="18.0562958" lon="-76.8096673" version="2" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77"/>
+  <node id="7824860680" lat="18.0564203" lon="-76.8095885" version="1" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77"/>
+  <node id="7824860681" lat="18.0563195" lon="-76.8095849" version="1" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77"/>
+  <node id="7824860682" lat="18.0563184" lon="-76.8096176" version="1" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77"/>
+  <node id="7824860683" lat="18.0562987" lon="-76.8096169" version="1" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77"/>
+  <node id="7824860684" lat="18.0562999" lon="-76.8095793" version="1" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77"/>
+  <node id="7824864885" lat="18.0562378" lon="-76.8096340" version="1" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77"/>
+  <node id="7824864886" lat="18.0562582" lon="-76.8096347" version="1" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77"/>
+  <node id="7824864887" lat="18.0562575" lon="-76.8096544" version="1" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77"/>
+  <node id="7824864888" lat="18.0562962" lon="-76.8096558" version="1" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77"/>
+  <node id="7824864889" lat="18.0563272" lon="-76.8096684" version="1" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77"/>
+  <node id="7824864890" lat="18.0563267" lon="-76.8096850" version="1" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77"/>
+  <node id="7824864891" lat="18.0563791" lon="-76.8096869" version="1" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77"/>
+  <node id="7824864892" lat="18.0563787" lon="-76.8096992" version="1" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77"/>
+  <way id="838311812" version="2" timestamp="2020-08-19T04:30:27Z" changeset="89605029" uid="11390791" user="geojosh77">
+    <nd ref="7823909018"/>
+    <nd ref="7824860680"/>
+    <nd ref="7824860681"/>
+    <nd ref="7824860682"/>
+    <nd ref="7824860683"/>
+    <nd ref="7824860684"/>
+    <nd ref="7823909019"/>
+    <nd ref="7824864885"/>
+    <nd ref="7824864886"/>
+    <nd ref="7824864887"/>
+    <nd ref="7824864888"/>
+    <nd ref="7823909020"/>
+    <nd ref="7824864889"/>
+    <nd ref="7824864890"/>
+    <nd ref="7824864891"/>
+    <nd ref="7824864892"/>
+    <nd ref="7823909018"/>
+    <tag k="building" v="yes"/>
+    <tag k='note' v='A complicated but good building' />
+  </way>    
+  </create>
+  <create>
+    <node id="7693450602" lat="7.3586031" lon="7.3855966" version="1" timestamp="2020-07-08T02:58:08Z" changeset="87680470" uid="2512340" user="heeyinholuwer"/>
+    <node id="7693450603" lat="7.3587041" lon="7.3856677" version="1" timestamp="2020-07-08T02:58:08Z" changeset="87680470" uid="2512340" user="heeyinholuwer"/>
+    <node id="7693450604" lat="7.3587068" lon="7.3855712" version="1" timestamp="2020-07-08T02:58:08Z" changeset="87680470" uid="2512340" user="heeyinholuwer"/>
+    <way id="824015796" version="1" timestamp="2020-07-08T02:58:08Z" changeset="87680470" uid="2512340" user="heeyinholuwer">
+      <nd ref="7693450604"/>
+      <nd ref="7693450603"/>
+      <nd ref="7693450602"/>
+      <nd ref="7693450604"/>
+      <tag k="building" v="yes"/>
+      <tag k='note' v='A triangle' />
+    </way>
+  </create>
+  <create>
+    <node id="7989775840" lat="4.9649134" lon="23.9337711" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775841" lat="4.9649176" lon="23.9337688" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775842" lat="4.9649206" lon="23.9337652" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775843" lat="4.9649223" lon="23.9337608" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775844" lat="4.9649224" lon="23.9337560" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775845" lat="4.9649208" lon="23.9337515" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775846" lat="4.9649179" lon="23.9337479" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775847" lat="4.9649138" lon="23.9337454" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775848" lat="4.9649092" lon="23.9337445" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775849" lat="4.9649045" lon="23.9337453" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775850" lat="4.9649004" lon="23.9337476" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775851" lat="4.9648976" lon="23.9337506" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775852" lat="4.9648959" lon="23.9337543" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775853" lat="4.9648953" lon="23.9337583" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775854" lat="4.9648960" lon="23.9337624" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775855" lat="4.9648978" lon="23.9337660" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775856" lat="4.9649006" lon="23.9337690" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775857" lat="4.9649041" lon="23.9337710" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <node id="7989775858" lat="4.9649088" lon="23.9337719" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat"/>
+    <way id="856945340" version="1" timestamp="2020-10-08T20:04:34Z" changeset="92194675" uid="11912666" user="ardchat">
+      <nd ref="7989775840"/>
+      <nd ref="7989775841"/>
+      <nd ref="7989775842"/>
+      <nd ref="7989775843"/>
+      <nd ref="7989775844"/>
+      <nd ref="7989775845"/>
+      <nd ref="7989775846"/>
+      <nd ref="7989775847"/>
+      <nd ref="7989775848"/>
+      <nd ref="7989775849"/>
+      <nd ref="7989775850"/>
+      <nd ref="7989775851"/>
+      <nd ref="7989775852"/>
+      <nd ref="7989775853"/>
+      <nd ref="7989775854"/>
+      <nd ref="7989775855"/>
+      <nd ref="7989775856"/>
+      <nd ref="7989775857"/>
+      <nd ref="7989775858"/>
+      <nd ref="7989775840"/>
+      <tag k="building" v="yes"/>
+      <tag k='note' v='A big round building' />
+    </way>
+  </create>
 </osmChange>
