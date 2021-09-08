@@ -1,3 +1,13 @@
+config:
+  - minangle:
+      - 85
+  - maxangle:
+      - 91
+  - complete:
+      - yes
+  - values:
+      - yes
+
 tags:
   - building:levels
 
