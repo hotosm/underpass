@@ -499,197 +499,56 @@ Planet::scanDirectory(const std::string &dir)
     return links;
 }
 
-// Since the data files don't have a consistent time interval, this
-// attempts to do a rough calculation of the probably data file,
-// and downloads *.state.txt files till the right data file is found.
-// Note that this can be slow as it has to download multiple files.
 std::shared_ptr<replication::StateFile>
-Planet::findData(frequency_t freq, const std::string &path)
+Planet::fetchData(frequency_t freq, const std::string &path,
+                  const std::string &underpass_dburl)
 {
-    const auto full_path{path + ".state.txt"};
-    auto data = downloadFile(full_path);
-    if (data->size() == 0) {
-        log_error(_("StateFile not found: %1%"), full_path);
-        auto tmp = std::make_shared<replication::StateFile>();
-        return tmp;
-    } else {
-        const std::string tmp(data->begin(), data->end());
-        auto state = std::make_shared<replication::StateFile>(tmp, true);
-        state->path = sequenceToPath(state->sequence);
-        state->frequency = Underpass::freq_to_string(freq);
-        state->dump();
-        return state;
-    }
-}
-
-std::shared_ptr<StateFile>
-Planet::findData(frequency_t freq, long sequence)
-{
-    auto state = std::make_shared<replication::StateFile>();
-
-    return state;
-}
-
-std::shared_ptr<StateFile>
-Planet::findData(frequency_t freq, ptime tstamp)
-{
-    ptime now = boost::posix_time::microsec_clock::local_time();
-    // start timestamps for the top level minute files
-    std::vector<ptime> mstates = {time_from_string("2012-09-13 02:06"),
-                                  time_from_string("2014-08-12 22:41"),
-                                  time_from_string("2016-07-09 14:33"),
-                                  time_from_string("2018-06-04 23:24"),
-                                  time_from_string("2020-04-30 23:20"),
-                                  now};
-
-    // start timestamps for the top level changeset files
-    // There are no state.txt files before 002/010/000, the
-    // first sequence is 2009999, 2016-09-08 20:19:01
-    std::vector<ptime> cstates = {
-        time_from_string("2012-10-28 19:36"),
-        time_from_string("2014-10-07 07:58"),
-        time_from_string("2016-09-01 20:43"),
-        time_from_string("2018-07-29 16:33"), // 2999999
-        time_from_string("2020-06-28 23:26"), // 3999999
-        now};
-    // Changeset files don't have an associated state.txt till
-    // this first one: .../replication/changesets/002/007/990.state.txt
-    boost::posix_time::time_duration delta1, delta2;
-    int minutes1 = 0;
-    int minutes2 = 0;
-    std::string major;
-    std::string minor;
-    std::string index;
-    auto state = std::make_shared<replication::StateFile>();
-#if 0
-    underpass::Underpass under;
-    under.connect("underpass"); // FIXME: this shouldn't be hardcoded
-    // boost::local_time::local_time_period lp(states[0]);
-    auto data = downloadFile(newpath + ".state.txt");
-    if (data->size() == 0) {
-        log_error(_("StateFile not found: %1%"),newpath);
-        return state;
-    } else {
-        std::string tmp(reinterpret_cast<const char *>(data->data()));
-        auto state = std::make_shared<replication::StateFile>(tmp, true);
-        state->path = newpath;
-        under.writeState(*state);
-        state->dump();
-    }
-#endif
-    std::vector<ptime> times;
-    if (freq == replication::minutely) {
-        times = mstates;
-    } else if (freq == replication::changeset) {
-        times = cstates;
-    } else if (freq == replication::hourly) {
-        // times = hstates;
-    }
-    for (int i = times.size(); i >= 0; --i) {
-        // std::cerr << to_simple_string(tstamp) << " : "
-        //           << to_simple_string(times[i-2]) << " : "
-        //           << to_simple_string(times[i-1]) << " : "
-        //          );
-        if (tstamp >= times[i - 1] && tstamp <= times[i]) {
-            delta1 = tstamp - times[i - 1];
-            delta2 = times[i] - tstamp;
-            log_debug(_("Hours: %1% : %2%"), delta1.hours(), delta2.hours());
-            minutes1 = (delta1.hours() * 60) + delta1.minutes();
-            // This is the total time span in the major directory
-            minutes2 = (delta2.hours() * 60) + delta2.minutes();
-            log_error(_("Minutes: %1% : %2%"), minutes1, minutes2);
-            boost::format fmt("%03d");
-            fmt % (i - 1);
-            major += fmt.str() + "/";
-            fmt % (minutes1 / 1000);
-            minor += fmt.str() + "/";
-            int total = 2;
-            fmt % (total);
-            index += fmt.str();
-            state->path = major + minor + index;
-            return state;
-        }
-    }
-
-#if 0
-    std::string path = pserver + datadir + state->path;
-    auto data = downloadFile(path + ".state.txt");
-    if (data->size() == 0) {
-        log_error(_("StateFile not found: " << path);
-        return state;
-    } else {
-        std::string tmp(reinterpret_cast<const char *>(data->data()));
-        auto state = std::make_shared<replication::StateFile>(tmp, true);
-            state->path = path;
-            under.writeState(*state);
-            state->dump();
-    }
-#endif
-#if 0
-        state.timestamp = tstamp;
-        under.writeState(state);
-        state.dump();
-        return state.path;
-    }
-#endif
-
-    return state;
-
-#if 0
-    auto last = std::make_shared<replication::StateFile>();
-    last = under.getLastState(freq);
-    if (!last->path.empty()) {
-        return state.path;
-    }
-    // last->dump();
-    bool loop = true;
-    delta = tstamp - last->timestamp;
-    std::vector<std::string> result;
-    boost::split(result, last->path, boost::is_any_of("/"));
-    int major = std::stoi(result[0]);
-    int minor = std::stoi(result[1]);
-    int index = std::stoi(result[2]);
-    int minutes = (delta.hours() * 60) + delta.minutes();
-    int quotient =  minutes / 1000;
-    int remainder = minutes % 1000;
-    boost::format fmt1("%03d");
-    fmt1 % (major);
-    std::string newpath = last->path + "/" + fmt1.str();
-    boost::format fmt2("%03d");
-    int next = (index + remainder)/1000;
-    fmt2 % (minor + next + quotient);
-    newpath += "/" + fmt2.str();
-    boost::format fmt3("%03d");
-    next = (index + remainder)%1000;
-    fmt3 % (next);
-    newpath += "/" + fmt3.str();
-    log_debug(_("FOUND: " << newpath);
-    while (loop) {
-        auto data = downloadFile(newpath + ".state.txt");
-        if (data->size() == 0) {
-            log_error(_("StateFile not found: " << newpath);
-            return std::string();
+    std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
+    // First search in the cache
+    bool use_cache{!underpass_dburl.empty()};
+    Underpass underpass;
+    if (use_cache) {
+        if (!underpass.connect(underpass_dburl)) {
+            log_error(_("Could not connect to underpass DB, caching disabled! "
+                        "- DB URL: %1%"),
+                      underpass_dburl);
         } else {
-            std::string tmp(reinterpret_cast<const char *>(data->data()));
-            auto state = std::make_shared<replication::StateFile>(tmp, true);
-            state->path = newpath;
-            under.writeState(*state);
-            state->dump();
-            // see if it's within range
-            delta = state->timestamp - tstamp;
-            // std::cerr << "DELTA: " << delta.seconds());
-            if (delta.seconds() > 0) {
-                log_debug(_("StateFile in range: %1%"), newpath);
-                return state->path;
-            } else {
-                    log_error(_("StateFile not in range: %1%"), newpath);
-                fmt3 % (++next);
-                newpath = newpath.substr(0, newpath.rfind('/')) + "/" + fmt3.str();
-                continue;
+            RemoteURL url;
+            try {
+                url.parse("https://fake_planet_server.org/replication/" +
+                          Underpass::freq_to_string(freq) + '/' + path);
+                const long sequence{url.major * 1000000 + url.minor * 1000 +
+                                    url.index};
+                state = underpass.getState(freq, sequence);
+            } catch (const std::exception &ex) {
+                // Ignore...
             }
         }
     }
-#endif
+
+    if (!state->isValid()) {
+        const auto full_path{path + ".state.txt"};
+        auto data = downloadFile(full_path);
+        if (data->size() == 0) {
+            log_error(_("StateFile not found: %1%"), full_path);
+            auto tmp = std::make_shared<replication::StateFile>();
+            return tmp;
+        } else {
+            const std::string tmp(data->begin(), data->end());
+            auto state = std::make_shared<replication::StateFile>(tmp, true);
+            state->path = sequenceToPath(state->sequence);
+            state->frequency = Underpass::freq_to_string(freq);
+            if (state->isValid() && use_cache) {
+                if (underpass.isOpen()) {
+                    if (!underpass.writeState(*state.get())) {
+                        log_error(_("Could not store cached state in the "
+                                    "underpass DB"));
+                    }
+                }
+            }
+        }
+    }
+    return state;
 }
 
 std::string
@@ -1004,10 +863,11 @@ Planet::fetchData(frequency_t freq, long sequence,
         log_debug(_("Cache miss for: %1% - sequence: %2%"),
                   Underpass::freq_to_string(freq), sequence);
         if (connectServer()) {
-            state =
-                findData(freq, "https://" + remote.domain + "/replication/" +
-                                   Underpass::freq_to_string(freq) +
-                                   sequenceToPath(sequence));
+            state = fetchData(freq,
+                              "https://" + remote.domain + "/replication/" +
+                                  Underpass::freq_to_string(freq) +
+                                  sequenceToPath(sequence),
+                              underpass_dburl);
             if (underpass.isOpen()) {
                 if (!underpass.writeState(*state.get())) {
                     log_error(

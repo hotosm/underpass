@@ -236,14 +236,16 @@ class Planet
     std::shared_ptr<std::vector<unsigned char>>
     downloadFile(const std::string &file);
 
-    /// Since the data files don't have a consistent time interval, this
-    /// attempts to do a rough calculation of the probably data file,
-    /// and downloads *.state.txt files till the right data file is found.
-    /// Note that this can be slow as it has to download multiple files.
-    std::shared_ptr<StateFile> findData(frequency_t freq, long sequence);
-    std::shared_ptr<StateFile> findData(frequency_t freq, ptime timestamp);
-    std::shared_ptr<StateFile> findData(frequency_t freq,
-                                        const std::string &path);
+    ///
+    /// \brief fetchDataData
+    /// \param freq
+    /// \param path
+    /// \param underpass_dburl
+    /// \return
+    ///
+    std::shared_ptr<StateFile>
+    fetchData(frequency_t freq, const std::string &path,
+              const std::string &underpass_dburl = "");
 
     static std::string sequenceToPath(long sequence);
 

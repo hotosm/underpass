@@ -421,21 +421,21 @@ main(int argc, char *argv[])
                             std::ref(osm2pgsqlDbUrl));
             auto state = under.getState(frequency, url);
             state->dump();
-            if (state->path.empty()) {
-                auto tmp = planet.findData(frequency, last);
-                if (tmp->path.empty()) {
+            if (!state->isValid()) {
+                auto tmp = planet.fetchData(frequency, last, osmStatsDbUrl);
+                if (state->isValid()) {
                     std::cerr << "ERROR: No last path!" << std::endl;
                     exit(EXIT_DB_FAILURE);
                 }
             }
             auto state2 =
                 under.getState(replication::changeset, state->timestamp);
-            if (state2->path.empty()) {
+            if (state2->isValid()) {
                 std::cerr << "WARNING: No changeset path in database!"
                           << std::endl;
-                auto tmp =
-                    planet.findData(replication::changeset, state->timestamp);
-                if (tmp->path.empty()) {
+                auto tmp = planet.fetchData(replication::changeset,
+                                            state->timestamp, osmStatsDbUrl);
+                if (tmp->isValid()) {
                     std::cerr << "ERROR: No changeset path!" << std::endl;
                     exit(EXIT_DB_FAILURE);
                 }
@@ -451,8 +451,9 @@ main(int argc, char *argv[])
         } else if (!starttime.is_not_a_date_time()) {
             // No URL, use the timestamp
             auto state = under.getState(frequency, starttime);
-            if (state->path.empty()) {
-                auto tmp = planet.findData(frequency, starttime);
+            if (state->isValid()) {
+                auto tmp =
+                    planet.fetchData(frequency, starttime, osmStatsDbUrl);
                 if (tmp->path.empty()) {
                     std::cerr << "ERROR: No last path!" << std::endl;
                     exit(-1);
