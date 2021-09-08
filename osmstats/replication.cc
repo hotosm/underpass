@@ -710,7 +710,7 @@ Planet::fetchData(frequency_t freq, ptime timestamp,
     // Add some delta
     switch (freq) {
         case frequency_t::minutely:
-            acceptable_delta = minutes{2};
+            acceptable_delta = minutes{3};
             break;
         case frequency_t::hourly:
             acceptable_delta = hours{2};
@@ -719,8 +719,7 @@ Planet::fetchData(frequency_t freq, ptime timestamp,
             acceptable_delta = hours{25};
             break;
         case frequency_t::changeset:
-            // TODO: handle changeset
-            acceptable_delta = not_a_date_time;
+            acceptable_delta = minutes{3};
             break;
     }
 

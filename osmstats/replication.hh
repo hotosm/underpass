@@ -237,7 +237,7 @@ class Planet
     downloadFile(const std::string &file);
 
     ///
-    /// \brief fetchDataData
+    /// \brief fetchData
     /// \param freq
     /// \param path
     /// \param underpass_dburl
