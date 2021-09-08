@@ -100,6 +100,22 @@ class Underpass : public pq::Pq
     std::shared_ptr<replication::StateFile>
     getState(replication::frequency_t freq, long sequence);
 
+    /// Get the state.txt data greater than \a timestamp.
+    std::shared_ptr<replication::StateFile>
+    getStateGreaterThan(replication::frequency_t freq, ptime &timestamp);
+
+    /// Get the state.txt data greater than \a sequence.
+    std::shared_ptr<replication::StateFile>
+    getStateGreaterThan(replication::frequency_t freq, long sequence);
+
+    /// Get the state.txt data less than \a timestamp.
+    std::shared_ptr<replication::StateFile>
+    getStateLessThan(replication::frequency_t freq, ptime &timestamp);
+
+    /// Get the state.txt data less than \a sequence.
+    std::shared_ptr<replication::StateFile>
+    getStateLessThan(replication::frequency_t freq, long sequence);
+
     /// Get the maximum timestamp for the state.txt data
     std::shared_ptr<replication::StateFile>
     getLastState(replication::frequency_t freq);
@@ -131,6 +147,11 @@ class Underpass : public pq::Pq
     // protected:
     static std::map<replication::frequency_t, std::string> frequency_tags;
     std::string db_url;
+
+  private:
+    /// Creates a (possibly invalid) state from a \a where condition and \a order_by SQL, LIMIT 1 is always appended.
+    std::shared_ptr<replication::StateFile>
+    stateFromQuery(const std::string &where, const std::string &order_by = "");
 };
 
 } // namespace underpass

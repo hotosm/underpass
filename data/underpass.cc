@@ -78,142 +78,85 @@ Underpass::dump(void)
 std::shared_ptr<replication::StateFile>
 Underpass::getState(replication::frequency_t freq, const std::string &path)
 {
-    auto state = std::make_shared<replication::StateFile>();
-    if (sdb == 0) {
-        log_error(_("database not connected!"));
-        return state;
-    } else if (!sdb->is_open()) {
-        log_error(_("database not open!!"));
-        return state;
-    }
+
     std::vector<std::string> nodes;
-    std::string tmp;
+    std::string cleaned_path;
     boost::split(nodes, path, boost::is_any_of("/"));
     if (nodes[0] == "https:") {
-        tmp = nodes[5] + "/" + nodes[6] + "/" + nodes[7];
+        cleaned_path = nodes[5] + "/" + nodes[6] + "/" + nodes[7];
     } else {
-        tmp = path;
+        cleaned_path = path;
     }
     //db_mutex.lock();
-    std::string query =
-        "SELECT timestamp,path,sequence,frequency FROM states WHERE path=\'";
-    query += tmp + "\' AND frequency=\'" + frequency_tags[freq] + "\'";
-    log_debug(_("QUERY: %1%"), query);
-    pqxx::work worker(*sdb);
-    pqxx::result result = worker.exec(query);
-    worker.commit();
-    if (result.size() > 0) {
-        state->timestamp = time_from_string(pqxx::to_string(result[0][0]));
-        state->path = pqxx::to_string(result[0][1]);
-        state->sequence = result[0][2].as(int(0));
-        state->frequency = pqxx::to_string(result[0][3]);
-    }
-    //db_mutex.unlock();
-    return state;
+    const std::string where = "path='" + cleaned_path + "' AND frequency='" +
+                              freq_to_string(freq) + "'";
+    return stateFromQuery(where);
 }
 
 // Get the state.txt date by timestamp
 std::shared_ptr<replication::StateFile>
 Underpass::getState(replication::frequency_t freq, ptime &tstamp)
 {
-    auto state = std::make_shared<replication::StateFile>();
+
     if (tstamp == boost::posix_time::not_a_date_time) {
         log_error(_("ERROR: bad timestamp!"));
-        exit(1);
+        return std::make_shared<replication::StateFile>();
     }
 
-    if (sdb > 0) {
-        if (!sdb->is_open()) {
-            log_error(_("database not connected!"));
-            return state;
-        }
-    } else {
-        log_error(_("database not connected!"));
-        return state;
-    }
+    // FIXME: freq is not necessarily minutes
+    const ptime other = tstamp + minutes(1);
 
-    ptime other = tstamp + minutes(1);
-    std::string query = "SELECT timestamp,path,created_at,closed_at FROM "
-                        "states WHERE timestamp BETWEEN ";
-    query += "\'" + to_simple_string(tstamp) + "\' AND ";
-    query += "\'" + to_simple_string(other) + "\' ";
-    query += " AND frequency=";
-    query += "\'" + frequency_tags[freq] + "\'";
-    query += " ORDER BY timestamp ASC LIMIT 1;";
-    log_debug(_("QUERY: %1%"), query);
-    pqxx::work worker(*sdb);
-    pqxx::result result = worker.exec(query);
-    worker.commit();
-    if (result.size() > 0) {
-        // Sometimes these two fields are reversed
-        try {
-            state->timestamp = time_from_string(result[0][0].c_str());
-            state->path = pqxx::to_string(result[0][1]);
-        } catch (std::exception &e) {
-            log_error(_("Couldn't parse StateFile %1%"), e.what());
-            state->path = pqxx::to_string(result[0][0]);
-            state->timestamp = time_from_string(result[0][1].c_str());
-            state->created_at = time_from_string(pqxx::to_string(result[0][2]));
-            state->closed_at = time_from_string(pqxx::to_string(result[0][3]));
-        }
-        state->sequence = result[0][2].as(int(0));
-        state->frequency = freq;
-    } else {
-#if 0
-        // FIXME: this does not work yet
-        ptime start = time_from_string("2012-09-12 13:22");
-        boost::posix_time::time_duration delta = tstamp - start;
-        state->timestamp = tstamp;
-        state->sequence = 0;
-        state->path = "https://planet.openstreetmap.org/replication";
-        state->path += "\'" + frequency_tags[freq] + "\'";
-        boost::format fmt("%03d");
-        int next;
-        fmt % (next);
-        state->path += fmt.str();
-#endif
-    }
-    return state;
+    const std::string where{boost::str(
+        format("timestamp BETWEEN '%1%' AND '%2%' AND frequency = '%3%'") %
+        to_iso_extended_string(tstamp) % to_iso_extended_string(other) %
+        freq_to_string(freq))};
+    const std::string order_by{"timestamp ASC"};
+    return stateFromQuery(where, order_by);
 }
 
 std::shared_ptr<replication::StateFile>
 Underpass::getState(replication::frequency_t freq, long sequence)
 {
-    auto state = std::make_shared<replication::StateFile>();
-    if (sdb == 0) {
-        log_error(_("database not connected!"));
-        return state;
-    } else if (!sdb->is_open()) {
-        log_error(_("database not open!!"));
-        return state;
+    return stateFromQuery("frequency = '" + freq_to_string(freq) +
+                          "' AND sequence=" + std::to_string(sequence));
+}
+
+std::shared_ptr<replication::StateFile>
+Underpass::getStateGreaterThan(replication::frequency_t freq, long sequence)
+{
+    return stateFromQuery("sequence > " + std::to_string(sequence),
+                          "sequence ASC");
+}
+
+std::shared_ptr<replication::StateFile>
+Underpass::getStateGreaterThan(replication::frequency_t freq, ptime &timestamp)
+{
+    if (timestamp == boost::posix_time::not_a_date_time) {
+        log_error(_("ERROR: bad timestamp!"));
+        return std::make_shared<replication::StateFile>();
     }
+    return stateFromQuery("timestamp > '" + to_iso_extended_string(timestamp) +
+                              "'",
+                          "timestamp ASC");
+}
 
-    pqxx::work worker(*sdb);
+std::shared_ptr<replication::StateFile>
+Underpass::getStateLessThan(replication::frequency_t freq, long sequence)
+{
+    return stateFromQuery("sequence > " + std::to_string(sequence),
+                          "sequence DESC");
+}
 
-    const std::string sql{"SELECT timestamp,path,created_at,closed_at FROM "
-                          "states WHERE sequence = " +
-                          std::to_string(sequence) + " AND frequency = " +
-                          worker.quote(Underpass::freq_to_string(freq)) +
-                          " LIMIT 1"};
-
-    const auto result{worker.exec(sql)};
-    if (result.size() == 1) {
-        state->timestamp = time_from_string(pqxx::to_string(result[0][0]));
-        state->path = pqxx::to_string(result[0][1]);
-        state->sequence = result[0][2].as(int(0));
-        state->frequency = Underpass::freq_to_string(freq);
-        auto datetime_str{pqxx::to_string(result[0][4])};
-        if (!datetime_str.empty()) {
-            state->created_at = time_from_string(datetime_str);
-        }
-        datetime_str = pqxx::to_string(result[0][5]);
-        if (!datetime_str.empty()) {
-            state->closed_at = time_from_string(datetime_str);
-        }
+std::shared_ptr<replication::StateFile>
+Underpass::getStateLessThan(replication::frequency_t freq, ptime &timestamp)
+{
+    if (timestamp == boost::posix_time::not_a_date_time) {
+        log_error(_("ERROR: bad timestamp!"));
+        return std::make_shared<replication::StateFile>();
     }
-    worker.commit();
-
-    return state;
+    return stateFromQuery("timestamp < '" + to_iso_extended_string(timestamp) +
+                              "'",
+                          "timestamp DESC");
 }
 
 /// Write the stored data on the directories and timestamps
@@ -266,7 +209,7 @@ Underpass::writeState(replication::StateFile &state)
         query += ", \'" + to_simple_string(state.closed_at) + "\'";
     }
     query += ") ON CONFLICT DO NOTHING;";
-    log_debug(query);
+    // log_debug(query);
     //db_mutex.lock();
     try {
         const auto result = worker.exec(query);
@@ -282,35 +225,8 @@ Underpass::writeState(replication::StateFile &state)
 std::shared_ptr<replication::StateFile>
 Underpass::getLastState(replication::frequency_t freq)
 {
-    pqxx::work worker(*sdb);
-    //    std::string query = "SELECT timestamp,sequence,path,frequency,created_at,closed_at FROM states";
-    std::string query = "SELECT timestamp,sequence,path FROM states";
-    query += " WHERE frequency=";
-    if (freq == replication::changeset) {
-        query += "\'changeset\'";
-    } else if (freq == replication::minutely) {
-        query += "\'minute\'";
-    } else if (freq == replication::hourly) {
-        query += "\'hour\'";
-    } else if (freq == replication::daily) {
-        query += "\'day\'";
-    }
-    query += " ORDER BY timestamp DESC LIMIT 1;";
-    log_debug(_("QUERY: %1%"), query);
-    pqxx::result result = worker.exec(query);
-    auto last = std::make_shared<replication::StateFile>();
-    if (result.size() > 0) {
-        last->timestamp = time_from_string(pqxx::to_string(result[0][0]));
-        last->sequence = result[0][1].as(int(0));
-        last->path = pqxx::to_string(result[0][2]);
-        last->frequency = freq;
-        //last->created_at = time_from_string(pqxx::to_string(result[0][3]));
-        //last->closed_at = time_from_string(pqxx::to_string(result[0][4]));
-    }
-
-    worker.commit();
-
-    return last;
+    return stateFromQuery("frequency='" + freq_to_string(freq) + "'",
+                          "timestamp DESC");
 }
 
 // Get the minimum timestamp for the state.txt data. As hashtags didn't
@@ -318,27 +234,50 @@ Underpass::getLastState(replication::frequency_t freq)
 std::shared_ptr<replication::StateFile>
 Underpass::getFirstState(replication::frequency_t freq)
 {
+    return stateFromQuery("frequency='" + freq_to_string(freq) + "'",
+                          "timestamp ASC");
+}
+
+std::shared_ptr<replication::StateFile>
+Underpass::stateFromQuery(const std::string &where, const std::string &order_by)
+{
     pqxx::work worker(*sdb);
-    std::string query = "SELECT timestamp,sequence,path FROM states ORDER BY "
-                        "timestamp ASC LIMIT 1;";
-    // log_debug(_("QUERY: %1%", query);
+    std::string query =
+        "SELECT frequency,timestamp,sequence,path,created_at,closed_at FROM "
+        "states";
+    if (!where.empty()) {
+        query += " WHERE " + where;
+    }
+
+    if (!order_by.empty()) {
+        query += " ORDER BY " + order_by;
+    }
+
+    query += " LIMIT 1;";
+    log_debug(_("QUERY: %1%"), query);
     pqxx::result result = worker.exec(query);
-    auto first = std::make_shared<replication::StateFile>();
+    auto state = std::make_shared<replication::StateFile>();
     if (result.size() > 0) {
-        first->timestamp = time_from_string(pqxx::to_string(result[0][0]));
-        first->sequence = result[0][1].as(int(0));
-        first->path = pqxx::to_string(result[0][2]);
-        first->frequency = freq;
-        // first->created_at = time_from_string(pqxx::to_string(result[0][3]));
-        // first->closed_at = time_from_string(pqxx::to_string(result[0][4]));
+        state->frequency = pqxx::to_string(result[0][0]);
+        state->timestamp = time_from_string(pqxx::to_string(result[0][1]));
+        state->sequence = result[0][2].as(int(0));
+        state->path = pqxx::to_string(result[0][3]);
+        auto datetime_str{pqxx::to_string(result[0][5])};
+        if (!datetime_str.empty()) {
+            state->created_at = time_from_string(datetime_str);
+        }
+        datetime_str = pqxx::to_string(result[0][6]);
+        if (!datetime_str.empty()) {
+            state->closed_at = time_from_string(datetime_str);
+        }
     } else {
-        log_error(
-            _("Error retrieving first state from DB: states table is empty."));
+        log_debug(_("Returning invalid state: no rows from query - %1%"),
+                  query);
     }
 
     worker.commit();
 
-    return first;
+    return state;
 }
 
 } // namespace underpass

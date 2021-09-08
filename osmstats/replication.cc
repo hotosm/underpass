@@ -165,11 +165,11 @@ StateFile::StateFile(const std::string &file, bool memory)
                 continue;
             }
 
-            std::string key = line.substr(0, pos);
-            std::string value = line.substr(pos + 1);
+            const std::string key = line.substr(0, pos);
+            const std::string value = line.substr(pos + 1);
 
-            std::vector<std::string> skipKeys{"txnMaxQueried", "txnActiveList",
-                                              "txnReadyList", "txnMax"};
+            const std::vector<std::string> skipKeys{
+                "txnMaxQueried", "txnActiveList", "txnReadyList", "txnMax"};
             if (key == "sequenceNumber") {
                 sequence = std::stol(value);
             } else if (std::count(skipKeys.begin(), skipKeys.end(), key)) {
@@ -183,7 +183,6 @@ StateFile::StateFile(const std::string &file, bool memory)
                 timestamp = from_iso_extended_string(tstamp);
             } else {
                 log_error(_("Invalid Key found: "), key);
-                exit(EXIT_FAILURE);
             }
         }
     }
@@ -206,7 +205,8 @@ StateFile::dump(void)
 bool
 StateFile::isValid() const
 {
-    return timestamp != boost::posix_time::not_a_date_time && sequence > 0;
+    return timestamp != boost::posix_time::not_a_date_time && sequence > 0 &&
+           !path.empty() && !frequency.empty();
 }
 
 // parse a replication file containing changesets
@@ -295,7 +295,7 @@ Planet::downloadFile(const std::string &url)
     req.keep_alive();
 
     // We want the host only: strip the rest
-    static const std::regex re(R"raw(^(?:https?://)([^/]+))raw");
+    static const std::regex re(R"raw(^(?:https?://)?([^/]+).*)raw");
     std::string host{remote.domain};
     host = std::regex_replace(host, re, "$1");
 
@@ -513,15 +513,10 @@ Planet::findData(frequency_t freq, const std::string &path)
         auto tmp = std::make_shared<replication::StateFile>();
         return tmp;
     } else {
-        std::string tmp(reinterpret_cast<const char *>(data->data()));
+        const std::string tmp(data->begin(), data->end());
         auto state = std::make_shared<replication::StateFile>(tmp, true);
-        state->path = path;
+        state->path = sequenceToPath(state->sequence);
         state->frequency = Underpass::freq_to_string(freq);
-        if (state->path[0] == 'h') {
-            std::vector<std::string> result;
-            boost::split(result, path, boost::is_any_of("/"));
-            state->path = path;
-        }
         state->dump();
         return state;
     }
@@ -705,26 +700,283 @@ Planet::sequenceToPath(long sequence)
 }
 
 std::shared_ptr<StateFile>
-Planet::fetchData(frequency_t freq, ptime starttime,
-                  const std::string &underpass_dburl)
+Planet::fetchDataLast(frequency_t freq, const std::string &underpass_dburl)
+{
+    const auto url{str(format("https://%1%/replication/%2%/state.txt") %
+                       remote.domain % Underpass::freq_to_string(freq))};
+    const auto last_state_info{downloadFile(url)};
+    // Find sequence number
+    if (last_state_info->size() == 0) {
+        log_error(_("Empty response retrieving last state from: %1%"), url);
+        return std::make_shared<StateFile>();
+    } else {
+        const std::string last_state_str(last_state_info->begin(),
+                                         last_state_info->end());
+        static const std::regex re{R"re([\s\S]*sequenceNumber=(\d+)[\s\S]*)re"};
+        try {
+            const long last_sequence =
+                std::stol(std::regex_replace(last_state_str, re, "$1"));
+            log_debug(_("Last sequence: %1%"), last_sequence);
+            return fetchData(freq, last_sequence, underpass_dburl);
+        } catch (const std::exception &ex) {
+            log_error(_("Error converting sequenceNumber to long from: %1%"),
+                      url);
+            return std::make_shared<StateFile>();
+        }
+    }
+}
+
+std::shared_ptr<StateFile>
+Planet::fetchDataFirst(frequency_t freq, const std::string &underpass_dburl,
+                       bool force_scan)
+{
+    std::shared_ptr<StateFile> state =
+        force_scan ? std::make_shared<StateFile>()
+                   : fetchData(freq, 1, underpass_dburl);
+    // Go the hard way and scan the index
+    if (!state->isValid()) {
+        const auto base_path{"/replication/" + Underpass::freq_to_string(freq) +
+                             '/'};
+        auto path{base_path};
+        std::string partial_path;
+        bool scanning{true};
+        while (scanning) {
+            log_debug(_("Searching first data in %1% ..."), path);
+            const auto links{scanDirectory(path)};
+            if (links->size() > 0) {
+                const auto first_link{links->at(0)};
+                // First link is ???.osc.gz, second is the ???.state.txt that we are looking for
+                if (first_link.rfind(".osc.gz") != std::string::npos &&
+                    links->size() > 1) {
+                    // Download
+                    path.append(links->at(1));
+                    partial_path.append(first_link.substr(0, 3));
+                    const auto data{downloadFile(remote.url + path)};
+                    if (data->size() == 0) {
+                        log_debug(_("FetchDataFirst download failed for: %1%"),
+                                  remote.url + path);
+                    } else {
+                        const std::string tmp_string{data->begin(),
+                                                     data->end()};
+                        state = std::make_shared<StateFile>(tmp_string, true);
+                        state->path = '/' + partial_path;
+                        state->frequency = Underpass::freq_to_string(freq);
+                        log_debug(_("FetchDataFirst found %1% for: %2%"),
+                                  state->sequence, remote.url + path);
+                    }
+                    scanning = false;
+                }
+                partial_path.append(first_link);
+                path.append(first_link);
+            } else {
+                log_debug(_("FetchDataFirst failed for: %1%"), path);
+                scanning = false;
+            }
+        };
+    }
+    return state;
+}
+
+std::shared_ptr<StateFile>
+Planet::fetchDataLessThan(frequency_t freq, ptime timestamp,
+                          const std::string &underpass_dburl)
 {
     std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
     // First search in the cache
-    const bool useCache{!underpass_dburl.empty()};
+    bool use_cache{!underpass_dburl.empty()};
     Underpass underpass;
-    if (useCache) {
+    if (use_cache) {
         if (!underpass.connect(underpass_dburl)) {
             log_error(_("Could not connect to underpass DB, caching disabled! "
                         "- DB URL: %1%"),
                       underpass_dburl);
         } else {
-            // For now make a copy
-            // FIXME: remove the shared ptr from getState and rely on RVO
-            state = underpass.getState(freq, starttime);
+            state = underpass.getStateLessThan(freq, timestamp);
         }
     }
+
     // Cache miss or disabled?
     if (!state->isValid()) {
+        log_debug(_("Cache miss for: %1% - %2%"),
+                  Underpass::freq_to_string(freq),
+                  to_iso_extended_string(timestamp));
+        if (connectServer()) {
+            state = fetchData(freq, 1, underpass_dburl);
+            if (state->timestamp >= timestamp) {
+                // The requested state is less than the first state.
+                state = std::make_shared<StateFile>();
+            } else {
+                if (underpass.isOpen()) {
+                    if (!underpass.writeState(*state.get())) {
+                        log_error(_("Could not store cached state in the "
+                                    "underpass DB"));
+                    }
+                }
+            }
+
+        } else {
+            log_error(
+                _("Could not fetch data from URL: server is not connected!"));
+        }
+    } else {
+        log_debug(_("Cache hit for: %1% - %2%"),
+                  Underpass::freq_to_string(freq),
+                  to_iso_extended_string(timestamp));
+    }
+    return state;
+}
+
+std::shared_ptr<StateFile>
+Planet::fetchDataLessThan(frequency_t freq, long sequence,
+                          const std::string &underpass_dburl)
+{
+    return fetchData(freq, sequence - 1, underpass_dburl);
+}
+
+std::shared_ptr<StateFile>
+Planet::fetchData(frequency_t freq, ptime timestamp,
+                  const std::string &underpass_dburl)
+{
+    std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
+
+    time_duration acceptable_delta;
+    // Add some delta
+    switch (freq) {
+        case frequency_t::minutely:
+            acceptable_delta = minutes{2};
+            break;
+        case frequency_t::hourly:
+            acceptable_delta = hours{2};
+            break;
+        case frequency_t::daily:
+            acceptable_delta = hours{25};
+            break;
+        case frequency_t::changeset:
+            // TODO: handle changeset
+            acceptable_delta = not_a_date_time;
+            break;
+    }
+
+    // First search in the cache
+    const bool use_cache{!underpass_dburl.empty()};
+    Underpass underpass;
+    if (use_cache) {
+        if (!underpass.connect(underpass_dburl)) {
+            log_error(_("Could not connect to underpass DB, caching disabled! "
+                        "- DB URL: %1%"),
+                      underpass_dburl);
+        } else {
+            const auto candidate{underpass.getState(freq, timestamp)};
+            if ((candidate->timestamp - timestamp) < acceptable_delta) {
+                state = candidate;
+            }
+        }
+    }
+
+    // abs is missing from boost 1.70
+    const auto duration_abs = [](const time_duration &d) -> time_duration {
+        return d.is_negative() ? d.invert_sign() : d;
+    };
+
+    // Cache miss or disabled?
+    if (!state->isValid()) {
+        log_debug(_("Cache miss for: %1% - %2%"),
+                  Underpass::freq_to_string(freq),
+                  to_iso_extended_string(timestamp));
+        // We need a range for the search
+        auto greater_state{
+            fetchDataGreaterThan(freq, timestamp, underpass_dburl)};
+        auto lesser_state{fetchDataLessThan(freq, timestamp, underpass_dburl)};
+        // Since the previous calls do not return valid states for equality
+        // we need to check the boundaries
+        if (!greater_state->isValid() || !lesser_state->isValid()) {
+            const auto first_state{fetchDataFirst(freq, underpass_dburl)};
+            if (duration_abs(first_state->timestamp - timestamp) <
+                acceptable_delta) {
+                state = first_state;
+            }
+            if (!state->isValid()) {
+                const auto last_state{fetchDataLast(freq, underpass_dburl)};
+                if (duration_abs(last_state->timestamp - timestamp) <
+                    acceptable_delta) {
+                    state = last_state;
+                }
+            }
+        } else {
+            // Start interpolation
+            unsigned int loop_counter{0};
+            long old_sequence_candidate{-1};
+            while (loop_counter < 10) {
+                const auto distance_seconds{
+                    (greater_state->timestamp - lesser_state->timestamp)
+                        .total_seconds()};
+                const auto lower_end_seconds{
+                    (timestamp - lesser_state->timestamp).total_seconds()};
+                const double ratio{static_cast<double>(lower_end_seconds) /
+                                   distance_seconds};
+                const long sequence_candidate{static_cast<long>(
+                    lesser_state->sequence +
+                    std::max<long>(
+                        1, (greater_state->sequence - lesser_state->sequence) *
+                               ratio))};
+                if (sequence_candidate != old_sequence_candidate) {
+                    old_sequence_candidate = sequence_candidate;
+                    const auto candidate{
+                        fetchData(freq, sequence_candidate, underpass_dburl)};
+                    log_debug(
+                        _("Checking candidate for %1% (loop: %2%) %3% - %4%"),
+                        to_iso_extended_string(timestamp), loop_counter,
+                        to_iso_extended_string(candidate->timestamp),
+                        candidate->sequence);
+                    if (!candidate->isValid()) {
+                        log_debug(_("No valid state for timestamp: %1% - "
+                                    "candidate is not valid."),
+                                  to_iso_extended_string(timestamp));
+                        loop_counter = 10;
+                    } else {
+                        // Check if it is within time range
+                        if (duration_abs(candidate->timestamp - timestamp) <
+                                acceptable_delta &&
+                            candidate->timestamp >= timestamp) {
+                            log_debug(_("State found for timestamp: %1% - "
+                                        "loops: %2%."),
+                                      to_iso_extended_string(timestamp),
+                                      loop_counter);
+                            state = candidate;
+                            loop_counter = 10;
+                        } else if (candidate->timestamp < timestamp) {
+                            lesser_state = candidate;
+                        } else if (candidate->timestamp > timestamp) {
+                            greater_state = candidate;
+                        }
+                    }
+                    loop_counter++;
+                } else {
+                    log_debug(_("No valid state for timestamp: %1% - end of "
+                                "candidates."),
+                              to_iso_extended_string(timestamp));
+                    loop_counter = 10;
+                }
+            } // loop end
+        }
+    } else {
+        log_debug(_("Cache hit for: %1% - %2%"),
+                  Underpass::freq_to_string(freq),
+                  to_iso_extended_string(timestamp));
+    }
+
+    if (!state->isValid()) {
+        log_debug(_("No valid state for timestamp: %1%."),
+                  to_iso_extended_string(timestamp));
+    } else {
+        // We need to make sure that there isn't a closer match within the freq acceptable_delta
+        const auto previous_candidate{fetchData(freq, state->sequence - 1)};
+        if (previous_candidate->isValid() &&
+            previous_candidate->timestamp >= timestamp) {
+            state = previous_candidate;
+            log_debug(_("Previous state found for timestamp %1% : %2%."),
+                      to_iso_extended_string(timestamp), state->sequence);
+        }
     }
     return state;
 }
@@ -734,27 +986,27 @@ Planet::fetchData(frequency_t freq, long sequence,
                   const std::string &underpass_dburl)
 {
     std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
-    const bool useCache{!underpass_dburl.empty()};
+    const bool use_cache{!underpass_dburl.empty()};
     Underpass underpass;
 
     // First search in the cache
-    if (useCache) {
+    if (use_cache) {
         if (!underpass.connect(underpass_dburl)) {
             log_error(_("Could not connect to underpass DB, caching disabled! "
                         "- DB URL: %1%"),
                       underpass_dburl);
         } else {
-            // For now make a copy
-            // FIXME: remove the shared ptr from getState and rely on RVO
             state = underpass.getState(freq, sequence);
         }
     }
     // Cache miss or disabled?
     if (!state->isValid()) {
+        log_debug(_("Cache miss for: %1% - sequence: %2%"),
+                  Underpass::freq_to_string(freq), sequence);
         if (connectServer()) {
             state =
                 findData(freq, "https://" + remote.domain + "/replication/" +
-                                   underpass.freq_to_string(freq) +
+                                   Underpass::freq_to_string(freq) +
                                    sequenceToPath(sequence));
             if (underpass.isOpen()) {
                 if (!underpass.writeState(*state.get())) {
@@ -767,6 +1019,65 @@ Planet::fetchData(frequency_t freq, long sequence,
             log_error(
                 _("Could not fetch data from URL: server is not connected!"));
         }
+    } else {
+        log_debug(_("Cache hit for: %1% - sequence: %2%"),
+                  Underpass::freq_to_string(freq), sequence);
+    }
+    return state;
+}
+
+std::shared_ptr<StateFile>
+Planet::fetchDataGreaterThan(frequency_t freq, long sequence,
+                             const std::string &underpass_dburl)
+{
+    return fetchData(freq, sequence + 1, underpass_dburl);
+}
+
+std::shared_ptr<StateFile>
+Planet::fetchDataGreaterThan(frequency_t freq, ptime timestamp,
+                             const std::string &underpass_dburl)
+{
+    std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
+    // First search in the cache
+    bool use_cache{!underpass_dburl.empty()};
+    Underpass underpass;
+    if (use_cache) {
+        if (!underpass.connect(underpass_dburl)) {
+            log_error(_("Could not connect to underpass DB, caching disabled! "
+                        "- DB URL: %1%"),
+                      underpass_dburl);
+        } else {
+            state = underpass.getStateGreaterThan(freq, timestamp);
+        }
+    }
+
+    // Cache miss or disabled?
+    if (!state->isValid()) {
+        log_debug(_("Cache miss for: %1% - %2%"),
+                  Underpass::freq_to_string(freq),
+                  to_iso_extended_string(timestamp));
+        if (connectServer()) {
+            state = fetchDataLast(freq, underpass_dburl);
+            if (state->timestamp <= timestamp) {
+                // The requested state is greater than the last state.
+                state = std::make_shared<StateFile>();
+            } else {
+                if (underpass.isOpen()) {
+                    if (!underpass.writeState(*state.get())) {
+                        log_error(_("Could not store cached state in the "
+                                    "underpass DB"));
+                    }
+                }
+            }
+
+        } else {
+            log_error(
+                _("Could not fetch data from URL: server is not connected!"));
+        }
+    } else {
+        log_debug(_("Cache hit for: %1% - %2%"),
+                  Underpass::freq_to_string(freq),
+                  to_iso_extended_string(timestamp));
     }
     return state;
 }

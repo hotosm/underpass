@@ -39,6 +39,35 @@ using namespace underpass;
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 
+#define VERIFY(condition, message)                                             \
+    if (condition) {                                                           \
+        runtest.pass(message);                                                 \
+    } else {                                                                   \
+        runtest.fail(message);                                                 \
+        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__             \
+                  << std::endl;                                                \
+        exit(EXIT_FAILURE);                                                    \
+    }
+
+struct TimeIt {
+    TimeIt(const std::string &message = "")
+        : start(std::chrono::high_resolution_clock::now()), message(message)
+    {
+    }
+    ~TimeIt()
+    {
+        const auto elapsed =
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::high_resolution_clock::now() - start);
+        std::cerr << "Execution time for " << message << " : "
+                  << elapsed.count() << " ms" << std::endl;
+    }
+
+  private:
+    std::chrono::time_point<std::chrono::high_resolution_clock> start;
+    std::string message;
+};
+
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 using namespace boost::filesystem;
@@ -122,85 +151,231 @@ main(int argc, char *argv[])
         replication_conn = test_replication_db_name;
     }
 
-    if (underpass.connect(replication_conn)) {
-        runtest.pass("Underpass::connect()");
-    } else {
-        runtest.fail("Underpass::connect()");
-        exit(EXIT_FAILURE);
-    }
+    VERIFY(underpass.connect(replication_conn), "Underpass::connect()")
 
     // Connect to server
-    assert(test_planet.connectServer("https://planet.maps.mail.ru"));
+    VERIFY(test_planet.connectServer("https://planet.maps.mail.ru"),
+           "Connect to server")
 
     // Test sequence to path
-    if (test_planet.sequenceToPath(1).compare("/000/000/001") == 0) {
-        runtest.pass("Underpass::sequenceToPath(/000/000/001)");
-    } else {
-        runtest.fail("Underpass::sequenceToPath(/000/000/001)");
-        exit(EXIT_FAILURE);
-    }
+    VERIFY(test_planet.sequenceToPath(1).compare("/000/000/001") == 0,
+           "Underpass::sequenceToPath(/000/000/001)")
 
-    if (test_planet.sequenceToPath(123456789).compare("/123/456/789") == 0) {
-        runtest.pass("Underpass::sequenceToPath(/123/456/789)");
-    } else {
-        runtest.fail("Underpass::sequenceToPath(/123/456/789)");
-        exit(EXIT_FAILURE);
-    }
+    VERIFY(test_planet.sequenceToPath(123456789).compare("/123/456/789") == 0,
+           "Underpass::sequenceToPath(/123/456/789)")
 
-    if (test_planet.sequenceToPath(999999999).compare("/999/999/999") == 0) {
-        runtest.pass("Underpass::sequenceToPath(/999/999/999)");
-    } else {
-        runtest.fail("Underpass::sequenceToPath(/999/999/999)");
-        exit(EXIT_FAILURE);
-    }
+    VERIFY(test_planet.sequenceToPath(999999999).compare("/999/999/999") == 0,
+           "Underpass::sequenceToPath(/999/999/999)")
+
+    // Store fetch results
+    std::shared_ptr<StateFile> data;
 
     // Test scan
     const auto links{test_planet.scanDirectory("/replication/minute/000/000/")};
-    if (links->size() > 0) {
-        runtest.pass("Underpass::scanDirectory()");
-    } else {
-        runtest.fail("Underpass::scanDirectory()");
-        exit(EXIT_FAILURE);
-    }
+    VERIFY(links->size() > 0, "Underpass::scanDirectory()")
 
     // Try first state
-    auto data{test_planet.fetchData(replication::minutely, 1)};
-    //std::cout << to_iso_extended_string(data->timestamp) << std::endl;
-    if (data->isValid() && data->sequence == 1 &&
-        to_iso_extended_string(data->timestamp)
-                .compare("2012-09-12T08:15:45") == 0 &&
-        !underpass.getFirstState(replication::minutely)->isValid()) {
-        runtest.pass("Underpass::fetchData(minutely, 1)");
-    } else {
-        runtest.fail("Underpass::fetchData(minutely, 1)");
-        exit(EXIT_FAILURE);
-    }
+    const auto initial_data = test_planet.fetchData(minutely, 1);
+    VERIFY(initial_data->isValid() && initial_data->sequence == 1 &&
+               initial_data->frequency == Underpass::freq_to_string(minutely) &&
+               initial_data->path.compare("/000/000/001") == 0 &&
+               to_iso_extended_string(initial_data->timestamp)
+                       .compare("2012-09-12T08:15:45") == 0 &&
+               !underpass.getFirstState(minutely)->isValid(),
+           "Underpass::fetchData(minutely, 1)")
+
+    // Store for later tests
+    const auto initial_timestamp{initial_data->timestamp};
 
     // Try caching
-    data = test_planet.fetchData(replication::minutely, 1, replication_conn);
-    //std::cout << to_iso_extended_string(data->timestamp) << std::endl;
-    if (data->isValid() && data->sequence == 1 &&
-        to_iso_extended_string(data->timestamp)
-                .compare("2012-09-12T08:15:45") == 0 &&
-        underpass.getFirstState(replication::minutely)->isValid()) {
-        runtest.pass("Underpass::fetchData(minutely, 1, replication_conn)");
-    } else {
-        runtest.fail("Underpass::fetchData(minutely, 1, replication_conn)");
-        exit(EXIT_FAILURE);
-    }
+    data = test_planet.fetchData(minutely, 1, replication_conn);
+    VERIFY(*data.get() == *initial_data.get() &&
+               underpass.getFirstState(minutely)->isValid(),
+           "Underpass::fetchData(minutely, 1, replication_conn)")
 
     // Now retrieve the cached value
-    data = test_planet.fetchData(replication::minutely, 1, replication_conn);
-    //std::cout << to_iso_extended_string(data->timestamp) << std::endl;
-    if (data->isValid() && data->sequence == 1 &&
-        to_iso_extended_string(data->timestamp)
-                .compare("2012-09-12T08:15:45") == 0 &&
-        underpass.getFirstState(replication::minutely)->isValid()) {
-        runtest.pass(
-            "Underpass::fetchData(minutely, 1, replication_conn - cached)");
-    } else {
-        runtest.fail(
-            "Underpass::fetchData(minutely, 1, replication_conn - cached)");
-        exit(EXIT_FAILURE);
+    data = test_planet.fetchData(minutely, 1, replication_conn);
+    VERIFY(*data.get() == *initial_data.get() &&
+               underpass.getFirstState(minutely)->isValid(),
+           "Underpass::fetchData(minutely, 1, replication_conn) - cached")
+
+    // Fetch first, force scan
+    data = test_planet.fetchDataFirst(minutely, "", true);
+    VERIFY(*data.get() == *initial_data.get(),
+           "Underpass::fetchDataLast(minutely, \"\", force_scan) - uncached)")
+
+    data = test_planet.fetchDataFirst(minutely);
+    VERIFY(*data.get() == *initial_data.get(),
+           "Underpass::fetchDataLast(minutely, \"\") - uncached)")
+
+    data = test_planet.fetchDataFirst(minutely, replication_conn);
+    VERIFY(*data.get() == *initial_data.get(),
+           "Underpass::fetchDataLast(minutely, replication_conn) - uncached)")
+
+    data = test_planet.fetchDataFirst(minutely, replication_conn);
+    VERIFY(*data.get() == *initial_data.get(),
+           "Underpass::fetchDataLast(minutely, replication_conn) - cached)")
+
+    // Fetch last
+    // 4704925 was the last sequence when I wrote this test
+    data = test_planet.fetchDataLast(minutely);
+    VERIFY(data->isValid() && data->sequence > 4704925,
+           "Underpass::fetchDataLast(minutely) - uncached)")
+
+    auto data_cached = test_planet.fetchDataLast(minutely, replication_conn);
+    VERIFY(data->isValid() && data->sequence > 4704925,
+           "Underpass::fetchDataLast(minutely) - replication_conn)")
+
+    data_cached = test_planet.fetchDataLast(minutely, replication_conn);
+    VERIFY(data->isValid() && data->sequence > 4704925,
+           "Underpass::fetchDataLast(minutely) - replication_conn) - cached")
+
+    // //////////////////////////////////////////////////////////////////////
+    // Fetch from timestamp tests
+    //
+
+    data = test_planet.fetchDataGreaterThan(minutely, initial_timestamp);
+    VERIFY(data->isValid() && data->sequence > 4704925,
+           "Underpass::fetchDataGreaterThan(minutely, initial_timestamp)")
+
+    // Now fetch sequence 3 and cache it
+    test_planet.fetchData(minutely, 3, replication_conn);
+    // Using cache, 3 is returned
+    data = test_planet.fetchDataGreaterThan(minutely, initial_timestamp,
+                                            replication_conn);
+    VERIFY(data->isValid() && data->sequence == 3,
+           "Underpass::fetchDataGreaterThan(minutely, initial_timestamp)")
+
+    // Still using the cache, we ask for greater than 3's timestamp but sequence 4 wasn't cached so we expect the last
+    data = test_planet.fetchDataGreaterThan(minutely, data->timestamp,
+                                            replication_conn);
+    VERIFY(data->isValid() && data->sequence > 4704925,
+           "Underpass::fetchDataGreaterThan(minutely, initial_timestamp)")
+
+    data = test_planet.fetchDataGreaterThan(minutely, 1);
+    VERIFY(data->isValid() && data->sequence == 2,
+           "Underpass::fetchDataGreaterThan(minutely, 1)")
+
+    // Out of range
+    data = test_planet.fetchDataGreaterThan(
+        minutely, time_from_string("2500-12-01 00:00:00"));
+    VERIFY(!data->isValid(),
+           "Underpass::fetchDataGreaterThan(minutely, 2500-12-01 00:00:00)")
+
+    // Lesser tests at this point we have sequences 1 and 3 in the cache
+    // Out of range
+    data = test_planet.fetchDataLessThan(minutely, 1);
+    VERIFY(!data->isValid(), "Underpass::fetchDataLessThan(minutely, 1)")
+    data = test_planet.fetchDataLessThan(minutely, initial_timestamp);
+    VERIFY(!data->isValid(),
+           "Underpass::fetchDataLessThan(minutely, initial_timestamp)")
+
+    // Get state for initial (uncached)
+    data = test_planet.fetchData(minutely, initial_timestamp);
+    VERIFY(data->isValid() && data->sequence == 1 &&
+               to_iso_extended_string(data->timestamp)
+                       .compare("2012-09-12T08:15:45") == 0,
+           "Underpass::fetchData(minutely, initial_timestamp)")
+
+    // Get state for initial (cached)
+    data = test_planet.fetchData(minutely, initial_timestamp, replication_conn);
+    VERIFY(data->isValid() && data->sequence == 1 &&
+               to_iso_extended_string(data->timestamp)
+                       .compare("2012-09-12T08:15:45") == 0,
+           "Underpass::fetchData(minutely, initial_timestamp) - cached")
+
+    // Get the state for a given timestamp
+    // https://planet.maps.mail.ru/replication/minute/004/025/013.state.txt
+    /*
+      #Sun May 17 15:47:04 UTC 2020
+      sequenceNumber=4025013
+      txnMaxQueried=2784168191
+      txnActiveList=
+      txnReadyList=
+      txnMax=2784168191
+      timestamp=2020-05-17T15:47:02Z
+
+      Next ts for 4025014 is: 2020-05-17T15:48:02Z
+    */
+
+    data = test_planet.fetchData(minutely,
+                                 time_from_string("2020-05-17 15:47:02"));
+    VERIFY(data->isValid() && data->sequence == 4025013 &&
+               to_iso_extended_string(data->timestamp)
+                       .compare("2020-05-17T15:47:02") == 0,
+           "Underpass::fetchData(minutely, 2020-05-17 15:47:02) - uncached")
+
+    data = test_planet.fetchData(minutely,
+                                 time_from_string("2020-05-17 15:47:02"));
+    VERIFY(data->isValid() && data->sequence == 4025013 &&
+               to_iso_extended_string(data->timestamp)
+                       .compare("2020-05-17T15:47:02") == 0,
+           "Underpass::fetchData(minutely, 2020-05-17 15:47:02) - uncached")
+
+    data = test_planet.fetchData(
+        minutely, time_from_string("2020-05-17 15:47:02"), replication_conn);
+    VERIFY(
+        data->isValid() && data->sequence == 4025013 &&
+            to_iso_extended_string(data->timestamp)
+                    .compare("2020-05-17T15:47:02") == 0,
+        "Underpass::fetchData(minutely, 2020-05-17 15:47:02, replication_conn)")
+
+    // Advance one second: should return next sequence
+    data = test_planet.fetchData(minutely,
+                                 time_from_string("2020-05-17 15:47:03"));
+    VERIFY(data->isValid() && data->sequence == 4025014 &&
+               to_iso_extended_string(data->timestamp)
+                       .compare("2020-05-17T15:48:02") == 0,
+           "Underpass::fetchData(minutely, 2020-05-17 15:47:03) - uncached")
+
+    data = test_planet.fetchData(
+        minutely, time_from_string("2020-05-17 15:47:03"), replication_conn);
+    VERIFY(
+        data->isValid() && data->sequence == 4025014 &&
+            to_iso_extended_string(data->timestamp)
+                    .compare("2020-05-17T15:48:02") == 0,
+        "Underpass::fetchData(minutely, 2020-05-17 15:47:03, replication_conn)")
+
+    data = test_planet.fetchData(
+        minutely, time_from_string("2020-05-17 15:47:03"), replication_conn);
+    VERIFY(data->isValid() && data->sequence == 4025014 &&
+               to_iso_extended_string(data->timestamp)
+                       .compare("2020-05-17T15:48:02") == 0,
+           "Underpass::fetchData(minutely, 2020-05-17 15:47:03, "
+           "replication_conn) - cached")
+
+    // Random checks in the middle
+    data = test_planet.fetchData(minutely,
+                                 time_from_string("2016-05-17 15:47:03"));
+    VERIFY(data->isValid() && data->sequence == 1924905,
+           "Timing test for 2016-05-17 15:47:03");
+
+    data = test_planet.fetchData(minutely,
+                                 time_from_string("2021-09-07 15:47:03"));
+    VERIFY(data->isValid() && data->sequence == 4704890,
+           "Timing test for 2021-09-07 15:47:03");
+
+#if 0
+   // Timing tests (uncached)
+    {
+      TimeIt timer{"initial timestamp " + to_iso_extended_string(initial_timestamp)};
+      data = test_planet.fetchData(minutely, initial_timestamp);
+      VERIFY(data->isValid() && data->sequence == 1, "Timing test for initial timestamp " + to_iso_extended_string(initial_timestamp));
     }
+    {
+      TimeIt timer{"2020-05-17 15:47:03"};
+      data = test_planet.fetchData(minutely, time_from_string("2020-05-17 15:47:03"));
+      VERIFY(data->isValid() && data->sequence == 4025014, "Timing test for 2020-05-17 15:47:03");
+    }
+    {
+      TimeIt timer{"2016-05-17 15:47:03"};
+      data = test_planet.fetchData(minutely, time_from_string("2016-05-17 15:47:03"));
+      VERIFY(data->isValid() && data->sequence == 1924905, "Timing test for 2016-05-17 15:47:03");
+    }
+    {
+      TimeIt timer{"2021-09-07 15:47:03"};
+      data = test_planet.fetchData(minutely, time_from_string("2021-09-07 15:47:03"));
+      VERIFY(data->isValid() && data->sequence == 4704890, "Timing test for 2021-09-07 15:47:03");
+    }
+#endif
 }
