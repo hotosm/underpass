@@ -151,7 +151,7 @@ std::shared_ptr<replication::StateFile>
 Underpass::getStateLessThan(replication::frequency_t freq, ptime &timestamp)
 {
     if (timestamp == boost::posix_time::not_a_date_time) {
-        log_error(_("ERROR: bad timestamp!"));
+        log_error(_("Bad timestamp!"));
         return std::make_shared<replication::StateFile>();
     }
     return stateFromQuery("timestamp < '" + to_iso_extended_string(timestamp) +
@@ -164,6 +164,10 @@ Underpass::getStateLessThan(replication::frequency_t freq, ptime &timestamp)
 bool
 Underpass::writeState(replication::StateFile &state)
 {
+
+    // Precondition
+    assert(state.isValid());
+
     std::string query;
     pqxx::work worker(*sdb);
 

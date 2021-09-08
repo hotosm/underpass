@@ -505,7 +505,7 @@ Planet::fetchData(frequency_t freq, const std::string &path,
 {
     std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
     // First search in the cache
-    bool use_cache{!underpass_dburl.empty()};
+    const bool use_cache{!underpass_dburl.empty()};
     Underpass underpass;
     if (use_cache) {
         if (!underpass.connect(underpass_dburl)) {
@@ -527,7 +527,8 @@ Planet::fetchData(frequency_t freq, const std::string &path,
     }
 
     if (!state->isValid()) {
-        const auto full_path{path + ".state.txt"};
+        const auto full_path{"/replication/" + Underpass::freq_to_string(freq) +
+                             path + ".state.txt"};
         auto data = downloadFile(full_path);
         if (data->size() == 0) {
             log_error(_("StateFile not found: %1%"), full_path);
@@ -535,16 +536,20 @@ Planet::fetchData(frequency_t freq, const std::string &path,
             return tmp;
         } else {
             const std::string tmp(data->begin(), data->end());
-            auto state = std::make_shared<replication::StateFile>(tmp, true);
-            state->path = sequenceToPath(state->sequence);
-            state->frequency = Underpass::freq_to_string(freq);
-            if (state->isValid() && use_cache) {
+            auto state_candidate =
+                std::make_shared<replication::StateFile>(tmp, true);
+            state_candidate->path = sequenceToPath(state_candidate->sequence);
+            state_candidate->frequency = Underpass::freq_to_string(freq);
+            if (state_candidate->isValid()) {
+                state = state_candidate;
                 if (underpass.isOpen()) {
                     if (!underpass.writeState(*state.get())) {
                         log_error(_("Could not store cached state in the "
                                     "underpass DB"));
                     }
                 }
+            } else {
+                log_error(_("Invalid state fetched from path: %1%"), path);
             }
         }
     }
@@ -863,16 +868,17 @@ Planet::fetchData(frequency_t freq, long sequence,
         log_debug(_("Cache miss for: %1% - sequence: %2%"),
                   Underpass::freq_to_string(freq), sequence);
         if (connectServer()) {
-            state = fetchData(freq,
-                              "https://" + remote.domain + "/replication/" +
-                                  Underpass::freq_to_string(freq) +
-                                  sequenceToPath(sequence),
-                              underpass_dburl);
-            if (underpass.isOpen()) {
-                if (!underpass.writeState(*state.get())) {
-                    log_error(
-                        _("Could not store cached state in the underpass DB"));
+            state = fetchData(freq, sequenceToPath(sequence), underpass_dburl);
+            if (state->isValid()) {
+                if (underpass.isOpen()) {
+                    if (!underpass.writeState(*state.get())) {
+                        log_error(_("Could not store cached state in the "
+                                    "underpass DB"));
+                    }
                 }
+            } else {
+                log_error(_("Invalid state fetched for sequence: %1%"),
+                          sequence);
             }
 
         } else {
