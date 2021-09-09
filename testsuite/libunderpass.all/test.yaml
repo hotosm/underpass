@@ -1,0 +1,24 @@
+config:
+  - minangle:
+      - 84
+  - maxangle:
+      - 91
+  - complete:
+      - no
+  - values:
+      - yes
+
+tags:
+  - building:levels
+
+  - building:material:
+      - cement_block
+      - metal
+      - brick
+
+  - building:roof:
+      - none
+      - metal
+      - wood
+      - tiles
+      - concrete
