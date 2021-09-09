@@ -49,6 +49,7 @@ Yaml::read(const std::string &fspec)
     std::string key;
     std::string value;
     std::vector<std::string> entries;
+    bool params = false;
 
     filespec = fspec;
 
@@ -62,9 +63,9 @@ Yaml::read(const std::string &fspec)
     }
         
     while (getline(yaml, line)) {
+	// A top level tag for config parameters
+	// Trim all spaces that start the string,
 	boost::algorithm::trim_left(line);
-	// boost::algorithm::trim(line);
-        // std::cerr << '\"' << line << '\"'<< std::endl;
 	// Ignore blank lines
 	if (line.empty()) {
 	    continue;
@@ -73,19 +74,47 @@ Yaml::read(const std::string &fspec)
         if (line.front() == '#') {
             continue;
         }
-	line.erase(0,2);
-	// std::cerr << '\"' << line << '\"'<< std::endl;
-	// It's a new keyword
-        if (line.back() == ':') {
-	    line.pop_back();
+	// If a line doesn't start with a hypen, but has a colon
+	// at the end, it's a top level keyword.
+	if (line.front() != '-' && line.back() == ':') {
+	    line.pop_back();	// delete the colon
 	    key = line;
-        } else {
-	    if (key.empty()) {
-		config[line] = entries;
-	    } else {
-		config[key].push_back(line);
+	    entries.clear();
+	    if (key == "config") {
+		params = true;
 	    }
-        }
+	    if (key == "tags") {
+		params = false;
+	    }
+	    continue;
+	} else if (line.front() == '-' && line.back() == ':') {
+	    line.erase(0,2);	// delete leading hypen
+	    line.pop_back();	// delete the colon
+	    key = line;
+	    continue;
+	// If a line starts with a hypen, and has a colon
+	// at the end, it's a 2nd level keyword.
+	} else if (line.front() != '-' && line.back() == ':') {
+	    line.erase(0,2);	// delete leading hypen
+	    line.pop_back();	// delete the colon
+	    key = line;
+	    entries.push_back(line);
+	    continue;
+	    // A line starting with a hypen that doesn't have a
+	    // a colon us a 2nd level keyword with no values.
+	} else if (line.front() == '-' && line.back() != ':') {
+	    line.erase(0,2);	// delete leading hypen
+	    if (key == "tags") {
+		key = line;
+	    } else {
+		entries.push_back(line);
+	    }
+	}
+	if (params) {
+	    config[key] = line;
+	} else {
+	    tags[key] = entries;
+	}
     }
 }
 
@@ -94,6 +123,10 @@ void Yaml::dump(void)
     std::cerr << std::endl << "Dumping yaml file: " << filespec << std::endl;
     
     for (auto cit = std::begin(config); cit != std::end(config); ++cit) {
+	std::cerr << "\tParameter: " << cit->first
+		  << " = " << cit->second << std::endl;
+    }
+    for (auto cit = std::begin(tags); cit != std::end(tags); ++cit) {
 	std::cerr << "\tKey: " << cit->first << std::endl;
         if ( cit->second.size() == 0) {
             continue;
