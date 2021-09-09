@@ -73,9 +73,6 @@ Yaml::read(const std::string &fspec)
         if (line.front() == '#') {
             continue;
         }
-        if (line == "tags:") {
-            continue;
-        }
 	line.erase(0,2);
 	// std::cerr << '\"' << line << '\"'<< std::endl;
 	// It's a new keyword

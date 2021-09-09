@@ -49,6 +49,7 @@ public:
     bool containsKey(const std::string &key) {
 	return config.count(key);
     };
+
     bool containsValue(const std::string &key, const std::string &value) {
 	std::string lower = boost::algorithm::to_lower_copy(value);
 	if (config[key].size() == 0 ) {
