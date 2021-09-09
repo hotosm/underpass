@@ -111,12 +111,14 @@ public:
     long change_id = 0;
     ptime timestamp;
     point_t center;
+    double angle = 0;
 
     void dump(void) {
 	std::cerr << "Dumping Validation Statistics" << std::endl;
 	std::cerr << "\tOSM ID: " << osm_id << std::endl;
 	std::cerr << "\tUser ID: " << user_id << std::endl;
 	std::cerr << "\tChange ID: " << change_id << std::endl;
+	std::cerr << "\tAngle: " << angle << std::endl;
 
 	std::map<valerror_t, std::string> results;
 	results[notags] = "No tags";
