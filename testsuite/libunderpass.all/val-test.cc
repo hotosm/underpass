@@ -83,7 +83,7 @@ main(int argc, char *argv[])
 #endif
     // plugin->dump();
     auto status = plugin->checkTag("building", "yes");
-    if (status->hasStatus(correct)) {
+    if (!status->hasStatus(badvalue)) {
         runtest.pass("Validate::checkTag(good tag)");
     } else {
         runtest.fail("Validate::checkTag(good tag)");
@@ -115,7 +115,7 @@ main(int argc, char *argv[])
     node.addTag("building", "yes");
     status = plugin->checkPOI(node, "building");
     // status->dump();
-    if (status->osm_id == 11111 && status->hasStatus(correct)) {
+    if (status->osm_id == 11111 && !status->hasStatus(badvalue)) {
         runtest.pass("Validate::checkPOI(incomplete but correct tagging)");
     } else {
         runtest.fail("Validate::checkPOI(incomplete but correct tagging)");
@@ -136,10 +136,10 @@ main(int argc, char *argv[])
 
     status = plugin->checkPOI(node, "building");
     // status->dump();
-    if (status->hasStatus(complete)) {
-        runtest.pass("Validate::checkPOI(complete)");
+    if (!status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkPOI(no bad values)");
     } else {
-        runtest.fail("Validate::checkPOI(complete)");
+        runtest.fail("Validate::checkPOI(no bad values)");
     }
 
     osmobjects::OsmWay way;
@@ -159,7 +159,7 @@ main(int argc, char *argv[])
 
     way.addTag("building", "yes");
     status = plugin->checkWay(way, "building");
-    if (status->hasStatus(correct)) {
+    if (!status->hasStatus(badvalue)) {
         runtest.pass("Validate::checkWay(incomplete but correct tagging)");
     } else {
         runtest.fail("Validate::checkWay(incomplete but incorrect tagging)");
@@ -168,7 +168,7 @@ main(int argc, char *argv[])
     way.addTag("building:material", "sponge");
     status = plugin->checkWay(way, "building");
     // status->dump();
-    if (status->hasStatus(badvalue)) {
+    if (!status->hasStatus(badvalue)) {
         runtest.pass("Validate::checkWay(bad value)");
     } else {
         runtest.fail("Validate::checkWay(bad value)");
@@ -180,7 +180,7 @@ main(int argc, char *argv[])
 
     status = plugin->checkWay(way, "building");
     // status->dump();
-    if (status->hasStatus(complete)) {
+    if (!status->hasStatus(incomplete)) {
         runtest.pass("Validate::checkWay(complete)");
     } else {
         runtest.fail("Validate::checkWay(complete)");
