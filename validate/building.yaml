@@ -1,10 +1,10 @@
 config:
   - minangle:
-      - 85
+      - 84
   - maxangle:
       - 91
   - complete:
-      - yes
+      - no
   - values:
       - yes
 

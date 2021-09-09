@@ -1,6 +1,6 @@
 config:
   - complete:
-      - yes
+      - no
   - values:
       - yes
 
