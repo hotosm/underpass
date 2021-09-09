@@ -1,3 +1,9 @@
+config:
+  - complete:
+      - yes
+  - values:
+      - yes
+
 tags:
     - highway
         - trunk

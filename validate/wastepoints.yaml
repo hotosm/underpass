@@ -1,3 +1,9 @@
+config:
+  - complete:
+      - no
+  - values:
+      - yes
+
 tags:
     - opening_hours
 
