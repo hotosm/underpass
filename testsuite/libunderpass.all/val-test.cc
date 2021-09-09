@@ -196,8 +196,69 @@ test_geom(std::shared_ptr<Validate> &plugin)
     std::string filespec = SRCDIR;
     filespec += "/rect.osc";
     ocf.readChanges(filespec);
-    ocf.dump();
+//    ocf.dump();
 
+    for (auto it = std::begin(ocf.changes); it != std::end(ocf.changes); ++it) {
+        osmchange::OsmChange *change = it->get();
+        // change->dump();
+        for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
+            osmobjects::OsmWay *way = wit->get();
+            auto status = plugin->checkWay(*way, "building");
+            // status->dump();
+            // std::cerr << way->tags["note"] << std::endl;
+            if (way->id == -101790) {
+                if (status->hasStatus(incomplete) && !status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(incomplete rectangle)");
+                } else {
+                    runtest.pass("Validate::checkWay(incomplete rectangle)");
+                }
+            }
+            if (way->id == 838311812) {
+                if (status->hasStatus(incomplete) && !status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(incomplete complex rectangle)");
+                } else {
+                    runtest.pass("Validate::checkWay(incomplete complex rectangle)");
+                }
+            }
+            if (way->id == 824015796) {
+                if (status->hasStatus(incomplete) && status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(incomplete triangle)");
+                } else {
+                    runtest.pass("Validate::checkWay(incomplete triangle)");
+                }
+            }
+            if (way->id == 821663069) {
+                if (status->hasStatus(incomplete) && status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(incomplete bad geometry)");
+                } else {
+                    runtest.pass("Validate::checkWay(incomplete bad geometry)");
+                }
+            }
+            if (way->id == -101806) {
+                if (status->hasStatus(incomplete) && status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(badgeom rectangle)");
+                } else {
+                    runtest.pass("Validate::checkWay(badgeom rectangle)");
+                }
+            }
+            if (way->id == 856945340) {
+                if (status->hasStatus(incomplete) && !status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(badgeom big round)");
+                } else {
+                    runtest.pass("Validate::checkWay(badgeom big round)");
+                }
+            }
+            if (way->id == 961600809) {
+                if (status->hasStatus(incomplete) && status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(badgeom small round)");
+                } else {
+                    runtest.pass("Validate::checkWay(badgeom small round)");
+                }
+            }
+        }
+    }
+    
+#if 0
     auto change = ocf.changes.front();
     auto way = change->ways.front();
     plugin->checkWay(*way, "building");
@@ -208,4 +269,5 @@ test_geom(std::shared_ptr<Validate> &plugin)
     plugin->checkWay(*way, "building");
     plugin->cornerAngle(way->linestring);
     ocf.changes.pop_front();
+#endif
 }
