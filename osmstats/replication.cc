@@ -505,18 +505,19 @@ Planet::fetchData(frequency_t freq, const std::string &path,
 {
     std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
     // First search in the cache
-    const bool use_cache{!underpass_dburl.empty()};
+    bool use_cache{!underpass_dburl.empty()};
     Underpass underpass;
     if (use_cache) {
         if (!underpass.connect(underpass_dburl)) {
             log_error(_("Could not connect to underpass DB, caching disabled! "
                         "- DB URL: %1%"),
                       underpass_dburl);
+            use_cache = false;
         } else {
             RemoteURL url;
             try {
                 url.parse("https://fake_planet_server.org/replication/" +
-                          Underpass::freq_to_string(freq) + '/' + path);
+                          Underpass::freq_to_string(freq) + path);
                 const long sequence{url.major * 1000000 + url.minor * 1000 +
                                     url.index};
                 state = underpass.getState(freq, sequence);
@@ -542,10 +543,10 @@ Planet::fetchData(frequency_t freq, const std::string &path,
             state_candidate->frequency = Underpass::freq_to_string(freq);
             if (state_candidate->isValid()) {
                 state = state_candidate;
-                if (underpass.isOpen()) {
+                if (use_cache) {
                     if (!underpass.writeState(*state.get())) {
                         log_error(_("Could not store cached state in the "
-                                    "underpass DB"));
+                                    "underpass DB!"));
                     }
                 }
             } else {
@@ -673,7 +674,7 @@ Planet::fetchDataLessThan(frequency_t freq, ptime timestamp,
                 // The requested state is less than the first state.
                 state = std::make_shared<StateFile>();
             } else {
-                if (underpass.isOpen()) {
+                if (use_cache) {
                     if (!underpass.writeState(*state.get())) {
                         log_error(_("Could not store cached state in the "
                                     "underpass DB"));
@@ -724,13 +725,14 @@ Planet::fetchData(frequency_t freq, ptime timestamp,
     }
 
     // First search in the cache
-    const bool use_cache{!underpass_dburl.empty()};
+    bool use_cache{!underpass_dburl.empty()};
     Underpass underpass;
     if (use_cache) {
         if (!underpass.connect(underpass_dburl)) {
             log_error(_("Could not connect to underpass DB, caching disabled! "
                         "- DB URL: %1%"),
                       underpass_dburl);
+            use_cache = false;
         } else {
             const auto candidate{underpass.getState(freq, timestamp)};
             if ((candidate->timestamp - timestamp) < acceptable_delta) {
@@ -852,7 +854,12 @@ Planet::fetchData(frequency_t freq, long sequence,
                   const std::string &underpass_dburl)
 {
     std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
-    const bool use_cache{!underpass_dburl.empty()};
+    if (sequence < 1) {
+        log_error(_("Invalid sequence (must be > 0)!"));
+        return state;
+    }
+
+    bool use_cache{!underpass_dburl.empty()};
     Underpass underpass;
 
     // First search in the cache
@@ -861,6 +868,7 @@ Planet::fetchData(frequency_t freq, long sequence,
             log_error(_("Could not connect to underpass DB, caching disabled! "
                         "- DB URL: %1%"),
                       underpass_dburl);
+            use_cache = false;
         } else {
             state = underpass.getState(freq, sequence);
         }
@@ -872,7 +880,7 @@ Planet::fetchData(frequency_t freq, long sequence,
         if (connectServer()) {
             state = fetchData(freq, sequenceToPath(sequence), underpass_dburl);
             if (state->isValid()) {
-                if (underpass.isOpen()) {
+                if (use_cache) {
                     if (!underpass.writeState(*state.get())) {
                         log_error(_("Could not store cached state in the "
                                     "underpass DB"));
@@ -914,6 +922,7 @@ Planet::fetchDataGreaterThan(frequency_t freq, ptime timestamp,
             log_error(_("Could not connect to underpass DB, caching disabled! "
                         "- DB URL: %1%"),
                       underpass_dburl);
+            use_cache = false;
         } else {
             state = underpass.getStateGreaterThan(freq, timestamp);
         }
@@ -930,7 +939,7 @@ Planet::fetchDataGreaterThan(frequency_t freq, ptime timestamp,
                 // The requested state is greater than the last state.
                 state = std::make_shared<StateFile>();
             } else {
-                if (underpass.isOpen()) {
+                if (use_cache) {
                     if (!underpass.writeState(*state.get())) {
                         log_error(_("Could not store cached state in the "
                                     "underpass DB"));

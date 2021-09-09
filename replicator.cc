@@ -63,9 +63,12 @@ namespace opts = boost::program_options;
 #include "data/threads.hh"
 #include "data/underpass.hh"
 #include "log.hh"
+#include "replicatorconfig.hh"
 #include "timer.hh"
 
 using namespace osmstats;
+using namespace underpass;
+using namespace replicatorconfig;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
@@ -118,7 +121,7 @@ class Replicator : public replication::Replication
 #if 0
     std::string getLastPath(replication::frequency_t interval) {
         ptime last = ostats.getLastUpdate();
-        underpass::Underpass under;
+        Underpass under;
         auto state = under.getState(interval, last);
         return state->path;
     };
@@ -169,6 +172,7 @@ class Replicator : public replication::Replication
 int
 main(int argc, char *argv[])
 {
+
     // Store the file names for replication files
     std::string changeset;
     std::string osmchange;
@@ -178,12 +182,9 @@ main(int argc, char *argv[])
     ptime starttime(not_a_date_time);
     ptime endtime(not_a_date_time);
     std::string url;
-<<<<<<< HEAD
 
     std::string osmStatsDbUrl = "localhost/osmstats";
-=======
     std::string osmstats_db_url = "localhost/osmstats";
->>>>>>> Add up db url config option, check changeset(s)
     // std::string pserver = "https://download.openstreetmap.fr";
     // std::string pserver = "https://planet.openstreetmap.org";
 
@@ -193,41 +194,42 @@ main(int argc, char *argv[])
     std::string underpass_db_url = "localhost/underpass";
     // Tasking Manager DB server connection: HOST or
     // USER:PASSSWORD@HOST/DATABASENAME
-<<<<<<< HEAD
     std::string tmDbUrl = "localhost";
 
     // Osm22pgsql DB server connection: HOST or
     // USER:PASSSWORD@HOST/DATABASENAME
     std::string osm2pgsqlDbUrl = "localhost/osm2pgsql";
 
-=======
     std::string tm_db_url = "localhost/taskingmanager";
->>>>>>> Add up db url config option, check changeset(s)
     // Tasking Manager user sync frequency in seconds (-1 -> disabled, 0 ->
     // single shot, > 0 -> interval)
     long tmusersfrequency{-1};
     std::string datadir = "replication/";
     std::string boundary = "priority.geojson";
-    replication::frequency_t frequency = replication::minutely;
+
+    ReplicatorConfig replicator_config;
 
     opts::positional_options_description p;
     opts::variables_map vm;
     try {
         opts::options_description desc("Allowed options");
         // clang-format off
-        desc.add_options()("help,h", "display help")
-            ("server,s", opts::value<std::string>(), "Database server (defaults to localhost/osmstats)")
-            ("tmserver", opts::value<std::string>(), "Tasking Manager database server (defaults to localhost/taskingmanager), "
+        desc.add_options()
+            ("help,h", "display help")
+            ("server,s", opts::value<std::string>(), "Database server for replicator output (defaults to localhost/osmstats) "
                                                      "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
-            ("upserver", opts::value<std::string>(), "Underpass database server (defaults to localhost/underpass), "
+            ("tmserver", opts::value<std::string>(), "Tasking Manager database server for input  (defaults to localhost/taskingmanager), "
+                                                     "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
+            ("upserver", opts::value<std::string>(), "Underpass database server for internal use (defaults to localhost/underpass), "
                                                      "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
             ("osm2pgsqlserver", opts::value<std::string>(), "Osm2pgsql database server (defaults to localhost), "
                                                      "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
             ("tmusersfrequency", opts::value<std::string>(), "Frequency in seconds for the Tasking Manager database users "
-                                                             "synchronization: -1 -> disabled, 0 -> single shot, > 0 interval in seconds")
+                                                             "synchronization: -1 (disabled), 0 (single shot), > 0 (interval in seconds)")
             ("planet,p", opts::value<std::string>(), "Replication server (defaults to planet.maps.mail.ru)")
-            ("url,u", opts::value<std::string>(), "Starting URL (ex. 000/075/000)")("monitor,m", "Starting monitor")
-            ("frequency,f", opts::value<std::string>(), "Update frequency (hour, daily), default minute)")
+            ("url,u", opts::value<std::string>(), "Starting URL path (ex. 000/075/000), takes precedence over 'timestamp' option")
+            ("monitor,m", "Start monitoring")
+            ("frequency,f", opts::value<std::string>(), "Update frequency (hourly, daily), default minutely)")
             ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp")
             ("import,i", opts::value<std::string>(), "Initialize OSM database with datafile")
             ("boundary,b", opts::value<std::string>(), "Boundary polygon file name")
@@ -246,7 +248,17 @@ main(int argc, char *argv[])
 
         if (vm.count("help")) {
             std::cout << "Usage: options_description [options]" << std::endl;
-            std::cout << desc;
+            std::cout << desc << std::endl;
+            std::cout << "A few configuration options can be set through the "
+                         "environment,"
+                      << std::endl;
+            std::cout << "this is the current status of the configuration "
+                         "options with"
+                      << std::endl;
+            std::cout << "the environment variable names and their current "
+                         "values (possibly defaults)."
+                      << std::endl;
+            std::cout << replicator_config.dbConfigHelp() << std::endl;
             return 0;
         }
     } catch (std::exception &e) {
@@ -254,20 +266,31 @@ main(int argc, char *argv[])
         return 1;
     }
 
-<<<<<<< HEAD
     // Osm2pgsql options
     if (vm.count("osm2pgsqlserver")) {
         osm2pgsqlDbUrl = vm["osm2pgsqlserver"].as<std::string>();
-=======
     // Underpass users options
     if (vm.count("upserver")) {
         underpass_db_url = vm["upserver"].as<std::string>();
->>>>>>> Add up db url config option, check changeset(s)
+    logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
+    if (vm.count("verbose")) {
+        dbglogfile.setVerbosity();
+    }
+
+    // Log to stdout by default
+    // TODO: add an option to log to a file
+    // dbglogfile.setWriteDisk(true);
+    // dbglogfile.setLogFilename("underpass.log");
+
+    // Underpass DB for internal use
+    if (vm.count("upserver")) {
+        replicator_config.underpass_db_url = vm["upserver"].as<std::string>();
     }
 
     // TM users options
     if (vm.count("tmserver")) {
-        tm_db_url = vm["tmserver"].as<std::string>();
+        replicator_config.taskingmanager_db_url =
+            vm["tmserver"].as<std::string>();
     }
 
     if (vm.count("tmusersfrequency")) {
@@ -279,7 +302,7 @@ main(int argc, char *argv[])
                       "tmusersfrequency!");
             exit(-1);
         } else {
-            tmusersfrequency = converted;
+            replicator_config.taskingmanager_users_update_frequency = converted;
         }
     }
 
@@ -287,22 +310,13 @@ main(int argc, char *argv[])
         boundary = vm["boundary"].as<std::string>();
     }
 
-    logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
-    dbglogfile.setWriteDisk(true);
-    if (vm.count("verbose")) {
-        dbglogfile.setLogFilename("underpass.log");
-        dbglogfile.setVerbosity();
-    }
-
     if (vm.count("debug")) {
         dbglogfile.setVerbosity();
     }
 
     if (vm.count("server")) {
-        osmstats_db_url = vm["server"].as<std::string>();
+        replicator_config.osmstats_db_url = vm["server"].as<std::string>();
     }
-    // osmstats::QueryOSMStats ostats;
-    // ostats.connect(dburl);
 
     geoutil::GeoUtil geou;
     std::string priority = SRCDIR;
@@ -331,10 +345,10 @@ main(int argc, char *argv[])
 
     std::unique_ptr<std::thread, decltype(stopTmUserSyncMonitor)>
         tmUserSyncMonitorThread(nullptr, stopTmUserSyncMonitor);
-    if (tmusersfrequency >= 0) {
-        tmUserSyncMonitorThread.reset(new std::thread(
-            threads::threadTMUsersSync, std::ref(tmUserSyncIsActive), tm_db_url,
-            osmstats_db_url, tmusersfrequency));
+    if (replicator_config.taskingmanager_users_update_frequency >= 0) {
+        tmUserSyncMonitorThread.reset(
+            new std::thread(threads::threadTMUsersSync,
+                            std::ref(tmUserSyncIsActive), replicator_config));
     }
 
     // End of Tasking Manager user sync setup
@@ -347,11 +361,17 @@ main(int argc, char *argv[])
         changeset->readChanges(file);
         changeset->areaFilter(geou.boundary);
         osmstats::QueryOSMStats ostats;
-        ostats.connect(osmstats_db_url);
-        for (auto it = std::begin(changeset->changes);
-             it != std::end(changeset->changes); ++it) {
-            ostats.applyChange(*it->get());
+        if (ostats.connect(replicator_config.osmstats_db_url)) {
+            for (auto it = std::begin(changeset->changes);
+                 it != std::end(changeset->changes); ++it) {
+                ostats.applyChange(*it->get());
+            }
+        } else {
+            log_error("ERROR: could not connect to osmstats DB, check 'server' "
+                      "parameter!");
+            exit(-1);
         }
+
         exit(0);
     }
 
@@ -359,9 +379,9 @@ main(int argc, char *argv[])
     std::vector<std::string> rawfile;
     std::shared_ptr<std::vector<unsigned char>> data;
 
-    // This is a full URL to server with replication files
+    // This is a full URL to the DB server with osmstats files
     if (vm.count("url")) {
-        url = vm["url"].as<std::string>();
+        replicator_config.starting_url_path = vm["url"].as<std::string>();
     }
     // This is the default data directory on that server
     if (vm.count("datadir")) {
@@ -372,19 +392,24 @@ main(int argc, char *argv[])
         datadir = tmp;
     }
 
-    std::string strfreq = "minute";
     if (vm.count("frequency")) {
-        strfreq = vm["frequency"].as<std::string>();
+        const auto strfreq = vm["frequency"].as<std::string>();
         if (strfreq[0] == 'm') {
-            frequency = replication::minutely;
+            replicator_config.frequency = replication::minutely;
         } else if (strfreq[0] == 'h') {
-            frequency = replication::hourly;
+            replicator_config.frequency = replication::hourly;
         } else if (strfreq[0] == 'd') {
-            frequency = replication::daily;
+            replicator_config.frequency = replication::daily;
+        } else {
+            std::cerr << "ERROR: Invalid frequency!" << std::endl;
+            exit(-1);
         }
     }
 
-    std::string fullurl = pserver + "/" + datadir + strfreq + "/" + url;
+    const std::string fullurl{
+        replicator_config.planet_server + "/" + datadir +
+        Underpass::freq_to_string(replicator_config.frequency) + "/" +
+        replicator_config.starting_url_path};
     replication::RemoteURL remote(fullurl);
     //     remote.dump();
     // Specify a timestamp used by other options
@@ -400,23 +425,20 @@ main(int argc, char *argv[])
         }
     }
 
-    // osmstats::QueryOSMStats ostats;
-    // ostats.connect();
-    underpass::Underpass under;
-    std::string upurl;
-    if (!osmstats_db_url.empty()) {
-        upurl = osmstats_db_url.substr(0, osmstats_db_url.find('/'));
-        upurl += "/underpass";
-    } else {
-        upurl = "localhost/underpass";
+    // Check connection to underpass DB
+    Underpass under;
+    if (!under.connect(replicator_config.underpass_db_url)) {
+        log_error("ERROR: could not connect to underpass DB, check 'upserver' "
+                  "parameter!");
     }
-    under.connect(upurl);
+
     replication::Planet planet(remote);
     std::string last;
     std::string clast;
 
     if (vm.count("monitor")) {
-        if (starttime.is_not_a_date_time() && url.size() == 0) {
+        if (starttime.is_not_a_date_time() &&
+            replicator_config.starting_url_path.size() == 0) {
             log_error("ERROR: You need to supply either a timestamp or URL!");
             //         if (timestamp.is_not_a_date_time()) {
             //             timestamp = ostats.getLastUpdate();
@@ -435,46 +457,47 @@ main(int argc, char *argv[])
         std::thread osmchanges_updates_thread;
         std::thread changesets_thread;
 
-        if (!url.empty()) {
-            last = url;
-            // Mame sure the path starts with a slash
-            if (last[0] != '/') {
-                last.insert(0, 1, '/');
+        if (!replicator_config.starting_url_path.empty()) {
+            // Make sure the path starts with a slash
+            if (replicator_config.starting_url_path[0] != '/') {
+                replicator_config.starting_url_path.insert(0, 1, '/');
             }
             // remote.dump();
-            osmchanges_updates_thread =
-                std::thread(threads::startMonitor, std::ref(remote),
-                            std::ref(geou.boundary), std::ref(osmStatsDbUrl),
-                            std::ref(osm2pgsqlDbUrl));
+            osmchanges_updates_thread = std::thread(
+                threads::startMonitor, std::ref(remote),
+                std::ref(geou.boundary), std::ref(replicator_config));
 
-            auto state = planet.fetchData(frequency, last, underpass_db_url);
+            auto state = planet.fetchData(replicator_config.frequency, last,
+                                          replicator_config.underpass_db_url);
 
             if (!state->isValid()) {
                 std::cerr << "ERROR: No last path!" << std::endl;
                 exit(EXIT_DB_FAILURE);
             }
 
-            auto state2 = planet.fetchData(replication::changeset,
-                                           state->timestamp, underpass_db_url);
+            auto state2 =
+                planet.fetchData(replication::changeset, state->timestamp,
+                                 replicator_config.underpass_db_url);
             if (!state2->isValid()) {
                 std::cerr << "ERROR: No changeset path!" << std::endl;
                 exit(-1);
             }
 
             state2->dump();
-            clast = pserver + "/" + datadir + "changesets/" + state2->path;
+            clast = replicator_config.planet_server + "/" + datadir +
+                    "changesets/" + state2->path;
             remote.parse(clast);
             // remote.dump();
-            changesets_thread =
-                std::thread(threads::startMonitor, std::ref(remote),
-                            std::ref(geou.boundary), std::ref(osmStatsDbUrl),
-                            std::ref(osm2pgsqlDbUrl));
+            changesets_thread = std::thread(
+                threads::startMonitor, std::ref(remote),
+                std::ref(geou.boundary), std::ref(replicator_config));
         } else if (!starttime.is_not_a_date_time()) {
             // No URL, use the timestamp
-            auto state = under.getState(frequency, starttime);
+            auto state = under.getState(replicator_config.frequency, starttime);
             if (state->isValid()) {
                 auto tmp =
-                    planet.fetchData(frequency, starttime, underpass_db_url);
+                    planet.fetchData(replicator_config.frequency, starttime,
+                                     replicator_config.underpass_db_url);
                 if (tmp->path.empty()) {
                     std::cerr << "ERROR: No last path!" << std::endl;
                     exit(-1);

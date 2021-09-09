@@ -82,9 +82,6 @@ class TestPlanet : public Planet
     bool init_test_case()
     {
 
-        logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
-        dbglogfile.setVerbosity();
-
         const std::string dbconn{getenv("UNDERPASS_TEST_DB_CONN")
                                      ? getenv("UNDERPASS_TEST_DB_CONN")
                                      : ""};
@@ -132,7 +129,7 @@ main(int argc, char *argv[])
     // Test preconditions
 
     logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
-    dbglogfile.setLogFilename("");
+    dbglogfile.setWriteDisk(false);
     dbglogfile.setVerbosity();
 
     TestPlanet test_planet;
@@ -351,12 +348,12 @@ main(int argc, char *argv[])
     data = test_planet.fetchData(minutely,
                                  time_from_string("2016-05-17 15:47:03"));
     VERIFY(data->isValid() && data->sequence == 1924905,
-           "Timing test for 2016-05-17 15:47:03");
+           "Underpass::fetchData(minutely, 2016-05-17 15:47:03)");
 
     data = test_planet.fetchData(minutely,
                                  time_from_string("2021-09-07 15:47:03"));
     VERIFY(data->isValid() && data->sequence == 4704890,
-           "Timing test for 2021-09-07 15:47:03");
+           "Underpass::fetchData(minutely, 2021-09-07 15:47:03)");
 
 #if 0
    // Timing tests (uncached)

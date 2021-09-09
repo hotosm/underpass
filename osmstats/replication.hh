@@ -53,7 +53,6 @@ namespace ssl = boost::asio::ssl; // from <boost/asio/ssl.hpp>
 #include <boost/format.hpp>
 using boost::format;
 
-#include "data/threads.hh"
 #include "osmstats/changeset.hh"
 #include "timer.hh"
 // #include "osmstats/osmstats.hh"

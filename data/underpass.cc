@@ -245,6 +245,11 @@ Underpass::getFirstState(replication::frequency_t freq)
 std::shared_ptr<replication::StateFile>
 Underpass::stateFromQuery(const std::string &where, const std::string &order_by)
 {
+    // Precondition
+    assert(sdb);
+
+    auto state = std::make_shared<replication::StateFile>();
+
     pqxx::work worker(*sdb);
     std::string query =
         "SELECT frequency,timestamp,sequence,path,created_at,closed_at FROM "
@@ -259,28 +264,29 @@ Underpass::stateFromQuery(const std::string &where, const std::string &order_by)
 
     query += " LIMIT 1;";
     log_debug(_("QUERY: %1%"), query);
-    pqxx::result result = worker.exec(query);
-    auto state = std::make_shared<replication::StateFile>();
-    if (result.size() > 0) {
-        state->frequency = pqxx::to_string(result[0][0]);
-        state->timestamp = time_from_string(pqxx::to_string(result[0][1]));
-        state->sequence = result[0][2].as(int(0));
-        state->path = pqxx::to_string(result[0][3]);
-        auto datetime_str{pqxx::to_string(result[0][5])};
-        if (!datetime_str.empty()) {
-            state->created_at = time_from_string(datetime_str);
+    try {
+        pqxx::result result = worker.exec(query);
+        if (result.size() > 0) {
+            state->frequency = pqxx::to_string(result[0][0]);
+            state->timestamp = time_from_string(pqxx::to_string(result[0][1]));
+            state->sequence = result[0][2].as(int(0));
+            state->path = pqxx::to_string(result[0][3]);
+            auto datetime_str{pqxx::to_string(result[0][5])};
+            if (!datetime_str.empty()) {
+                state->created_at = time_from_string(datetime_str);
+            }
+            datetime_str = pqxx::to_string(result[0][6]);
+            if (!datetime_str.empty()) {
+                state->closed_at = time_from_string(datetime_str);
+            }
+        } else {
+            log_debug(_("Returning invalid state: no rows from query - %1%"),
+                      query);
         }
-        datetime_str = pqxx::to_string(result[0][6]);
-        if (!datetime_str.empty()) {
-            state->closed_at = time_from_string(datetime_str);
-        }
-    } else {
-        log_debug(_("Returning invalid state: no rows from query - %1%"),
-                  query);
+        worker.commit();
+    } catch (std::exception const &e) {
+        log_error(_("Error quering states table: %1%"), e.what());
     }
-
-    worker.commit();
-
     return state;
 }
 
