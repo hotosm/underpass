@@ -167,4 +167,74 @@
       <tag k="note" v="Looks rectangular, fails validation"/>
     </way>
   </create>
+  <create>
+    <node id="7671857999" lat="13.0570944" lon="11.0148590" version="1" timestamp="2020-06-30T21:15:23Z" changeset="87366985" uid="10969282" user="Dani To"/>
+    <node id="7671858000" lat="13.0570756" lon="11.0148719" version="1" timestamp="2020-06-30T21:15:23Z" changeset="87366985" uid="10969282" user="Dani To"/>
+    <node id="7671858001" lat="13.0570703" lon="11.0148987" version="1" timestamp="2020-06-30T21:15:23Z" changeset="87366985" uid="10969282" user="Dani To"/>
+    <node id="7671858002" lat="13.0570787" lon="11.0149105" version="1" timestamp="2020-06-30T21:15:23Z" changeset="87366985" uid="10969282" user="Dani To"/>
+    <node id="7671858003" lat="13.0570954" lon="11.0149105" version="1" timestamp="2020-06-30T21:15:23Z" changeset="87366985" uid="10969282" user="Dani To"/>
+    <node id="7671858004" lat="13.0571132" lon="11.0149073" version="1" timestamp="2020-06-30T21:15:23Z" changeset="87366985" uid="10969282" user="Dani To"/>
+    <node id="7671858005" lat="13.0571205" lon="11.0148901" version="1" timestamp="2020-06-30T21:15:23Z" changeset="87366985" uid="10969282" user="Dani To"/>
+    <node id="7671858006" lat="13.0571205" lon="11.0148772" version="1" timestamp="2020-06-30T21:15:23Z" changeset="87366985" uid="10969282" user="Dani To"/>
+    <node id="7671858007" lat="13.0571121" lon="11.0148633" version="1" timestamp="2020-06-30T21:15:23Z" changeset="87366985" uid="10969282" user="Dani To"/>
+    <way id="821644720" version="1" timestamp="2020-06-30T21:15:23Z" changeset="87366985" uid="10969282" user="Dani To">
+      <nd ref="7671857999"/>
+      <nd ref="7671858000"/>
+      <nd ref="7671858001"/>
+      <nd ref="7671858002"/>
+      <nd ref="7671858003"/>
+      <nd ref="7671858004"/>
+      <nd ref="7671858005"/>
+      <nd ref="7671858006"/>
+      <nd ref="7671858007"/>
+      <nd ref="7671857999"/>
+      <tag k="building" v="yes"/>
+      <tag k="note" v="really bad circle"/>
+  </way>
+  </create>
+  <create>
+    <node id="7672046670" lat="4.3836660" lon="21.6848376" version="1" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672046671" lat="4.3836760" lon="21.6848442" version="1" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672046672" lat="4.3836833" lon="21.6848538" version="1" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672046673" lat="4.3836869" lon="21.6848653" version="1" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672046674" lat="4.3836866" lon="21.6848773" version="1" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672046675" lat="4.3836538" lon="21.6849056" version="1" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672046676" lat="4.3836424" lon="21.6849044" version="1" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672046677" lat="4.3836320" lon="21.6848995" version="1" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672046678" lat="4.3836237" lon="21.6848916" version="1" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672046679" lat="4.3836183" lon="21.6848815" version="1" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672046680" lat="4.3836165" lon="21.6848701" version="1" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672046681" lat="4.3836184" lon="21.6848588" version="1" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672046682" lat="4.3836237" lon="21.6848487" version="1" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672046683" lat="4.3836321" lon="21.6848408" version="1" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672048488" lat="4.3836425" lon="21.6848360" version="2" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672048489" lat="4.3836544" lon="21.6848348" version="2" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672048490" lat="4.3836822" lon="21.6848885" version="2" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672048491" lat="4.3836748" lon="21.6848972" version="2" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <node id="7672048492" lat="4.3836650" lon="21.6849031" version="2" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe"/>
+    <way id="821664154" version="2" timestamp="2020-06-30T23:13:41Z" changeset="87369203" uid="11392201" user="GiantGiraffe">
+      <nd ref="7672046675"/>
+      <nd ref="7672046676"/>
+      <nd ref="7672046677"/>
+      <nd ref="7672046678"/>
+      <nd ref="7672046679"/>
+      <nd ref="7672046680"/>
+      <nd ref="7672046681"/>
+      <nd ref="7672046682"/>
+      <nd ref="7672046683"/>
+      <nd ref="7672048488"/>
+      <nd ref="7672048489"/>
+      <nd ref="7672046670"/>
+      <nd ref="7672046671"/>
+      <nd ref="7672046672"/>
+      <nd ref="7672046673"/>
+      <nd ref="7672046674"/>
+      <nd ref="7672048490"/>
+      <nd ref="7672048491"/>
+      <nd ref="7672048492"/>
+      <nd ref="7672046675"/>
+      <tag k="building" v="yes"/>
+      <tag k="note" v="really big circle"/>
+    </way>
+  </create>
 </osmChange>
