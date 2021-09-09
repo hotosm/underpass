@@ -383,6 +383,13 @@ main(int argc, char *argv[])
     if (vm.count("url")) {
         replicator_config.starting_url_path = vm["url"].as<std::string>();
     }
+
+    // Make sure the path starts with a slash
+    if (!replicator_config.starting_url_path.empty() &&
+        replicator_config.starting_url_path[0] != '/') {
+        replicator_config.starting_url_path.insert(0, 1, '/');
+    }
+
     // This is the default data directory on that server
     if (vm.count("datadir")) {
         datadir = vm["datadir"].as<std::string>();
@@ -408,7 +415,7 @@ main(int argc, char *argv[])
 
     const std::string fullurl{
         replicator_config.planet_server + "/" + datadir +
-        Underpass::freq_to_string(replicator_config.frequency) + "/" +
+        Underpass::freq_to_string(replicator_config.frequency) +
         replicator_config.starting_url_path};
     replication::RemoteURL remote(fullurl);
     //     remote.dump();
@@ -433,7 +440,6 @@ main(int argc, char *argv[])
     }
 
     replication::Planet planet(remote);
-    std::string last;
     std::string clast;
 
     if (vm.count("monitor")) {
@@ -458,20 +464,19 @@ main(int argc, char *argv[])
         std::thread changesets_thread;
 
         if (!replicator_config.starting_url_path.empty()) {
-            // Make sure the path starts with a slash
-            if (replicator_config.starting_url_path[0] != '/') {
-                replicator_config.starting_url_path.insert(0, 1, '/');
-            }
+
             // remote.dump();
             osmchanges_updates_thread = std::thread(
                 threads::startMonitor, std::ref(remote),
                 std::ref(geou.boundary), std::ref(replicator_config));
 
-            auto state = planet.fetchData(replicator_config.frequency, last,
+            auto state = planet.fetchData(replicator_config.frequency,
+                                          replicator_config.starting_url_path,
                                           replicator_config.underpass_db_url);
 
             if (!state->isValid()) {
-                std::cerr << "ERROR: No last path!" << std::endl;
+                std::cerr << "ERROR: Invalid state from path!"
+                          << replicator_config.starting_url_path << std::endl;
                 exit(EXIT_DB_FAILURE);
             }
 
@@ -509,7 +514,8 @@ main(int argc, char *argv[])
                 // last = replicator.baseurl + under.freq_to_string(frequency) +
                 // "/" + state->path;
             }
-            log_debug(_("Last minutely is "), last);
+            log_debug(_("Last minutely is "),
+                      replicator_config.starting_url_path);
             // mthread = std::thread(threads::startMonitor, std::ref(remote));
         }
 

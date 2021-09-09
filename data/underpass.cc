@@ -271,11 +271,11 @@ Underpass::stateFromQuery(const std::string &where, const std::string &order_by)
             state->timestamp = time_from_string(pqxx::to_string(result[0][1]));
             state->sequence = result[0][2].as(int(0));
             state->path = pqxx::to_string(result[0][3]);
-            auto datetime_str{pqxx::to_string(result[0][5])};
+            auto datetime_str{pqxx::to_string(result[0][4])};
             if (!datetime_str.empty()) {
                 state->created_at = time_from_string(datetime_str);
             }
-            datetime_str = pqxx::to_string(result[0][6]);
+            datetime_str = pqxx::to_string(result[0][5]);
             if (!datetime_str.empty()) {
                 state->closed_at = time_from_string(datetime_str);
             }

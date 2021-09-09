@@ -68,9 +68,11 @@ class GeoUtil;
 namespace changeset {
 
 /// Check a character in a string if it'S a control character
-extern bool IsControl(int i);
+extern bool
+IsControl(int i);
 
-extern std::string fixString(std::string text);
+extern std::string
+fixString(std::string text);
 
 /// \file changeset.hh
 /// \brief The file is used for processing changeset files
@@ -96,25 +98,16 @@ class ChangeSet
     void dump(void);
 
     /// Add a hashtag to internal storage
-    void
-    addHashtags(std::string text) {
-        hashtags.push_back(fixString(text));
-    };
+    void addHashtags(std::string text) { hashtags.push_back(fixString(text)); };
 
     /// Add the comment field, which is often used for hashtags
-    void
-    addComment(std::string text) {
-        comment = fixString(text);
-    };
+    void addComment(std::string text) { comment = fixString(text); };
 
     /// Add the editor field
-    void
-    addEditor(std::string text) {
-        editor = fixString(text);
-    };
+    void addEditor(std::string text) { editor = fixString(text); };
 
     // osmstats::RawCountry country;
-    int countryid;
+    int countryid = -1;
     // protected so testcases can access private data
     // protected:
     // These fields come from the changeset replication file

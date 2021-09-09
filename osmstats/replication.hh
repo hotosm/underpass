@@ -91,7 +91,7 @@ namespace replication {
 typedef enum { minutely, hourly, daily, changeset } frequency_t;
 
 /// \class StateFile
-/// \brief Data structure for state.text files
+/// \brief Data structure for state.txt files
 ///
 /// This contains the data in a ???.state.txt file, used to identify the timestamp
 /// of the changeset replication file. The replication file uses the same
@@ -107,7 +107,7 @@ class StateFile
         timestamp = not_a_date_time;
         created_at = not_a_date_time;
         closed_at = not_a_date_time;
-        sequence = 0;
+        sequence = -1; // Turns out 0 is a valid sequence for changeset :/
     };
 
     /// Initialize with a state file from disk or memory
@@ -149,7 +149,7 @@ class StateFile
 
     ///
     /// \brief isValid checks the validity of a state file.
-    /// A state file is considered valid is it has a not-null timestamp and a sequence > 0
+    /// A state file is considered valid is it has a not-null timestamp, a path, a frequence and a valid sequence.
     /// \return TRUE if the StateFile is valid.
     ///
     bool isValid() const;
@@ -159,7 +159,8 @@ class StateFile
     std::string path; ///< URL to this file
     ptime timestamp =
         not_a_date_time; ///< The timestamp of the associated changeset file
-    long sequence = 0; ///< The sequence number of the associated changeset file
+    long sequence =
+        -1; ///< The sequence number of the associated changeset/osmchange file
     // FIXME: frequency is stored as a string, an ENUM would be a better choice, DB schema should be changed accordingly,.
     std::string frequency; ///< The time interval of this change file
     /// These two values are updated after the changset is parsed
@@ -192,6 +193,7 @@ class RemoteURL
     void dump(void);
     void Increment(void);
     RemoteURL &operator=(const RemoteURL &inr);
+    long sequence();
 };
 
 /// \class Planet
@@ -313,7 +315,7 @@ class Planet
                          const std::string &underpass_dburl = "");
 
     ///
-    /// \brief fetchDataLessThan finds and returns the first (possibly invalid) state with a sequence less than \a sequence.
+    /// \brief fetchDataLessThan finds and returns a (possibly invalid) state with a sequence less than \a sequence.
     /// \param freq frequency.
     /// \param sequence sequence.
     /// \param underpass_dburl optional url for underpass DB where data are cached, an empty value means no cache will be used.

@@ -87,9 +87,9 @@ struct ReplicatorConfig {
     std::string planet_server = "https://planet.maps.mail.ru";
     frequency_t frequency = frequency_t::minutely;
     std::string starting_url_path =
-        ""; //!< Starting URL path (e.g. /000/000/001)
+        ""; ///< Starting URL path (e.g. /000/000/001)
     long taskingmanager_users_update_frequency =
-        -1; //!< Users synchronization: -1 (disabled), 0 (single shot), > 0 (interval in seconds)
+        -1; ///< Users synchronization: -1 (disabled), 0 (single shot), > 0 (interval in seconds)
 
     ///
     /// \brief dbConfigHelp

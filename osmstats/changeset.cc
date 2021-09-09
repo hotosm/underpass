@@ -79,7 +79,8 @@ namespace changeset {
 
 /// Check a character in a string if it's a control character
 bool
-IsControl(int i) {
+IsControl(int i)
+{
     return (iscntrl(i));
 }
 
@@ -97,7 +98,8 @@ IsControl(int i) {
 ///  <tag k="created_by" v="JOSM/1.5 (7182 en)"/>
 /// </changeset>
 bool
-ChangeSetFile::importChanges(const std::string &file) {
+ChangeSetFile::importChanges(const std::string &file)
+{
     std::ifstream change;
     int size = 0;
     //    store = false;
@@ -129,14 +131,16 @@ ChangeSetFile::importChanges(const std::string &file) {
 }
 
 bool
-ChangeSetFile::readChanges(const std::vector<unsigned char> &buffer) {
+ChangeSetFile::readChanges(const std::vector<unsigned char> &buffer)
+{
 
     // parse_memory((const Glib::ustring &)buffer);
 }
 
 // Read a changeset file from disk or memory into internal storage
 bool
-ChangeSetFile::readChanges(const std::string &file) {
+ChangeSetFile::readChanges(const std::string &file)
+{
     std::ifstream change;
     int size = 0;
     //    store = false;
@@ -177,7 +181,8 @@ ChangeSetFile::readChanges(const std::string &file) {
 }
 
 bool
-ChangeSetFile::areaFilter(const multipolygon_t &poly) {
+ChangeSetFile::areaFilter(const multipolygon_t &poly)
+{
     // log_debug(_("Pre filtering changeset size is %1%"), changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
         ChangeSet *change = it->get();
@@ -209,7 +214,8 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly) {
 }
 
 void
-ChangeSet::dump(void) {
+ChangeSet::dump(void)
+{
     std::cerr << "-------------------------" << std::endl;
     std::cerr << "Change ID: " << id << std::endl;
     std::cerr << "Created At:  " << to_simple_string(created_at) << std::endl;
@@ -240,17 +246,18 @@ ChangeSet::dump(void) {
 }
 
 #ifdef LIBXML
-ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes) {
+ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes)
+{
     for (const auto &attr_pair : attributes) {
         try {
             if (attr_pair.name == "id") {
                 id = std::stol(attr_pair.value); // change id
             } else if (attr_pair.name == "created_at") {
                 created_at =
-                    from_iso_extended_string(attr_pair.value.substr(0, 18));
+                    from_iso_extended_string(attr_pair.value.substr(0, 19));
             } else if (attr_pair.name == "closed_at") {
                 closed_at =
-                    from_iso_extended_string(attr_pair.value.substr(0, 18));
+                    from_iso_extended_string(attr_pair.value.substr(0, 19));
             } else if (attr_pair.name == "open") {
                 if (attr_pair.value == "true") {
                     open = true;
@@ -293,7 +300,8 @@ ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes) {
 #endif // EOF LIBXML
 
 void
-ChangeSetFile::dump(void) {
+ChangeSetFile::dump(void)
+{
     std::cerr << "There are " << changes.size() << " changes" << std::endl;
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         // it->dump();
@@ -303,7 +311,8 @@ ChangeSetFile::dump(void) {
 // Read an istream of the data and parse the XML
 //
 bool
-ChangeSetFile::readXML(std::istream &xml) {
+ChangeSetFile::readXML(std::istream &xml)
+{
     // log_debug(_(xml.rdbuf();
 #ifdef LIBXML
     // libxml calls on_element_start for each node, using a SAX parser,
@@ -368,13 +377,15 @@ ChangeSetFile::readXML(std::istream &xml) {
 
 #ifdef LIBXML
 void
-ChangeSetFile::on_end_element(const Glib::ustring &name) {
+ChangeSetFile::on_end_element(const Glib::ustring &name)
+{
     // log_debug(_("Element \'%1%\' ending"), name);
 }
 
 void
 ChangeSetFile::on_start_element(const Glib::ustring &name,
-                                const AttributeList &attributes) {
+                                const AttributeList &attributes)
+{
     // log_debug(_("Element \'" << name << "\' starting" << std::endl;
     if (name == "changeset") {
         auto change = std::make_shared<changeset::ChangeSet>(attributes);
@@ -478,7 +489,8 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
 #endif // EOF LIBXML
 
 std::string
-fixString(std::string text) {
+fixString(std::string text)
+{
     std::string newstr;
     int i = 0;
     while (i < text.size()) {

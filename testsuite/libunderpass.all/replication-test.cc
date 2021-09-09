@@ -130,7 +130,7 @@ main(int argc, char *argv[])
 
     logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
     dbglogfile.setWriteDisk(false);
-    dbglogfile.setVerbosity();
+    dbglogfile.setVerbosity(logger::LogFile::LOG_DEBUG);
 
     TestPlanet test_planet;
     Underpass underpass;
@@ -169,6 +169,84 @@ main(int argc, char *argv[])
 
     // Store fetch results
     std::shared_ptr<StateFile> data;
+
+    // //////////////////////////////////////////////////////////////////////
+    // Changeset tests
+    //
+    const auto initial_changeset_data =
+        test_planet.fetchData(replication::changeset, 0);
+    VERIFY(initial_changeset_data->isValid() &&
+               initial_changeset_data->sequence == 0 &&
+               initial_changeset_data->frequency ==
+                   Underpass::freq_to_string(replication::changeset) &&
+               initial_changeset_data->path.compare("/000/000/000") == 0 &&
+               to_iso_extended_string(initial_changeset_data->timestamp)
+                       .compare("2012-10-28T19:35:49") == 0 &&
+               !underpass.getFirstState(replication::changeset)->isValid(),
+           "Underpass::fetchData(changeset, 0)")
+
+    data = test_planet.fetchData(replication::changeset, 0, replication_conn);
+    VERIFY(*data.get() == *initial_changeset_data.get() &&
+               underpass.getFirstState(replication::changeset)->isValid(),
+           "Underpass::fetchData(changeset, 0, replication_conn)")
+
+    // Now retrieve the cached value
+    data = test_planet.fetchData(replication::changeset, 0, replication_conn);
+    VERIFY(*data.get() == *initial_changeset_data.get() &&
+               underpass.getFirstState(replication::changeset)->isValid(),
+           "Underpass::fetchData(changeset, 0, replication_conn) - cached")
+
+    // Fetch first, force scan
+    data = test_planet.fetchDataFirst(replication::changeset, "", true);
+    VERIFY(*data.get() == *initial_changeset_data.get(),
+           "Underpass::fetchDataLast(replication::changeset, \"\", force_scan) "
+           "- uncached)")
+
+    data = test_planet.fetchDataFirst(replication::changeset);
+    VERIFY(*data.get() == *initial_changeset_data.get(),
+           "Underpass::fetchDataLast(replication::changeset, \"\") - uncached)")
+
+    data = test_planet.fetchDataFirst(replication::changeset, replication_conn);
+    VERIFY(*data.get() == *initial_changeset_data.get(),
+           "Underpass::fetchDataLast(replication::changeset, replication_conn) "
+           "- uncached)")
+
+    data = test_planet.fetchDataFirst(replication::changeset, replication_conn);
+    VERIFY(*data.get() == *initial_changeset_data.get(),
+           "Underpass::fetchDataLast(replication::changeset, replication_conn) "
+           "- cached)")
+
+    // Fetch last
+    // 4704925 was the last sequence when I wrote this test
+    data = test_planet.fetchDataLast(replication::changeset);
+    VERIFY(data->isValid() && data->sequence > 4621312,
+           "Underpass::fetchDataLast(replication::changeset) - uncached)")
+
+    data = test_planet.fetchDataLast(replication::changeset, replication_conn);
+    VERIFY(
+        data->isValid() && data->sequence > 4621312,
+        "Underpass::fetchDataLast(replication::changeset) - replication_conn)")
+
+    data = test_planet.fetchDataLast(replication::changeset, replication_conn);
+    VERIFY(data->isValid() && data->sequence > 4621312,
+           "Underpass::fetchDataLast(replication::changeset) - "
+           "replication_conn) - cached")
+
+    // Path is offset by one!
+    data = test_planet.fetchData(replication::changeset, 3939092);
+    VERIFY(data->isValid() && data->sequence == 3939092 &&
+               data->path == "/003/939/093",
+           "Underpass::fetchData(replication::changeset, 3939092)")
+
+    data = test_planet.fetchData(replication::changeset,
+                                 time_from_string("2020-05-17 15:45:01"),
+                                 replication_conn);
+    VERIFY(data->isValid() && data->sequence == 3939092,
+           "Underpass::fetchData(replication::changeset, 3939092)")
+
+    // //////////////////////////////////////////////////////////////////////
+    // OsmChange tests
+    //
 
     // Test scan
     const auto links{test_planet.scanDirectory("/replication/minute/000/000/")};
@@ -222,11 +300,11 @@ main(int argc, char *argv[])
     VERIFY(data->isValid() && data->sequence > 4704925,
            "Underpass::fetchDataLast(minutely) - uncached)")
 
-    auto data_cached = test_planet.fetchDataLast(minutely, replication_conn);
+    data = test_planet.fetchDataLast(minutely, replication_conn);
     VERIFY(data->isValid() && data->sequence > 4704925,
            "Underpass::fetchDataLast(minutely) - replication_conn)")
 
-    data_cached = test_planet.fetchDataLast(minutely, replication_conn);
+    data = test_planet.fetchDataLast(minutely, replication_conn);
     VERIFY(data->isValid() && data->sequence > 4704925,
            "Underpass::fetchDataLast(minutely) - replication_conn) - cached")
 
