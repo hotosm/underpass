@@ -69,12 +69,38 @@ metadata tags beyond *building=yes*. When local mappers import more
 detailed data, or update the existing metadata, those values get
 added. This is the current set of building values being accumulated.
 
-- hospital
+- yes
+- house
+- residential
+- commercial
+- retail
+- commercial;residential
+- apartments
+- kitchen
+- roof
+- construction
 - school
-- healthcare
 - clinic
-- health center
-- health centre
+- hospital
+- office
+- public
+- church
+- mosque
+- temple
+- service
+- warehouse
+- industrial
+- kiosk
+- abandoned
+- cabin
+- bungalow
+- hotel
+- farm
+- hut
+- train_station
+- house_boat
+- barn
+- historic
 - latrine
 - latrines
 - toilet
@@ -115,15 +141,15 @@ easy to determine. An accumulated value for the total of highways, and
 the total length in kilometers is store as an aggregate. More detailed
 statistics are also kept allowing more detail when needed.
 
-- highway
+- trunk
 - tertiary
 - secondary
 - unclassified
 - track
 - residential
 - path
+- service
 - bridge
-- waterway
 
 ### School Types
 
@@ -291,3 +317,11 @@ age | The age (optional) of the mapper
 
 Keyword | Description
 --------|------------
+osm_id | The OSM ID of this feature
+user_id | The user ID editing this feature
+change_id | The Changeset ID of this feature
+objtype | The type of opbjecct, node, way, or relation
+angle | The angle of the first corner (current DEBUG only!)
+status[] | An array of flagged issues is the feature
+timestamp | The time of this validation
+location | The centroid of this feature
