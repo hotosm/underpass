@@ -56,22 +56,27 @@ main(int argc, char *argv[])
         runtest.fail("Yaml::read()");
     }
 
-    if (yaml.containsKey("building:material")) {
+    if (yaml.containsKey("building:material") && yaml.containsKey("building:roof")) {
         runtest.pass("Yaml::containsKey()");
     } else {
         runtest.fail("Yaml::containsKey()");
     }
 
-    if (yaml.containsValue("building:material", "metal")) {
+    if (yaml.containsValue("building:material", "metal")&& yaml.containsValue("building:roof", "tiles")) {
         runtest.pass("Yaml::containsValue(good)");
     } else {
         runtest.fail("Yaml::containsValue(good)");
     }
 
-    if (!yaml.containsValue("building:material", "sponge")) {
-        runtest.pass("Yaml::containsValue(bad)");
+    if (yaml.containsKey("building:material") && yaml.containsKey("building:roof")) {
+        runtest.pass("Yaml::containsKey()");
     } else {
-        runtest.fail("Yaml::containsValue(bad)");
+        runtest.fail("Yaml::containsKey()");
     }
 
+    if (yaml.containsKey("building:levels") && yaml["building:levels"].size() == 0) {
+        runtest.pass("Yaml::containsValue(none)");
+    } else {
+        runtest.fail("Yaml::containsValue(none)");
+    }
 }
