@@ -42,21 +42,24 @@ public:
     void read(const std::string &filespec);
     void dump(void);
     std::vector<std::string> &operator[](const std::string &key) {
-        return config[key];
+        return tags[key];
     };
-    std::map<std::string, std::vector<std::string>> config;
+    std::map<std::string, std::string> config;
+    std::map<std::string, std::vector<std::string>> tags;
 
     bool containsKey(const std::string &key) {
-	return config.count(key);
+	return tags.count(key);
     };
-
+    std::string getConfig(const std::string &key) {
+	return config[key];
+    };
     bool containsValue(const std::string &key, const std::string &value) {
 	std::string lower = boost::algorithm::to_lower_copy(value);
-	if (config[key].size() == 0 ) {
+	if (tags[key].size() == 0 ) {
 	    return true;
 	}
-	auto match = std::find(config[key].begin(), config[key].end(), lower);
-	if (match != config[key].end()) {
+	auto match = std::find(tags[key].begin(), tags[key].end(), lower);
+	if (match != tags[key].end()) {
 	    return true;
 	}
 	return false;
