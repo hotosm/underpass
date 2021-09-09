@@ -116,22 +116,18 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     bool values = false;
     // This enables/disables writing features flagged for not being tag complete
     // from being written to the database to reduce the size of the results.
-    if (tests.containsKey("complete")) {
-	if (tests["complete"][0] == "yes") {
-	    minimal = false;
-	} else {
-	    minimal = true;
-	}
+    if (tests.getConfig("complete") == "yes") {
+	minimal = false;
+    } else {
+	minimal = true;
     }
     // This enables/disables writing features flagged for not having values
     // in range as defined in the YAML config file. This prevents those
     // from being written to the database to reduce the size of the results.
-    if (tests.containsKey("values")) {
-	if (tests["values"][0] == "yes") {
-	    values = true;
-	} else {
-	    values = false;
-	}
+    if (tests.getConfig("values") == "yes") {
+	values = true;
+    } else {
+	values = false;
     }
 
     for (auto vit = std::begin(node.tags); vit != std::end(node.tags); ++vit) {
@@ -154,7 +150,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     }
     // std::cerr << keyexists << " : " << valexists << " : " << tests.config.size() << std::endl;
 
-    if (keyexists == tests.config.size() && valexists == tests.config.size()) {
+    if (keyexists == tests.tags.size() && valexists == tests.tags.size()) {
 	status->status.clear();
 	if (!minimal) {
 	    status->status.insert(complete);
@@ -197,33 +193,28 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     bool minimal = false;
     bool values = false;
     // This is the minimum angle used to determine rectangular buildings
-    if (tests.containsKey("minangle")) {
-	minangle = std::stod(tests["minangle"][0]);
+    if (!tests.getConfig("minangle").empty()) {
+	minangle = std::stod(tests.getConfig("minangle"));
     }
     // This is the maximum angle used to determine rectangular buildings
-    if (tests.containsKey("minangle")) {
-	maxangle = std::stod(tests["maxangle"][0]);
+    if (!tests.getConfig("maxangle").empty()) {
+	maxangle = std::stod(tests.getConfig("maxangle"));
     }
     // This enables/disables writing features flagged for not being tag complete
     // from being written to the database to reduce the size of the results.
-    if (tests.containsKey("complete")) {
-	if (tests["complete"][0] == "yes") {
-	    minimal = false;
-	} else {
-	    minimal = true;
-	}
+    if (tests.getConfig("complete") == "yes") {
+	minimal = false;
+    } else {
+	minimal = true;
     }
     // This enables/disables writing features flagged for not having values
     // in range as defined in the YAML config file. This prevents those
     // from being written to the database to reduce the size of the results.
-    if (tests.containsKey("values")) {
-	if (tests["values"][0] == "yes") {
-	    values = true;
-	} else {
-	    values = false;
-	}
+    if (tests.getConfig("values") == "yes") {
+	values = true;
+    } else {
+	values = false;
     }
-
     for (auto vit = std::begin(way.tags); vit != std::end(way.tags); ++vit) {
 	if (tests.containsKey(vit->first)) {
 	    // std::cerr << "Matched key " << vit->first << "!" << std::endl;
@@ -260,10 +251,14 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 	// If it's a building, check for square corners
 	if (way.tags.count("building") || way.tags.count("amenity")) {
 	    double angle = cornerAngle(way.linestring);
-	    std::cerr << "Angle for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
-	    if ((std::abs(angle) >= maxangle || std::abs(angle) <= minangle) && way.refs.size() < 12) {
+	    status->angle = std::abs(angle);
+	    // std::cerr << "Angle for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
+	    if ((std::abs(angle) >= maxangle || std::abs(angle) <= minangle) && std::abs(angle) >= 40) {
 		// std::cerr << "Bad Geometry for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
-		status->status.insert(badgeom);
+		// It's probably round
+		if (std::abs(angle) >= 40) {
+		    status->status.insert(badgeom);
+		}
 	    }
 	} else if (way.refs.size() == 5 && way.tags.size() == 0) {
 	    // See if it's closed, has 4 corners, but no tags
@@ -271,7 +266,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 	}
 	return status;
     }
-    if (keyexists == tests.config.size() && valexists == tests.config.size()) {
+    if (keyexists == tests.tags.size() && valexists == tests.tags.size()) {
 	status->status.clear();
 	status->status.insert(complete);
     } else {
