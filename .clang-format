@@ -1,6 +1,7 @@
 
 BasedOnStyle: LLVM
 AlwaysBreakAfterDefinitionReturnType: All
+BreakStringLiterals: false
 AlwaysBreakTemplateDeclarations: No
 AlwaysBreakAfterReturnType: TopLevel
 ReflowComments: false
@@ -24,4 +25,3 @@ BraceWrapping:
   SplitEmptyFunction: true
   SplitEmptyRecord: true
   SplitEmptyNamespace: true
-
