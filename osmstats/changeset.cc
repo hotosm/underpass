@@ -313,7 +313,6 @@ ChangeSetFile::dump(void)
 bool
 ChangeSetFile::readXML(std::istream &xml)
 {
-    // log_debug(_(xml.rdbuf();
 #ifdef LIBXML
     // libxml calls on_element_start for each node, using a SAX parser,
     // and works well for large files.
@@ -324,8 +323,8 @@ ChangeSetFile::readXML(std::istream &xml)
         // FIXME: files downloaded seem to be missing a trailing \n,
         // so produce an error, but we can ignore this as the file is
         // processed correctly.
-        // log_error(_("libxml++ exception: %1%"), ex.what());
-        int return_code = EXIT_FAILURE;
+        log_error(_("libxml++ exception: %1%"), ex.what());
+        return false;
     }
 #else
     // Boost::parser_tree with RapidXML is faster, but builds a DOM tree
@@ -373,6 +372,7 @@ ChangeSetFile::readXML(std::istream &xml)
         }
     }
 #endif
+    return true;
 }
 
 #ifdef LIBXML
