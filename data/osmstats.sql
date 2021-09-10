@@ -47,6 +47,7 @@ CREATE TABLE public.validation (
     user_id bigint,
     change_id bigint,
     type public.objtype,
+    double angle,
     status public.status[],
     timestamp timestamp with time zone,
     location public.geometry(Geometry,4326)

@@ -319,14 +319,15 @@ main(int argc, char *argv[])
     }
 
     geoutil::GeoUtil geou;
-    std::string priority = SRCDIR;
-    priority += "/data/" + boundary;
-    if (boost::filesystem::exists(priority)) {
-        geou.readFile(datadir + boundary);
-    } else {
-        priority = PKGLIBDIR;
-        priority += "/" + boundary;
-        geou.readFile(priority);
+    std::string priority_area_file_path = SRCDIR;
+    priority_area_file_path += "/data/" + boundary;
+    if (!boost::filesystem::exists(priority_area_file_path)) {
+        priority_area_file_path = PKGLIBDIR;
+        priority_area_file_path += "/" + boundary;
+    }
+
+    if (!geou.readFile(priority_area_file_path)) {
+        log_debug("Could not find 'priority.geojson' area file!");
     }
 
     // Tasking Manager users sync setup

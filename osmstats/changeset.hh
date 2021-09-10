@@ -155,7 +155,7 @@ class ChangeSetFile
   public:
     ChangeSetFile(void){};
 
-    bool areaFilter(const multipolygon_t &poly);
+    void areaFilter(const multipolygon_t &poly);
 
     /// Read a changeset file from disk or memory into internal storage
     bool readChanges(const std::string &file);

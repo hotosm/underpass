@@ -180,7 +180,7 @@ ChangeSetFile::readChanges(const std::string &file)
     change.close();
 }
 
-bool
+void
 ChangeSetFile::areaFilter(const multipolygon_t &poly)
 {
     // log_debug(_("Pre filtering changeset size is %1%"), changes.size());
@@ -198,15 +198,21 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly)
         boost::geometry::append(change->bbox,
                                 point_t(change->max_lon, change->max_lat));
         boost::geometry::centroid(change->bbox, pt);
-        if (!boost::geometry::within(pt, poly)) {
-            // log_debug(_("Validating changeset %1% is not in a priority
-            // area"), change->id);
-            change->priority = false;
-            changes.erase(it--);
-        } else {
-            // log_debug(_("Validating changeset %1% is in a priority area"),
+        if (poly.empty()) {
+            // log_debug(_("Accepting changeset %1% as in priority area because area information is missing"),
             // change->id);
             change->priority = true;
+        } else {
+            if (!boost::geometry::within(pt, poly)) {
+                // log_debug(_("Validating changeset %1% is not in a priority
+                // area"), change->id);
+                change->priority = false;
+                changes.erase(it--);
+            } else {
+                // log_debug(_("Validating changeset %1% is in a priority area"),
+                // change->id);
+                change->priority = true;
+            }
         }
     }
     // log_debug(_("Post filtering changeset size is %1%"),
