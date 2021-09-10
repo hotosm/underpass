@@ -312,6 +312,7 @@ Planet::downloadFile(const std::string &url)
     // Send the HTTP request to the remote host
     try {
         http::write(stream, req);
+        log_debug(_("Downloading https://%1%/%2% ... "), host, url);
     } catch (boost::system::system_error ex) {
         log_error(_("stream write failed: %1%"), ex.what());
         return data;
@@ -322,7 +323,7 @@ Planet::downloadFile(const std::string &url)
 
     // Receive the HTTP response
     http::response_parser<http::string_body> parser;
-    // read_header(stream, buffer, parser);
+
     try {
         read(stream, buffer, parser);
 
@@ -330,21 +331,24 @@ Planet::downloadFile(const std::string &url)
             log_error(_("Remote file not found: %1%"), url);
         } else {
             // Check the magic number of the file
-            if (parser.get().body()[0] == 0x1f) {
-                log_debug(_("It's gzipped"));
+            const auto is_gzipped{parser.get().body()[0] == 0x1f};
+            if (is_gzipped) {
+                log_debug(_("Downloaded body is gzipped"));
             } else {
                 if (parser.get().body()[0] == '<') {
-                    log_debug(_("It's XML"));
+                    log_debug(_("Downloaded body is XML/HTML"));
                 }
             }
 
             for (auto body = std::begin(parser.get().body());
                  body != std::end(parser.get().body()); ++body) {
-                data->push_back((unsigned char)*body);
+                data->push_back(static_cast<unsigned char>(*body));
             }
 
-            // Add the last newline back
-            data->push_back('\n');
+            // Add the last newline back if not gzipped (or we'll get decompression error: unexpected end of file)
+            if (!is_gzipped) {
+                data->push_back('\n');
+            }
         }
 
     } catch (boost::system::system_error ex) {
@@ -361,6 +365,7 @@ Planet::downloadFile(const std::string &url)
     }
 
     if (ec) {
+        // Note: not sure about this, it looks harmless
         log_debug(_("stream shutdown failed: %1%"), ec.message());
     }
 
@@ -524,7 +529,7 @@ Planet::fetchData(frequency_t freq, const std::string &path,
         } else {
             RemoteURL url;
             try {
-                url.parse("https://fake_planet_server.org/replication/" +
+                url.parse("https://" + remote.domain + "/replication/" +
                           Underpass::freq_to_string(freq) + path);
                 const long sequence{url.major * 1000000 + url.minor * 1000 +
                                     url.index};
@@ -556,7 +561,6 @@ Planet::fetchData(frequency_t freq, const std::string &path,
                             boost::iostreams::input>
                             inbuf;
                         inbuf.push(boost::iostreams::gzip_decompressor());
-                        // data->push_back('\n');
                         boost::iostreams::array_source arrs{
                             reinterpret_cast<char const *>(data->data()),
                             data->size()};
@@ -583,9 +587,9 @@ Planet::fetchData(frequency_t freq, const std::string &path,
                                             changeset.changes.front()
                                                 ->created_at;
                                     } catch (const std::exception &ex) {
-                                        log_error(_("Couldn't get sequence "
-                                                    "from: %1%"),
-                                                  osm_gz_full_path);
+                                        log_error(
+                                            _("Couldn't get sequence from: %1%"),
+                                            osm_gz_full_path);
                                     }
                                 } else {
                                     log_error(
@@ -619,8 +623,8 @@ Planet::fetchData(frequency_t freq, const std::string &path,
                 state = state_candidate;
                 if (use_cache) {
                     if (!underpass.writeState(*state.get())) {
-                        log_error(_("Could not store cached state in the "
-                                    "underpass DB!"));
+                        log_error(_(
+                            "Could not store cached state in the underpass DB!"));
                     }
                 }
             } else {
