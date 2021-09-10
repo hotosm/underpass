@@ -117,14 +117,15 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
 std::shared_ptr<replication::StateFile>
 Underpass::getState(replication::frequency_t freq, long sequence)
 {
-    return stateFromQuery("frequency = '" + freq_to_string(freq) +
-                          "' AND sequence=" + std::to_string(sequence));
+    return stateFromQuery("frequency = '" + freq_to_string(freq) + "' AND " +
+                          "sequence=" + std::to_string(sequence));
 }
 
 std::shared_ptr<replication::StateFile>
 Underpass::getStateGreaterThan(replication::frequency_t freq, long sequence)
 {
-    return stateFromQuery("sequence > " + std::to_string(sequence),
+    return stateFromQuery("frequency='" + freq_to_string(freq) + "' AND " +
+                              "sequence > " + std::to_string(sequence),
                           "sequence ASC");
 }
 
@@ -135,15 +136,17 @@ Underpass::getStateGreaterThan(replication::frequency_t freq, ptime &timestamp)
         log_error(_("ERROR: bad timestamp!"));
         return std::make_shared<replication::StateFile>();
     }
-    return stateFromQuery("timestamp > '" + to_iso_extended_string(timestamp) +
-                              "'",
+    return stateFromQuery("frequency='" + freq_to_string(freq) + "' AND " +
+                              " timestamp > '" +
+                              to_iso_extended_string(timestamp) + "'",
                           "timestamp ASC");
 }
 
 std::shared_ptr<replication::StateFile>
 Underpass::getStateLessThan(replication::frequency_t freq, long sequence)
 {
-    return stateFromQuery("sequence > " + std::to_string(sequence),
+    return stateFromQuery("frequency='" + freq_to_string(freq) + "' AND " +
+                              "sequence > " + std::to_string(sequence),
                           "sequence DESC");
 }
 
@@ -154,8 +157,9 @@ Underpass::getStateLessThan(replication::frequency_t freq, ptime &timestamp)
         log_error(_("Bad timestamp!"));
         return std::make_shared<replication::StateFile>();
     }
-    return stateFromQuery("timestamp < '" + to_iso_extended_string(timestamp) +
-                              "'",
+    return stateFromQuery("frequency='" + freq_to_string(freq) + "' AND " +
+                              "timestamp < '" +
+                              to_iso_extended_string(timestamp) + '\'',
                           "timestamp DESC");
 }
 
