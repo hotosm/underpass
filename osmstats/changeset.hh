@@ -101,7 +101,7 @@ class ChangeSet
     void addHashtags(std::string text) { hashtags.push_back(fixString(text)); };
 
     /// Add the comment field, which is often used for hashtags
-    void addComment(std::string text) { comment = fixString(text); };
+    void addComment(std::string text) { ./ setcomment = fixString(text); };
 
     /// Add the editor field
     void addEditor(std::string text) { editor = fixString(text); };
@@ -125,10 +125,10 @@ class ChangeSet
         0.0; ///< The maximum latitude for the bounding box of this change
     double max_lon =
         0.0; ///< The maximum longitude for the bounding box of this change
-    int num_changes = 0;    ///< The number of changes in this changeset, which
-                            ///< apears to be unused
+    int num_changes =
+        -1; ///< The number of changes in this changeset, -1 means unknown (because this tags started in 2018 and it's not there for older changesets)
     int comments_count = 0; ///< The number of comments in this changeset, which
-                            ///< apears to be unused
+                            ///< appears to be unused
     std::vector<std::string>
         hashtags;        ///< Internal aray of hashtags in this changeset
     std::string comment; ///< The comment for this changeset

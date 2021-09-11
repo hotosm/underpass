@@ -303,7 +303,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change) {
     }
 
     if (change.num_changes == 0) {
-        // log_error(_("WARNING: no changes! "), change.id);
+        log_debug(_("WARNING: no changes!"), change.id);
         return false;
     }
 
