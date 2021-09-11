@@ -69,6 +69,9 @@ using namespace osmstats;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
+// Exit code when connection to DB fails
+#define EXIT_DB_FAILURE -1
+
 enum pathMatches { ROOT, DIRECTORY, SUBDIRECTORY, FILEPATH };
 
 using namespace logger;
@@ -175,13 +178,20 @@ main(int argc, char *argv[])
     ptime starttime(not_a_date_time);
     ptime endtime(not_a_date_time);
     std::string url;
+
     std::string osmStatsDbUrl = "localhost/osmstats";
     // std::string pserver = "https://download.openstreetmap.fr";
     // std::string pserver = "https://planet.openstreetmap.org";
+
     std::string pserver = "https://planet.maps.mail.ru";
     // Tasking Manager DB server connection: HOST or
     // USER:PASSSWORD@HOST/DATABASENAME
     std::string tmDbUrl = "localhost";
+
+    // Osm22pgsql DB server connection: HOST or
+    // USER:PASSSWORD@HOST/DATABASENAME
+    std::string osm2pgsqlDbUrl = "localhost/osm2pgsql";
+
     // Tasking Manager user sync frequency in seconds (-1 -> disabled, 0 ->
     // single shot, > 0 -> interval)
     long tmusersfrequency{-1};
@@ -197,6 +207,8 @@ main(int argc, char *argv[])
         desc.add_options()("help,h", "display help")
             ("server,s", opts::value<std::string>(), "Database server (defaults to localhost)")
             ("tmserver", opts::value<std::string>(), "Tasking Manager database server (defaults to localhost), "
+                                                     "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
+            ("osm2pgsqlserver", opts::value<std::string>(), "Osm2pgsql database server (defaults to localhost), "
                                                      "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
             ("tmusersfrequency", opts::value<std::string>(), "Frequency in seconds for the Tasking Manager database users "
                                                              "synchronization: -1 -> disabled, 0 -> single shot, > 0 interval in seconds")
@@ -227,6 +239,11 @@ main(int argc, char *argv[])
     } catch (std::exception &e) {
         std::cout << e.what() << std::endl;
         return 1;
+    }
+
+    // Osm2pgsql options
+    if (vm.count("osm2pgsqlserver")) {
+        osm2pgsqlDbUrl = vm["osm2pgsqlserver"].as<std::string>();
     }
 
     // TM users options
@@ -393,7 +410,6 @@ main(int argc, char *argv[])
         frequency_tags[replication::hourly] = "hour";
         frequency_tags[replication::daily] = "day";
         frequency_tags[replication::changeset] = "changeset";
-        std::string path = frequency_tags[frequency] + "/";
         std::thread mthread;
         std::thread cthread;
         if (!url.empty()) {
@@ -401,14 +417,15 @@ main(int argc, char *argv[])
             // remote.dump();
             mthread =
                 std::thread(threads::startMonitor, std::ref(remote),
-                            std::ref(geou.boundary), std::ref(osmStatsDbUrl));
+                            std::ref(geou.boundary), std::ref(osmStatsDbUrl),
+                            std::ref(osm2pgsqlDbUrl));
             auto state = under.getState(frequency, url);
             state->dump();
             if (state->path.empty()) {
                 auto tmp = planet.findData(frequency, last);
                 if (tmp->path.empty()) {
                     std::cerr << "ERROR: No last path!" << std::endl;
-                    exit(-1);
+                    exit(EXIT_DB_FAILURE);
                 }
             }
             auto state2 =
@@ -420,7 +437,7 @@ main(int argc, char *argv[])
                     planet.findData(replication::changeset, state->timestamp);
                 if (tmp->path.empty()) {
                     std::cerr << "ERROR: No changeset path!" << std::endl;
-                    exit(-1);
+                    exit(EXIT_DB_FAILURE);
                 }
             }
             state2->dump();
@@ -429,7 +446,8 @@ main(int argc, char *argv[])
             // remote.dump();
             cthread =
                 std::thread(threads::startMonitor, std::ref(remote),
-                            std::ref(geou.boundary), std::ref(osmStatsDbUrl));
+                            std::ref(geou.boundary), std::ref(osmStatsDbUrl),
+                            std::ref(osm2pgsqlDbUrl));
         } else if (!starttime.is_not_a_date_time()) {
             // No URL, use the timestamp
             auto state = under.getState(frequency, starttime);
@@ -457,7 +475,7 @@ main(int argc, char *argv[])
         if (mthread.joinable()) {
             mthread.join();
         }
-        exit(0);
+        exit(EXIT_SUCCESS);
     }
 
     std::string statistics;

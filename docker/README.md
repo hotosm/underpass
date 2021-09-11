@@ -7,6 +7,10 @@
 
 A pre-built image of `underpass-build-deps.dockerfile` is available on Docker Hub as `elpaso/underpass-build-deps:focal`.
 
+## Build image
+
+`docker build -t elpaso/underpass-build-deps:focal -f underpass-build-deps.dockerfile .`
+
 ## Docker compose
 
 The docker composition is used in a GH workflow for continuous integration testing.

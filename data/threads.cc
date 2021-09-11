@@ -89,13 +89,14 @@ namespace threads {
 // Starting with this URL, download the file, incrementing
 void
 startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
-             const std::string &dburl)
+             const std::string &dburl, const std::string &osm2pgsql_dburl)
 {
     underpass::Underpass under;
-    under.connect(dburl);
 
     osmstats::QueryOSMStats ostats;
     ostats.connect(dburl);
+
+    osm2pgsql::Osm2Pgsql osm2pgsql(osm2pgsql_dburl);
 
     replication::RemoteURL remote = inr;
     auto planet = std::make_shared<replication::Planet>(remote);
@@ -110,14 +111,13 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
     boost::dll::fs::path lib_path(plugins);
     boost::function<plugin_t> creator;
     try {
-	creator = boost::dll::import_alias<plugin_t>(
-	    lib_path / "libhotosm", "create_plugin",
-	    boost::dll::load_mode::append_decorations
-	    );
-	    log_debug(_("Loaded plugin hotosm!"));
-    } catch (std::exception& e) {
-	    log_debug(_("Couldn't load plugin! %1%"), e.what());
-	    exit(0);
+        creator = boost::dll::import_alias<plugin_t>(
+            lib_path / "libhotosm", "create_plugin",
+            boost::dll::load_mode::append_decorations);
+        log_debug(_("Loaded plugin hotosm!"));
+    } catch (std::exception &e) {
+        log_debug(_("Couldn't load plugin! %1%"), e.what());
+        exit(0);
     }
     auto validator = creator();
     while (mainloop) {
@@ -163,7 +163,8 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
             std::string file = remote.url + ".osc.gz";
             ptime now = boost::posix_time::microsec_clock::local_time();
             timer.startTimer();
-            auto osmchange = threadOsmChange(remote, poly, ostats, validator);
+            auto osmchange =
+                threadOsmChange(remote, poly, ostats, osm2pgsql, validator);
             // FIXME: There is probably a better way to determine when to delay,
             // or when to just keep processing files when catching up.
             timer.endTimer("osmChange");
@@ -295,6 +296,7 @@ startStateThreads(const std::string &base, const std::string &file)
 std::shared_ptr<osmchange::OsmChangeFile>
 threadOsmChange(const replication::RemoteURL &remote,
                 const multipolygon_t &poly, osmstats::QueryOSMStats &ostats,
+                osm2pgsql::Osm2Pgsql &o2pgsql,
                 std::shared_ptr<Validate> &plugin)
 {
     // osmstats::QueryOSMStats ostats;
@@ -352,7 +354,10 @@ threadOsmChange(const replication::RemoteURL &remote,
                 std::cerr << e.what() << std::endl;
                 // return false;
             }
-            // change.readXML(instream);
+
+            // TODO: Start thread to update pgsql DB
+            o2pgsql.updateDatabase(std::string(data->begin(), data->end()));
+
         } catch (std::exception &e) {
             log_error(_("%1% is corrupted!"), remote.url);
             std::cerr << e.what() << std::endl;
@@ -373,11 +378,12 @@ threadOsmChange(const replication::RemoteURL &remote,
         under.writeState(state);
     }
 #endif
+
     //boost::timer::cpu_timer timer;
     for (auto it = std::begin(osmchanges->changes);
          it != std::end(osmchanges->changes); ++it) {
         osmchange::OsmChange *change = it->get();
-	// change->dump();
+        // change->dump();
         for (auto it = std::begin(change->nodes); it != std::end(change->nodes);
              ++it) {
             osmobjects::OsmNode *node = it->get();
@@ -410,17 +416,17 @@ threadOsmChange(const replication::RemoteURL &remote,
     auto nodeval = osmchanges->validateNodes(poly, plugin);
     // std::cerr << "SIZE " << nodeval->size() << std::endl;
     for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
-	ostats.applyChange(*it->get());
+        ostats.applyChange(*it->get());
     }
     timer.endTimer("validate nodes");
     timer.startTimer();
     auto wayval = osmchanges->validateWays(poly, plugin);
     // std::cerr << "SIZE " << wayval->size() << std::endl;
     for (auto it = wayval->begin(); it != wayval->end(); ++it) {
-	ostats.applyChange(*it->get());
+        ostats.applyChange(*it->get());
     }
     timer.endTimer("validate ways");
-    
+
     return osmchanges;
 }
 

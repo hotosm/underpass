@@ -26,6 +26,8 @@ check_PROGRAMS = \
 	pq-test \
 	change-test \
 	val-test \
+  pgsql-sync-2 \
+	osm2pgsql-test \
 	yaml-test
 
 AM_CPPFLAGS = -I$(top_srcdir) -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)/hottm
@@ -109,6 +111,13 @@ usersync_test_CPPFLAGS = -DDATADIR=\"$(srcdir)\" -I$(top_srcdir)
 usersync_test_LDFLAGS = -L../..
 usersync_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
+# Test osm2pgsql class
+osm2pgsql_test_SOURCES = osm2pgsql-test.cc
+osm2pgsql_test_CPPFLAGS = -DDATADIR=\"$(srcdir)\" -I$(top_srcdir)
+osm2pgsql_test_LDFLAGS = -L../..
+osm2pgsql_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+
+
 CLEANFILES = \
 	underpass.log \
 	tm-test.log \
@@ -116,6 +125,7 @@ CLEANFILES = \
 	under-test.log \
 	pq-test.log \
 	change-test.log \
-	geo-test.log
+	geo-test.log \
+	osm2pgsql-test.log
 
 RUNTESTFLAGS = -xml
