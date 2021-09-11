@@ -26,7 +26,9 @@ check_PROGRAMS = \
 	pq-test \
 	change-test \
 	val-test \
-	osm2pgsql-test
+  pgsql-sync-2 \
+	osm2pgsql-test \
+	yaml-test
 
 AM_CPPFLAGS = -I$(top_srcdir) -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)/hottm
 AM_LDFLAGS = -L../..
@@ -50,6 +52,11 @@ AM_CXXFLAGS = \
         -DPKGLIBDIR=\"$(pkglibdir)\" \
         -DTOPSRCDIR=\"$(top_srcdir)\" \
         -DSRCDIR=\"$(srcdir)\"
+
+yaml_test_SOURCES = yaml-test.cc
+yaml_test_LDFLAGS = -L../..
+yaml_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
+yaml_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 pq_test_SOURCES = pq-test.cc
 pq_test_LDFLAGS = -L../..

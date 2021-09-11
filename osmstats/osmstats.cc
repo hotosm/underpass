@@ -371,27 +371,24 @@ QueryOSMStats::applyChange(ValidateStatus &validation)
 						{ correct, "correct" },
 						{ badgeom, "badgeom" }
     };
-    std::string query = "INSERT INTO validation (osm_id, user_id, type, status, timestamp, location) VALUES(";
-    boost::format fmt("%d, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)");
+    std::string query = "INSERT INTO validation (osm_id, angle, user_id, type, status, timestamp, location) VALUES(";
+    boost::format fmt("%d, %g, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)");
     fmt % validation.osm_id;
+    fmt % validation.angle;
     fmt % validation.user_id;
     fmt % objtypes[validation.objtype];
     std::string tmp;
     for (auto it = validation.status.begin(); it != validation.status.end(); ++it) {
 	tmp += " \'" + status[*it] + "\',";
     }
-    tmp.pop_back();
+    if (!tmp.empty()) {
+	tmp.pop_back();
+    }
     fmt % tmp;
     fmt % to_simple_string(validation.timestamp);
     // Postgres wants the order of lat,lon reversed from how they
     // are stored in the WKT.
-#if 0
-    std::string tmpp = "POINT(" + std::to_string(validation.center.get<1>());
-    tmpp += " " + std::to_string(validation.center.get<0>()) + ")";
-    fmt % tmpp;
-#else
     fmt % boost::geometry::wkt(validation.center);
-#endif
     query += fmt.str();
     query += ") ON CONFLICT (osm_id) DO UPDATE ";
     query += " SET status = ARRAY[" + tmp + " ]::status[]";
