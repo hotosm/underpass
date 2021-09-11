@@ -283,6 +283,21 @@ main(int argc, char *argv[]) {
         replicator_config.underpass_db_url = vm["upserver"].as<std::string>();
     }
 
+    // Planet server
+    if (vm.count("planet")) {
+        replicator_config.planet_server = vm["planet"].as<std::string>();
+        // Little cleanup: we want something like https://planet.maps.mail.ru
+        if (replicator_config.planet_server.find("https://") != 0) {
+            log_error("ERROR: planet server must start with 'https://' !");
+            exit(-1);
+        }
+
+        if (boost::algorithm::ends_with(replicator_config.planet_server, "/")) {
+            replicator_config.planet_server.resize(
+                replicator_config.planet_server.size() - 1);
+        }
+    }
+
     // TM users options
     if (vm.count("tmserver")) {
         replicator_config.taskingmanager_db_url =
@@ -449,13 +464,6 @@ main(int argc, char *argv[]) {
 
             exit(-1);
         }
-
-        // 1. get the initial changeset sequence from timestamp or path
-        // 2. exit if not found
-        // 3. get the initial osmchanges sequence from timestamp or path
-        // 4. exit if not found
-        // 5. start osmchange monitoring thread
-        // 6. start changesets monitoring thread
 
         std::thread osmchanges_updates_thread;
         std::thread changesets_thread;

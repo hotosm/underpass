@@ -89,8 +89,7 @@ namespace threads {
 // Starting with this URL, download the file, incrementing
 void
 startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
-             const replicatorconfig::ReplicatorConfig &config)
-{
+             const replicatorconfig::ReplicatorConfig &config) {
 
     osmstats::QueryOSMStats ostats;
     if (!ostats.connect(config.osmstats_db_url)) {
@@ -200,8 +199,7 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
 }
 
 void
-startStateThreads(const std::string &base, const std::string &file)
-{
+startStateThreads(const std::string &base, const std::string &file) {
     // std::map<std::string, std::thread> thread_pool;
 
     //return;                     // FIXME:
@@ -339,7 +337,7 @@ threadOsmChange(const replication::RemoteURL &remote,
         }
         std::ofstream myfile;
         myfile.open(remote.filespec, std::ios::binary);
-        myfile.write(reinterpret_cast<char *>(data->data()), data->size() - 1);
+        myfile.write(reinterpret_cast<char *>(data->data()), data->size());
         myfile.close();
 #endif
         try {
@@ -438,8 +436,7 @@ threadOsmChange(const replication::RemoteURL &remote,
 //void threadChangeSet(const std::string &file, std::promise<bool> &&result)
 std::shared_ptr<changeset::ChangeSetFile>
 threadChangeSet(const replication::RemoteURL &remote,
-                const multipolygon_t &poly, osmstats::QueryOSMStats &ostats)
-{
+                const multipolygon_t &poly, osmstats::QueryOSMStats &ostats) {
     auto changeset = std::make_shared<changeset::ChangeSetFile>();
     auto state = std::make_shared<replication::StateFile>();
     auto data = std::make_shared<std::vector<unsigned char>>();
@@ -478,7 +475,7 @@ threadChangeSet(const replication::RemoteURL &remote,
         }
         std::ofstream myfile;
         myfile.open(remote.filespec, std::ios::binary);
-        myfile.write(reinterpret_cast<char *>(data->data()), data->size() - 1);
+        myfile.write(reinterpret_cast<char *>(data->data()), data->size());
         myfile.close();
 #endif
         //data->push_back('\n');
@@ -536,16 +533,14 @@ threadChangeSet(const replication::RemoteURL &remote,
 // This updates the calculated fields in the raw_changesets table, based on
 // the data in the OSM stats database.
 void
-threadStatistics(const std::string &database, ptime &timestamp)
-{
+threadStatistics(const std::string &database, ptime &timestamp) {
     //osmstats::QueryOSMStats ostats;
     replication::Replication repl;
 }
 
 // Updates the states table in the Underpass database
 std::shared_ptr<replication::StateFile>
-threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
-{
+threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file) {
     std::string server;
 
     std::vector<std::string> result;
@@ -623,8 +618,7 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
 
 void
 threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive,
-                  const replicatorconfig::ReplicatorConfig &config)
-{
+                  const replicatorconfig::ReplicatorConfig &config) {
     // There is a lot of DB URI manipulations in this program, if the URL
     // contains a plain hostname we need to add a database name too
     // FIXME: handle all DB URIs in a consistent and documented way

@@ -45,10 +45,10 @@ using namespace boost::gregorian;
 
 #include "data/osmobjects.hh"
 #include "data/underpass.hh"
+#include "log.hh"
 #include "osmstats/changeset.hh"
 #include "osmstats/osmstats.hh"
 #include "validate/validate.hh"
-#include "log.hh"
 using namespace logger;
 
 std::once_flag prepare_user_statement_flag;
@@ -58,10 +58,7 @@ namespace osmstats {
 
 QueryOSMStats::QueryOSMStats(void) {}
 
-QueryOSMStats::QueryOSMStats(const std::string &dburl)
-{
-    connect(dburl);
-};
+QueryOSMStats::QueryOSMStats(const std::string &dburl) { connect(dburl); };
 
 int
 QueryOSMStats::lookupHashtag(const std::string &hashtag) {
@@ -344,7 +341,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change) {
     // 	query += "\', closed_at=\'" + to_simple_string(change.closed_at);
     // }
     query += "\', bbox=" + bbox.substr(2) + ")'))";
-    // log_debug(_("QUERY: %1%"), query);
+    log_debug(_("QUERY: %1%"), query);
     result = worker.exec(query);
 
     // Commit the results to the database
@@ -354,35 +351,34 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change) {
 }
 
 bool
-QueryOSMStats::applyChange(ValidateStatus &validation)
-{
+QueryOSMStats::applyChange(ValidateStatus &validation) {
     log_debug(_("Applying Validation data"));
     validation.dump();
 
-    std::map<osmobjects::osmtype_t, std::string> objtypes = { {osmobjects::empty, "empty" },
-							   { osmobjects::node, "node"},
-							   { osmobjects::way, "way"},
-							   { osmobjects::relation, "relation"}
-    };
-    std::map<valerror_t, std::string> status = { {notags, "notags" },
-						{ complete, "complete" },
-						{ incomplete, "incomplete" },
-						{ badvalue, "badvalue" },
-						{ correct, "correct" },
-						{ badgeom, "badgeom" }
-    };
-    std::string query = "INSERT INTO validation (osm_id, angle, user_id, type, status, timestamp, location) VALUES(";
-    boost::format fmt("%d, %g, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)");
+    std::map<osmobjects::osmtype_t, std::string> objtypes = {
+        {osmobjects::empty, "empty"},
+        {osmobjects::node, "node"},
+        {osmobjects::way, "way"},
+        {osmobjects::relation, "relation"}};
+    std::map<valerror_t, std::string> status = {
+        {notags, "notags"},         {complete, "complete"},
+        {incomplete, "incomplete"}, {badvalue, "badvalue"},
+        {correct, "correct"},       {badgeom, "badgeom"}};
+    std::string query =
+        "INSERT INTO validation (osm_id, angle, user_id, type, status, timestamp, location) VALUES(";
+    boost::format fmt(
+        "%d, %g, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)");
     fmt % validation.osm_id;
     fmt % validation.angle;
     fmt % validation.user_id;
     fmt % objtypes[validation.objtype];
     std::string tmp;
-    for (auto it = validation.status.begin(); it != validation.status.end(); ++it) {
-	tmp += " \'" + status[*it] + "\',";
+    for (auto it = validation.status.begin(); it != validation.status.end();
+         ++it) {
+        tmp += " \'" + status[*it] + "\',";
     }
     if (!tmp.empty()) {
-	tmp.pop_back();
+        tmp.pop_back();
     }
     fmt % tmp;
     fmt % to_simple_string(validation.timestamp);
