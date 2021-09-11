@@ -487,7 +487,7 @@ main(int argc, char *argv[]) {
 
             state2->dump();
             clast = replicator_config.planet_server + "/" + datadir +
-                    "changesets/" + state2->path;
+                    "changesets" + state2->path;
             remote.parse(clast);
             // remote.dump();
             changesets_thread = std::thread(
