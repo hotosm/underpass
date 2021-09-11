@@ -113,8 +113,7 @@ namespace replication {
 /// timestamp=2020-10-09T10\:03\:02Z
 ///
 /// State files are used to know where to start downloading files
-StateFile::StateFile(const std::string &file, bool memory)
-{
+StateFile::StateFile(const std::string &file, bool memory) {
     std::string line;
     std::ifstream state;
     std::stringstream ss;
@@ -196,8 +195,7 @@ StateFile::StateFile(const std::string &file, bool memory)
 
 // Dump internal data to the terminal, used only for debugging
 void
-StateFile::dump(void)
-{
+StateFile::dump(void) {
     std::cerr << "Dumping state.txt file" << std::endl;
     std::cerr << "\tTimestamp: " << timestamp << std::endl;
     std::cerr << "\tSequence: " << sequence << std::endl;
@@ -207,8 +205,7 @@ StateFile::dump(void)
 }
 
 bool
-StateFile::isValid() const
-{
+StateFile::isValid() const {
     return timestamp != boost::posix_time::not_a_date_time &&
            sequence >=
                (frequency == Underpass::freq_to_string(frequency_t::changeset)
@@ -219,8 +216,7 @@ StateFile::isValid() const
 
 // parse a replication file containing changesets
 bool
-Replication::readChanges(const std::string &file)
-{
+Replication::readChanges(const std::string &file) {
     changeset::ChangeSetFile changeset;
     std::ifstream stream;
     stream.open(file, std::ifstream::in);
@@ -231,15 +227,13 @@ Replication::readChanges(const std::string &file)
 
 // Add this replication data to the changeset database
 bool
-Replication::mergeToDB()
-{
+Replication::mergeToDB() {
     return false;
 }
 
 std::shared_ptr<std::vector<std::string>> &
 Planet::getLinks(GumboNode *node,
-                 std::shared_ptr<std::vector<std::string>> &links)
-{
+                 std::shared_ptr<std::vector<std::string>> &links) {
     // if (node->type == GUMBO_NODE_TEXT) {
     //     std::string val = std::string(node->v.text.text);
     //     log_debug(_("FIXME: " << "GUMBO_NODE_TEXT " << val);
@@ -270,8 +264,7 @@ Planet::getLinks(GumboNode *node,
 
 // Download a file from planet
 std::shared_ptr<std::vector<unsigned char>>
-Planet::downloadFile(const std::string &url)
-{
+Planet::downloadFile(const std::string &url) {
 
     auto data = std::make_shared<std::vector<unsigned char>>();
 
@@ -366,14 +359,13 @@ Planet::downloadFile(const std::string &url)
 
     if (ec) {
         // Note: not sure about this, it looks harmless
-        log_debug(_("stream shutdown failed: %1%"), ec.message());
+        // log_debug(_("stream shutdown failed: %1%"), ec.message());
     }
 
     return data;
 }
 
-Planet::~Planet(void)
-{
+Planet::~Planet(void) {
     ioc.reset(); // reset the I/O conhtext
     // stream.shutdown();          // shutdown the socket used by the stream
 }
@@ -389,8 +381,7 @@ Planet::Planet(void){
 
 // Dump internal data to the terminal, used only for debugging
 void
-Planet::dump(void)
-{
+Planet::dump(void) {
     log_debug(_("Dumping Planet data"));
     for (auto it = std::begin(changeset); it != std::end(changeset); ++it) {
         std::cerr << "Changeset at: " << it->first << it->second << std::endl;
@@ -410,8 +401,7 @@ Planet::dump(void)
 }
 
 bool
-Planet::connectServer(const std::string &planet)
-{
+Planet::connectServer(const std::string &planet) {
 
     // Gracefully close the socket
     boost::system::error_code ec;
@@ -448,8 +438,7 @@ Planet::connectServer(const std::string &planet)
 
 // Scan remote directory from planet
 std::shared_ptr<std::vector<std::string>>
-Planet::scanDirectory(const std::string &dir)
-{
+Planet::scanDirectory(const std::string &dir) {
     log_debug(_("Scanning remote Directory: %1%"), dir);
 
     // The io_context is required for all I/O
@@ -514,8 +503,7 @@ Planet::scanDirectory(const std::string &dir)
 
 std::shared_ptr<replication::StateFile>
 Planet::fetchData(frequency_t freq, const std::string &path,
-                  const std::string &underpass_dburl)
-{
+                  const std::string &underpass_dburl) {
     std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
     // First search in the cache
     bool use_cache{!underpass_dburl.empty()};
@@ -636,15 +624,13 @@ Planet::fetchData(frequency_t freq, const std::string &path,
 }
 
 std::string
-Planet::sequenceToPath(long sequence)
-{
+Planet::sequenceToPath(long sequence) {
     return str(format("/%03d/%03d/%03d") % (sequence / 1000000) %
                (sequence / 1000 % 1000) % (sequence % 1000));
 }
 
 std::shared_ptr<StateFile>
-Planet::fetchDataLast(frequency_t freq, const std::string &underpass_dburl)
-{
+Planet::fetchDataLast(frequency_t freq, const std::string &underpass_dburl) {
     const bool is_changeset{freq == frequency_t::changeset};
     const auto url{str(format("https://%1%/replication/%2%/state.%3%") %
                        remote.domain % Underpass::freq_to_string(freq) %
@@ -674,8 +660,7 @@ Planet::fetchDataLast(frequency_t freq, const std::string &underpass_dburl)
 
 std::shared_ptr<StateFile>
 Planet::fetchDataFirst(frequency_t freq, const std::string &underpass_dburl,
-                       bool force_scan)
-{
+                       bool force_scan) {
     const bool is_changeset{freq == frequency_t::changeset};
     std::shared_ptr<StateFile> state =
         force_scan ? std::make_shared<StateFile>()
@@ -801,8 +786,7 @@ Planet::fetchDataFirst(frequency_t freq, const std::string &underpass_dburl,
 
 std::shared_ptr<StateFile>
 Planet::fetchDataLessThan(frequency_t freq, ptime timestamp,
-                          const std::string &underpass_dburl)
-{
+                          const std::string &underpass_dburl) {
     std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
     // First search in the cache
     bool use_cache{!underpass_dburl.empty()};
@@ -850,15 +834,13 @@ Planet::fetchDataLessThan(frequency_t freq, ptime timestamp,
 
 std::shared_ptr<StateFile>
 Planet::fetchDataLessThan(frequency_t freq, long sequence,
-                          const std::string &underpass_dburl)
-{
+                          const std::string &underpass_dburl) {
     return fetchData(freq, sequence - 1, underpass_dburl);
 }
 
 std::shared_ptr<StateFile>
 Planet::fetchData(frequency_t freq, ptime timestamp,
-                  const std::string &underpass_dburl)
-{
+                  const std::string &underpass_dburl) {
     std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
 
     time_duration acceptable_delta;
@@ -1012,8 +994,7 @@ Planet::fetchData(frequency_t freq, ptime timestamp,
 
 std::shared_ptr<StateFile>
 Planet::fetchData(frequency_t freq, long sequence,
-                  const std::string &underpass_dburl)
-{
+                  const std::string &underpass_dburl) {
     std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
     if (sequence < (freq == frequency_t::changeset ? 0 : 1)) {
         log_error(_("Invalid sequence (must be > 0 for changes and >= 0 for "
@@ -1072,15 +1053,13 @@ Planet::fetchData(frequency_t freq, long sequence,
 
 std::shared_ptr<StateFile>
 Planet::fetchDataGreaterThan(frequency_t freq, long sequence,
-                             const std::string &underpass_dburl)
-{
+                             const std::string &underpass_dburl) {
     return fetchData(freq, sequence + 1, underpass_dburl);
 }
 
 std::shared_ptr<StateFile>
 Planet::fetchDataGreaterThan(frequency_t freq, ptime timestamp,
-                             const std::string &underpass_dburl)
-{
+                             const std::string &underpass_dburl) {
     std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
     // First search in the cache
     bool use_cache{!underpass_dburl.empty()};
@@ -1127,13 +1106,11 @@ Planet::fetchDataGreaterThan(frequency_t freq, ptime timestamp,
     return state;
 }
 
-RemoteURL::RemoteURL(void) : major(0), minor(0), index(0), frequency(minutely)
-{
-}
+RemoteURL::RemoteURL(void)
+    : major(0), minor(0), index(0), frequency(minutely) {}
 
 void
-RemoteURL::parse(const std::string &rurl)
-{
+RemoteURL::parse(const std::string &rurl) {
     if (rurl.empty()) {
         log_error(_("URL is empty!"));
         return;
@@ -1162,14 +1139,14 @@ RemoteURL::parse(const std::string &rurl)
         }
         destdir = datadir + "/" + parts[4] + "/" + parts[5] + "/" + parts[6];
     } else {
-        log_error(_("Error parsing URL: not in the expected form "
-                    "(https://<server>/replication/<frequency>/000/000/001)"));
+        log_error(_("Error parsing URL %1%: not in the expected form "
+                    "(https://<server>/replication/<frequency>/000/000/001)"),
+                  rurl);
     }
 }
 
 void
-RemoteURL::Increment(void)
-{
+RemoteURL::Increment(void) {
     boost::format majorfmt("%03d");
     boost::format minorfmt("%03d");
     boost::format indexfmt("%03d");
@@ -1200,8 +1177,7 @@ RemoteURL::Increment(void)
 }
 
 RemoteURL &
-RemoteURL::operator=(const RemoteURL &inr)
-{
+RemoteURL::operator=(const RemoteURL &inr) {
     domain = inr.domain;
     datadir = inr.datadir;
     subpath = inr.subpath;
@@ -1217,13 +1193,11 @@ RemoteURL::operator=(const RemoteURL &inr)
 }
 
 long
-RemoteURL::sequence()
-{
+RemoteURL::sequence() {
     return major * 1000000 + minor * 1000 + index;
 }
 
-RemoteURL::RemoteURL(const RemoteURL &inr)
-{
+RemoteURL::RemoteURL(const RemoteURL &inr) {
     domain = inr.domain;
     datadir = inr.datadir;
     subpath = inr.subpath;
@@ -1237,8 +1211,7 @@ RemoteURL::RemoteURL(const RemoteURL &inr)
 }
 
 void
-RemoteURL::dump(void)
-{
+RemoteURL::dump(void) {
     std::cerr << "URL: " << url << std::endl;
     std::cerr << "\tDomain: " << domain << std::endl;
     std::cerr << "\tDatadir: " << datadir << std::endl;

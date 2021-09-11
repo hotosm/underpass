@@ -86,8 +86,7 @@ class ChangeSet;
 
 /// A helper function to simplify the main part.
 template <class T> std::ostream &
-operator<<(std::ostream &os, const std::vector<T> &v)
-{
+operator<<(std::ostream &os, const std::vector<T> &v) {
     copy(v.begin(), v.end(), std::ostream_iterator<T>(os, " "));
     return os;
 }
@@ -101,16 +100,14 @@ class Replicator : public replication::Replication
 {
   public:
     /// Create a new instance, and read in the geoboundaries file.
-    Replicator(void)
-    {
+    Replicator(void) {
         auto hashes = std::make_shared<std::map<std::string, int>>();
     };
 
     /// Initialize the raw_user, raw_hashtags, and raw_changeset tables
     /// in the OSM stats database from a changeset file
     bool initializeRaw(std::vector<std::string> &rawfile,
-                       const std::string &database)
-    {
+                       const std::string &database) {
         for (auto it = std::begin(rawfile); it != std::end(rawfile); ++it) {
             changes->importChanges(*it);
         }
@@ -129,8 +126,7 @@ class Replicator : public replication::Replication
     // osmstats::RawCountry & findCountry() {
     //     geou.inCountry();
 
-    enum pathMatches matchUrl(const std::string &url)
-    {
+    enum pathMatches matchUrl(const std::string &url) {
         boost::regex test{"([0-9]{3})"};
 
         boost::sregex_token_iterator iter(url.begin(), url.end(), test, 0);
@@ -170,8 +166,7 @@ class Replicator : public replication::Replication
 };
 
 int
-main(int argc, char *argv[])
-{
+main(int argc, char *argv[]) {
 
     // Store the file names for replication files
     std::string changeset;
@@ -235,6 +230,7 @@ main(int argc, char *argv[])
             ("boundary,b", opts::value<std::string>(), "Boundary polygon file name")
             ("datadir,i", opts::value<std::string>(), "Base directory for cached files")
             ("verbose,v", "Enable verbosity")
+            ("logstdout,l", "Enable logging to stdout, default is log to underpass.log")
             ("changefile,c", opts::value<std::string>(), "Import change file")
             ("debug,d", "Enable debug messages for developers");
         // clang-format on
@@ -277,10 +273,10 @@ main(int argc, char *argv[])
         dbglogfile.setVerbosity();
     }
 
-    // Log to stdout by default
-    // TODO: add an option to log to a file
-    // dbglogfile.setWriteDisk(true);
-    // dbglogfile.setLogFilename("underpass.log");
+    if (!vm.count("logstdout")) {
+        dbglogfile.setWriteDisk(true);
+        dbglogfile.setLogFilename("underpass.log");
+    }
 
     // Underpass DB for internal use
     if (vm.count("upserver")) {
