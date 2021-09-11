@@ -101,7 +101,7 @@ class ChangeSet
     void addHashtags(std::string text) { hashtags.push_back(fixString(text)); };
 
     /// Add the comment field, which is often used for hashtags
-    void addComment(std::string text) { ./ setcomment = fixString(text); };
+    void addComment(std::string text) { comment = fixString(text); };
 
     /// Add the editor field
     void addEditor(std::string text) { editor = fixString(text); };
