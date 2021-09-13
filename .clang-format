@@ -1,19 +1,22 @@
-
 BasedOnStyle: LLVM
 AlwaysBreakAfterDefinitionReturnType: All
 BreakStringLiterals: false
 AlwaysBreakTemplateDeclarations: No
+PointerAlignment: Right
 AlwaysBreakAfterReturnType: TopLevel
 ReflowComments: false
 IndentWidth: 4
 IndentCaseLabels: true
+SortUsingDeclarations: false
+SortIncludes: false
+SpaceBeforeRangeBasedForLoopColon: false
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterCaseLabel:  true
-  AfterClass:      true
+  AfterClass:      false
   AfterControlStatement: false
   AfterEnum:       false
-  AfterFunction:   false
+  AfterFunction:   true
   AfterNamespace:  false
   AfterObjCDeclaration: true
   AfterStruct:     false
