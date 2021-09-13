@@ -96,8 +96,7 @@ operator<<(std::ostream &os, const std::vector<T> &v) {
 ///
 /// This class identifies, downloads, and processes a replication file.
 /// Replication files are available from the OSM planet server.
-class Replicator : public replication::Replication
-{
+class Replicator : public replication::Replication {
   public:
     /// Create a new instance, and read in the geoboundaries file.
     Replicator(void) {
@@ -250,6 +249,10 @@ main(int argc, char *argv[]) {
     if (!vm.count("logstdout")) {
         dbglogfile.setWriteDisk(true);
         dbglogfile.setLogFilename("underpass.log");
+    }
+
+    if (vm.count("debug")) {
+        dbglogfile.setVerbosity();
     }
 
     // Osm2pgsql options
