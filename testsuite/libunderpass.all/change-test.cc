@@ -42,16 +42,13 @@ using namespace boost::gregorian;
 
 TestState runtest;
 
-class TestCS : public changeset::ChangeSetFile
-{
+class TestCS : public changeset::ChangeSetFile {
 };
 
-class TestCO : public osmchange::OsmChangeFile
-{
+class TestCO : public osmchange::OsmChangeFile {
 };
 
-class TestStateFile : public replication::StateFile
-{
+class TestStateFile : public replication::StateFile {
   public:
     TestStateFile(const std::string &file, bool memory)
         : replication::StateFile(file, memory){};
@@ -61,7 +58,8 @@ class TestStateFile : public replication::StateFile
 };
 
 int
-main(int argc, char *argv[]) {
+main(int argc, char *argv[])
+{
     logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
     dbglogfile.setWriteDisk(true);
     dbglogfile.setLogFilename("change-test.log");

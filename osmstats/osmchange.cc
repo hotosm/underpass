@@ -87,7 +87,8 @@ namespace osmchange {
 
 // Read a changeset file from disk or memory into internal storage
 bool
-OsmChangeFile::readChanges(const std::string &file) {
+OsmChangeFile::readChanges(const std::string &file)
+{
     setlocale(LC_ALL, "");
     std::ifstream change;
     int size = 0;
@@ -128,7 +129,8 @@ OsmChangeFile::readChanges(const std::string &file) {
 }
 
 bool
-OsmChangeFile::readXML(std::istream &xml) {
+OsmChangeFile::readXML(std::istream &xml)
+{
     // log_debug(_("OsmChangeFile::readXML(): " << xml.rdbuf();
     std::ofstream myfile;
 #ifdef LIBXML
@@ -234,7 +236,8 @@ OsmChangeFile::readXML(std::istream &xml) {
 // Called by libxml++ for each element of the XML file
 void
 OsmChangeFile::on_start_element(const Glib::ustring &name,
-                                const AttributeList &attributes) {
+                                const AttributeList &attributes)
+{
     // If a change is in progress, apply to to that instance
     std::shared_ptr<OsmChange> change;
     // log_debug(_("NAME: %1%"), name);
@@ -346,7 +349,8 @@ OsmChangeFile::on_start_element(const Glib::ustring &name,
 #endif // EOF LIBXML
 
 void
-OsmChange::dump(void) {
+OsmChange::dump(void)
+{
     std::cerr << "------------" << std::endl;
     std::cerr << "Dumping OsmChange()" << std::endl;
     if (action == osmobjects::create) {
@@ -383,7 +387,8 @@ OsmChange::dump(void) {
 }
 
 void
-OsmChangeFile::dump(void) {
+OsmChangeFile::dump(void)
+{
     std::cerr << "Dumping OsmChangeFile()" << std::endl;
     std::cerr << "There are " << changes.size() << " changes" << std::endl;
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
@@ -405,7 +410,8 @@ OsmChangeFile::dump(void) {
 }
 
 void
-OsmChangeFile::areaFilter(const multipolygon_t &poly) {
+OsmChangeFile::areaFilter(const multipolygon_t &poly)
+{
     // log_debug(_("Pre filtering size is %1%"), changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
         OsmChange *change = it->get();
@@ -463,7 +469,8 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly) {
 }
 
 std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>>
-OsmChangeFile::collectStats(const multipolygon_t &poly) {
+OsmChangeFile::collectStats(const multipolygon_t &poly)
+{
     // FIXME: stuff to extract for MERL
     // names added to villages, neigborhood, or citys
     // facilities added (aggregated by schools, clinics, water points, bridges,
@@ -632,7 +639,8 @@ OsmChangeFile::collectStats(const multipolygon_t &poly) {
 }
 
 std::shared_ptr<std::vector<std::string>>
-OsmChangeFile::scanTags(std::map<std::string, std::string> tags) {
+OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
+{
     auto hits = std::make_shared<std::vector<std::string>>();
 
     // FIXME: Parse this a YAML file instead of hardcoded!
@@ -753,7 +761,8 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags) {
 
 /// Dump internal data to the terminal, only for debugging
 void
-ChangeStats::dump(void) {
+ChangeStats::dump(void)
+{
     std::cerr << "Dumping ChangeStats for: \t " << change_id << std::endl;
     std::cerr << "\tUser ID: \t\t " << user_id << std::endl;
     std::cerr << "\tUser Name: \t\t " << username << std::endl;
@@ -773,7 +782,8 @@ ChangeStats::dump(void) {
 
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 OsmChangeFile::validateNodes(const multipolygon_t &poly,
-                             std::shared_ptr<Validate> &plugin) {
+                             std::shared_ptr<Validate> &plugin)
+{
     auto totals =
         std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
@@ -816,7 +826,8 @@ OsmChangeFile::validateNodes(const multipolygon_t &poly,
 
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 OsmChangeFile::validateWays(const multipolygon_t &poly,
-                            std::shared_ptr<Validate> &plugin) {
+                            std::shared_ptr<Validate> &plugin)
+{
     auto totals =
         std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {

@@ -25,8 +25,7 @@
 
 TestState runtest;
 
-class TestPQ : public pq::Pq
-{
+class TestPQ : public pq::Pq {
   public:
     TestPQ(void){};
 };

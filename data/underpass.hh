@@ -73,8 +73,7 @@ class StateFile;
 /// \namespace underpass
 namespace underpass {
 
-class Underpass : public pq::Pq
-{
+class Underpass : public pq::Pq {
   public:
     /// Connect to the Underpass database
     Underpass(void) = default;
@@ -128,7 +127,8 @@ class Underpass : public pq::Pq
     std::shared_ptr<osmstats::RawCountry>
     getCountry(double max_lat, double max_lon, double min_lat, double min_lon);
 
-    std::string parsePath(const std::string &url) {
+    std::string parsePath(const std::string &url)
+    {
         // return url.substr();
         // FIXME: this needs to parse a full URL, and return the file path
         return url;
@@ -141,7 +141,8 @@ class Underpass : public pq::Pq
     /// \param frequency the frequency enum value.
     /// \return a string representation of the frequency.
     ///
-    static std::string freq_to_string(replication::frequency_t frequency) {
+    static std::string freq_to_string(replication::frequency_t frequency)
+    {
         return frequency_tags[frequency];
     };
 
@@ -152,7 +153,8 @@ class Underpass : public pq::Pq
     /// \throws std::invalid_argument if the \a frequency_str is not a valid frequency.
     ///
     static replication::frequency_t
-    freq_from_string(const std::string &frequency_str) {
+    freq_from_string(const std::string &frequency_str)
+    {
         for (const auto &[key, value]: frequency_tags)
             if (value == frequency_str)
                 return key;

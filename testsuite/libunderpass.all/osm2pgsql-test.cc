@@ -47,7 +47,8 @@ class TestOsm2Pgsql : public Osm2Pgsql {
     TestOsm2Pgsql() = default;
 
     //! Clear the test DB and fill it with with initial test data
-    bool init_test_case() {
+    bool init_test_case()
+    {
 
         logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
         dbglogfile.setVerbosity();
@@ -123,7 +124,8 @@ class TestOsm2Pgsql : public Osm2Pgsql {
 };
 
 int
-main(int argc, char *argv[]) {
+main(int argc, char *argv[])
+{
 
     // Test preconditions
 

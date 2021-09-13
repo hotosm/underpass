@@ -78,8 +78,7 @@ typedef enum { empty, node, way, relation, member } osmtype_t;
 ///
 /// This stores the calculated data from a change for a user,
 /// which later gets added to the database statistics.
-class ChangeStats
-{
+class ChangeStats {
   public:
     long change_id = 0;   ///< The ID of this change
     long user_id = 0;     ///< The User ID
@@ -98,8 +97,7 @@ class ChangeStats
 ///
 /// This contains all the data in a change. Redirection is used
 /// so the object type has a generic API
-class OsmChange
-{
+class OsmChange {
   public:
     OsmChange(osmobjects::action_t act) { action = act; };
 
@@ -108,19 +106,22 @@ class OsmChange
 
     // protected:
     /// Set the latitude of the current node
-    void setLatitude(double lat) {
+    void setLatitude(double lat)
+    {
         if (type == node) {
             nodes.back()->setLatitude(lat);
         }
     };
     /// Set the longitude of the current node
-    void setLongitude(double lon) {
+    void setLongitude(double lon)
+    {
         if (type == node) {
             nodes.back()->setLongitude(lon);
         }
     };
     /// Set the timestamp of the current node or way
-    void setTimestamp(const std::string &val) {
+    void setTimestamp(const std::string &val)
+    {
         if (type == node) {
             nodes.back()->timestamp = time_from_string(val);
         }
@@ -129,7 +130,8 @@ class OsmChange
         }
     };
     /// Set the version number of the current node or way
-    void setVersion(double val) {
+    void setVersion(double val)
+    {
         if (type == node) {
             nodes.back()->version = val;
         }
@@ -138,7 +140,8 @@ class OsmChange
         }
     };
     /// Add a tag to the current node or way
-    void addTag(const std::string &key, const std::string &value) {
+    void addTag(const std::string &key, const std::string &value)
+    {
         if (type == node) {
             nodes.back()->addTag(key, value);
         }
@@ -147,13 +150,15 @@ class OsmChange
         }
     };
     /// Add a node reference to the current way
-    void addRef(long ref) {
+    void addRef(long ref)
+    {
         if (type == way) {
             ways.back()->addRef(ref);
         }
     };
     /// Set the User ID for the current node or way
-    void setUID(long val) {
+    void setUID(long val)
+    {
         if (type == node) {
             nodes.back()->uid = val;
         }
@@ -162,7 +167,8 @@ class OsmChange
         }
     };
     /// Set the Change ID for the current node or way
-    void setChangeID(long val) {
+    void setChangeID(long val)
+    {
         if (type == node) {
             nodes.back()->id = val;
         }
@@ -171,7 +177,8 @@ class OsmChange
         }
     };
     /// Set the User name for the current node or way
-    void setUser(const std::string &val) {
+    void setUser(const std::string &val)
+    {
         if (type == node) {
             nodes.back()->user = val;
         }
@@ -180,14 +187,16 @@ class OsmChange
         }
     };
     /// Instantiate a new node
-    std::shared_ptr<osmobjects::OsmNode> newNode(void) {
+    std::shared_ptr<osmobjects::OsmNode> newNode(void)
+    {
         auto tmp = std::make_shared<osmobjects::OsmNode>();
         type = node;
         nodes.push_back(tmp);
         return tmp;
     };
     /// Instantiate a new way
-    std::shared_ptr<osmobjects::OsmWay> newWay(void) {
+    std::shared_ptr<osmobjects::OsmWay> newWay(void)
+    {
         std::shared_ptr<osmobjects::OsmWay> tmp =
             std::make_shared<osmobjects::OsmWay>();
         type = way;
@@ -195,7 +204,8 @@ class OsmChange
         return tmp;
     };
     /// Instantiate a new relation
-    std::shared_ptr<osmobjects::OsmRelation> newRelation(void) {
+    std::shared_ptr<osmobjects::OsmRelation> newRelation(void)
+    {
         std::shared_ptr<osmobjects::OsmRelation> tmp =
             std::make_shared<osmobjects::OsmRelation>();
         type = relation;

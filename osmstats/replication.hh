@@ -96,13 +96,13 @@ typedef enum { minutely, hourly, daily, changeset } frequency_t;
 /// This contains the data in a ???.state.txt file, used to identify the timestamp
 /// of the changeset replication file. The replication file uses the same
 /// 3 digit number as the state file.
-class StateFile
-{
+class StateFile {
   public:
     ///
     /// \brief constructs an invalid StateFile
     /// \see isValid()
-    StateFile(void) {
+    StateFile(void)
+    {
         timestamp = not_a_date_time;
         created_at = not_a_date_time;
         closed_at = not_a_date_time;
@@ -114,7 +114,8 @@ class StateFile
     StateFile(const std::vector<unsigned char> &data)
         : StateFile(reinterpret_cast<const char *>(data.data()), true){};
 
-    inline bool operator==(const StateFile &other) const {
+    inline bool operator==(const StateFile &other) const
+    {
         return timestamp == other.timestamp && sequence == other.sequence &&
                path == other.path && frequency == other.frequency &&
                created_at == other.created_at && closed_at == other.closed_at;
@@ -126,17 +127,20 @@ class StateFile
     void dump(void);
 
     /// Get the first numerical directory
-    long getMajor(void) {
+    long getMajor(void)
+    {
         std::vector<std::string> result;
         boost::split(result, path, boost::is_any_of("/"));
         return std::stol(result[4]);
     };
-    long getMinor(void) {
+    long getMinor(void)
+    {
         std::vector<std::string> result;
         boost::split(result, path, boost::is_any_of("/"));
         return std::stol(result[5]);
     };
-    long getIndex(void) {
+    long getIndex(void)
+    {
         std::vector<std::string> result;
         boost::split(result, path, boost::is_any_of("/"));
         return std::stol(result[6]);
@@ -166,8 +170,7 @@ class StateFile
 
 /// \class RemoteURL
 /// \brief This parses a remote URL into pieces
-class RemoteURL
-{
+class RemoteURL {
   public:
     RemoteURL(void);
     RemoteURL(const RemoteURL &inr);
@@ -193,12 +196,12 @@ class RemoteURL
 
 /// \class Planet
 /// \brief This stores file paths and timestamps from planet.
-class Planet
-{
+class Planet {
   public:
     Planet(void);
     // Planet(const std::string &planet) { pserver = planet; };
-    Planet(const RemoteURL &url) {
+    Planet(const RemoteURL &url)
+    {
         remote = url;
         connectServer(url.domain);
     };
@@ -218,7 +221,8 @@ class Planet
 
     bool connectServer(void) { return connectServer(remote.domain); }
     bool connectServer(const std::string &server);
-    bool disconnectServer(void) {
+    bool disconnectServer(void)
+    {
         // db->disconnect();           // close the database connection
         // db->close();                // close the database connection
         ioc.reset();       // reset the I/O conhtext
@@ -368,10 +372,10 @@ class Planet
 ///
 /// This class handles identifying the right replication file to download,
 /// and downloading it.
-class Replication
-{
+class Replication {
   public:
-    Replication(void) {
+    Replication(void)
+    {
         last_run = boost::posix_time::second_clock::local_time();
         sequence = 0;
         port = 443;
@@ -379,7 +383,8 @@ class Replication
     };
     // Downloading a replication requires either a sequence
     // number or a starting timestamp
-    Replication(ptime last, long seq) : Replication() {
+    Replication(ptime last, long seq) : Replication()
+    {
         if (!last.is_not_a_date_time()) {
             last_run = last;
         }

@@ -58,7 +58,8 @@ std::map<replication::frequency_t, std::string> Underpass::frequency_tags = {
 
 Underpass::Underpass(const std::string &dburl) { connect(dburl); };
 
-Underpass::~Underpass() {
+Underpass::~Underpass()
+{
     // db->disconnect();        // close the database connection
     if (sdb) {
         if (sdb->is_open()) {
@@ -69,12 +70,14 @@ Underpass::~Underpass() {
 
 // Dump internal data to the terminal, used only for debugging
 void
-Underpass::dump(void) {
+Underpass::dump(void)
+{
     log_debug(_("Database url: %1%"), db_url);
 }
 
 std::shared_ptr<replication::StateFile>
-Underpass::getState(replication::frequency_t freq, const std::string &path) {
+Underpass::getState(replication::frequency_t freq, const std::string &path)
+{
 
     std::vector<std::string> nodes;
     std::string cleaned_path;
@@ -92,7 +95,8 @@ Underpass::getState(replication::frequency_t freq, const std::string &path) {
 
 // Get the state.txt date by timestamp
 std::shared_ptr<replication::StateFile>
-Underpass::getState(replication::frequency_t freq, ptime &tstamp) {
+Underpass::getState(replication::frequency_t freq, ptime &tstamp)
+{
 
     if (tstamp == boost::posix_time::not_a_date_time) {
         log_error(_("ERROR: bad timestamp!"));
@@ -111,21 +115,23 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp) {
 }
 
 std::shared_ptr<replication::StateFile>
-Underpass::getState(replication::frequency_t freq, long sequence) {
+Underpass::getState(replication::frequency_t freq, long sequence)
+{
     return stateFromQuery("frequency = '" + freq_to_string(freq) + "' AND " +
                           "sequence=" + std::to_string(sequence));
 }
 
 std::shared_ptr<replication::StateFile>
-Underpass::getStateGreaterThan(replication::frequency_t freq, long sequence) {
+Underpass::getStateGreaterThan(replication::frequency_t freq, long sequence)
+{
     return stateFromQuery("frequency='" + freq_to_string(freq) + "' AND " +
                               "sequence > " + std::to_string(sequence),
                           "sequence ASC");
 }
 
 std::shared_ptr<replication::StateFile>
-Underpass::getStateGreaterThan(replication::frequency_t freq,
-                               ptime &timestamp) {
+Underpass::getStateGreaterThan(replication::frequency_t freq, ptime &timestamp)
+{
     if (timestamp == boost::posix_time::not_a_date_time) {
         log_error(_("ERROR: bad timestamp!"));
         return std::make_shared<replication::StateFile>();
@@ -137,14 +143,16 @@ Underpass::getStateGreaterThan(replication::frequency_t freq,
 }
 
 std::shared_ptr<replication::StateFile>
-Underpass::getStateLessThan(replication::frequency_t freq, long sequence) {
+Underpass::getStateLessThan(replication::frequency_t freq, long sequence)
+{
     return stateFromQuery("frequency='" + freq_to_string(freq) + "' AND " +
                               "sequence > " + std::to_string(sequence),
                           "sequence DESC");
 }
 
 std::shared_ptr<replication::StateFile>
-Underpass::getStateLessThan(replication::frequency_t freq, ptime &timestamp) {
+Underpass::getStateLessThan(replication::frequency_t freq, ptime &timestamp)
+{
     if (timestamp == boost::posix_time::not_a_date_time) {
         log_error(_("Bad timestamp!"));
         return std::make_shared<replication::StateFile>();
@@ -158,7 +166,8 @@ Underpass::getStateLessThan(replication::frequency_t freq, ptime &timestamp) {
 /// Write the stored data on the directories and timestamps
 /// on the planet server.
 bool
-Underpass::writeState(replication::StateFile &state) {
+Underpass::writeState(replication::StateFile &state)
+{
 
     // Precondition
     assert(state.isValid());
@@ -222,7 +231,8 @@ Underpass::writeState(replication::StateFile &state) {
 
 /// Get the maximum timestamp for the state.txt data
 std::shared_ptr<replication::StateFile>
-Underpass::getLastState(replication::frequency_t freq) {
+Underpass::getLastState(replication::frequency_t freq)
+{
     return stateFromQuery("frequency='" + freq_to_string(freq) + "'",
                           "timestamp DESC");
 }
@@ -230,14 +240,15 @@ Underpass::getLastState(replication::frequency_t freq) {
 // Get the minimum timestamp for the state.txt data. As hashtags didn't
 // appear until late 2014, we don't care as much about the older data.
 std::shared_ptr<replication::StateFile>
-Underpass::getFirstState(replication::frequency_t freq) {
+Underpass::getFirstState(replication::frequency_t freq)
+{
     return stateFromQuery("frequency='" + freq_to_string(freq) + "'",
                           "timestamp ASC");
 }
 
 std::shared_ptr<replication::StateFile>
-Underpass::stateFromQuery(const std::string &where,
-                          const std::string &order_by) {
+Underpass::stateFromQuery(const std::string &where, const std::string &order_by)
+{
     // Precondition
     assert(sdb);
 

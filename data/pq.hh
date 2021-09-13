@@ -40,8 +40,7 @@
 /// \namespace pq
 namespace pq {
 
-class Pq
-{
+class Pq {
   public:
     Pq(void);
     ~Pq(void);

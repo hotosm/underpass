@@ -254,7 +254,7 @@ ChangeSet::dump(void)
 #ifdef LIBXML
 ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes)
 {
-    for (const auto &attr_pair : attributes) {
+    for (const auto &attr_pair: attributes) {
         try {
             if (attr_pair.name == "id") {
                 id = std::stol(attr_pair.value); // change id
@@ -345,11 +345,11 @@ ChangeSetFile::readXML(std::istream &xml)
         return false;
     }
 
-    for (auto value : pt.get_child("osm")) {
+    for (auto value: pt.get_child("osm")) {
         if (value.first == "changeset") {
             changeset::ChangeSet change;
             // Process the tags. These don't exist for every element
-            for (auto tag : value.second) {
+            for (auto tag: value.second) {
                 if (tag.first == "tag") {
                     std::string key = tag.second.get("<xmlattr>.k", "");
                     std::string val = tag.second.get("<xmlattr>.v", "");
@@ -415,7 +415,7 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
         double max_lat = 0.0;
         double max_lon = 0.0;
 
-        for (const auto &attr_pair : attributes) {
+        for (const auto &attr_pair: attributes) {
             // std::wcout << "\tPAIR: " << attr_pair.name << " = " <<
             // attr_pair.value << std::endl;
             if (attr_pair.name == "k" && attr_pair.value == "max_lat") {

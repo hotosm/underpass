@@ -86,8 +86,7 @@ fixString(std::string text);
 ///
 /// This stores the hashtags and comments use for a change when it is
 /// uploaded to OSM
-class ChangeSet
-{
+class ChangeSet {
   public:
     ChangeSet(void){/* FIXME */};
 #ifdef LIBXML

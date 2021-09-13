@@ -73,8 +73,7 @@ using namespace boost::gregorian;
 using namespace boost::filesystem;
 TestState runtest;
 
-class TestPlanet : public Planet
-{
+class TestPlanet : public Planet {
   public:
     TestPlanet() = default;
 

@@ -34,7 +34,8 @@ using namespace logger;
 
 namespace pq {
 
-Pq::Pq(void) {
+Pq::Pq(void)
+{
     // Validate environment variable is defined.
     char *tmp;
     tmp = std::getenv("PGHOST");
@@ -77,7 +78,8 @@ Pq::Pq(void) {
 
 Pq::Pq(const std::string &args) { connect(args); };
 
-Pq::~Pq(void) {
+Pq::~Pq(void)
+{
     // db->disconnect();        // close the database connection
     if (sdb) {
         if (sdb->is_open()) {
@@ -88,7 +90,8 @@ Pq::~Pq(void) {
 
 // Dump internal data to the terminal, used only for debugging
 void
-Pq::dump(void) {
+Pq::dump(void)
+{
     log_debug(_("Database host: %1%"), host);
     log_debug(_("Database name: %1%"), dbname);
     log_debug(_("Database user: %1%"), user);
@@ -96,12 +99,14 @@ Pq::dump(void) {
 }
 
 bool
-Pq::isOpen() const {
+Pq::isOpen() const
+{
     return static_cast<bool>(sdb) && sdb->is_open();
 }
 
 bool
-Pq::parseURL(const std::string &dburl) {
+Pq::parseURL(const std::string &dburl)
+{
     if (dburl.empty()) {
         // log_error(_("No database connection string!"));
         return false;
@@ -152,7 +157,8 @@ Pq::parseURL(const std::string &dburl) {
 }
 
 bool
-Pq::connect(const std::string &dburl) {
+Pq::connect(const std::string &dburl)
+{
     std::string args;
 
     if (parseURL(dburl)) {
@@ -178,7 +184,8 @@ Pq::connect(const std::string &dburl) {
 }
 
 pqxx::result
-Pq::query(const std::string &query) {
+Pq::query(const std::string &query)
+{
     if (sdb) {
         if (!sdb->is_open()) {
             log_error(_("Database isn't open!"));

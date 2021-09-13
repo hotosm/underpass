@@ -43,7 +43,8 @@ struct ReplicatorConfig {
     /// \brief ReplicatorConfig constructor: will try to initialize from uppercased same-name
     ///        environment variables prefixed by REPLICATOR_ (e.g. REPLICATOR_OSMSTATS_DB_URL)
     ///
-    ReplicatorConfig() {
+    ReplicatorConfig()
+    {
         if (getenv("REPLICATOR_OSMSTATS_DB_URL")) {
             osmstats_db_url = getenv("REPLICATOR_OSMSTATS_DB_URL");
         }
@@ -98,7 +99,8 @@ struct ReplicatorConfig {
     /// \brief dbConfigHelp
     /// \return a string with the names of the environment variables of the available configuration options and their current values.
     ///
-    std::string dbConfigHelp() const {
+    std::string dbConfigHelp() const
+    {
         return str(format(R"raw(
 REPLICATOR_OSMSTATS_DB_URL=%1%
 REPLICATOR_UNDERPASS_DB_URL=%2%

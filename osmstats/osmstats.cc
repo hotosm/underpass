@@ -61,7 +61,8 @@ QueryOSMStats::QueryOSMStats(void) {}
 QueryOSMStats::QueryOSMStats(const std::string &dburl) { connect(dburl); };
 
 int
-QueryOSMStats::lookupHashtag(const std::string &hashtag) {
+QueryOSMStats::lookupHashtag(const std::string &hashtag)
+{
     std::string query = "SELECT id FROM taw_hashtags WHERE hashtag=\'";
     query += hashtag + "\';";
     pqxx::work worker(*sdb);
@@ -73,7 +74,8 @@ QueryOSMStats::lookupHashtag(const std::string &hashtag) {
 }
 
 bool
-QueryOSMStats::applyChange(const osmchange::ChangeStats &change) {
+QueryOSMStats::applyChange(const osmchange::ChangeStats &change)
+{
     // std::cout << "Applying OsmChange data" << std::endl;
 
     if (hasHashtag(change.change_id)) {
@@ -174,7 +176,8 @@ QueryOSMStats::applyChange(const osmchange::ChangeStats &change) {
 }
 
 bool
-QueryOSMStats::applyChange(const changeset::ChangeSet &change) {
+QueryOSMStats::applyChange(const changeset::ChangeSet &change)
+{
     // log_debug(_("Applying ChangeSet data"));
     // change.dump();
 
@@ -349,7 +352,8 @@ QueryOSMStats::applyChange(const changeset::ChangeSet &change) {
 }
 
 bool
-QueryOSMStats::applyChange(const ValidateStatus &validation) {
+QueryOSMStats::applyChange(const ValidateStatus &validation)
+{
     log_debug(_("Applying Validation data"));
     validation.dump();
 
@@ -393,7 +397,8 @@ QueryOSMStats::applyChange(const ValidateStatus &validation) {
 }
 
 bool
-QueryOSMStats::hasHashtag(long changeid) {
+QueryOSMStats::hasHashtag(long changeid)
+{
 #if 0
     std::string query = "SELECT COUNT(hashtag_id) FROM changesets_hashtags WHERE changeset_id=" + std::to_string( changeid ) + ";";
     // log_debug( _( "QUERY: %1%" ), query );
@@ -411,7 +416,8 @@ QueryOSMStats::hasHashtag(long changeid) {
 
 // Get the timestamp of the last update in the database
 ptime
-QueryOSMStats::getLastUpdate(void) {
+QueryOSMStats::getLastUpdate(void)
+{
     std::string query = "SELECT MAX(created_at) FROM changesets;";
     // log_debug(_("QUERY: %1%"), query);
     pqxx::work worker(*sdb);
@@ -429,7 +435,8 @@ QueryOSMStats::getLastUpdate(void) {
 }
 
 void
-RawChangeset::dump(void) {
+RawChangeset::dump(void)
+{
     log_debug("-----------------------------------");
     log_debug(_("changeset id: \t\t %1%"), std::to_string(id));
     log_debug(_("Editor: \t\t %1%"), editor);
@@ -441,7 +448,8 @@ RawChangeset::dump(void) {
 }
 
 QueryOSMStats::SyncResult
-QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool purge) {
+QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool purge)
+{
     // Preconditions:
     assert(sdb);
 
