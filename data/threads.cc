@@ -33,6 +33,7 @@
 #include <thread>
 #include <unistd.h>
 #include <vector>
+#include <sstream>
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/algorithm/string.hpp>
@@ -340,28 +341,38 @@ threadOsmChange(const replication::RemoteURL &remote,
         myfile.close();
 #endif
         try {
-            boost::iostreams::filtering_streambuf<boost::iostreams::input>
-                inbuf;
-            inbuf.push(boost::iostreams::gzip_decompressor());
-            boost::iostreams::array_source arrs{
-                reinterpret_cast<char const *>(data->data()), data->size()};
-            inbuf.push(arrs);
-            std::istream instream(&inbuf);
+
+            std::istringstream changes_xml;
+
+            // Scope to deallocate buffers
+            {
+                boost::iostreams::filtering_streambuf<boost::iostreams::input>
+                    inbuf;
+                inbuf.push(boost::iostreams::gzip_decompressor());
+                boost::iostreams::array_source arrs{
+                    reinterpret_cast<char const *>(data->data()), data->size()};
+                inbuf.push(arrs);
+                std::istream instream(&inbuf);
+                changes_xml.str(
+                    std::string{std::istreambuf_iterator<char>(instream), {}});
+            }
+
             try {
-                osmchanges->readXML(instream);
+                osmchanges->readXML(changes_xml);
+
             } catch (std::exception &e) {
                 log_error(_("Couldn't parse: %1%"), remote.url);
                 std::cerr << e.what() << std::endl;
-                // return false;
             }
 
-            // TODO: Start thread to update pgsql DB
-            o2pgsql.updateDatabase(std::string(data->begin(), data->end()));
+            // TODO: Start own thread to update pgsql DB
+            if (!changes_xml.str().empty()) {
+                o2pgsql.updateDatabase(changes_xml.str());
+            }
 
         } catch (std::exception &e) {
             log_error(_("%1% is corrupted!"), remote.url);
             std::cerr << e.what() << std::endl;
-            // return false;
         }
     }
 

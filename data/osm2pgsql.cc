@@ -41,16 +41,14 @@ const std::string Osm2Pgsql::OSM2PGSQL_DEFAULT_SCHEMA_NAME = "osm2pgsql_pgsql";
 logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
 
 Osm2Pgsql::Osm2Pgsql(const std::string &_dburl, const std::string &schema)
-    : pq::Pq(), schema(schema)
-{
+    : pq::Pq(), schema(schema) {
     if (!connect(_dburl)) {
         log_error(_("Could not connect to osm2pgsql server %1%"), _dburl);
     }
 }
 
 ptime
-Osm2Pgsql::getLastUpdate()
-{
+Osm2Pgsql::getLastUpdate() {
     if (last_update.is_not_a_date_time()) {
         getLastUpdateFromDb();
     }
@@ -58,8 +56,8 @@ Osm2Pgsql::getLastUpdate()
 }
 
 bool
-Osm2Pgsql::updateDatabase(const std::string &osm_changes)
-{
+Osm2Pgsql::updateDatabase(const std::string &osm_changes) {
+
     if (!sdb->is_open()) {
         log_error(
             _("Update error: connection to osm2pgsql server '%1%' is closed"),
@@ -89,8 +87,7 @@ Osm2Pgsql::updateDatabase(const std::string &osm_changes)
     in.pipe().close();
 
     // FIXME: make wait_for duration an arg
-    bool result{osm2pgsql_update_process.running() &&
-                osm2pgsql_update_process.wait_for(std::chrono::minutes{1}) &&
+    bool result{(!osm2pgsql_update_process.running() || osm2pgsql_update_process.wait_for(std::chrono::minutes{1})) &&
                 osm2pgsql_update_process.exit_code() == EXIT_SUCCESS};
     if (!result) {
         std::stringstream err_mesg;
@@ -102,8 +99,7 @@ Osm2Pgsql::updateDatabase(const std::string &osm_changes)
 }
 
 bool
-Osm2Pgsql::connect(const std::string &_dburl)
-{
+Osm2Pgsql::connect(const std::string &_dburl) {
     const bool result{pq::Pq::connect(_dburl)};
     if (result) {
         dburl = _dburl;
@@ -114,8 +110,7 @@ Osm2Pgsql::connect(const std::string &_dburl)
 }
 
 bool
-Osm2Pgsql::getLastUpdateFromDb()
-{
+Osm2Pgsql::getLastUpdateFromDb() {
     if (sdb->is_open()) {
         const std::string sql{R"sql(
         SELECT MAX(foo.ts) AS ts FROM(
@@ -150,14 +145,12 @@ Osm2Pgsql::getLastUpdateFromDb()
 }
 
 const std::string &
-Osm2Pgsql::getSchema() const
-{
+Osm2Pgsql::getSchema() const {
     return schema;
 }
 
 void
-Osm2Pgsql::setSchema(const std::string &newSchema)
-{
+Osm2Pgsql::setSchema(const std::string &newSchema) {
     schema = newSchema;
 }
 
