@@ -39,3 +39,6 @@ jobs:
       - name: Run Test replication-test
         run: docker-compose -f docker/docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build && testsuite/libunderpass.all/replication-test"
 
+      - name: Run Test change-test
+        run: docker-compose -f docker/docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build && testsuite/libunderpass.all/change-test"
+
