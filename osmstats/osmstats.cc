@@ -73,7 +73,7 @@ QueryOSMStats::lookupHashtag(const std::string &hashtag) {
 }
 
 bool
-QueryOSMStats::applyChange(osmchange::ChangeStats &change) {
+QueryOSMStats::applyChange(const osmchange::ChangeStats &change) {
     // std::cout << "Applying OsmChange data" << std::endl;
 
     if (hasHashtag(change.change_id)) {
@@ -87,15 +87,14 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change) {
     if (change.added.size() > 0) {
         ahstore = "HSTORE(ARRAY[";
 
-        for (auto it = std::begin(change.added); it != std::end(change.added);
-             ++it) {
-            if (it->first.empty()) {
+        for (const auto &added: std::as_const(change.added)) {
+            if (added.first.empty()) {
                 return true;
             }
 
-            if (it->second > 0) {
-                ahstore += " ARRAY[\'" + it->first + "\',\'" +
-                           std::to_string((int)it->second) + "\'],";
+            if (added.second > 0) {
+                ahstore += " ARRAY[\'" + added.first + "\',\'" +
+                           std::to_string(added.second) + "\'],";
             }
         }
 
@@ -108,15 +107,14 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change) {
     if (change.modified.size() > 0) {
         ahstore = "HSTORE(ARRAY[";
 
-        for (auto it = std::begin(change.modified);
-             it != std::end(change.modified); ++it) {
-            if (it->first.empty()) {
+        for (const auto &modified: std::as_const(change.modified)) {
+            if (modified.first.empty()) {
                 return true;
             }
 
-            if (it->second > 0) {
-                ahstore += " ARRAY[\'" + it->first + "\',\'" +
-                           std::to_string(it->second) + "\'],";
+            if (modified.second > 0) {
+                ahstore += " ARRAY[\'" + modified.first + "\',\'" +
+                           std::to_string(modified.second) + "\'],";
             }
         }
 
@@ -172,11 +170,11 @@ QueryOSMStats::applyChange(osmchange::ChangeStats &change) {
 
     worker.commit();
 
-    // FIXME: return something
+    return true;
 }
 
 bool
-QueryOSMStats::applyChange(changeset::ChangeSet &change) {
+QueryOSMStats::applyChange(const changeset::ChangeSet &change) {
     // log_debug(_("Applying ChangeSet data"));
     // change.dump();
 
@@ -241,10 +239,10 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change) {
     if (change.hashtags.size() > 0) {
         query += ", \'{ ";
 
-        for (auto it = std::begin(change.hashtags);
-             it != std::end(change.hashtags); ++it) {
-            boost::algorithm::replace_all(*it, "\"", "&quot;");
-            query += "\"" + sdb->esc(*it) + "\"" + ", ";
+        for (const auto &hashtag: std::as_const(change.hashtags)) {
+            auto ht{hashtag};
+            boost::algorithm::replace_all(ht, "\"", "&quot;");
+            query += "\"" + sdb->esc(ht) + "\"" + ", ";
         }
 
         // drop the last comma
@@ -351,7 +349,7 @@ QueryOSMStats::applyChange(changeset::ChangeSet &change) {
 }
 
 bool
-QueryOSMStats::applyChange(ValidateStatus &validation) {
+QueryOSMStats::applyChange(const ValidateStatus &validation) {
     log_debug(_("Applying Validation data"));
     validation.dump();
 
@@ -373,9 +371,8 @@ QueryOSMStats::applyChange(ValidateStatus &validation) {
     fmt % validation.user_id;
     fmt % objtypes[validation.objtype];
     std::string tmp;
-    for (auto it = validation.status.begin(); it != validation.status.end();
-         ++it) {
-        tmp += " \'" + status[*it] + "\',";
+    for (const auto &_stat: std::as_const(validation.status)) {
+        tmp += " \'" + status[_stat] + "\',";
     }
     if (!tmp.empty()) {
         tmp.pop_back();
@@ -392,6 +389,7 @@ QueryOSMStats::applyChange(ValidateStatus &validation) {
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     worker.commit();
+    return true;
 }
 
 bool
@@ -452,7 +450,7 @@ QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool purge) {
     pqxx::work worker(*sdb);
     const auto result{worker.exec("SELECT id FROM users")};
 
-    for (const auto &row : std::as_const(result)) {
+    for (const auto &row: std::as_const(result)) {
         currentIds.push_back(row.at(0).as(TaskingManagerIdType(0)));
     }
 
@@ -502,7 +500,7 @@ QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool purge) {
         sdb->prepare("update_osmstats_user", updateSql);
     });
 
-    for (const auto &user : std::as_const(users)) {
+    for (const auto &user: std::as_const(users)) {
         if (hasError) {
             break;
         }
@@ -511,7 +509,7 @@ QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool purge) {
         const int role{static_cast<int>(user.role)};
         std::string projects_mapped{"{"};
 
-        for (const auto &elem : std::as_const(user.projects_mapped)) {
+        for (const auto &elem: std::as_const(user.projects_mapped)) {
             projects_mapped += std::to_string(elem);
 
             if (elem != user.projects_mapped.back()) {
