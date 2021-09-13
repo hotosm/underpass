@@ -87,7 +87,8 @@ Osm2Pgsql::updateDatabase(const std::string &osm_changes) {
     in.pipe().close();
 
     // FIXME: make wait_for duration an arg
-    bool result{(!osm2pgsql_update_process.running() || osm2pgsql_update_process.wait_for(std::chrono::minutes{1})) &&
+    bool result{(!osm2pgsql_update_process.running() ||
+                 osm2pgsql_update_process.wait_for(std::chrono::minutes{1})) &&
                 osm2pgsql_update_process.exit_code() == EXIT_SUCCESS};
     if (!result) {
         std::stringstream err_mesg;
