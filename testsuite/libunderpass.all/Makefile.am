@@ -26,10 +26,9 @@ check_PROGRAMS = \
 	pq-test \
 	change-test \
 	val-test \
-    pgsql-sync-2 \
 	osm2pgsql-test \
 	yaml-test \
-    replication-test
+	replication-test
 
 AM_CPPFLAGS = -I$(top_srcdir) -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)/hottm
 AM_LDFLAGS = -L../..
@@ -123,7 +122,7 @@ CLEANFILES = \
 	pq-test.log \
 	change-test.log \
 	geo-test.log \
-	osm2pgsql-test.log
-    replication-test.log
+	osm2pgsql-test.log \
+	replication-test.log
 
 RUNTESTFLAGS = -xml

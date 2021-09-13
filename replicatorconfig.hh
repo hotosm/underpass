@@ -43,8 +43,7 @@ struct ReplicatorConfig {
     /// \brief ReplicatorConfig constructor: will try to initialize from uppercased same-name
     ///        environment variables prefixed by REPLICATOR_ (e.g. REPLICATOR_OSMSTATS_DB_URL)
     ///
-    ReplicatorConfig()
-    {
+    ReplicatorConfig() {
         if (getenv("REPLICATOR_OSMSTATS_DB_URL")) {
             osmstats_db_url = getenv("REPLICATOR_OSMSTATS_DB_URL");
         }
@@ -53,6 +52,9 @@ struct ReplicatorConfig {
         }
         if (getenv("REPLICATOR_UNDERPASS_DB_URL")) {
             underpass_db_url = getenv("REPLICATOR_UNDERPASS_DB_URL");
+        }
+        if (getenv("REPLICATOR_OSM2PGSQL_DB_URL")) {
+            osm2pgsql_db_url = getenv("REPLICATOR__OSM2PGSQL_DB_URL");
         }
         if (getenv("REPLICATOR_PLANET_SERVER")) {
             planet_server = getenv("REPLICATOR_PLANET_SERVER");
@@ -84,6 +86,7 @@ struct ReplicatorConfig {
     std::string underpass_db_url = "localhost/underpass";
     std::string osmstats_db_url = "localhost/osmstats";
     std::string taskingmanager_db_url = "localhost/taskingmanager";
+    std::string osm2pgsql_db_url = "localhost/osm2pgsql";
     std::string planet_server = "https://planet.maps.mail.ru";
     frequency_t frequency = frequency_t::minutely;
     std::string starting_url_path =
@@ -95,20 +98,20 @@ struct ReplicatorConfig {
     /// \brief dbConfigHelp
     /// \return a string with the names of the environment variables of the available configuration options and their current values.
     ///
-    std::string dbConfigHelp() const
-    {
+    std::string dbConfigHelp() const {
         return str(format(R"raw(
 REPLICATOR_OSMSTATS_DB_URL=%1%
 REPLICATOR_UNDERPASS_DB_URL=%2%
 REPLICATOR_TASKINGMANAGER_DB_URL=%3%
+REPLICATOR_OSM2PGSQL_DB_URL=%3%
 REPLICATOR_PLANET_SERVER=%4%
 REPLICATOR_FREQUENCY=%5%
 REPLICATOR_STARTING_URL_PATH=%6%
 REPLICATOR_TASKINGMANAGER_USERS_UPDATE_FREQUENCY=%7%
       )raw") % osmstats_db_url %
-                   underpass_db_url % taskingmanager_db_url % planet_server %
-                   Underpass::freq_to_string(frequency) % starting_url_path %
-                   taskingmanager_users_update_frequency);
+                   underpass_db_url % taskingmanager_db_url % osm2pgsql_db_url %
+                   planet_server % Underpass::freq_to_string(frequency) %
+                   starting_url_path % taskingmanager_users_update_frequency);
     };
 };
 

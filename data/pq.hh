@@ -53,13 +53,12 @@ class Pq
     /// \brief isOpen, checks if the DB is open.
     /// \return TRUE if the DB is open.
     ///
-    bool isOpen();
+    bool isOpen() const;
 
     /// Query the database
     pqxx::result query(const std::string &query);
     bool parseURL(const std::string &query);
     void dump(void);
-    bool isOpen();
 
     //protected:
     std::unique_ptr<pqxx::connection> sdb;

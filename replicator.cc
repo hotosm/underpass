@@ -178,26 +178,6 @@ main(int argc, char *argv[]) {
     ptime endtime(not_a_date_time);
     std::string url;
 
-    std::string osmStatsDbUrl = "localhost/osmstats";
-    std::string osmstats_db_url = "localhost/osmstats";
-    // std::string pserver = "https://download.openstreetmap.fr";
-    // std::string pserver = "https://planet.openstreetmap.org";
-
-    std::string pserver = "https://planet.maps.mail.ru";
-    // Unddrpass DB server connection: HOST or
-    // USER:PASSSWORD@HOST/DATABASENAME
-    std::string underpass_db_url = "localhost/underpass";
-    // Tasking Manager DB server connection: HOST or
-    // USER:PASSSWORD@HOST/DATABASENAME
-    std::string tmDbUrl = "localhost";
-
-    // Osm22pgsql DB server connection: HOST or
-    // USER:PASSSWORD@HOST/DATABASENAME
-    std::string osm2pgsqlDbUrl = "localhost/osm2pgsql";
-
-    std::string tm_db_url = "localhost/taskingmanager";
-    // Tasking Manager user sync frequency in seconds (-1 -> disabled, 0 ->
-    // single shot, > 0 -> interval)
     long tmusersfrequency{-1};
     std::string datadir = "replication/";
     std::string boundary = "priority.geojson";
@@ -262,12 +242,6 @@ main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Osm2pgsql options
-    if (vm.count("osm2pgsqlserver")) {
-        osm2pgsqlDbUrl = vm["osm2pgsqlserver"].as<std::string>();
-    // Underpass users options
-    if (vm.count("upserver")) {
-        underpass_db_url = vm["upserver"].as<std::string>();
     logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
     if (vm.count("verbose")) {
         dbglogfile.setVerbosity();
@@ -276,6 +250,12 @@ main(int argc, char *argv[]) {
     if (!vm.count("logstdout")) {
         dbglogfile.setWriteDisk(true);
         dbglogfile.setLogFilename("underpass.log");
+    }
+
+    // Osm2pgsql options
+    if (vm.count("osm2pgsqlserver")) {
+        replicator_config.osm2pgsql_db_url =
+            vm["osm2pgsqlserver"].as<std::string>();
     }
 
     // Underpass DB for internal use
@@ -319,10 +299,6 @@ main(int argc, char *argv[]) {
 
     if (vm.count("boundary")) {
         boundary = vm["boundary"].as<std::string>();
-    }
-
-    if (vm.count("debug")) {
-        dbglogfile.setVerbosity();
     }
 
     if (vm.count("server")) {
@@ -482,7 +458,7 @@ main(int argc, char *argv[]) {
             if (!state->isValid()) {
                 std::cerr << "ERROR: Invalid state from path!"
                           << replicator_config.starting_url_path << std::endl;
-                exit(EXIT_DB_FAILURE);
+                exit(-1);
             }
 
             auto state2 =
@@ -531,7 +507,7 @@ main(int argc, char *argv[]) {
         if (osmchanges_updates_thread.joinable()) {
             osmchanges_updates_thread.join();
         }
-        exit(EXIT_SUCCESS);
+        exit(0);
     }
 
     std::string statistics;

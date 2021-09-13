@@ -33,6 +33,7 @@
 #include "boost/date_time/gregorian/gregorian.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/date_time.hpp>
+#include <boost/geometry.hpp>
 
 using namespace logger;
 using namespace changeset;
@@ -111,23 +112,23 @@ main(int argc, char *argv[]) {
     }
     auto twf = tf->ways.front();
     // twf->dump();
-    if (twf->change_id == 99069879 && twf->id == 474556695 &&
-        twf->uid == 1041828) {
+    if (twf->change_id == 99069879L && twf->id == 474556695L &&
+        twf->uid == 1041828L) {
         runtest.pass("ChangeSetFile::readChanges(first change, first way)");
     } else {
         runtest.fail("ChangeSetFile::readChanges(first change, first way)");
     }
     auto tnb = tf->nodes.back();
     // tnb->dump();
-    if (tnb->change_id == 94802322 && tnb->id == 289112823) {
+    if (tnb->change_id == 94802322L && tnb->id == 289112823L) {
         runtest.pass("ChangeSetFile::readChanges(first change, last node)");
     } else {
         runtest.fail("ChangeSetFile::readChanges(first change, last node)");
     }
     auto twb = tf->ways.back();
     // twb->dump();
-    if (twb->change_id == 99063443 && twb->id == 67365141 &&
-        twb->uid == 1137406) {
+    if (twb->change_id == 99063443L && twb->id == 67365141L &&
+        twb->uid == 1137406L) {
         runtest.pass("ChangeSetFile::readChanges(first change, last way)");
     } else {
         runtest.fail("ChangeSetFile::readChanges(first change, last way)");
@@ -156,5 +157,31 @@ main(int argc, char *argv[]) {
         runtest.fail("ChangeSetFile::readChanges(compressed)");
     }
 
-    std::cout << "Done..." << std::endl;
+    // Test crash when build with default optimization (release mode)
+    multipolygon_t null_island_poly;
+    boost::geometry::read_wkt(
+        "MULTIPOLYGON(((0 0, 0 0.1, 0.1 0.1, 0.1 0, 0 0)))", null_island_poly);
+
+    testco.areaFilter(null_island_poly);
+    if (testco.changes.size() == 0) {
+        runtest.pass("ChangeSetFile::areaFilter(null_island_poly)");
+    } else {
+        runtest.fail("ChangeSetFile::areaFilter(null_island_poly)");
+    }
+
+    // Contains a single node from the hospital lat="22.9890996" lon="114.4398219
+    multipolygon_t single_node_poly;
+    boost::geometry::read_wkt(
+        "MULTIPOLYGON(((114.4397 22.988, 114.4397 22.99, 114.4399 22.99, 114.4399 22.988, 114.4397 22.988)))",
+        single_node_poly);
+    testco.changes.clear();
+    testco.nodecache.clear();
+    testco.readChanges(test_data_dir + "/123.osc");
+    testco.areaFilter(single_node_poly);
+    if (testco.changes.size() == 1 &&
+        testco.changes.front()->obj->id == 67365141L) {
+        runtest.pass("ChangeSetFile::areaFilter(single_node_poly)");
+    } else {
+        runtest.fail("ChangeSetFile::areaFilter(single_node_poly)");
+    }
 };

@@ -98,7 +98,7 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
         return;
     }
 
-    osm2pgsql::Osm2Pgsql osm2pgsql(osm2pgsql_dburl);
+    osm2pgsql::Osm2Pgsql osm2pgsql(config.osm2pgsql_db_url);
 
     replication::RemoteURL remote = inr;
     auto planet = std::make_shared<replication::Planet>(remote);
@@ -298,8 +298,7 @@ std::shared_ptr<osmchange::OsmChangeFile>
 threadOsmChange(const replication::RemoteURL &remote,
                 const multipolygon_t &poly, osmstats::QueryOSMStats &ostats,
                 osm2pgsql::Osm2Pgsql &o2pgsql,
-                std::shared_ptr<Validate> &plugin)
-{
+                std::shared_ptr<Validate> &plugin) {
     // osmstats::QueryOSMStats ostats;
     std::vector<std::string> result;
     auto osmchanges = std::make_shared<osmchange::OsmChangeFile>();
