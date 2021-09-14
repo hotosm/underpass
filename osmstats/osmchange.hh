@@ -156,6 +156,16 @@ class OsmChange {
             ways.back()->addRef(ref);
         }
     };
+    /// Add a member reference to the current relation
+    void addMember(long ref, osmobjects::osmtype_t _type,
+                   const std::string role)
+    {
+        if (type == relation && relations.size() > 0) {
+            relations.back()->addMember(ref, _type, role);
+        } else {
+            log_debug(_("Could not add member to relation!"));
+        }
+    };
     /// Set the User ID for the current node or way
     void setUID(long val)
     {

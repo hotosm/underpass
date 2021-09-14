@@ -286,7 +286,37 @@ OsmChangeFile::on_start_element(const Glib::ustring &name,
         change->obj = changes.back()->newRelation();
         change->obj->action = changes.back()->action;
     } else if (name == "member") {
-        // It's a member of a relation
+        // Process relation attributes
+        long ref = -1;
+        osmobjects::osmtype_t type = osmobjects::osmtype_t::empty;
+        std::string role;
+        for (const auto &a: std::as_const(attributes)) {
+            if (a.name == "type") {
+                if (a.value == "way") {
+                    type = osmobjects::osmtype_t::way;
+                } else if (a.value == "node") {
+                    type = osmobjects::osmtype_t::node;
+                } else if (a.value == "relation") {
+                    type = osmobjects::osmtype_t::relation;
+                } else {
+                    log_debug(_("Invalid relation type '%1%'!"), a.value);
+                }
+            } else if (a.name == "ref") {
+                ref = std::stol(a.value);
+            } else if (a.name == "role") {
+                role = a.value;
+            } else {
+                log_debug(_("Invalid attribute '%1%' in relation member!"),
+                          a.name);
+            }
+        }
+        // FIXME: is role mandatory?
+        if (ref != -1 && type != osmobjects::osmtype_t::empty) {
+            changes.back()->addMember(ref, type, role);
+        } else {
+            log_debug(_("Invalid relation (ref: %1%, type: %2%, role: %3%"),
+                      ref, type, role);
+        }
     } else if (name == "nd") {
         long ref = std::stol(attributes[0].value);
         changes.back()->addRef(ref);
@@ -543,11 +573,11 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
             OsmWay *way = it->get();
             // If there are no tags, assume it's part of a relation
             if (way->tags.size() == 0) {
-                log_debug(_("change %1% has no tags!"), way->change_id);
+                log_debug(_("Way %1% has no tags!"), way->change_id);
                 continue;
             }
             // if (way->polygon.outer().size() == 0) {
-            // 	log_error(_("change %1% has no points"), way->change_id);
+            // 	log_error(_("Way %1% has no points"), way->change_id);
             // 	continue;
             // }
             if (!way->priority) {

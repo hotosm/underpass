@@ -222,7 +222,7 @@ main(int argc, char *argv[])
             <tag k="name" v="node_1_rel_node_2"/>
           </way>
           <relation id="4" user="some_bored_user" uid="2" version="1" changeset="1" timestamp="2012-07-10T00:00:00Z">
-             <member type="way" ref="3" role=""/>
+             <member type="way" ref="3" role="a_role"/>
              <tag k="type" v="route"/>
           </relation>
         </create>
@@ -242,4 +242,14 @@ main(int argc, char *argv[])
             "ChangeSetFile::readXML(xml) - relation.action");
     COMPARE(relation->type, osmobjects::relation,
             "ChangeSetFile::readXML(xml) - relation.type");
+    COMPARE(relation->members.size(), 1,
+            "ChangeSetFile::readXML(xml) - relation.members");
+
+    // Check relation member
+    const auto member{relation->members.front()};
+    COMPARE(member.ref, 3, "ChangeSetFile::readXML(xml) - relation member ref");
+    COMPARE(member.role, "a_role",
+            "ChangeSetFile::readXML(xml) - relation member role");
+    COMPARE(member.type, osmobjects::osmtype_t::way,
+            "ChangeSetFile::readXML(xml) - relation member type");
 };
