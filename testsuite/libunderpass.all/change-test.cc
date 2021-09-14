@@ -40,6 +40,28 @@ using namespace changeset;
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
+#define VERIFY(condition, message)                                             \
+    if (condition) {                                                           \
+        runtest.pass(message);                                                 \
+    } else {                                                                   \
+        runtest.fail(message);                                                 \
+        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__             \
+                  << std::endl;                                                \
+        exit(EXIT_FAILURE);                                                    \
+    }
+
+#define COMPARE(first, second, message)                                        \
+    if (first == second) {                                                     \
+        runtest.pass(message);                                                 \
+    } else {                                                                   \
+        runtest.fail(message);                                                 \
+        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__             \
+                  << std::endl;                                                \
+        std::cerr << "Values are not equal: " << first << " != " << second     \
+                  << std::endl;                                                \
+        exit(EXIT_FAILURE);                                                    \
+    }
+
 TestState runtest;
 
 class TestCS : public changeset::ChangeSetFile {
@@ -170,16 +192,54 @@ main(int argc, char *argv[])
     // Contains a single node from the hospital lat="22.9890996" lon="114.4398219
     multipolygon_t single_node_poly;
     boost::geometry::read_wkt(
-        "MULTIPOLYGON(((114.4397 22.988, 114.4397 22.99, 114.4399 22.99, 114.4399 22.988, 114.4397 22.988)))",
+        "MULTIPOLYGON(((114.43 22.98, 114.43 22.99, 114.44 22.99, 114.44 22.98, 114.43 22.98)))",
         single_node_poly);
     testco.changes.clear();
     testco.nodecache.clear();
     testco.readChanges(test_data_dir + "/123.osc");
     testco.areaFilter(single_node_poly);
-    if (testco.changes.size() == 1 &&
-        testco.changes.front()->obj->id == 67365141L) {
-        runtest.pass("ChangeSetFile::areaFilter(single_node_poly)");
-    } else {
-        runtest.fail("ChangeSetFile::areaFilter(single_node_poly)");
-    }
+    COMPARE(testco.changes.size(), 1,
+            "ChangeSetFile::areaFilter(single_node_poly) - size");
+    COMPARE(testco.changes.front()->obj->id, 67365141L,
+            "ChangeSetFile::areaFilter(single_node_poly) - id");
+
+    // Test relations
+    testco.changes.clear();
+    testco.nodecache.clear();
+
+    const auto xml{R"xml(<?xml version='1.0' encoding='UTF-8'?>
+      <osmChange version="0.6" generator="Osmosis 0.47.4">
+        <create>
+          <node id="1" version="2" timestamp="2021-02-11T01:49:51Z" uid="1" user="bored_developer" changeset="99069702" lat="22.1" lon="114.1">
+           <tag k="name" v="node_1"/>
+          </node>
+          <node id="2" version="2" timestamp="2021-02-11T01:49:51Z" uid="1" user="bored_developer" changeset="99069702" lat="22.2" lon="114.2">
+          <tag k="name" v="node_1"/>
+          </node>
+          <way id="3" version="2" timestamp="2021-02-11T01:56:35Z" uid="1" user="bored_developer" changeset="99069879">
+            <nd ref="1"/>
+            <nd ref="2"/>
+            <tag k="name" v="node_1_rel_node_2"/>
+          </way>
+          <relation id="4" user="some_bored_user" uid="2" version="1" changeset="1" timestamp="2012-07-10T00:00:00Z">
+             <member type="way" ref="3" role=""/>
+             <tag k="type" v="route"/>
+          </relation>
+        </create>
+      </osmChange>
+    )xml"};
+
+    std::stringstream xml_stream{xml};
+    testco.readXML(xml_stream);
+    VERIFY(testco.changes.size() == 1 &&
+               testco.changes.front()->nodes.size() == 2 &&
+               testco.changes.front()->relations.size() == 1 &&
+               testco.changes.front()->ways.size() == 1,
+           "ChangeSetFile::readXML(xml) - relations");
+
+    const auto relation{testco.changes.front()->relations.front()};
+    COMPARE(relation->action, osmobjects::create,
+            "ChangeSetFile::readXML(xml) - relation.action");
+    COMPARE(relation->type, osmobjects::relation,
+            "ChangeSetFile::readXML(xml) - relation.type");
 };
