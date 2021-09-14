@@ -254,6 +254,11 @@ ChangeSet::dump(void)
 #ifdef LIBXML
 ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes)
 {
+    // On non-english numeric locales using decimal separator different than '.'
+    // this is necessary to parse double strings with std::stod correctly without
+    // loosing precision
+    std::setlocale(LC_NUMERIC, "C");
+
     for (const auto &attr_pair: attributes) {
         try {
             if (attr_pair.name == "id") {

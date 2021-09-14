@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <pqxx/pqxx>
 #include <list>
+#include <locale>
 
 #ifdef LIBXML
 #include <libxml++/libxml++.h>
@@ -131,6 +132,10 @@ OsmChangeFile::readChanges(const std::string &file)
 bool
 OsmChangeFile::readXML(std::istream &xml)
 {
+    // On non-english numeric locales using decimal separator different than '.'
+    // this is necessary to parse lat-lon with std::stod correctly without
+    // loosing precision
+    std::setlocale(LC_NUMERIC, "C");
     // log_debug(_("OsmChangeFile::readXML(): " << xml.rdbuf();
     std::ofstream myfile;
 #ifdef LIBXML
@@ -420,6 +425,7 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
             OsmNode *node = nit->get();
             nodecache[node->id] = node->point;
             // log_debug("ST_GeomFromEWKT(\'SRID=4326; %1%\'))", boost::geometry::wkt(node->point));
+            // std::cerr << "Checking " << boost::geometry::wkt(node->point) << " within " << boost::geometry::wkt(poly) << std::endl;
             if (!boost::geometry::within(node->point, poly)) {
                 // std::cerr << "Deleting point " << node->point.x() << ", " << node->point.y() << std::endl;
                 // log_debug(_("Validating Node %1% is not in a priority area"), node->change_id);
@@ -459,10 +465,13 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
                 way->priority = true;
             }
         }
-        // Delete the whole change if no ways or nodes
-        if (change->nodes.empty() && change->ways.empty()) {
+        // Delete the whole change if no ways or nodes or relations
+        // TODO: check for relations in priority area ?
+        if (change->nodes.empty() && change->ways.empty() &&
+            change->relations.empty()) {
             log_debug(_("Deleting empty change %1% after area filtering."),
                       change->obj->id);
+            // std::cerr << "Deleting whole change " << change->obj->id << std::endl;
             changes.erase(it--);
         }
     }
