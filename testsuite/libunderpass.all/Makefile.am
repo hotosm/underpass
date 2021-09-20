@@ -97,7 +97,7 @@ tm_test_LDADD = -lpqxx -lunderpass  $(BOOST_LIBS)
 
 # Test the Changeset class
 change_test_SOURCES = change-test.cc
-change_test_CPPFLAGS = -DDATADIR=\"$(srcdir)\" -I$(top_srcdir)
+change_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
 change_test_LDFLAGS = -L../..
 change_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
