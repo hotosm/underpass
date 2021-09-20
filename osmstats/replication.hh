@@ -50,8 +50,9 @@ using namespace boost::gregorian;
 #include <boost/asio/ssl/error.hpp>
 #include <boost/asio/ssl/stream.hpp>
 namespace ssl = boost::asio::ssl; // from <boost/asio/ssl.hpp>
+#include <boost/format.hpp>
+using boost::format;
 
-#include "data/threads.hh"
 #include "osmstats/changeset.hh"
 #include "timer.hh"
 // #include "osmstats/osmstats.hh"
@@ -90,27 +91,37 @@ namespace replication {
 typedef enum { minutely, hourly, daily, changeset } frequency_t;
 
 /// \class StateFile
-/// \brief Data structure for state.text files
+/// \brief Data structure for state.txt files
 ///
 /// This contains the data in a ???.state.txt file, used to identify the timestamp
 /// of the changeset replication file. The replication file uses the same
 /// 3 digit number as the state file.
-class StateFile
-{
+class StateFile {
   public:
+    ///
+    /// \brief constructs an invalid StateFile
+    /// \see isValid()
     StateFile(void)
     {
-        //timestamp = boost::posix_time::second_clock::local_time();
-        timestamp = boost::posix_time::not_a_date_time;
-        created_at = boost::posix_time::not_a_date_time;
-        closed_at = boost::posix_time::not_a_date_time;
-        sequence = 0;
+        timestamp = not_a_date_time;
+        created_at = not_a_date_time;
+        closed_at = not_a_date_time;
+        sequence = -1; // Turns out 0 is a valid sequence for changeset :/
     };
 
     /// Initialize with a state file from disk or memory
     StateFile(const std::string &file, bool memory);
     StateFile(const std::vector<unsigned char> &data)
         : StateFile(reinterpret_cast<const char *>(data.data()), true){};
+
+    inline bool operator==(const StateFile &other) const
+    {
+        return timestamp == other.timestamp && sequence == other.sequence &&
+               path == other.path && frequency == other.frequency &&
+               created_at == other.created_at && closed_at == other.closed_at;
+    };
+
+    inline bool operator!=(const StateFile &other) { return !(*this == other); }
 
     /// Dump internal data to the terminal, used only for debugging
     void dump(void);
@@ -135,21 +146,31 @@ class StateFile
         return std::stol(result[6]);
     };
 
+    ///
+    /// \brief isValid checks the validity of a state file.
+    /// A state file is considered valid is it has a not-null timestamp, a path, a frequence and a valid sequence.
+    /// \return TRUE if the StateFile is valid.
+    ///
+    bool isValid() const;
+
     // protected so testcases can access private data
     //protected:
     std::string path; ///< URL to this file
-    ptime timestamp;  ///< The timestamp of the associated changeset file
-    long sequence;    ///< The sequence number of the associated changeset file
+    ptime timestamp =
+        not_a_date_time; ///< The timestamp of the associated changeset file
+    long sequence =
+        -1; ///< The sequence number of the associated changeset/osmchange file
+    // FIXME: frequency is stored as a string, an ENUM would be a better choice, DB schema should be changed accordingly,.
     std::string frequency; ///< The time interval of this change file
     /// These two values are updated after the changset is parsed
-    ptime created_at; ///< The first timestamp in the changefile
-    ptime closed_at;  ///< The last timestamp in the changefile
+    ptime created_at =
+        not_a_date_time; ///< The first timestamp in the changefile
+    ptime closed_at = not_a_date_time; ///< The last timestamp in the changefile
 };
 
 /// \class RemoteURL
 /// \brief This parses a remote URL into pieces
-class RemoteURL
-{
+class RemoteURL {
   public:
     RemoteURL(void);
     RemoteURL(const RemoteURL &inr);
@@ -170,12 +191,12 @@ class RemoteURL
     void dump(void);
     void Increment(void);
     RemoteURL &operator=(const RemoteURL &inr);
+    long sequence();
 };
 
 /// \class Planet
 /// \brief This stores file paths and timestamps from planet.
-class Planet
-{
+class Planet {
   public:
     Planet(void);
     // Planet(const std::string &planet) { pserver = planet; };
@@ -210,17 +231,105 @@ class Planet
         return false;
     }
 
+    ///
+    /// \brief downloadFile downloads a file from planet
+    /// \param file the full URL or the path part of the URL (such as: "/replication/changesets/000/001/633.osm.gz"), the host part is taken from remote.domain.
+    /// \return file data (possibly empty in case of errors)
+    ///
     std::shared_ptr<std::vector<unsigned char>>
     downloadFile(const std::string &file);
 
-    /// Since the data files don't have a consistent time interval, this
-    /// attempts to do a rough calculation of the probably data file,
-    /// and downloads *.state.txt files till the right data file is found.
-    /// Note that this can be slow as it has to download multiple files.
-    std::shared_ptr<StateFile> findData(frequency_t freq, long sequence);
-    std::shared_ptr<StateFile> findData(frequency_t freq, ptime starttime);
-    std::shared_ptr<StateFile> findData(frequency_t freq,
-                                        const std::string &path);
+    ///
+    /// \brief fetchData
+    /// \param freq
+    /// \param path
+    /// \param underpass_dburl
+    /// \return
+    ///
+    std::shared_ptr<StateFile>
+    fetchData(frequency_t freq, const std::string &path,
+              const std::string &underpass_dburl = "");
+
+    static std::string sequenceToPath(long sequence);
+
+    ///
+    /// \brief fetchLastData reads the replication/<frequency>/state.txt file and retieve the last ???.state.txt state.
+    ///        Data is never read from cache but if \a underpass_dburl is not empty, retrieved state will be saved in the DB.
+    /// \param freq frequency.
+    /// \param underpass_dburl optional url for underpass DB where data are cached, an empty value means no cache will be used.
+    /// \return the last (possily invalid) state.
+    ///
+    std::shared_ptr<StateFile>
+    fetchDataLast(frequency_t freq, const std::string &underpass_dburl = "");
+
+    ///
+    /// \brief fetchLastFirst reads the replication/<frequency>/state.txt file and retieve the first ???.state.txt state.
+    ///        Sequence == 1 is attempted first and read from cache (if \a underpass_dburl is not empty and \a force_scan is FALSE),
+    ///        if that fails an index scan is performed in order to identify the first valid state, retrieved state will be
+    ///        saved in the DB.
+    /// \param freq frequency.
+    /// \param underpass_dburl optional url for underpass DB where data are cached, an empty value means no cache will be used.
+    /// \param force_scan optional flag to force an index scan (mainly for testing purposes).
+    /// \return the first (possily invalid) state.
+    ///
+    std::shared_ptr<StateFile>
+    fetchDataFirst(frequency_t freq, const std::string &underpass_dburl = "",
+                   bool force_scan = false);
+
+    ///
+    /// \brief fetchData retrieves data from the cache or from the server.
+    /// \param freq frequency.
+    /// \param timestamp timestamp.
+    /// \param underpass_dburl optional url for underpass DB where data are cached, an empty value means no cache will be used.
+    /// \return a (possibly invalid) StateFile record.
+    ///
+    std::shared_ptr<StateFile>
+    fetchData(frequency_t freq, ptime timestamp,
+              const std::string &underpass_dburl = "");
+
+    std::shared_ptr<StateFile>
+    fetchData(frequency_t freq, long sequence,
+              const std::string &underpass_dburl = "");
+
+    ///
+    /// \brief fetchDataGreaterThan finds and returns the first (possibly invalid) state with a sequence greater than \a sequence.
+    /// \param freq frequency.
+    /// \param sequence sequence.
+    /// \param underpass_dburl optional url for underpass DB where data are cached, an empty value means no cache will be used.
+    /// \return the first (possibly invalid) state with a sequence greater than \a sequence.
+    ///
+    std::shared_ptr<StateFile>
+    fetchDataGreaterThan(frequency_t freq, long sequence,
+                         const std::string &underpass_dburl = "");
+
+    ///
+    /// \brief fetchDataGreaterThan finds and returns a (possibly invalid) state with a timestamp greater than \a sequence.
+    /// If the optional \a underpass_dburl is specified and the DB already contains a state with a timestamp greater than
+    /// the requested \a timestamp then that state is returned. In any other case the last available state is fetched from the
+    /// server and returned if the timestamp is greater than the requested \a timestamp.
+    /// \param freq frequency.
+    /// \param timestamp timestamp.
+    /// \param underpass_dburl optional url for underpass DB where data are cached, an empty value means no cache will be used.
+    /// \return the first (possibly invalid) state with a sequence greater than \a sequence.
+    ///
+    std::shared_ptr<StateFile>
+    fetchDataGreaterThan(frequency_t freq, ptime timestamp,
+                         const std::string &underpass_dburl = "");
+
+    ///
+    /// \brief fetchDataLessThan finds and returns a (possibly invalid) state with a sequence less than \a sequence.
+    /// \param freq frequency.
+    /// \param sequence sequence.
+    /// \param underpass_dburl optional url for underpass DB where data are cached, an empty value means no cache will be used.
+    /// \return the first (possibly invalid) state with a sequence less than \a sequence.
+    ///
+    std::shared_ptr<StateFile>
+    fetchDataLessThan(frequency_t freq, long sequence,
+                      const std::string &underpass_dburl = "");
+
+    std::shared_ptr<StateFile>
+    fetchDataLessThan(frequency_t freq, ptime timestamp,
+                      const std::string &underpass_dburl = "");
 
     /// Dump internal data to the terminal, used only for debugging
     void dump(void);
@@ -263,8 +372,7 @@ class Planet
 ///
 /// This class handles identifying the right replication file to download,
 /// and downloading it.
-class Replication
-{
+class Replication {
   public:
     Replication(void)
     {

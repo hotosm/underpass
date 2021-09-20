@@ -40,19 +40,24 @@
 /// \namespace pq
 namespace pq {
 
-class Pq
-{
+class Pq {
   public:
     Pq(void);
     ~Pq(void);
     /// Connect to the Pq database
     Pq(const std::string &dbname);
     bool connect(const std::string &args);
+
+    ///
+    /// \brief isOpen, checks if the DB is open.
+    /// \return TRUE if the DB is open.
+    ///
+    bool isOpen() const;
+
     /// Query the database
     pqxx::result query(const std::string &query);
     bool parseURL(const std::string &query);
     void dump(void);
-    bool isOpen();
 
     //protected:
     std::unique_ptr<pqxx::connection> sdb;

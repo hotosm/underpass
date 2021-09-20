@@ -68,9 +68,11 @@ class GeoUtil;
 namespace changeset {
 
 /// Check a character in a string if it'S a control character
-extern bool IsControl(int i);
+extern bool
+IsControl(int i);
 
-extern std::string fixString(std::string text);
+extern std::string
+fixString(std::string text);
 
 /// \file changeset.hh
 /// \brief The file is used for processing changeset files
@@ -84,8 +86,7 @@ extern std::string fixString(std::string text);
 ///
 /// This stores the hashtags and comments use for a change when it is
 /// uploaded to OSM
-class ChangeSet
-{
+class ChangeSet {
   public:
     ChangeSet(void){/* FIXME */};
 #ifdef LIBXML
@@ -96,25 +97,16 @@ class ChangeSet
     void dump(void);
 
     /// Add a hashtag to internal storage
-    void
-    addHashtags(std::string text) {
-        hashtags.push_back(fixString(text));
-    };
+    void addHashtags(std::string text) { hashtags.push_back(fixString(text)); };
 
     /// Add the comment field, which is often used for hashtags
-    void
-    addComment(std::string text) {
-        comment = fixString(text);
-    };
+    void addComment(std::string text) { comment = fixString(text); };
 
     /// Add the editor field
-    void
-    addEditor(std::string text) {
-        editor = fixString(text);
-    };
+    void addEditor(std::string text) { editor = fixString(text); };
 
     // osmstats::RawCountry country;
-    int countryid;
+    int countryid = -1;
     // protected so testcases can access private data
     // protected:
     // These fields come from the changeset replication file
@@ -132,10 +124,10 @@ class ChangeSet
         0.0; ///< The maximum latitude for the bounding box of this change
     double max_lon =
         0.0; ///< The maximum longitude for the bounding box of this change
-    int num_changes = 0;    ///< The number of changes in this changeset, which
-                            ///< apears to be unused
+    int num_changes =
+        -1; ///< The number of changes in this changeset, -1 means unknown (because this tags started in 2018 and it's not there for older changesets)
     int comments_count = 0; ///< The number of comments in this changeset, which
-                            ///< apears to be unused
+                            ///< appears to be unused
     std::vector<std::string>
         hashtags;        ///< Internal aray of hashtags in this changeset
     std::string comment; ///< The comment for this changeset
@@ -162,7 +154,7 @@ class ChangeSetFile
   public:
     ChangeSetFile(void){};
 
-    bool areaFilter(const multipolygon_t &poly);
+    void areaFilter(const multipolygon_t &poly);
 
     /// Read a changeset file from disk or memory into internal storage
     bool readChanges(const std::string &file);

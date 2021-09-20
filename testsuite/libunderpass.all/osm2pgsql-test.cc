@@ -42,8 +42,7 @@ using namespace boost::filesystem;
 
 TestState runtest;
 
-class TestOsm2Pgsql : public Osm2Pgsql
-{
+class TestOsm2Pgsql : public Osm2Pgsql {
   public:
     TestOsm2Pgsql() = default;
 
@@ -59,7 +58,7 @@ class TestOsm2Pgsql : public Osm2Pgsql
                                      : ""};
         source_tree_root = getenv("UNDERPASS_SOURCE_TREE_ROOT")
                                ? getenv("UNDERPASS_SOURCE_TREE_ROOT")
-                               : ".";
+                               : SRCDIR;
 
         const std::string test_osm2pgsql_db_name{"osm2pgsql_test"};
 

@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <iterator>
 #include <valarray>
+#include <locale>
 
 #include <boost/dll/alias.hpp>
 #include <boost/function.hpp>
@@ -48,14 +49,12 @@ using namespace logger;
 
 namespace hotosm {
 
-LogFile& dbglogfile = LogFile::getDefaultInstance();
+LogFile &dbglogfile = LogFile::getDefaultInstance();
 
 // FIXME: things to look for
 // Villages, hamlets, neigborhoods, towns, or cities added without a name
 
-Hotosm::Hotosm(void)
-{
-}
+Hotosm::Hotosm(void) {}
 
 #if 0
 Hotosm::Hotosm(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
@@ -81,7 +80,7 @@ Hotosm::Hotosm(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
             //         continue;
             //     }
             // }
-            }       
+            }
         }
     }
 }
@@ -97,12 +96,12 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     status->user_id = node.uid;
 
     if (yamls.size() == 0) {
-	log_error(_("No config files!"));
-	return status;
+        log_error(_("No config files!"));
+        return status;
     }
     if (node.tags.size() == 0) {
-	status->status.insert(notags);
-	return status;
+        status->status.insert(notags);
+        return status;
     }
 
     yaml::Yaml tests = yamls[type];
@@ -117,48 +116,48 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     // This enables/disables writing features flagged for not being tag complete
     // from being written to the database to reduce the size of the results.
     if (tests.getConfig("complete") == "yes") {
-	minimal = false;
+        minimal = false;
     } else {
-	minimal = true;
+        minimal = true;
     }
     // This enables/disables writing features flagged for not having values
     // in range as defined in the YAML config file. This prevents those
     // from being written to the database to reduce the size of the results.
     if (tests.getConfig("values") == "yes") {
-	values = true;
+        values = true;
     } else {
-	values = false;
+        values = false;
     }
 
     for (auto vit = std::begin(node.tags); vit != std::end(node.tags); ++vit) {
-	if (tests.containsKey(vit->first)) {
-	    // std::cerr << "Matched key " << vit->first << "!" << std::endl;
-	    keyexists++;
-	} else {
-	    if (!minimal) {
-		status->status.insert(incomplete);
-	    }
-	}
-	if (tests.containsValue(vit->first, vit->second)) {
-	    // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
-	    valexists++;
-	    // status->status.insert(correct);
-	} else {
-	    status->status.insert(badvalue);
-	}
-	status->center = node.point;
+        if (tests.containsKey(vit->first)) {
+            // std::cerr << "Matched key " << vit->first << "!" << std::endl;
+            keyexists++;
+        } else {
+            if (!minimal) {
+                status->status.insert(incomplete);
+            }
+        }
+        if (tests.containsValue(vit->first, vit->second)) {
+            // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
+            valexists++;
+            // status->status.insert(correct);
+        } else {
+            status->status.insert(badvalue);
+        }
+        status->center = node.point;
     }
     // std::cerr << keyexists << " : " << valexists << " : " << tests.config.size() << std::endl;
 
     if (keyexists == tests.tags.size() && valexists == tests.tags.size()) {
-	status->status.clear();
-	if (!minimal) {
-	    status->status.insert(complete);
-	}
+        status->status.clear();
+        if (!minimal) {
+            status->status.insert(complete);
+        }
     } else {
-	if (!minimal) {
-	    status->status.insert(incomplete);
-	}
+        if (!minimal) {
+            status->status.insert(incomplete);
+        }
     }
     return status;
 }
@@ -168,17 +167,22 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
 std::shared_ptr<ValidateStatus>
 Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 {
+    // On non-english numeric locales using decimal separator different than '.'
+    // this is necessary to parse double strings with std::stod correctly
+    // without loosing precision
+    std::setlocale(LC_NUMERIC, "C");
+
     auto status = std::make_shared<ValidateStatus>(way);
     status->timestamp = boost::posix_time::microsec_clock::local_time();
     status->user_id = way.uid;
 
     if (yamls.size() == 0) {
-	log_error(_("No config files!"));
-	return status;
+        log_error(_("No config files!"));
+        return status;
     }
     if (way.tags.size() == 0) {
-	status->status.insert(notags);
-	return status;
+        status->status.insert(notags);
+        return status;
     }
 
     yaml::Yaml tests = yamls[type];
@@ -194,85 +198,87 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     bool values = false;
     // This is the minimum angle used to determine rectangular buildings
     if (!tests.getConfig("minangle").empty()) {
-	minangle = std::stod(tests.getConfig("minangle"));
+        minangle = std::stod(tests.getConfig("minangle"));
     }
     // This is the maximum angle used to determine rectangular buildings
     if (!tests.getConfig("maxangle").empty()) {
-	maxangle = std::stod(tests.getConfig("maxangle"));
+        maxangle = std::stod(tests.getConfig("maxangle"));
     }
     // This enables/disables writing features flagged for not being tag complete
     // from being written to the database to reduce the size of the results.
     if (tests.getConfig("complete") == "yes") {
-	minimal = false;
+        minimal = false;
     } else {
-	minimal = true;
+        minimal = true;
     }
     // This enables/disables writing features flagged for not having values
     // in range as defined in the YAML config file. This prevents those
     // from being written to the database to reduce the size of the results.
     if (tests.getConfig("values") == "yes") {
-	values = true;
+        values = true;
     } else {
-	values = false;
+        values = false;
     }
     for (auto vit = std::begin(way.tags); vit != std::end(way.tags); ++vit) {
-	if (tests.containsKey(vit->first)) {
-	    // std::cerr << "Matched key " << vit->first << "!" << std::endl;
-	    keyexists++;
-	} else {
-	    if (!minimal) {
-		status->status.insert(incomplete);
-	    }
-	}
-	if (tests.containsValue(vit->first, vit->second)) {
-	    // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
-	    valexists++;
-	    // status->status.insert(correct);
-	} else {
-	    if (!values) {
-		status->status.insert(badvalue);
-	    }
-	}
-	if (!values) {
-	    if (vit->first == "building" && vit->second == "residential" && !way.tags.count("name")) {
-		status->status.insert(badvalue);
-	    }
-	}
+        if (tests.containsKey(vit->first)) {
+            // std::cerr << "Matched key " << vit->first << "!" << std::endl;
+            keyexists++;
+        } else {
+            if (!minimal) {
+                status->status.insert(incomplete);
+            }
+        }
+        if (tests.containsValue(vit->first, vit->second)) {
+            // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
+            valexists++;
+            // status->status.insert(correct);
+        } else {
+            if (!values) {
+                status->status.insert(badvalue);
+            }
+        }
+        if (!values) {
+            if (vit->first == "building" && vit->second == "residential" &&
+                !way.tags.count("name")) {
+                status->status.insert(badvalue);
+            }
+        }
 
-	if (way.linestring.size() == 0) {
-	    return status;
-	}
-	boost::geometry::centroid(way.linestring, status->center);
-	// std::cerr << "Way ID: " << way.id << " " << boost::geometry::wkt(status->center) << std::endl;
+        if (way.linestring.size() == 0) {
+            return status;
+        }
+        boost::geometry::centroid(way.linestring, status->center);
+        // std::cerr << "Way ID: " << way.id << " " << boost::geometry::wkt(status->center) << std::endl;
     }
     // boost::geometry::correct(way.polygon);
     // See if the way is a closed polygon
     if (way.refs.front() == way.refs.back()) {
-	// If it's a building, check for square corners
-	if (way.tags.count("building") || way.tags.count("amenity")) {
-	    double angle = cornerAngle(way.linestring);
-	    status->angle = std::abs(angle);
-	    // std::cerr << "Angle for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
-	    if ((std::abs(angle) >= maxangle || std::abs(angle) <= minangle) && std::abs(angle) >= 40) {
-		// std::cerr << "Bad Geometry for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
-		// It's probably round
-		if (std::abs(angle) >= 40) {
-		    status->status.insert(badgeom);
-		}
-	    }
-	} else if (way.refs.size() == 5 && way.tags.size() == 0) {
-	    // See if it's closed, has 4 corners, but no tags
-	    log_error(_("WARNING: %1% might be a building!"), way.id);
-	}
-	return status;
+        // If it's a building, check for square corners
+        if (way.tags.count("building") || way.tags.count("amenity")) {
+            double angle = cornerAngle(way.linestring);
+            status->angle = std::abs(angle);
+            // std::cerr << "Angle for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
+            if ((std::abs(angle) >= maxangle || std::abs(angle) <= minangle) &&
+                std::abs(angle) >= 40) {
+                // std::cerr << "Bad Geometry for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
+                // It's probably round
+                if (std::abs(angle) >= 40) {
+                    status->status.insert(badgeom);
+                }
+            }
+        } else if (way.refs.size() == 5 && way.tags.size() == 0) {
+            // See if it's closed, has 4 corners, but no tags
+            log_error(_("WARNING: %1% might be a building!"), way.id);
+        }
+        return status;
     }
     if (keyexists == tests.tags.size() && valexists == tests.tags.size()) {
-	status->status.clear();
-	status->status.insert(complete);
+        status->status.clear();
+        status->status.insert(complete);
     } else {
-	if (!minimal) {
-	    status->status.insert(incomplete);
-	}
+        if (!minimal) {
+            status->status.insert(incomplete);
+        }
     }
     return status;
 }
@@ -288,30 +294,30 @@ Hotosm::checkTag(const std::string &key, const std::string &value)
     // Check for an empty value
     if (!key.empty() && value.empty()) {
         log_debug(_("WARNING: empty value for tag \"%1%\""), key);
-	status->status.insert(badvalue);
+        status->status.insert(badvalue);
     }
     // Check for a space in the tag key
     if (key.find(' ') != std::string::npos) {
         log_error(_("WARNING: spaces in tag key \"%1%\""), key);
-	status->status.insert(badvalue);
+        status->status.insert(badvalue);
     }
     // Check for single quotes in the tag value
     if (value.find('\'') != std::string::npos) {
         log_error(_("WARNING: single quote in tag value \"%1%\""), value);
-	status->status.insert(badvalue);
+        status->status.insert(badvalue);
     }
     // Check for single quotes in the tag value
     if (value.find('\"') != std::string::npos) {
         log_error(_("WARNING: double quote in tag value \"%1%\""), value);
-	status->status.insert(badvalue);
+        status->status.insert(badvalue);
     }
 
     return status;
 }
 
-};      // EOF hotosm namespace
+}; // namespace hotosm
 
-#endif  // EOF __HOTOSM_H__
+#endif // EOF __HOTOSM_H__
 
 // Local Variables:
 // mode: C++

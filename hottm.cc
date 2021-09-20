@@ -33,7 +33,8 @@ using namespace logger;
 namespace tmdb {
 
 bool
-TaskingManager::connect(const std::string &dburl) {
+TaskingManager::connect(const std::string &dburl)
+{
 
     if (dburl.empty()) {
         log_error(_(" need to specify URL connection string!"));
@@ -91,14 +92,15 @@ TaskingManager::connect(const std::string &dburl) {
             return false;
         }
     } catch (const std::exception &e) {
-        log_error(_(" Couldn't open database connection to %1% %2%"), dburl,
+        log_error(_("Couldn't open database connection to %1% %2%"), dburl,
                   e.what());
         return false;
     }
 }
 
 std::vector<TMTeam>
-TaskingManager::getTeams(TaskingManagerIdType teamid) {
+TaskingManager::getTeams(TaskingManagerIdType teamid)
+{
     std::vector<TMTeam> teams;
 
     std::string sql = "SELECT id,organisation_id,name FROM teams";
@@ -127,7 +129,8 @@ TaskingManager::getTeams(TaskingManagerIdType teamid) {
 }
 
 std::vector<long>
-TaskingManager::getTeamMembers(TaskingManagerIdType teamid, bool active) {
+TaskingManager::getTeamMembers(TaskingManagerIdType teamid, bool active)
+{
     std::vector<long> members;
 
     std::string sql = "SELECT user_id FROM team_members WHERE team_id=";
@@ -156,7 +159,8 @@ TaskingManager::getTeamMembers(TaskingManagerIdType teamid, bool active) {
 }
 
 std::vector<TMUser>
-TaskingManager::getUsers(TaskingManagerIdType userId) {
+TaskingManager::getUsers(TaskingManagerIdType userId)
+{
     std::vector<TMUser> users;
 
     // Extract data from TM DB
@@ -202,7 +206,8 @@ TaskingManager::getUsers(TaskingManagerIdType userId) {
 };
 
 std::vector<TMProject>
-TaskingManager::getProjects(TaskingManagerIdType projectid) {
+TaskingManager::getProjects(TaskingManagerIdType projectid)
+{
     std::vector<TMProject> projects;
 
     std::string sql = "SELECT "
@@ -233,7 +238,8 @@ TaskingManager::getProjects(TaskingManagerIdType projectid) {
 }
 
 std::unique_ptr<pqxx::work>
-TaskingManager::getWorker() const {
+TaskingManager::getWorker() const
+{
     if (!db) {
         return nullptr;
     }
@@ -241,7 +247,8 @@ TaskingManager::getWorker() const {
 }
 
 std::vector<long>
-TaskingManager::getProjectTeams(long projectid) {
+TaskingManager::getProjectTeams(long projectid)
+{
     std::vector<TaskingManagerIdType> teams;
 
     std::string sql = "SELECT team_id FROM project_teams WHERE project_id=";

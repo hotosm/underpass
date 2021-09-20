@@ -17,18 +17,17 @@
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
 
+#include "data/pq.hh"
+#include "log.hh"
 #include <dejagnu.h>
 #include <iostream>
 #include <string>
-#include "data/pq.hh"
-#include "log.hh"
 
 TestState runtest;
 
-class TestPQ : public pq::Pq
-{
-public:
-    TestPQ(void) {};
+class TestPQ : public pq::Pq {
+  public:
+    TestPQ(void){};
 };
 
 int
@@ -37,8 +36,8 @@ main(int argc, char *argv[])
     TestPQ tp;
     bool ret;
 
-    logger::LogFile& dbglogfile = logger::LogFile::getDefaultInstance();
-    
+    logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
+
     dbglogfile.setLogFilename("pq-test.log");
     dbglogfile.setVerbosity(3);
 
@@ -49,21 +48,21 @@ main(int argc, char *argv[])
     }
 
     ret = tp.parseURL("testdb");
-    // tp.dump();    
+    // tp.dump();
     if (ret && !tp.dbname.empty() && tp.host.empty()) {
         runtest.pass("PQ::parseURL(dbname)");
     } else {
         runtest.fail("PQ::parseURL(dbname)");
     }
     ret = tp.parseURL("localhost/testdb");
-    //tp.dump();    
+    //tp.dump();
     if (ret && tp.dbname == "dbname=testdb" && tp.host.empty()) {
         runtest.pass("PQ::parseURL(localhost/dbname)");
     } else {
         runtest.fail("PQ::parseURL(localhost/dbname)");
     }
     ret = tp.parseURL("testhost/testdb");
-    //tp.dump();    
+    //tp.dump();
     if (ret && tp.dbname == "dbname=testdb" && tp.host == "host=testhost") {
         runtest.pass("PQ::parseURL(remote/dbname)");
     } else {
@@ -71,24 +70,29 @@ main(int argc, char *argv[])
     }
 
     ret = tp.parseURL("foo@testhost/testdb");
-    //tp.dump();    
-    if (ret && tp.dbname == "dbname=testdb"
-        && tp.host == "host=testhost"\
-        && tp.user == "user=foo"
-        && tp.passwd.empty()) {
+    //tp.dump();
+    if (ret && tp.dbname == "dbname=testdb" && tp.host == "host=testhost" &&
+        tp.user == "user=foo" && tp.passwd.empty()) {
         runtest.pass("PQ::parseURL(user@remote/dbname)");
     } else {
         runtest.fail("PQ::parseURL(user@remote/dbname)");
     }
 
     ret = tp.parseURL("foo:bar@testhost/testdb");
-    //tp.dump();    
-    if (ret && tp.dbname == "dbname=testdb"
-        && tp.host == "host=testhost"\
-        && tp.user == "user=foo"
-        && tp.passwd == "password=bar") {
+    //tp.dump();
+    if (ret && tp.dbname == "dbname=testdb" && tp.host == "host=testhost" &&
+        tp.user == "user=foo" && tp.passwd == "password=bar") {
         runtest.pass("PQ::parseURL(user:pass@remote/dbname)");
     } else {
         runtest.fail("PQ::parseURL(user:pass@remote/dbname)");
+    }
+
+    ret = tp.parseURL("foo:bar@testhost");
+    //tp.dump();
+    if (ret && tp.dbname == "" && tp.host == "host=testhost" &&
+        tp.user == "user=foo" && tp.passwd == "password=bar") {
+        runtest.pass("PQ::parseURL(user:pass@remote)");
+    } else {
+        runtest.fail("PQ::parseURL(user:pass@remote)");
     }
 }

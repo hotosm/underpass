@@ -17,87 +17,105 @@
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
 
+#include <cmath>
 #include <dejagnu.h>
 #include <iostream>
-#include <string>
 #include <pqxx/pqxx>
-#include <cmath>
+#include <string>
 
 #include "data/geoutil.hh"
-#include "osmstats/osmstats.hh"
+#include "log.hh"
 #include "osmstats/changeset.hh"
 #include "osmstats/osmchange.hh"
+#include "osmstats/osmstats.hh"
 #include "osmstats/replication.hh"
-#include "log.hh"
 
-#include <boost/date_time.hpp>
-#include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/date_time/gregorian/gregorian.hpp"
+#include "boost/date_time/posix_time/posix_time.hpp"
+#include <boost/date_time.hpp>
+#include <boost/geometry.hpp>
 
 using namespace logger;
 using namespace changeset;
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
+#define VERIFY(condition, message)                                             \
+    if (condition) {                                                           \
+        runtest.pass(message);                                                 \
+    } else {                                                                   \
+        runtest.fail(message);                                                 \
+        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__             \
+                  << std::endl;                                                \
+        exit(EXIT_FAILURE);                                                    \
+    }
+
+#define COMPARE(first, second, message)                                        \
+    if (first == second) {                                                     \
+        runtest.pass(message);                                                 \
+    } else {                                                                   \
+        runtest.fail(message);                                                 \
+        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__             \
+                  << std::endl;                                                \
+        std::cerr << "Values are not equal: " << first << " != " << second     \
+                  << std::endl;                                                \
+        exit(EXIT_FAILURE);                                                    \
+    }
+
 TestState runtest;
 
-class TestCS : public changeset::ChangeSetFile
-{
-    bool testFile(const std::string &filespec) {
-        // std::string basedir="DATADIR";
-    };
-    bool testMem(const std::string &data);
+class TestCS : public changeset::ChangeSetFile {
 };
 
-class TestCO : public osmchange::OsmChangeFile
-{
-    bool testFile(const std::string &filespec) {
-        // std::string basedir="DATADIR";
-    };
-    bool testMem(const std::string &data);
+class TestCO : public osmchange::OsmChangeFile {
 };
 
-class TestStateFile : public replication::StateFile
-{
-public:
-    TestStateFile(const std::string &file, bool memory) : replication::StateFile(file, memory) {
-    };
+class TestStateFile : public replication::StateFile {
+  public:
+    TestStateFile(const std::string &file, bool memory)
+        : replication::StateFile(file, memory){};
     // Accessors for the private data
     ptime getTimestamp(void) { return timestamp; };
     long getSequence(void) { return sequence; };
 };
 
 int
-main(int argc, char* argv[])
+main(int argc, char *argv[])
 {
     logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
     dbglogfile.setWriteDisk(true);
     dbglogfile.setLogFilename("change-test.log");
     dbglogfile.setVerbosity(3);
 
-    std::string basedir = DATADIR;
+    const std::string basedir{getenv("UNDERPASS_SOURCE_TREE_ROOT")
+                                  ? getenv("UNDERPASS_SOURCE_TREE_ROOT")
+                                  : DATADIR};
+
+    const auto test_data_dir{basedir + "/testsuite/testdata"};
 
     // Read the changeset state file
-    TestStateFile statefile(basedir + "/993.state.txt", false);
+    TestStateFile statefile(test_data_dir + "/993.state.txt", false);
     // statefile.dump();
-    if (statefile.getSequence() == 4517993 && to_simple_string(statefile.getTimestamp()) == "2021-Apr-28 03:03:09") {
+    if (statefile.getSequence() == 4517993 &&
+        to_simple_string(statefile.getTimestamp()) == "2021-Apr-28 03:03:09") {
         runtest.pass("StateFile::Statefile(disk)");
     } else {
         runtest.fail("StateFile::Statefile(disk)");
     }
 
-    std::string buf = "---\nlast_run: 2020-10-08 22:30:01.737719000 +00:00\nsequence: 4139993\n";
+    std::string buf =
+        "---\nlast_run: 2020-10-08 22:30:01.737719000 +00:00\nsequence: 4139993\n";
     TestStateFile mem(buf, true);
     // mem.dump();
-    if (mem.getSequence() == 4139993 && to_simple_string(statefile.getTimestamp()) == "2021-Apr-28 03:03:09") {
+    if (mem.getSequence() == 4139993 &&
+        to_simple_string(statefile.getTimestamp()) == "2021-Apr-28 03:03:09") {
         runtest.pass("StateFile::Statefile(buffer)");
     } else {
         runtest.fail("StateFile::Statefile(buffer)");
     }
 
     TestCO testco;
-    // testco.readChanges("/tmp/y");
-    testco.readChanges(basedir + "/123.osc");
+    testco.readChanges(test_data_dir + "/123.osc");
     // testco.dump();
     if (testco.changes.size() >= 1) {
         runtest.pass("ChangeSetFile::readChanges(parsed file)");
@@ -114,26 +132,28 @@ main(int argc, char* argv[])
     }
     auto twf = tf->ways.front();
     // twf->dump();
-    if (twf->change_id ==  99069879 && twf->id == 474556695 &&  twf->uid == 1041828) {
+    if (twf->change_id == 99069879L && twf->id == 474556695L &&
+        twf->uid == 1041828L) {
         runtest.pass("ChangeSetFile::readChanges(first change, first way)");
     } else {
         runtest.fail("ChangeSetFile::readChanges(first change, first way)");
     }
     auto tnb = tf->nodes.back();
     // tnb->dump();
-    if (tnb->change_id == 94802322 && tnb->id == 289112823) {
+    if (tnb->change_id == 94802322L && tnb->id == 289112823L) {
         runtest.pass("ChangeSetFile::readChanges(first change, last node)");
     } else {
         runtest.fail("ChangeSetFile::readChanges(first change, last node)");
     }
     auto twb = tf->ways.back();
     // twb->dump();
-    if (twb->change_id == 99063443 && twb->id == 67365141 &&  twb->uid == 1137406) {
+    if (twb->change_id == 99063443L && twb->id == 67365141L &&
+        twb->uid == 1137406L) {
         runtest.pass("ChangeSetFile::readChanges(first change, last way)");
     } else {
         runtest.fail("ChangeSetFile::readChanges(first change, last way)");
     }
-    
+
     auto tb = testco.changes.back();
     // tb->dump();
     if (tb) {
@@ -141,26 +161,95 @@ main(int argc, char* argv[])
     } else {
         runtest.fail("ChangeSetFile::readChanges(last change)");
     }
-    
-#if 0
-    tests.readChanges(basedir + "/changeset-data.osm");
-    tests.dump();
-    
-    // if (tests[3].id > 0) {
-    //     runtest.pass("ChangeSetFile::readChanges(uncompressed)");
-    // } else {
-    //     runtest.fail("ChangeSetFile::readChanges(uncompressed)");
-    // }
-    auto rc = tests.readChanges(basedir + "/changeset-data2.osm.gz");
-    tests.dump();
-    // if (tests[3].id > 0) {
-    //     runtest.pass("ChangeSetFile::readChanges(compressed)");
-    // } else {
-    //     runtest.fail("ChangeSetFile::readChanges(compressed)");
-    // }
 
-#endif
-    
-    std::cout << "Done..." << std::endl;
+    testco.readChanges(test_data_dir + "/changeset-data.osm");
+
+    if (testco.changes.size() == 3 && testco.changes.back()->obj->id > 0) {
+        runtest.pass("ChangeSetFile::readChanges(uncompressed)");
+    } else {
+        runtest.fail("ChangeSetFile::readChanges(uncompressed)");
+    }
+
+    auto rc = testco.readChanges(basedir + "/changeset-data2.osm.gz");
+    if (testco.changes.size() == 3 && testco.changes.back()->obj->id > 0) {
+        runtest.pass("ChangeSetFile::readChanges(compressed)");
+    } else {
+        runtest.fail("ChangeSetFile::readChanges(compressed)");
+    }
+
+    // Test crash when build with default optimization (release mode)
+    multipolygon_t null_island_poly;
+    boost::geometry::read_wkt(
+        "MULTIPOLYGON(((0 0, 0 0.1, 0.1 0.1, 0.1 0, 0 0)))", null_island_poly);
+
+    testco.areaFilter(null_island_poly);
+    if (testco.changes.size() == 0) {
+        runtest.pass("ChangeSetFile::areaFilter(null_island_poly)");
+    } else {
+        runtest.fail("ChangeSetFile::areaFilter(null_island_poly)");
+    }
+
+    // Contains a single node from the hospital lat="22.9890996" lon="114.4398219
+    multipolygon_t single_node_poly;
+    boost::geometry::read_wkt(
+        "MULTIPOLYGON(((114.43 22.98, 114.43 22.99, 114.44 22.99, 114.44 22.98, 114.43 22.98)))",
+        single_node_poly);
+    testco.changes.clear();
+    testco.nodecache.clear();
+    testco.readChanges(test_data_dir + "/123.osc");
+    testco.areaFilter(single_node_poly);
+    COMPARE(testco.changes.size(), 1,
+            "ChangeSetFile::areaFilter(single_node_poly) - size");
+    COMPARE(testco.changes.front()->obj->id, 67365141L,
+            "ChangeSetFile::areaFilter(single_node_poly) - id");
+
+    // Test relations
+    testco.changes.clear();
+    testco.nodecache.clear();
+
+    const auto xml{R"xml(<?xml version='1.0' encoding='UTF-8'?>
+      <osmChange version="0.6" generator="Osmosis 0.47.4">
+        <create>
+          <node id="1" version="2" timestamp="2021-02-11T01:49:51Z" uid="1" user="bored_developer" changeset="99069702" lat="22.1" lon="114.1">
+           <tag k="name" v="node_1"/>
+          </node>
+          <node id="2" version="2" timestamp="2021-02-11T01:49:51Z" uid="1" user="bored_developer" changeset="99069702" lat="22.2" lon="114.2">
+          <tag k="name" v="node_1"/>
+          </node>
+          <way id="3" version="2" timestamp="2021-02-11T01:56:35Z" uid="1" user="bored_developer" changeset="99069879">
+            <nd ref="1"/>
+            <nd ref="2"/>
+            <tag k="name" v="node_1_rel_node_2"/>
+          </way>
+          <relation id="4" user="some_bored_user" uid="2" version="1" changeset="1" timestamp="2012-07-10T00:00:00Z">
+             <member type="way" ref="3" role="a_role"/>
+             <tag k="type" v="route"/>
+          </relation>
+        </create>
+      </osmChange>
+    )xml"};
+
+    std::stringstream xml_stream{xml};
+    testco.readXML(xml_stream);
+    VERIFY(testco.changes.size() == 1 &&
+               testco.changes.front()->nodes.size() == 2 &&
+               testco.changes.front()->relations.size() == 1 &&
+               testco.changes.front()->ways.size() == 1,
+           "ChangeSetFile::readXML(xml) - relations");
+
+    const auto relation{testco.changes.front()->relations.front()};
+    COMPARE(relation->action, osmobjects::create,
+            "ChangeSetFile::readXML(xml) - relation.action");
+    COMPARE(relation->type, osmobjects::relation,
+            "ChangeSetFile::readXML(xml) - relation.type");
+    COMPARE(relation->members.size(), 1,
+            "ChangeSetFile::readXML(xml) - relation.members");
+
+    // Check relation member
+    const auto member{relation->members.front()};
+    COMPARE(member.ref, 3, "ChangeSetFile::readXML(xml) - relation member ref");
+    COMPARE(member.role, "a_role",
+            "ChangeSetFile::readXML(xml) - relation member role");
+    COMPARE(member.type, osmobjects::osmtype_t::way,
+            "ChangeSetFile::readXML(xml) - relation member type");
 };
-

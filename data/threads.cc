@@ -33,6 +33,7 @@
 #include <thread>
 #include <unistd.h>
 #include <vector>
+#include <sstream>
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/algorithm/string.hpp>
@@ -89,14 +90,17 @@ namespace threads {
 // Starting with this URL, download the file, incrementing
 void
 startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
-             const std::string &dburl, const std::string &osm2pgsql_dburl)
+             const replicatorconfig::ReplicatorConfig &config)
 {
-    underpass::Underpass under;
 
     osmstats::QueryOSMStats ostats;
-    ostats.connect(dburl);
+    if (!ostats.connect(config.osmstats_db_url)) {
+        log_error(
+            _("Could not connect to osmstats DB, aborting monitoring thread!"));
+        return;
+    }
 
-    osm2pgsql::Osm2Pgsql osm2pgsql(osm2pgsql_dburl);
+    osm2pgsql::Osm2Pgsql osm2pgsql(config.osm2pgsql_db_url);
 
     replication::RemoteURL remote = inr;
     auto planet = std::make_shared<replication::Planet>(remote);
@@ -336,32 +340,42 @@ threadOsmChange(const replication::RemoteURL &remote,
         }
         std::ofstream myfile;
         myfile.open(remote.filespec, std::ios::binary);
-        myfile.write(reinterpret_cast<char *>(data->data()), data->size() - 1);
+        myfile.write(reinterpret_cast<char *>(data->data()), data->size());
         myfile.close();
 #endif
         try {
-            boost::iostreams::filtering_streambuf<boost::iostreams::input>
-                inbuf;
-            inbuf.push(boost::iostreams::gzip_decompressor());
-            boost::iostreams::array_source arrs{
-                reinterpret_cast<char const *>(data->data()), data->size()};
-            inbuf.push(arrs);
-            std::istream instream(&inbuf);
+
+            std::istringstream changes_xml;
+
+            // Scope to deallocate buffers
+            {
+                boost::iostreams::filtering_streambuf<boost::iostreams::input>
+                    inbuf;
+                inbuf.push(boost::iostreams::gzip_decompressor());
+                boost::iostreams::array_source arrs{
+                    reinterpret_cast<char const *>(data->data()), data->size()};
+                inbuf.push(arrs);
+                std::istream instream(&inbuf);
+                changes_xml.str(
+                    std::string{std::istreambuf_iterator<char>(instream), {}});
+            }
+
             try {
-                osmchanges->readXML(instream);
+                osmchanges->readXML(changes_xml);
+
             } catch (std::exception &e) {
                 log_error(_("Couldn't parse: %1%"), remote.url);
                 std::cerr << e.what() << std::endl;
-                // return false;
             }
 
-            // TODO: Start thread to update pgsql DB
-            o2pgsql.updateDatabase(std::string(data->begin(), data->end()));
+            // TODO: Start own thread to update pgsql DB
+            if (!changes_xml.str().empty()) {
+                o2pgsql.updateDatabase(changes_xml.str());
+            }
 
         } catch (std::exception &e) {
             log_error(_("%1% is corrupted!"), remote.url);
             std::cerr << e.what() << std::endl;
-            // return false;
         }
     }
 
@@ -475,7 +489,7 @@ threadChangeSet(const replication::RemoteURL &remote,
         }
         std::ofstream myfile;
         myfile.open(remote.filespec, std::ios::binary);
-        myfile.write(reinterpret_cast<char *>(data->data()), data->size() - 1);
+        myfile.write(reinterpret_cast<char *>(data->data()), data->size());
         myfile.close();
 #endif
         //data->push_back('\n');
@@ -620,14 +634,13 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
 
 void
 threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive,
-                  const std::string &tmDbUrl, const std::string &osmStatsDbUrl,
-                  long tmusersfrequency)
+                  const replicatorconfig::ReplicatorConfig &config)
 {
     // There is a lot of DB URI manipulations in this program, if the URL
     // contains a plain hostname we need to add a database name too
     // FIXME: handle all DB URIs in a consistent and documented way
-    auto osmStatsDbUrlWithDbName{osmStatsDbUrl};
-    if (osmStatsDbUrl.find('/') == std::string::npos) {
+    auto osmStatsDbUrlWithDbName{config.osmstats_db_url};
+    if (config.osmstats_db_url.find('/') == std::string::npos) {
         osmStatsDbUrlWithDbName.append("/osmstats");
     }
     auto osmStats{QueryOSMStats()};
@@ -640,8 +653,8 @@ threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive,
 
     TaskingManager taskingManager;
     // FIXME: handle all DB URIs in a consistent and documented way
-    auto tmDbUrlWithDbName{tmDbUrl};
-    if (tmDbUrl.find('/') == std::string::npos) {
+    auto tmDbUrlWithDbName{config.taskingmanager_db_url};
+    if (config.taskingmanager_db_url.find('/') == std::string::npos) {
         tmDbUrlWithDbName.append("/taskingmanager");
     }
 
@@ -650,6 +663,8 @@ threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive,
                   tmDbUrlWithDbName);
         return;
     }
+
+    const auto tmusersfrequency{config.taskingmanager_users_update_frequency};
 
     do {
 

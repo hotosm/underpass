@@ -99,7 +99,7 @@ Pq::dump(void)
 }
 
 bool
-Pq::isOpen()
+Pq::isOpen() const
 {
     return static_cast<bool>(sdb) && sdb->is_open();
 }
@@ -136,13 +136,21 @@ Pq::parseURL(const std::string &dburl)
     } else {
         boost::split(result, dburl, boost::is_any_of("/"));
     }
+
+    std::string host_tmp;
     if (result.size() == 1) {
-        dbname = "dbname=" + result[0];
-    } else if (result.size() == 2) {
-        if (result[0] != "localhost") {
-            host = "host=" + result[0];
+        if (apos == std::string::npos) {
+            dbname = "dbname=" + result[0];
+        } else {
+            host_tmp = result[0];
         }
+    } else if (result.size() == 2) {
+        host_tmp = result[0];
         dbname = "dbname=" + result[1];
+    }
+
+    if (!host_tmp.empty() && host_tmp != "localhost") {
+        host = "host=" + host_tmp;
     }
 
     return true;
@@ -169,7 +177,7 @@ Pq::connect(const std::string &dburl)
             return false;
         }
     } catch (const std::exception &e) {
-        log_error(_(" Couldn't open database connection to %1% %2%"), args,
+        log_error(_("Couldn't open database connection to %1% %2%"), args,
                   e.what());
         return false;
     }

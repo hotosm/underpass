@@ -73,19 +73,13 @@ class StateFile;
 /// \namespace underpass
 namespace underpass {
 
-class Underpass : public pq::Pq
-{
+class Underpass : public pq::Pq {
   public:
     /// Connect to the Underpass database
-    Underpass(void)
-    {
-        frequency_tags[replication::minutely] = "minute";
-        frequency_tags[replication::hourly] = "hour";
-        frequency_tags[replication::daily] = "day";
-        frequency_tags[replication::changeset] = "changeset";
-    };
+    Underpass(void) = default;
     Underpass(const std::string &dburl);
-    void dump(void);
+    ~Underpass(void);
+    void dump();
 
     /// Update the creator table to track editor statistics
     bool updateCreator(long user_id, long change_id, const std::string &editor);
@@ -101,6 +95,26 @@ class Underpass : public pq::Pq
     /// Get the state.txt date by timestamp
     std::shared_ptr<replication::StateFile>
     getState(replication::frequency_t freq, ptime &tstamp);
+
+    /// Get the state.txt date by sequence
+    std::shared_ptr<replication::StateFile>
+    getState(replication::frequency_t freq, long sequence);
+
+    /// Get the state.txt data greater than \a timestamp.
+    std::shared_ptr<replication::StateFile>
+    getStateGreaterThan(replication::frequency_t freq, ptime &timestamp);
+
+    /// Get the state.txt data greater than \a sequence.
+    std::shared_ptr<replication::StateFile>
+    getStateGreaterThan(replication::frequency_t freq, long sequence);
+
+    /// Get the state.txt data less than \a timestamp.
+    std::shared_ptr<replication::StateFile>
+    getStateLessThan(replication::frequency_t freq, ptime &timestamp);
+
+    /// Get the state.txt data less than \a sequence.
+    std::shared_ptr<replication::StateFile>
+    getStateLessThan(replication::frequency_t freq, long sequence);
 
     /// Get the maximum timestamp for the state.txt data
     std::shared_ptr<replication::StateFile>
@@ -120,13 +134,41 @@ class Underpass : public pq::Pq
         return url;
     };
 
-    std::string freq_to_string(replication::frequency_t tag)
+    ///
+    /// \brief freq_to_string returns a string representation of the given \a frequency.
+    /// The string representation can be used as part of the path for replication URL
+    /// (day, hour, minute, changesets).
+    /// \param frequency the frequency enum value.
+    /// \return a string representation of the frequency.
+    ///
+    static std::string freq_to_string(replication::frequency_t frequency)
     {
-        return frequency_tags[tag];
+        return frequency_tags[frequency];
     };
+
+    ///
+    /// \brief freq_from_string returns a frequency from its string representation \a frequency_str.
+    /// \param frequency_str the string representation (day, hour, minute, changesets).
+    /// \return the enum value for \a frequency_str.
+    /// \throws std::invalid_argument if the \a frequency_str is not a valid frequency.
+    ///
+    static replication::frequency_t
+    freq_from_string(const std::string &frequency_str)
+    {
+        for (const auto &[key, value]: frequency_tags)
+            if (value == frequency_str)
+                return key;
+        throw std::invalid_argument("Invalid frequency: " + frequency_str);
+    };
+
     // protected:
-    std::map<replication::frequency_t, std::string> frequency_tags;
+    static std::map<replication::frequency_t, std::string> frequency_tags;
     std::string db_url;
+
+  private:
+    /// Creates a (possibly invalid) state from a \a where condition and \a order_by SQL, LIMIT 1 is always appended.
+    std::shared_ptr<replication::StateFile>
+    stateFromQuery(const std::string &where, const std::string &order_by = "");
 };
 
 } // namespace underpass

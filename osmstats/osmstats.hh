@@ -71,8 +71,7 @@ namespace osmstats {
 ///
 /// The raw_changesets table contains all the calculated statistics
 /// for a change. This stores the data as parsed from the database.
-class RawChangeset
-{
+class RawChangeset {
   public:
     RawChangeset(pqxx::const_result_iterator &res);
     RawChangeset(const std::string filespec);
@@ -103,8 +102,7 @@ class RawChangeset
 ///
 /// The raw_user table is used to coorelate a user ID with their name.
 /// This stores the data as parsed from the database.
-class RawUser
-{
+class RawUser {
   public:
     RawUser(void){};
     /// Instantiate the user data from an iterator
@@ -128,8 +126,7 @@ class RawUser
 ///
 /// The raw_hashtag table is used to coorelate a hashtag ID with the
 /// hashtag name. This stores the data as parsed from the database.
-class RawHashtag
-{
+class RawHashtag {
   public:
     RawHashtag(void){};
     /// Instantiate the hashtag data from an iterator
@@ -154,8 +151,7 @@ class RawHashtag
 /// This class handles all the queries to the OSM Stats database.
 /// This includes querying the database for existing data, as
 /// well as updating the data whenh applying a replication file.
-class QueryOSMStats : public pq::Pq
-{
+class QueryOSMStats : public pq::Pq {
   public:
     QueryOSMStats(void);
     QueryOSMStats(const std::string &dburl);
@@ -190,9 +186,9 @@ class QueryOSMStats : public pq::Pq
     int addComment(long id, const std::string &user);
 
     /// Apply a change to the database
-    bool applyChange(changeset::ChangeSet &change);
-    bool applyChange(osmchange::ChangeStats &change);
-    bool applyChange(ValidateStatus &validation);
+    bool applyChange(const changeset::ChangeSet &change);
+    bool applyChange(const osmchange::ChangeStats &change);
+    bool applyChange(const ValidateStatus &validation);
 
     int lookupHashtag(const std::string &hashtag);
     bool hasHashtag(long changeid);

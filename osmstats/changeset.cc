@@ -79,7 +79,8 @@ namespace changeset {
 
 /// Check a character in a string if it's a control character
 bool
-IsControl(int i) {
+IsControl(int i)
+{
     return (iscntrl(i));
 }
 
@@ -97,7 +98,8 @@ IsControl(int i) {
 ///  <tag k="created_by" v="JOSM/1.5 (7182 en)"/>
 /// </changeset>
 bool
-ChangeSetFile::importChanges(const std::string &file) {
+ChangeSetFile::importChanges(const std::string &file)
+{
     std::ifstream change;
     int size = 0;
     //    store = false;
@@ -129,14 +131,16 @@ ChangeSetFile::importChanges(const std::string &file) {
 }
 
 bool
-ChangeSetFile::readChanges(const std::vector<unsigned char> &buffer) {
+ChangeSetFile::readChanges(const std::vector<unsigned char> &buffer)
+{
 
     // parse_memory((const Glib::ustring &)buffer);
 }
 
 // Read a changeset file from disk or memory into internal storage
 bool
-ChangeSetFile::readChanges(const std::string &file) {
+ChangeSetFile::readChanges(const std::string &file)
+{
     std::ifstream change;
     int size = 0;
     //    store = false;
@@ -176,8 +180,9 @@ ChangeSetFile::readChanges(const std::string &file) {
     change.close();
 }
 
-bool
-ChangeSetFile::areaFilter(const multipolygon_t &poly) {
+void
+ChangeSetFile::areaFilter(const multipolygon_t &poly)
+{
     // log_debug(_("Pre filtering changeset size is %1%"), changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
         ChangeSet *change = it->get();
@@ -193,15 +198,21 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly) {
         boost::geometry::append(change->bbox,
                                 point_t(change->max_lon, change->max_lat));
         boost::geometry::centroid(change->bbox, pt);
-        if (!boost::geometry::within(pt, poly)) {
-            // log_debug(_("Validating changeset %1% is not in a priority
-            // area"), change->id);
-            change->priority = false;
-            changes.erase(it--);
-        } else {
-            // log_debug(_("Validating changeset %1% is in a priority area"),
+        if (poly.empty()) {
+            // log_debug(_("Accepting changeset %1% as in priority area because area information is missing"),
             // change->id);
             change->priority = true;
+        } else {
+            if (!boost::geometry::within(pt, poly)) {
+                // log_debug(_("Validating changeset %1% is not in a priority
+                // area"), change->id);
+                change->priority = false;
+                changes.erase(it--);
+            } else {
+                // log_debug(_("Validating changeset %1% is in a priority area"),
+                // change->id);
+                change->priority = true;
+            }
         }
     }
     // log_debug(_("Post filtering changeset size is %1%"),
@@ -209,7 +220,8 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly) {
 }
 
 void
-ChangeSet::dump(void) {
+ChangeSet::dump(void)
+{
     std::cerr << "-------------------------" << std::endl;
     std::cerr << "Change ID: " << id << std::endl;
     std::cerr << "Created At:  " << to_simple_string(created_at) << std::endl;
@@ -240,17 +252,23 @@ ChangeSet::dump(void) {
 }
 
 #ifdef LIBXML
-ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes) {
-    for (const auto &attr_pair : attributes) {
+ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes)
+{
+    // On non-english numeric locales using decimal separator different than '.'
+    // this is necessary to parse double strings with std::stod correctly without
+    // loosing precision
+    std::setlocale(LC_NUMERIC, "C");
+
+    for (const auto &attr_pair: attributes) {
         try {
             if (attr_pair.name == "id") {
                 id = std::stol(attr_pair.value); // change id
             } else if (attr_pair.name == "created_at") {
                 created_at =
-                    from_iso_extended_string(attr_pair.value.substr(0, 18));
+                    from_iso_extended_string(attr_pair.value.substr(0, 19));
             } else if (attr_pair.name == "closed_at") {
                 closed_at =
-                    from_iso_extended_string(attr_pair.value.substr(0, 18));
+                    from_iso_extended_string(attr_pair.value.substr(0, 19));
             } else if (attr_pair.name == "open") {
                 if (attr_pair.value == "true") {
                     open = true;
@@ -293,7 +311,8 @@ ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes) {
 #endif // EOF LIBXML
 
 void
-ChangeSetFile::dump(void) {
+ChangeSetFile::dump(void)
+{
     std::cerr << "There are " << changes.size() << " changes" << std::endl;
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         // it->dump();
@@ -303,8 +322,8 @@ ChangeSetFile::dump(void) {
 // Read an istream of the data and parse the XML
 //
 bool
-ChangeSetFile::readXML(std::istream &xml) {
-    // log_debug(_(xml.rdbuf();
+ChangeSetFile::readXML(std::istream &xml)
+{
 #ifdef LIBXML
     // libxml calls on_element_start for each node, using a SAX parser,
     // and works well for large files.
@@ -315,8 +334,8 @@ ChangeSetFile::readXML(std::istream &xml) {
         // FIXME: files downloaded seem to be missing a trailing \n,
         // so produce an error, but we can ignore this as the file is
         // processed correctly.
-        // log_error(_("libxml++ exception: %1%"), ex.what());
-        int return_code = EXIT_FAILURE;
+        log_error(_("libxml++ exception: %1%"), ex.what());
+        return false;
     }
 #else
     // Boost::parser_tree with RapidXML is faster, but builds a DOM tree
@@ -331,11 +350,11 @@ ChangeSetFile::readXML(std::istream &xml) {
         return false;
     }
 
-    for (auto value : pt.get_child("osm")) {
+    for (auto value: pt.get_child("osm")) {
         if (value.first == "changeset") {
             changeset::ChangeSet change;
             // Process the tags. These don't exist for every element
-            for (auto tag : value.second) {
+            for (auto tag: value.second) {
                 if (tag.first == "tag") {
                     std::string key = tag.second.get("<xmlattr>.k", "");
                     std::string val = tag.second.get("<xmlattr>.v", "");
@@ -364,17 +383,20 @@ ChangeSetFile::readXML(std::istream &xml) {
         }
     }
 #endif
+    return true;
 }
 
 #ifdef LIBXML
 void
-ChangeSetFile::on_end_element(const Glib::ustring &name) {
+ChangeSetFile::on_end_element(const Glib::ustring &name)
+{
     // log_debug(_("Element \'%1%\' ending"), name);
 }
 
 void
 ChangeSetFile::on_start_element(const Glib::ustring &name,
-                                const AttributeList &attributes) {
+                                const AttributeList &attributes)
+{
     // log_debug(_("Element \'" << name << "\' starting" << std::endl;
     if (name == "changeset") {
         auto change = std::make_shared<changeset::ChangeSet>(attributes);
@@ -398,7 +420,7 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
         double max_lat = 0.0;
         double max_lon = 0.0;
 
-        for (const auto &attr_pair : attributes) {
+        for (const auto &attr_pair: attributes) {
             // std::wcout << "\tPAIR: " << attr_pair.name << " = " <<
             // attr_pair.value << std::endl;
             if (attr_pair.name == "k" && attr_pair.value == "max_lat") {
@@ -478,7 +500,8 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
 #endif // EOF LIBXML
 
 std::string
-fixString(std::string text) {
+fixString(std::string text)
+{
     std::string newstr;
     int i = 0;
     while (i < text.size()) {

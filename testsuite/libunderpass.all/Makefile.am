@@ -26,17 +26,13 @@ check_PROGRAMS = \
 	pq-test \
 	change-test \
 	val-test \
-  pgsql-sync-2 \
 	osm2pgsql-test \
-	yaml-test
+	yaml-test \
+	replication-test
 
 AM_CPPFLAGS = -I$(top_srcdir) -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)/hottm
 AM_LDFLAGS = -L../..
 
-#	rep-test
-#	stats-test
-#	hotosm-test
-#	geo-test
 
 BOOST_LIBS = \
 	$(BOOST_DATE_TIME_LIB) \
@@ -73,11 +69,11 @@ val_test_LDFLAGS = -L../..
 val_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS) ../../validate/hotosm.lo
 val_test_CPPFLAGS = -I$(top_srcdir) -DDATADIR=\"$(top_srcdir)\"
 
-
-#rep_test_SOURCES = rep-test.cc
-#rep_test_LDFLAGS = -L../..
-#rep_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
-#rep_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+# Test the replication classes
+replication_test_SOURCES = replication-test.cc
+replication_test_LDFLAGS = -L../..
+rplication_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
+replication_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 under_test_SOURCES = under-test.cc
 under_test_LDFLAGS = -L../..
@@ -126,6 +122,7 @@ CLEANFILES = \
 	pq-test.log \
 	change-test.log \
 	geo-test.log \
-	osm2pgsql-test.log
+	osm2pgsql-test.log \
+	replication-test.log
 
 RUNTESTFLAGS = -xml
