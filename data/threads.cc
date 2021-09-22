@@ -370,7 +370,12 @@ threadOsmChange(const replication::RemoteURL &remote,
 
             // TODO: Start own thread to update pgsql DB
             if (!changes_xml.str().empty()) {
-                o2pgsql.updateDatabase(changes_xml.str());
+                if (o2pgsql.isOpen()) {
+                    o2pgsql.updateDatabase(changes_xml.str());
+                } else {
+                    log_debug(
+                        _("osm2pgsql DB is closed, couldn't store changes!"));
+                }
             }
 
         } catch (std::exception &e) {
