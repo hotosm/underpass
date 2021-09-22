@@ -201,7 +201,7 @@ main(int argc, char *argv[])
                                                      "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
             ("upserver", opts::value<std::string>(), "Underpass database server for internal use (defaults to localhost/underpass), "
                                                      "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
-            ("osm2pgsqlserver", opts::value<std::string>(), "Osm2pgsql database server (defaults to localhost), "
+            ("osm2pgsqlserver", opts::value<std::string>(), "Osm2pgsql database server (defaults to localhost/osm2pgsql), "
                                                      "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
             ("tmusersfrequency", opts::value<std::string>(), "Frequency in seconds for the Tasking Manager database users "
                                                              "synchronization: -1 (disabled), 0 (single shot), > 0 (interval in seconds)")
