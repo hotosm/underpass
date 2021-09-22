@@ -61,12 +61,6 @@ bool
 Osm2Pgsql::updateDatabase(const std::string &osm_changes)
 {
 
-    if (isOpen()) {
-        log_error(
-            _("Update error: connection to osm2pgsql server '%1%' is closed"),
-            dburl);
-        return false;
-    }
     // -l for 4326
     std::string osm2pgsql_update_command{
         "osm2pgsql -l --append -r xml -s -C 300 -G --hstore --middle-schema=" +
