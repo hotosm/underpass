@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osmChange version="0.6" generator="CGImap 0.8.5 (1496412 spike-06.openstreetmap.org)" copyright="OpenStreetMap and contributors" attribution="http://www.openstreetmap.org/copyright" license="http://opendatacommons.org/licenses/odbl/1-0/">
+ <create>
+  <node id="7672025797" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4748099" lon="34.0827441"/>
+ </create>
+ <create>
+  <node id="7672025798" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4750782" lon="34.0823042"/>
+ </create>
+ <create>
+  <node id="7672025799" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4752498" lon="34.0814996"/>
+ </create>
+ <create>
+  <node id="7672025800" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4759793" lon="34.0809846"/>
+ </create>
+ <create>
+  <node id="7672025801" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4763227" lon="34.0803730"/>
+ </create>
+ <create>
+  <node id="7672025802" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4766338" lon="34.0795040"/>
+ </create>
+ <create>
+  <node id="7672025803" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4786829" lon="34.0772509"/>
+ </create>
+ <create>
+  <node id="7672025804" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4788653" lon="34.0761995"/>
+ </create>
+ <create>
+  <node id="7672025805" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4799596" lon="34.0744400"/>
+ </create>
+ <create>
+  <node id="7672025806" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4801956" lon="34.0733457"/>
+ </create>
+ <create>
+  <node id="7672025807" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4813221" lon="34.0717471"/>
+ </create>
+ <create>
+  <node id="7672025808" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4797195" lon="34.0820421"/>
+ </create>
+ <create>
+  <node id="7672025809" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4797370" lon="34.0821406"/>
+ </create>
+ <create>
+  <node id="7672025810" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4797554" lon="34.0821587"/>
+ </create>
+ <create>
+  <node id="7672025811" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4797340" lon="34.0822798"/>
+ </create>
+ <create>
+  <node id="7672025812" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4799033" lon="34.0823713"/>
+ </create>
+ <create>
+  <node id="7672025813" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795" lat="0.4800320" lon="34.0828380"/>
+ </create>
+ <create>
+  <way id="821663800" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795">
+   <nd ref="7672025807"/>
+   <nd ref="7672025806"/>
+   <nd ref="7672025805"/>
+   <nd ref="7672025804"/>
+   <nd ref="7672025803"/>
+   <nd ref="7672025802"/>
+   <nd ref="7672025801"/>
+   <nd ref="7672025800"/>
+   <nd ref="7672025799"/>
+   <nd ref="7672025798"/>
+   <nd ref="7672025797"/>
+  </way>
+ </create>
+ <create>
+  <way id="821663801" visible="true" version="1" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795">
+   <nd ref="6353646374"/>
+   <nd ref="7672025813"/>
+   <nd ref="7672025812"/>
+   <nd ref="7672025811"/>
+   <nd ref="7672025810"/>
+   <nd ref="7672025809"/>
+   <nd ref="7672025808"/>
+   <nd ref="6353634308"/>
+   <tag k="highway" v="path"/>
+  </way>
+ </create>
+ <delete>
+  <node id="7659927953" visible="false" version="2" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795"/>
+ </delete>
+ <delete>
+  <node id="7659927954" visible="false" version="2" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795"/>
+ </delete>
+ <delete>
+  <node id="7659927955" visible="false" version="2" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795"/>
+ </delete>
+ <modify>
+  <way id="815923836" visible="true" version="2" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795">
+   <nd ref="7620338992"/>
+   <nd ref="7620338993"/>
+   <nd ref="7620338994"/>
+   <nd ref="7620338995"/>
+   <nd ref="7620338996"/>
+   <nd ref="7620338997"/>
+   <nd ref="7620338998"/>
+   <nd ref="7620338999"/>
+   <nd ref="7620339000"/>
+   <nd ref="7620339001"/>
+   <nd ref="7620339002"/>
+   <nd ref="7620338991"/>
+   <nd ref="7620339003"/>
+   <nd ref="7620339004"/>
+   <nd ref="7620339005"/>
+   <nd ref="7620339006"/>
+   <nd ref="7620339007"/>
+   <nd ref="7620339008"/>
+   <nd ref="7620339009"/>
+   <tag k="highway" v="residential"/>
+  </way>
+ </modify>
+ <modify>
+  <way id="815951903" visible="true" version="2" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795">
+   <nd ref="2281630522"/>
+   <nd ref="7620520783"/>
+   <nd ref="7620520784"/>
+   <nd ref="7620575085"/>
+   <nd ref="7620575086"/>
+   <nd ref="7620575087"/>
+   <nd ref="7620575088"/>
+   <nd ref="7620575089"/>
+   <nd ref="7620339009"/>
+   <tag k="highway" v="residential"/>
+  </way>
+ </modify>
+ <delete>
+  <way id="816463804" visible="false" version="2" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795"/>
+ </delete>
+ <delete>
+  <way id="816463807" visible="false" version="2" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795"/>
+ </delete>
+ <delete>
+  <way id="818868521" visible="false" version="2" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795"/>
+ </delete>
+ <delete>
+  <way id="820331588" visible="false" version="2" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795"/>
+ </delete>
+ <delete>
+  <way id="820348706" visible="false" version="2" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795"/>
+ </delete>
+ <delete>
+  <way id="820348808" visible="false" version="2" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795"/>
+ </delete>
+ <delete>
+  <way id="820348843" visible="false" version="2" changeset="87369123" timestamp="2020-06-30T23:06:59Z" user="Daniel Specht" uid="2393795"/>
+ </delete>
+</osmChange>
