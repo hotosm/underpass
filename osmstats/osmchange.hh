@@ -273,11 +273,9 @@ class OsmChangeFile
     /// Read an istream of the data and parse the XML
     bool readXML(std::istream &xml);
 
-    std::map<long, std::shared_ptr<ChangeStats>>
-        userstats; ///< User statistics for this file
+    std::map<long, std::shared_ptr<ChangeStats>> userstats; ///< User statistics for this file
 
-    std::list<std::shared_ptr<OsmChange>>
-        changes; ///< All the changes in this file
+    std::list<std::shared_ptr<OsmChange>> changes; ///< All the changes in this file
     std::map<long, point_t> nodecache;
 
     /// Collect statistics for each user
@@ -285,8 +283,7 @@ class OsmChangeFile
     collectStats(const multipolygon_t &poly);
 
     std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
-    validateNodes(const multipolygon_t &poly,
-                  std::shared_ptr<Validate> &plugin);
+    validateNodes(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin);
 
     std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
     validateWays(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin);
@@ -294,6 +291,7 @@ class OsmChangeFile
     std::shared_ptr<std::vector<std::string>>
     scanTags(std::map<std::string, std::string> tags);
 
+//    std::map<long, bool> priority;
     /// dump internal data, for debugging only
     void dump(void);
 };

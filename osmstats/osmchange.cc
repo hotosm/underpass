@@ -447,13 +447,16 @@ OsmChangeFile::dump(void)
 void
 OsmChangeFile::areaFilter(const multipolygon_t &poly)
 {
+    std::map<long, bool> priority;
     // log_debug(_("Pre filtering size is %1%"), changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
         OsmChange *change = it->get();
-        for (auto nit = std::begin(change->nodes);
-             nit != std::end(change->nodes); ++nit) {
+        for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
             OsmNode *node = nit->get();
-            nodecache[node->id] = node->point;
+	    if (node->action == osmobjects::remove) {
+                continue;
+            }
+        nodecache[node->id] = node->point;
             // log_debug("ST_GeomFromEWKT(\'SRID=4326; %1%\'))", boost::geometry::wkt(node->point));
             // std::cerr << "Checking " << boost::geometry::wkt(node->point) << " within " << boost::geometry::wkt(poly) << std::endl;
             if (!boost::geometry::within(node->point, poly)) {
@@ -463,27 +466,34 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
             } else {
                 // log_debug(_("Validating Node %1% is in a priority area"), node->change_id);
                 node->priority = true;
+		priority[node->change_id] = true;
             }
         }
         //log_debug(_("Post filtering size is %1%"), changes.size());
-        for (auto wit = std::begin(change->ways); wit != std::end(change->ways);
-             ++wit) {
+        for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
             OsmWay *way = wit->get();
-            if (way->action == osmobjects::remove ||
-                way->action == osmobjects::modify) {
+            if (way->action == osmobjects::remove) {
                 continue;
             }
-            for (auto lit = std::begin(way->refs); lit != std::end(way->refs);
-                 ++lit) {
+            for (auto lit = std::begin(way->refs); lit != std::end(way->refs); ++lit) {
                 if (nodecache.count(*lit)) {
                     boost::geometry::append(way->linestring, nodecache[*lit]);
                 }
             }
-            if (way->linestring.size() == 0) {
-                log_debug(_("Empty linestring in way!"));
-                change->ways.erase(wit--);
-                continue;
-            }
+            if (way->linestring.size() == 0 && way->action == osmobjects::modify) {
+		if (priority[way->change_id]) {
+		    // log_debug(_("FIXME: priority is TRUE for way %1%"), way->id);
+		    way->priority = true;
+		} else {
+		    change->ways.erase(wit--);
+		    // log_debug(_("FIXME: priority is FALSE for way %1%"), way->id);
+		}
+		continue;
+	    }
+            if (way->linestring.size() == 0 && way->action == osmobjects::create) {
+		log_error(_("Way %1% has no geometry!"), way->id);
+		return;
+	    }
             boost::geometry::centroid(way->linestring, way->center);
             // point_t pt = nodecache.find(way->refs[1])->second;
             // log_debug("ST_GeomFromEWKT(\'SRID=4326; %1%\'))", boost::geometry::wkt(pt));
@@ -493,16 +503,15 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
             } else {
                 // log_debug(_("Validating Way %1% is in a priority area"), way->id);
                 way->priority = true;
+		priority[way->change_id] = true;
             }
         }
         // Delete the whole change if no ways or nodes or relations
         // TODO: check for relations in priority area ?
-        if (change->nodes.empty() && change->ways.empty() &&
-            change->relations.empty()) {
-            log_debug(_("Deleting empty change %1% after area filtering."),
-                      change->obj->id);
+        if (change->nodes.empty() && change->ways.empty()) {
+            // log_debug(_("Deleting empty change %1% after area filtering."), change->obj->id);
             // std::cerr << "Deleting whole change " << change->obj->id << std::endl;
-            changes.erase(it--);
+            // changes.erase(it--);
         }
     }
 }
@@ -572,23 +581,27 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
              ++it) {
             OsmWay *way = it->get();
             // If there are no tags, assume it's part of a relation
-            if (way->tags.size() == 0) {
-                log_debug(_("Way %1% has no tags!"), way->change_id);
+            if (way->tags.size() == 0 && way->action != osmobjects::remove) {
+                log_debug(_("Way %1% has no tags!"), way->id);
+                continue;
+            }
+            if (way->action == osmobjects::remove) {
                 continue;
             }
             // if (way->polygon.outer().size() == 0) {
             // 	log_error(_("Way %1% has no points"), way->change_id);
             // 	continue;
             // }
-            if (!way->priority) {
-                log_debug(_("Changeset with way %1% is not in a priority area"),
-                          way->change_id);
+#if 0
+	    // FIXME: Since this now handled by areaFilter(), this is just
+	    // a debugging test to make sure nothing snuck through.
+            if (way->priority) {
+                log_debug(_("Changeset with way %1% is in a priority area"), way->id);
                 continue;
             } else {
-                log_debug(_("Changeset with way %1% is in a priority area"),
-                          way->change_id);
+                log_debug(_("Changeset with way %1% is not  priority area"), way->id);
             }
-
+#endif
             // Some older ways in a way wound up with this one tag, which nobody noticed,
             // so ignore it.
             if (way->tags.size() == 1 &&
@@ -619,20 +632,20 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                         boost::geometry::append(way->linestring,
                                                 nodecache[*lit]);
                     }
+#if 0
                     // Get the middle point of the linestring on the sphere
                     point_t pt;
                     boost::geometry::centroid(way->linestring, pt);
                     way->center = pt;
                     if (!boost::geometry::within(pt, poly)) {
                         log_debug(
-                            _("Changeset with way %1% is not in a priority area"),
-                            way->change_id);
+                            _("Changeset with way %1% is not in a priority area"), way->id);
                         continue;
                     } else {
                         log_debug(
-                            _("Changeset with way %1% is in a priority area"),
-                            way->change_id);
-                    }
+                            _("Changeset with way %1% is in a priority area"), way->id);
+		    }
+#endif
                     std::string tag;
                     if (*hit == "highway") {
                         tag = "highway_km";
@@ -640,24 +653,21 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                     if (*hit == "waterway") {
                         tag = "waterway_km";
                     }
-                    double length =
-                        boost::geometry::length(
-                            globe,
-                            boost::geometry::strategy::distance::haversine<
-                                float>(6371.0)) *
-                        1000;
+                    double length = boost::geometry::length(globe,
+                            boost::geometry::strategy::distance::haversine<float>(6371.0)) * 1000;
                     // log_debug("LENGTH: %1% %2%", std::to_string(length), way->change_id);
                     if (way->action == osmobjects::create) {
                         ostats->added[tag] += length;
                         ostats->added[*hit]++;
                     } else if (way->action == osmobjects::modify) {
-                        ostats->modified[tag] += length;
-                        ostats->modified[*hit]++;
+			if (length > 0) {
+			    ostats->modified[tag] += length;
+			}
+			ostats->modified[*hit]++;
                     }
                 } else if (*hit == "building" || *hit == "amenity") {
                     polygon_t poly;
-                    for (auto lit = std::begin(way->refs);
-                         lit != std::end(way->refs); ++lit) {
+                    for (auto lit = std::begin(way->refs); lit != std::end(way->refs); ++lit) {
                         boost::geometry::append(poly, nodecache[*lit]);
                     }
                     // Get the middle point of the linestring on the sphere
@@ -831,11 +841,14 @@ OsmChangeFile::validateNodes(const multipolygon_t &poly,
              nit != std::end(change->nodes); ++nit) {
             OsmNode *node = nit->get();
             if (!node->priority) {
-                log_debug(_("Validating Node %1% is not in a priority area"),
-                          node->id);
+                // log_debug(_("Validating Node %1% is not in a priority area"), node->id);
                 continue;
             } else {
                 // log_debug(_("Validating Node %1% is in a priority area"), node->id);
+		// A node with no tags is probably part of a way
+		if (node->tags.empty() || node->action == osmobjects::remove) {
+		    continue;
+		}
             }
             std::vector<std::string> node_tests = {"building", "place"
                                                                "amenity"};
@@ -867,8 +880,7 @@ std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 OsmChangeFile::validateWays(const multipolygon_t &poly,
                             std::shared_ptr<Validate> &plugin)
 {
-    auto totals =
-        std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
+    auto totals = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
         for (auto nit = std::begin(change->ways); nit != std::end(change->ways);
@@ -881,8 +893,7 @@ OsmChangeFile::validateWays(const multipolygon_t &poly,
                 // log_debug(_("Validating Way %1% is in a priority area"), way->id);
             }
 
-            std::vector<std::string> way_tests = {"building", "highway",
-                                                  "waterway"};
+            std::vector<std::string> way_tests = {"building", "highway", "waterway"};
             // FIXME: place
 
             for (auto wit = way_tests.begin(); wit != way_tests.end(); ++wit) {
