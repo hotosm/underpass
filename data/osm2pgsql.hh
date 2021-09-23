@@ -31,6 +31,9 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
+#include "osmstats/osmchange.hh"
+using namespace osmchange;
+
 /// \file osm2pgsql.hh
 /// \brief Manages a osm2pgsql DB
 
@@ -43,8 +46,7 @@ namespace osm2pgsql {
 /// Methods to query the osm2pgsql DB status and to update the DB with osm changes
 /// are provided.
 ///
-class Osm2Pgsql : public pq::Pq
-{
+class Osm2Pgsql : public pq::Pq {
   public:
     ///
     /// \brief OSM2PGSQL_DEFAULT_SCHEMA_NAME the default schema name for osm2pgsql tables.
@@ -56,8 +58,7 @@ class Osm2Pgsql : public pq::Pq
     /// \param dburl the DB url in the form USER:PASSSWORD@HOST/DATABASENAME
     /// \param schema name of the osm2pgsql schema, defaults to "osm2pgsql_pgsql".
     ///
-    Osm2Pgsql(const std::string &dburl,
-              const std::string &schema = OSM2PGSQL_DEFAULT_SCHEMA_NAME);
+    Osm2Pgsql(const std::string &dburl, const std::string &schema = OSM2PGSQL_DEFAULT_SCHEMA_NAME);
 
     ///
     /// \brief Osm2Pgsql constructs a default uninitialized Osm2Pgsql.
@@ -78,6 +79,20 @@ class Osm2Pgsql : public pq::Pq
     ///
     bool updateDatabase(const std::string &osm_changes);
 
+    ///
+    /// \brief updateDatabase updates the DB with osm changes.
+    /// \param osm_changes OsmChangeFile (parsed)
+    /// \return TRUE on success, errors are logged.
+    ///
+    bool updateDatabase(const std::shared_ptr<OsmChangeFile> &osm_changes) const;
+
+    bool upsertWay(const std::shared_ptr<osmobjects::OsmWay> &way) const;
+    bool upsertNode(const std::shared_ptr<osmobjects::OsmNode> &node) const;
+    bool upsertRelation(const std::shared_ptr<osmobjects::OsmRelation> &relation) const;
+    bool removeWay(const std::shared_ptr<osmobjects::OsmWay> &way) const;
+    bool removeNode(const std::shared_ptr<osmobjects::OsmNode> &node) const;
+    bool removeRelation(const std::shared_ptr<osmobjects::OsmRelation> &relation) const;
+
     bool connect(const std::string &dburl);
 
     ///
@@ -95,6 +110,8 @@ class Osm2Pgsql : public pq::Pq
   private:
     /// Get last timestamp in the DB
     bool getLastUpdateFromDb();
+
+    /// Write an osm
 
     ptime last_update = not_a_date_time;
     std::string dburl;

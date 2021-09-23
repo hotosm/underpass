@@ -41,10 +41,7 @@ typedef boost::geometry::model::polygon<point_t> polygon_t;
 typedef boost::geometry::model::multi_polygon<polygon_t> multipolygon_t;
 typedef boost::geometry::model::linestring<point_t> linestring_t;
 typedef boost::geometry::model::segment<point_t> segment_t;
-typedef boost::geometry::model::point<
-    double, 2,
-    boost::geometry::cs::spherical_equatorial<boost::geometry::degree>>
-    sphere_t;
+typedef boost::geometry::model::point<double, 2, boost::geometry::cs::spherical_equatorial<boost::geometry::degree>> sphere_t;
 
 /// \namespace osmobjects
 namespace osmobjects {
@@ -59,12 +56,7 @@ namespace osmobjects {
 /// Relations contain multipe ways, and are often used for combining
 /// highway segments or administrative boundaries.
 
-typedef enum {
-    none,
-    create,
-    modify,
-    remove
-} action_t; // delete is a reserved word
+typedef enum { none, create, modify, remove } action_t; // delete is a reserved word
 typedef enum { empty, node, way, relation, member } osmtype_t;
 
 /// \class OsmObject
@@ -72,24 +64,20 @@ typedef enum { empty, node, way, relation, member } osmtype_t;
 class OsmObject {
   public:
     /// Add a metadata tag to an OSM object
-    void addTag(const std::string &key, const std::string &value)
-    {
-        tags[key] = value;
-    };
+    void addTag(const std::string &key, const std::string &value) { tags[key] = value; };
 
     void setAction(action_t act) { action = act; };
     void setUID(long val) { uid = val; };
     void setChangeID(long val) { change_id = val; };
 
-    action_t action = none; ///< the action that contains this object
-    osmtype_t type = empty; ///< The type of this object, node, way, or relation
-    long id = 0;            ///< The object ID within OSM
-    int version = 0;        ///< The version of this object
-    ptime
-        timestamp; ///< The timestamp of this object's creation or modification
-    long uid = 0;  ///< The User ID of the mapper of this object
-    std::string user;   ///< The User name  of the mapper of this object
-    long change_id = 0; ///< The changeset ID this object is contained in
+    action_t action = none;                  ///< the action that contains this object
+    osmtype_t type = empty;                  ///< The type of this object, node, way, or relation
+    long id = 0;                             ///< The object ID within OSM
+    int version = 0;                         ///< The version of this object
+    ptime timestamp;                         ///< The timestamp of this object's creation or modification
+    long uid = 0;                            ///< The User ID of the mapper of this object
+    std::string user;                        ///< The User name  of the mapper of this object
+    long change_id = 0;                      ///< The changeset ID this object is contained in
     std::map<std::string, std::string> tags; ///< OSM metadata tags
 
     bool priority = false; ///< Whether it's in the priority area
@@ -138,6 +126,12 @@ class OsmNode : public OsmObject {
 
     /// Dump internal data to the terminal, only for debugging
     void dump(void) const { OsmObject::dump(); };
+
+    int getZ_order() const;
+    void setZ_order(int newZ_order);
+
+  private:
+    int z_order = 0;
 };
 
 /// \class OsmWay
@@ -182,9 +176,7 @@ class OsmWay : public OsmObject {
     /// Calculate the length of the linestring in Kilometers
     double getLength(void)
     {
-        return boost::geometry::length(
-            linestring,
-            boost::geometry::strategy::distance::haversine<float>(6371.0));
+        return boost::geometry::length(linestring, boost::geometry::strategy::distance::haversine<float>(6371.0));
     };
 
     /// Dump internal data to the terminal, only for debugging
@@ -225,10 +217,7 @@ class OsmRelation : public OsmObject {
     OsmRelation(void) { type = relation; };
 
     /// Add a member to this relation
-    void addMember(long ref, osmtype_t _type, const std::string role)
-    {
-        members.push_back({ref, _type, role});
-    };
+    void addMember(long ref, osmtype_t _type, const std::string role) { members.push_back({ref, _type, role}); };
 
     ///< The members contained in this relation
     std::list<OsmRelationMember> members;

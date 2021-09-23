@@ -24,12 +24,19 @@
 
 #include <chrono>
 #include <string>
+#include <regex>
+
+#include <pqxx/nontransaction>
 
 #include <boost/iostreams/copy.hpp>
 #include <boost/process.hpp>
 using namespace boost::process;
+#include <boost/format.hpp>
+using boost::format;
 
 #include "osm2pgsql.hh"
+#include "data/osmobjects.hh"
+using namespace osmobjects;
 
 #include "log.hh"
 using namespace logger;
@@ -40,8 +47,7 @@ const std::string Osm2Pgsql::OSM2PGSQL_DEFAULT_SCHEMA_NAME = "osm2pgsql_pgsql";
 
 logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
 
-Osm2Pgsql::Osm2Pgsql(const std::string &_dburl, const std::string &schema)
-    : pq::Pq(), schema(schema)
+Osm2Pgsql::Osm2Pgsql(const std::string &_dburl, const std::string &schema) : pq::Pq(), schema(schema)
 {
     if (!connect(_dburl)) {
         log_error(_("Could not connect to osm2pgsql server %1%"), _dburl);
@@ -62,9 +68,8 @@ Osm2Pgsql::updateDatabase(const std::string &osm_changes)
 {
 
     // -l for 4326
-    std::string osm2pgsql_update_command{
-        "osm2pgsql -l --append -r xml -s -C 300 -G --hstore --middle-schema=" +
-        schema + " --output-pgsql-schema=" + schema + " -d postgresql://"};
+    std::string osm2pgsql_update_command{"osm2pgsql -l --append -r xml -s -C 300 -G --hstore --middle-schema=" + schema +
+                                         " --output-pgsql-schema=" + schema + " -d postgresql://"};
     // Append DB url in the form: postgresql://[user[:password]@][netloc][:port][,...][/dbname][?param1=value1&...]
     osm2pgsql_update_command.append(dburl);
     // Read from stdin
@@ -76,24 +81,265 @@ Osm2Pgsql::updateDatabase(const std::string &osm_changes)
     ipstream err;
     opstream in;
 
-    child osm2pgsql_update_process(osm2pgsql_update_command, std_out > out,
-                                   std_err > err, std_in < in);
+    child osm2pgsql_update_process(osm2pgsql_update_command, std_out > out, std_err > err, std_in < in);
 
     in.write(osm_changes.data(), osm_changes.size());
     in.close();
     in.pipe().close();
 
     // FIXME: make wait_for duration an arg
-    bool result{(!osm2pgsql_update_process.running() ||
-                 osm2pgsql_update_process.wait_for(std::chrono::minutes{1})) &&
+    bool result{(!osm2pgsql_update_process.running() || osm2pgsql_update_process.wait_for(std::chrono::minutes{1})) &&
                 osm2pgsql_update_process.exit_code() == EXIT_SUCCESS};
     if (!result) {
         std::stringstream err_mesg;
         boost::iostreams::copy(err, err_mesg);
-        log_error(_("Error running osm2pgsql command %1%\n%2%"),
-                  osm2pgsql_update_command, err_mesg.str());
+        log_error(_("Error running osm2pgsql command %1%\n%2%"), osm2pgsql_update_command, err_mesg.str());
     }
     return result;
+}
+
+bool
+Osm2Pgsql::updateDatabase(const std::shared_ptr<OsmChangeFile> &osm_changes) const
+{
+    // Preconditions
+    assert(static_cast<bool>(osm_changes));
+
+    if (!isOpen()) {
+        log_error(_("Could not update osm2pgsql DB %1%: DB is closed!"), dburl);
+        return false;
+    }
+
+    for (const auto &change: std::as_const(osm_changes->changes)) {
+        switch (change->action) {
+            case action_t::modify:
+            case action_t::create:
+            {
+                for (const auto &node: std::as_const(change->nodes)) {
+                    upsertNode(node);
+                }
+                for (const auto &way: std::as_const(change->ways)) {
+                    upsertWay(way);
+                }
+                for (const auto &relation: std::as_const(change->relations)) {
+                    upsertRelation(relation);
+                }
+                break;
+            }
+            case action_t::remove:
+            {
+                for (const auto &node: std::as_const(change->nodes)) {
+                    removeNode(node);
+                }
+                for (const auto &way: std::as_const(change->ways)) {
+                    removeWay(way);
+                }
+                for (const auto &relation: std::as_const(change->relations)) {
+                    removeRelation(relation);
+                }
+                break;
+            }
+            case action_t::none:
+            {
+                break;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool
+Osm2Pgsql::upsertWay(const std::shared_ptr<osmobjects::OsmWay> &way) const
+{
+    return true;
+}
+
+bool
+Osm2Pgsql::upsertNode(const std::shared_ptr<osmobjects::OsmNode> &node) const
+{
+    // Preconditions
+    assert(static_cast<bool>(sdb));
+
+    pqxx::nontransaction worker(*sdb);
+
+    // First: upsert in middle table
+    const std::string middle_sql{str(format(R"sql(
+  INSERT INTO %1%.planet_osm_nodes
+    (id, lon, lat)
+    VALUES ($1, $2, $3)
+  ON CONFLICT (id) DO
+    UPDATE
+    SET lon = $2, lat = $3
+    WHERE %1%.planet_osm_nodes.id = $1
+  )sql") % schema)};
+
+    // Process tags, this is the list of tag names that map to table columns
+    static const std::set<std::string> tags_to_fields{"access",
+                                                      "addr:housename",
+                                                      "addr:housenumber",
+                                                      "addr:interpolation",
+                                                      "admin_level",
+                                                      "aerialway",
+                                                      "aeroway",
+                                                      "amenity",
+                                                      "area",
+                                                      "barrier",
+                                                      "bicycle",
+                                                      "brand",
+                                                      "bridge",
+                                                      "boundary",
+                                                      "building",
+                                                      "capital",
+                                                      "construction",
+                                                      "covered",
+                                                      "culvert",
+                                                      "cutting",
+                                                      "denomination",
+                                                      "disused",
+                                                      "ele",
+                                                      "embankment",
+                                                      "foot",
+                                                      "generator:source",
+                                                      "harbour",
+                                                      "highway",
+                                                      "historic",
+                                                      "horse",
+                                                      "intermittent",
+                                                      "junction",
+                                                      "landuse",
+                                                      "layer",
+                                                      "leisure",
+                                                      "lock",
+                                                      "man_made",
+                                                      "military",
+                                                      "motorcar",
+                                                      "name",
+                                                      "natural",
+                                                      "office",
+                                                      "oneway",
+                                                      "operator",
+                                                      "place",
+                                                      "population",
+                                                      "power",
+                                                      "power_source",
+                                                      "public_transport",
+                                                      "railway",
+                                                      "ref",
+                                                      "religion",
+                                                      "route",
+                                                      "service",
+                                                      "shop",
+                                                      "sport",
+                                                      "surface",
+                                                      "toll",
+                                                      "tourism",
+                                                      "tower:type",
+                                                      "tunnel",
+                                                      "water",
+                                                      "waterway",
+                                                      "wetland",
+                                                      "width",
+                                                      "wood"};
+
+    std::string tag_field_names;
+    std::string tag_field_values;
+    std::string tag_field_updates;
+    std::string tags_literal{"'"};
+
+    const std::regex tags_escape_re{R"re((["=>]))re"};
+
+    static const auto separator{", "};
+
+    for (const auto &tag: std::as_const(node->tags)) {
+        if (!tag.second.empty()) {
+            // Tags mapped to columns
+            if (tags_to_fields.find(tag.first) != tags_to_fields.cend()) {
+                tag_field_names.append(separator + worker.quote_name(tag.first));
+                const auto value{"'" + worker.esc(tag.second) + "'"};
+                tag_field_values.append(separator + value);
+                tag_field_updates.append(separator + worker.quote_name(tag.first) + " = " + value);
+            } else { // Tags added to "tags"
+                const auto tag_value{worker.esc(tag.second)};
+                const auto tag_name{worker.esc(tag.first)};
+                // Escape = and > and "
+                const auto tag_name_safe{std::regex_replace(tag_name, tags_escape_re, R"raw(\$1)raw")};
+                const auto tag_value_safe{std::regex_replace(tag_value, tags_escape_re, R"raw(\$1)raw")};
+                tags_literal.append((tags_literal.size() > 1 ? ", " : "") + tag_name_safe + " => \"" + tag_value_safe + '"');
+            }
+        }
+    }
+    tags_literal.append("'");
+
+    // No upsert here because planet_osm_point has no PK ...
+    const std::string delete_sql{str(format(R"sql(DELETE FROM %1%.planet_osm_point WHERE osm_id = $1)sql") % schema)};
+    // Insert
+    const std::string insert_sql{str(format(R"sql(
+  INSERT INTO %1%.planet_osm_point
+    (osm_id, way, tags %2%)
+    VALUES ($1, public.ST_SetSRID(public.ST_MakePoint($2, $3), 4326), %4% %3%)
+  )sql") % schema % tag_field_names % tag_field_values %
+                                     tags_literal)};
+
+    //std::cerr << middle_sql << std::endl;
+    std::cerr << insert_sql << std::endl;
+
+    try {
+        worker.exec("BEGIN;");
+        worker.exec_params0(middle_sql, node->id, static_cast<int>(node->point.x() * 10000000),
+                            static_cast<int>(node->point.y() * 10000000));
+        worker.exec_params0(delete_sql, node->id);
+        worker.exec_params0(insert_sql, node->id, node->point.x(), node->point.y());
+        worker.exec("COMMIT;");
+    } catch (const std::exception &ex) {
+        log_error(_("Couldn't upsert node/points record: %1%"), ex.what());
+        worker.exec("ROLLBACK;");
+        return false;
+    }
+    return true;
+}
+
+bool
+Osm2Pgsql::upsertRelation(const std::shared_ptr<osmobjects::OsmRelation> &relation) const
+{
+    return true;
+}
+
+bool
+Osm2Pgsql::removeWay(const std::shared_ptr<osmobjects::OsmWay> &way) const
+{
+    return true;
+}
+
+bool
+Osm2Pgsql::removeNode(const std::shared_ptr<osmobjects::OsmNode> &node) const
+{
+    // Preconditions
+    assert(static_cast<bool>(sdb));
+
+    // upsert in middle nodes table
+    const std::string middle_sql{str(format(R"sql(
+  DELETE FROM %1%.planet_osm_nodes WHERE id = $1
+  )sql") % schema)};
+    // upsert in point table
+    const std::string sql{str(format(R"sql(
+  DELETE FROM %1%.planet_osm_point WHERE osm_id = $1
+  )sql") % schema)};
+    try {
+        pqxx::work worker(*sdb);
+        worker.exec_params(middle_sql, node->id);
+        worker.exec_params(sql, node->id);
+        worker.commit();
+    } catch (const std::exception &ex) {
+        log_error(_("Couldn't remove node record: %1%"), ex.what());
+        return false;
+    }
+    return true;
+}
+
+bool
+Osm2Pgsql::removeRelation(const std::shared_ptr<osmobjects::OsmRelation> &relation) const
+{
+    return true;
 }
 
 bool
@@ -111,7 +357,7 @@ Osm2Pgsql::connect(const std::string &_dburl)
 bool
 Osm2Pgsql::getLastUpdateFromDb()
 {
-    if (sdb->is_open()) {
+    if (isOpen()) {
         const std::string sql{R"sql(
         SELECT MAX(foo.ts) AS ts FROM(
           SELECT MAX(tags -> 'osm_timestamp') AS ts FROM osm2pgsql_pgsql.planet_osm_point
@@ -135,8 +381,7 @@ Osm2Pgsql::getLastUpdateFromDb()
             last_update = time_from_string(timestamp);
             return last_update != not_a_date_time;
         } catch (std::exception const &e) {
-            log_error(_("Error getting last update from osm2pgsql DB: %1%"),
-                      e.what());
+            log_error(_("Error getting last update from osm2pgsql DB: %1%"), e.what());
         }
         return false;
     } else {

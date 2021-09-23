@@ -42,6 +42,25 @@ using namespace boost::filesystem;
 
 TestState runtest;
 
+#define VERIFY(condition, message)                                                                                                 \
+    if (condition) {                                                                                                               \
+        runtest.pass(message);                                                                                                     \
+    } else {                                                                                                                       \
+        runtest.fail(message);                                                                                                     \
+        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__ << std::endl;                                                   \
+        exit(EXIT_FAILURE);                                                                                                        \
+    }
+
+#define COMPARE(first, second, message)                                                                                            \
+    if (first == second) {                                                                                                         \
+        runtest.pass(message);                                                                                                     \
+    } else {                                                                                                                       \
+        runtest.fail(message);                                                                                                     \
+        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__ << std::endl;                                                   \
+        std::cerr << "Values are not equal: " << first << " != " << second << std::endl;                                           \
+        exit(EXIT_FAILURE);                                                                                                        \
+    }
+
 class TestOsm2Pgsql : public Osm2Pgsql {
   public:
     TestOsm2Pgsql() = default;
@@ -53,12 +72,8 @@ class TestOsm2Pgsql : public Osm2Pgsql {
         logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
         dbglogfile.setVerbosity();
 
-        const std::string dbconn{getenv("UNDERPASS_TEST_DB_CONN")
-                                     ? getenv("UNDERPASS_TEST_DB_CONN")
-                                     : ""};
-        source_tree_root = getenv("UNDERPASS_SOURCE_TREE_ROOT")
-                               ? getenv("UNDERPASS_SOURCE_TREE_ROOT")
-                               : SRCDIR;
+        const std::string dbconn{getenv("UNDERPASS_TEST_DB_CONN") ? getenv("UNDERPASS_TEST_DB_CONN") : ""};
+        source_tree_root = getenv("UNDERPASS_SOURCE_TREE_ROOT") ? getenv("UNDERPASS_SOURCE_TREE_ROOT") : SRCDIR;
 
         const std::string test_osm2pgsql_db_name{"osm2pgsql_test"};
 
@@ -78,49 +93,29 @@ class TestOsm2Pgsql : public Osm2Pgsql {
 
             // Create schema
             const path base_path{source_tree_root / "testsuite"};
-            const auto schema_path{base_path / "testdata" /
-                                   "pgsql_test_schema.sql"};
+            const auto schema_path{base_path / "testdata" / "pgsql_test_schema.sql"};
             std::ifstream schema_definition(schema_path);
-            std::string sql((std::istreambuf_iterator<char>(schema_definition)),
-                            std::istreambuf_iterator<char>());
+            std::string sql((std::istreambuf_iterator<char>(schema_definition)), std::istreambuf_iterator<char>());
 
             assert(!sql.empty());
             worker.exec0(sql);
 
             // Load a minimal data set for testing
-            const auto data_path{base_path / "testdata" /
-                                 "pgsql_test_data.sql.gz"};
-            std::ifstream data_definition(data_path, std::ios_base::in |
-                                                         std::ios_base::binary);
-            boost::iostreams::filtering_streambuf<boost::iostreams::input>
-                inbuf;
+            const auto data_path{base_path / "testdata" / "pgsql_test_data.sql.gz"};
+            std::ifstream data_definition(data_path, std::ios_base::in | std::ios_base::binary);
+            boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
             inbuf.push(boost::iostreams::gzip_decompressor());
             inbuf.push(data_definition);
             std::istream instream(&inbuf);
-            std::string data_sql((std::istreambuf_iterator<char>(instream)),
-                                 std::istreambuf_iterator<char>());
+            std::string data_sql((std::istreambuf_iterator<char>(instream)), std::istreambuf_iterator<char>());
             assert(!data_sql.empty());
             worker.exec0(data_sql);
-
-            // Load changes
-            const auto changes_data_path{base_path / "testdata" /
-                                         "simple_test.osc"};
-            std::ifstream osm_change(changes_data_path,
-                                     std::ios_base::in | std::ios_base::binary);
-            boost::iostreams::filtering_istream osm_change_inbuf;
-            osm_change_inbuf.push(osm_change);
-            std::stringstream sstream;
-            auto bytes_written =
-                boost::iostreams::copy(osm_change_inbuf, sstream);
-            osm_changes = sstream.str();
-            assert(bytes_written > 0);
         }
 
         return true;
     };
 
     std::string source_tree_root;
-    std::string osm_changes;
 };
 
 int
@@ -136,70 +131,129 @@ main(int argc, char *argv[])
     TestOsm2Pgsql testosm2pgsql;
 
     // Test that default constructed object have a schema set
-    assert(testosm2pgsql.getSchema().compare(
-               testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME) == 0);
+    assert(testosm2pgsql.getSchema().compare(testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME) == 0);
 
     testosm2pgsql.init_test_case();
 
     const std::string test_osm2pgsql_db_name{"osm2pgsql_test"};
     std::string osm2pgsql_conn;
     if (getenv("PGHOST") && getenv("PGUSER") && getenv("PGPASSWORD")) {
-        osm2pgsql_conn = std::string(getenv("PGUSER")) + ":" +
-                         std::string(getenv("PGPASSWORD")) + "@" +
-                         std::string(getenv("PGHOST")) + "/" +
-                         test_osm2pgsql_db_name;
+        osm2pgsql_conn = std::string(getenv("PGUSER")) + ":" + std::string(getenv("PGPASSWORD")) + "@" +
+                         std::string(getenv("PGHOST")) + "/" + test_osm2pgsql_db_name;
     } else {
         osm2pgsql_conn = test_osm2pgsql_db_name;
     }
 
-    if (testosm2pgsql.connect(osm2pgsql_conn)) {
-        runtest.pass("Osm2Pgsql::connect()");
-    } else {
-        runtest.fail("Osm2Pgsql::connect()");
-        exit(EXIT_FAILURE);
-    }
+    VERIFY(testosm2pgsql.connect(osm2pgsql_conn), "Osm2Pgsql::connect()");
 
     const auto last_update{testosm2pgsql.getLastUpdate()};
-    std::cout << "ts: " << to_iso_extended_string(last_update) << std::endl;
-    if (!last_update.is_not_a_date_time() &&
-        to_iso_extended_string(last_update).compare("2021-08-05T23:38:28") ==
-            0) {
-        runtest.pass("Osm2Pgsql::getLastUpdate()");
-    } else {
-        runtest.fail("Osm2Pgsql::getLastUpdate()");
-        exit(EXIT_FAILURE);
-    }
 
-    // Read the osm change from file and process it
-    if (!testosm2pgsql.updateDatabase(testosm2pgsql.osm_changes)) {
+    VERIFY(!last_update.is_not_a_date_time() && to_iso_extended_string(last_update) == "2021-08-05T23:38:28",
+           "Osm2Pgsql::getLastUpdate()");
+
+    const std::string xml{R"xml(<?xml version='1.0' encoding='UTF-8'?>
+      <osmChange version="0.6" generator="manually_generated/1.8.0">
+         <modify>
+             <node id="3" lat="49.5" lon="3.12" user="some_user" uid="1" version="2" changeset="1" timestamp="2021-08-05T23:38:28Z">
+                 <tag k="name" v="Some interesting point new name"/>
+                 <tag k="foo" v="bar"/>
+                 <tag k="bar" v="baz"/>
+             </node>
+         </modify>         
+         <delete>
+             <node id="4" lat="49" lon="3" user="some_user" uid="1" version="1" changeset="1" timestamp="2012-07-10T00:00:00Z"/>
+             <node id="10" lat="49.590" lon="2.4060" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-08-05T23:38:28Z"/>
+         </delete>
+         <create>
+             <!-- recreate node 4 as 44 -->
+             <node id="44" lat="49" lon="3" user="some_user" uid="1" version="1" changeset="1" timestamp="2012-07-10T00:00:00Z">
+                 <tag k="name" v="Some other interesting point (44)"/>
+                 <tag k="foo" v="bar"/>
+                 <tag k="bar" v="baz"/>
+                 <tag k="crazy=>tag" v="crazy'&quot;=>values"/>
+                 <tag k="shop" v="department_store"/>
+                 <tag k="addr:housename" v="My house name at N°5" />
+             </node>
+         </create>
+         <modify>
+           <!-- remove node 10 -->
+           <way id="1" user="some_user" uid="1" version="1" changeset="1" timestamp="2012-07-10T00:00:00Z">
+             <nd ref="1"/>
+             <nd ref="2"/>
+             <tag k="highway" v="motorway"/>
+             <tag k="foo" v="bar"/>
+           </way>
+           <!-- remove node 4 -->
+           <way id="2" version="2" timestamp="2020-05-15T13:36:18Z" uid="2" user="more_bored" changeset="1">
+             <nd ref="1"/>
+             <nd ref="2"/>
+             <nd ref="5"/>
+             <nd ref="1"/>
+             <tag k="highway" v="motorway"/>
+             <tag k="foo" v="bar"/>
+           </way>
+         </modify>
+      </osmChange>
+    )xml"};
+
+    // Test update from osm changes
+    std::shared_ptr<OsmChangeFile> osm_changes = std::make_shared<OsmChangeFile>();
+    std::stringstream xml_stream{xml};
+    osm_changes->readXML(xml_stream);
+
+    auto results{testosm2pgsql.query("SELECT ST_Contains(ST_MakeLine(way), ST_SetSRID(ST_MakePoint(2.4060, 49.590), 4326)) FROM " +
+                                     testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_roads WHERE osm_id = 1")};
+
+    VERIFY(results.at(0)["st_contains"].as(std::string()) == "t",
+           "OsmChangeFile::readXML(xml_stream) - verify initial road 1 geometry");
+
+    // Read the osm change and process it
+    //if (!testosm2pgsql.updateDatabase(osm_changes)) {
+    if (!testosm2pgsql.updateDatabase(xml)) {
         runtest.fail("Osm2Pgsql::updateDatabase()");
         exit(EXIT_FAILURE);
     } else {
         // Check for changes!
-        const auto results{
-            testosm2pgsql.query("SELECT name, ST_X(way) AS x FROM " +
-                                testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
-                                ".planet_osm_point ORDER BY name")};
-        if (results.at(0)["name"]
-                .as(std::string())
-                .compare("Some interesting point new name") != 0) {
-            runtest.fail("Osm2Pgsql::updateDatabase() - retrieve 0");
-            exit(EXIT_FAILURE);
-        }
-        if (results.at(1)["name"]
-                .as(std::string())
-                .compare("Some other interesting point (44)") != 0) {
-            runtest.fail("Osm2Pgsql::updateDatabase() - retrieve 1");
-            exit(EXIT_FAILURE);
-        }
-        if (results.at(0)["x"].as(double()) != 3.12) {
-            runtest.fail("Osm2Pgsql::updateDatabase() - retrieve X 0");
-            exit(EXIT_FAILURE);
-        }
-        if (results.at(1)["x"].as(double()) != 3.0) {
-            runtest.fail("Osm2Pgsql::updateDatabase() - retrieve X 1");
-            exit(EXIT_FAILURE);
-        }
-        runtest.pass("Osm2Pgsql::updateDatabase()");
+        results = testosm2pgsql.query("SELECT osm_id, name, ST_X(way) AS x, shop, tags, \"addr:housename\" FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_point ORDER BY name");
+
+        COMPARE(results.at(0)["name"].as(std::string()), "Some interesting point new name",
+                "Osm2Pgsql::updateDatabase() - retrieve 0");
+
+        COMPARE(results.at(1)["name"].as(std::string()), "Some other interesting point (44)",
+                "Osm2Pgsql::updateDatabase() - retrieve 1");
+
+        COMPARE(results.at(1)["shop"].as(std::string()), "department_store", "Osm2Pgsql::updateDatabase() - retrieve 1 shop");
+
+        COMPARE(results.at(1)["addr:housename"].as(std::string()), "My house name at N°5",
+                "Osm2Pgsql::updateDatabase() - retrieve 1 addr:housename");
+
+        COMPARE(results.at(1)["tags"].as(std::string()), R"("bar"=>"baz", "foo"=>"bar", "crazy=>tag"=>"crazy'\"=>values")",
+                "Osm2Pgsql::updateDatabase() - retrieve 1 tags");
+
+        COMPARE(results.at(1)["osm_id"].as(int()), 44, "Osm2Pgsql::updateDatabase() - retrieve osm_id 44");
+
+        COMPARE(results.at(0)["x"].as(double()), 3.12, "Osm2Pgsql::updateDatabase() - retrieve X 0");
+
+        COMPARE(results.at(1)["x"].as(double()), 3.0, "Osm2Pgsql::updateDatabase() - retrieve X 1");
+
+        results = testosm2pgsql.query("SELECT * FROM " + testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                      ".planet_osm_nodes WHERE id IN(4, 44)");
+
+        COMPARE(results.size(), 1, "Osm2Pgsql::updateDatabase() - verify nodes 4 and 44 size");
+        COMPARE(results.at(0)["id"].as(int()), 44, "Osm2Pgsql::updateDatabase() - verify node 44");
+
+        // Verify way 2 which has been altered
+        results =
+            testosm2pgsql.query("SELECT * FROM " + testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_ways WHERE id = 2");
+
+        // verify node 4 is gone
+        COMPARE(results.at(0)["nodes"].as(std::string()), "{1,2,5,1}", "Osm2Pgsql::updateDatabase() - verify changed way 2 nodes");
+
+        results = testosm2pgsql.query("SELECT ST_Contains(ST_MakeLine(way), ST_SetSRID(ST_MakePoint(2.4060, 49.590), 4326)) FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_roads WHERE osm_id = 1");
+
+        VERIFY(results.at(0)["st_contains"].as(std::string()) == "f",
+               "OsmChangeFile::readXML(xml_stream) - verify final road 1 geometry");
     }
 }

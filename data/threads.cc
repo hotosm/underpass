@@ -89,14 +89,12 @@ namespace threads {
 
 // Starting with this URL, download the file, incrementing
 void
-startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
-             const replicatorconfig::ReplicatorConfig &config)
+startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly, const replicatorconfig::ReplicatorConfig &config)
 {
 
     osmstats::QueryOSMStats ostats;
     if (!ostats.connect(config.osmstats_db_url)) {
-        log_error(
-            _("Could not connect to osmstats DB, aborting monitoring thread!"));
+        log_error(_("Could not connect to osmstats DB, aborting monitoring thread!"));
         return;
     }
 
@@ -115,9 +113,8 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
     boost::dll::fs::path lib_path(plugins);
     boost::function<plugin_t> creator;
     try {
-        creator = boost::dll::import_alias<plugin_t>(
-            lib_path / "libhotosm", "create_plugin",
-            boost::dll::load_mode::append_decorations);
+        creator =
+            boost::dll::import_alias<plugin_t>(lib_path / "libhotosm", "create_plugin", boost::dll::load_mode::append_decorations);
         log_debug(_("Loaded plugin hotosm!"));
     } catch (std::exception &e) {
         log_debug(_("Couldn't load plugin! %1%"), e.what());
@@ -147,8 +144,7 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
         if (remote.frequency == replication::changeset) {
             timer.startTimer();
             auto changefile = threadChangeSet(remote, poly, ostats);
-            for (auto it = std::begin(changefile->changes);
-                 it != std::end(changefile->changes); ++it) {
+            for (auto it = std::begin(changefile->changes); it != std::end(changefile->changes); ++it) {
                 ostats.applyChange(*it->get());
             }
             timer.endTimer("changeSet");
@@ -295,10 +291,8 @@ startStateThreads(const std::string &base, const std::string &file)
 
 // This thread get started for every osmChange file
 std::shared_ptr<osmchange::OsmChangeFile>
-threadOsmChange(const replication::RemoteURL &remote,
-                const multipolygon_t &poly, osmstats::QueryOSMStats &ostats,
-                osm2pgsql::Osm2Pgsql &o2pgsql,
-                std::shared_ptr<Validate> &plugin)
+threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly, osmstats::QueryOSMStats &ostats,
+                osm2pgsql::Osm2Pgsql &o2pgsql, std::shared_ptr<Validate> &plugin)
 {
     // osmstats::QueryOSMStats ostats;
     std::vector<std::string> result;
@@ -327,8 +321,7 @@ threadOsmChange(const replication::RemoteURL &remote,
         data = planet.downloadFile(remote.url);
     }
     if (data->size() == 0) {
-        log_error(_("osmChange file not found: %1% %2%"), remote.url,
-                  ".osc.gz");
+        log_error(_("osmChange file not found: %1% %2%"), remote.url, ".osc.gz");
         return osmchanges;
     } else {
 #ifdef USE_CACHE
@@ -346,15 +339,12 @@ threadOsmChange(const replication::RemoteURL &remote,
 
             // Scope to deallocate buffers
             {
-                boost::iostreams::filtering_streambuf<boost::iostreams::input>
-                    inbuf;
+                boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
                 inbuf.push(boost::iostreams::gzip_decompressor());
-                boost::iostreams::array_source arrs{
-                    reinterpret_cast<char const *>(data->data()), data->size()};
+                boost::iostreams::array_source arrs{reinterpret_cast<char const *>(data->data()), data->size()};
                 inbuf.push(arrs);
                 std::istream instream(&inbuf);
-                changes_xml.str(
-                    std::string{std::istreambuf_iterator<char>(instream), {}});
+                changes_xml.str(std::string{std::istreambuf_iterator<char>(instream), {}});
             }
 
             try {
@@ -368,10 +358,9 @@ threadOsmChange(const replication::RemoteURL &remote,
             // TODO: Start own thread to update pgsql DB
             if (!changes_xml.str().empty()) {
                 if (o2pgsql.isOpen()) {
-                    // o2pgsql.updateDatabase(changes_xml.str());
+                    o2pgsql.updateDatabase(changes_xml.str());
                 } else {
-                    log_debug(
-                        _("osm2pgsql DB is closed, couldn't store changes!"));
+                    log_debug(_("osm2pgsql DB is closed, couldn't store changes!"));
                 }
             }
 
@@ -396,16 +385,13 @@ threadOsmChange(const replication::RemoteURL &remote,
 #endif
 
     //boost::timer::cpu_timer timer;
-    for (auto it = std::begin(osmchanges->changes);
-         it != std::end(osmchanges->changes); ++it) {
+    for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
         osmchange::OsmChange *change = it->get();
         // change->dump();
-        for (auto it = std::begin(change->nodes); it != std::end(change->nodes);
-             ++it) {
+        for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
             osmobjects::OsmNode *node = it->get();
         }
-        for (auto it = std::begin(change->ways); it != std::end(change->ways);
-             ++it) {
+        for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
             osmobjects::OsmWay *way = it->get();
         }
     }
@@ -450,8 +436,7 @@ threadOsmChange(const replication::RemoteURL &remote,
 // the changeset file, and don't need to be calculated.
 //void threadChangeSet(const std::string &file, std::promise<bool> &&result)
 std::shared_ptr<changeset::ChangeSetFile>
-threadChangeSet(const replication::RemoteURL &remote,
-                const multipolygon_t &poly, osmstats::QueryOSMStats &ostats)
+threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly, osmstats::QueryOSMStats &ostats)
 {
     auto changeset = std::make_shared<changeset::ChangeSetFile>();
     auto state = std::make_shared<replication::StateFile>();
@@ -496,12 +481,10 @@ threadChangeSet(const replication::RemoteURL &remote,
 #endif
         //data->push_back('\n');
         try {
-            boost::iostreams::filtering_streambuf<boost::iostreams::input>
-                inbuf;
+            boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
             inbuf.push(boost::iostreams::gzip_decompressor());
             // data->push_back('\n');
-            boost::iostreams::array_source arrs{
-                reinterpret_cast<char const *>(data->data()), data->size()};
+            boost::iostreams::array_source arrs{reinterpret_cast<char const *>(data->data()), data->size()};
             inbuf.push(arrs);
             std::istream instream(&inbuf);
             try {
@@ -528,8 +511,7 @@ threadChangeSet(const replication::RemoteURL &remote,
     //timer.endTimer("changeset::areaFilter");
 
     // Apply the changes to the database
-    for (auto it = std::begin(changeset->changes);
-         it != std::end(changeset->changes); ++it) {
+    for (auto it = std::begin(changeset->changes); it != std::end(changeset->changes); ++it) {
         ostats.applyChange(*it->get());
     }
     //     changeset.dump();
@@ -617,8 +599,7 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
 
     //const std::lock_guard<std::mutex> unlock(stream_mutex);
     auto data = std::make_shared<std::vector<unsigned char>>();
-    for (auto body = std::begin(parser.get().body());
-         body != std::end(parser.get().body()); ++body) {
+    for (auto body = std::begin(parser.get().body()); body != std::end(parser.get().body()); ++body) {
         data->push_back((unsigned char)*body);
     }
     if (data->size() == 0) {
@@ -635,8 +616,7 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file)
 }
 
 void
-threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive,
-                  const replicatorconfig::ReplicatorConfig &config)
+threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive, const replicatorconfig::ReplicatorConfig &config)
 {
     // There is a lot of DB URI manipulations in this program, if the URL
     // contains a plain hostname we need to add a database name too
@@ -648,8 +628,7 @@ threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive,
     auto osmStats{QueryOSMStats()};
     // Connection errors are fatal: exit!
     if (!osmStats.connect(osmStatsDbUrlWithDbName)) {
-        log_error("ERROR: couldn't connect to OSM Stats Underpass server: %1%!",
-                  osmStatsDbUrlWithDbName);
+        log_error("ERROR: couldn't connect to OSM Stats Underpass server: %1%!", osmStatsDbUrlWithDbName);
         return;
     }
 
@@ -661,8 +640,7 @@ threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive,
     }
 
     if (!taskingManager.connect(tmDbUrlWithDbName)) {
-        log_error("ERROR: couldn't connect to Tasking Manager server: %1%!",
-                  tmDbUrlWithDbName);
+        log_error("ERROR: couldn't connect to Tasking Manager server: %1%!", tmDbUrlWithDbName);
         return;
     }
 
@@ -675,22 +653,16 @@ threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive,
         // Sync and delete missing
         const auto results{osmStats.syncUsers(users, true)};
         auto end{std::chrono::system_clock::now()};
-        auto elapsed{
-            std::chrono::duration_cast<std::chrono::seconds>(end - start)};
+        auto elapsed{std::chrono::duration_cast<std::chrono::seconds>(end - start)};
 
-        log_debug("Users sync TM->OS executed in %1% seconds.",
-                  elapsed.count());
-        log_debug("Users created: %1%, updated: %2%, deleted: %3%",
-                  results.created, results.updated, results.deleted);
+        log_debug("Users sync TM->OS executed in %1% seconds.", elapsed.count());
+        log_debug("Users created: %1%, updated: %2%, deleted: %3%", results.created, results.updated, results.deleted);
 
         if (tmusersfrequency > 0) {
             if (elapsed.count() < tmusersfrequency) {
-                log_debug(
-                    "Users sync TM->OS sleeping for %1% seconds...",
-                    std::chrono::seconds(tmusersfrequency - elapsed.count())
-                        .count());
-                std::this_thread::sleep_for(
-                    std::chrono::seconds(tmusersfrequency - elapsed.count()));
+                log_debug("Users sync TM->OS sleeping for %1% seconds...",
+                          std::chrono::seconds(tmusersfrequency - elapsed.count()).count());
+                std::this_thread::sleep_for(std::chrono::seconds(tmusersfrequency - elapsed.count()));
             }
         }
 

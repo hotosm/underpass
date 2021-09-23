@@ -22,8 +22,11 @@ osm2pgsql \
 
 ```
 
+Note that a DB named `pgsql_pbf_import_test` with `postgis` and `hstore` extensions and 
+`osm2pgsql_pgsql` schema must exist, you can change `osm2pgsql` to suit your needs in case
+you are using a different DB.
+
 Then, a dump must be created with:
 
 `pg_dump --inserts -O -a pgsql_pbf_import_test | gzip > pgsql_test_data.sql.gz`
 
-`simple_test.osc` contains manually generated changes for `osm2pgsql` tests.
