@@ -47,6 +47,106 @@ const std::string Osm2Pgsql::OSM2PGSQL_DEFAULT_SCHEMA_NAME = "osm2pgsql_pgsql";
 
 logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
 
+const std::regex Osm2Pgsql::TagsParser::tags_escape_re = std::regex(R"re((["=>]))re");
+
+const std::set<std::string> Osm2Pgsql::TagsParser::polygon_tags = {
+    "aeroway", "amenity", "building", "harbour",          "historic", "landuse", "leisure", "man_made", "military", "natural",
+    "office",  "place",   "power",    "public_transport", "shop",     "sport",   "tourism", "water",    "waterway", "wetland"};
+
+// Process tags, this is the list of tag names that map to table columns
+const std::set<std::string> Osm2Pgsql::TagsParser::tags_to_fields = {"access",
+                                                                     "addr:housename",
+                                                                     "addr:housenumber",
+                                                                     "addr:interpolation",
+                                                                     "admin_level",
+                                                                     "aerialway",
+                                                                     "aeroway",
+                                                                     "amenity",
+                                                                     "area",
+                                                                     "barrier",
+                                                                     "bicycle",
+                                                                     "brand",
+                                                                     "bridge",
+                                                                     "boundary",
+                                                                     "building",
+                                                                     "capital",
+                                                                     "construction",
+                                                                     "covered",
+                                                                     "culvert",
+                                                                     "cutting",
+                                                                     "denomination",
+                                                                     "disused",
+                                                                     "ele",
+                                                                     "embankment",
+                                                                     "foot",
+                                                                     "generator:source",
+                                                                     "harbour",
+                                                                     "highway",
+                                                                     "historic",
+                                                                     "horse",
+                                                                     "intermittent",
+                                                                     "junction",
+                                                                     "landuse",
+                                                                     "layer",
+                                                                     "leisure",
+                                                                     "lock",
+                                                                     "man_made",
+                                                                     "military",
+                                                                     "motorcar",
+                                                                     "name",
+                                                                     "natural",
+                                                                     "office",
+                                                                     "oneway",
+                                                                     "operator",
+                                                                     "place",
+                                                                     "population",
+                                                                     "power",
+                                                                     "power_source",
+                                                                     "public_transport",
+                                                                     "railway",
+                                                                     "ref",
+                                                                     "religion",
+                                                                     "route",
+                                                                     "service",
+                                                                     "shop",
+                                                                     "sport",
+                                                                     "surface",
+                                                                     "toll",
+                                                                     "tourism",
+                                                                     "tower:type",
+                                                                     "tunnel",
+                                                                     "water",
+                                                                     "waterway",
+                                                                     "wetland",
+                                                                     "width",
+                                                                     "wood"
+
+};
+
+const std::map<std::pair<std::string, std::string>, std::pair<bool, int>> Osm2Pgsql::TagsParser::z_index_map = {
+    {{"railway", ""}, {5, 1}},
+    {{"boundary", "administrative "}, {0, 1}},
+    {{"bridge", "yes"}, {10, 0}},
+    {{"bridge", "true"}, {10, 0}},
+    {{"bridge", "1"}, {10, 0}},
+    {{"tunnel", "yes"}, {-10, 0}},
+    {{"tunnel", "true"}, {-10, 0}},
+    {{"tunnel", "1"}, {-10, 0}},
+    {{"highway", "minor"}, {3, 0}},
+    {{"highway", "road"}, {3, 0}},
+    {{"highway", "unclassified"}, {3, 0}},
+    {{"highway", "residential"}, {3, 0}},
+    {{"highway", "tertiary_link"}, {4, 0}},
+    {{"highway", "tertiary"}, {4, 0}},
+    {{"highway", "secondary_link"}, {6, 1}},
+    {{"highway", "secondary"}, {6, 1}},
+    {{"highway", "primary_link"}, {7, 1}},
+    {{"highway", "primary"}, {7, 1}},
+    {{"highway", "trunk_link"}, {8, 1}},
+    {{"highway", "trunk"}, {8, 1}},
+    {{"highway", "motorway_link"}, {9, 1}},
+    {{"highway", "motorway"}, {9, 1}}};
+
 Osm2Pgsql::Osm2Pgsql(const std::string &_dburl, const std::string &schema) : pq::Pq(), schema(schema)
 {
     if (!connect(_dburl)) {
@@ -68,8 +168,9 @@ Osm2Pgsql::updateDatabase(const std::string &osm_changes)
 {
 
     // -l for 4326
-    std::string osm2pgsql_update_command{"osm2pgsql -l --append -r xml -s -C 300 -G --hstore --middle-schema=" + schema +
-                                         " --output-pgsql-schema=" + schema + " -d postgresql://"};
+    std::string osm2pgsql_update_command{
+        "osm2pgsql -l --append -r xml -s -C 300 -G --hstore-all --extra-attributes --middle-schema=" + schema +
+        " --output-pgsql-schema=" + schema + " -d postgresql://"};
     // Append DB url in the form: postgresql://[user[:password]@][netloc][:port][,...][/dbname][?param1=value1&...]
     osm2pgsql_update_command.append(dburl);
     // Read from stdin
@@ -151,6 +252,91 @@ Osm2Pgsql::updateDatabase(const std::shared_ptr<OsmChangeFile> &osm_changes) con
 bool
 Osm2Pgsql::upsertWay(const std::shared_ptr<osmobjects::OsmWay> &way) const
 {
+    // Preconditions
+    assert(static_cast<bool>(sdb));
+
+    pqxx::nontransaction worker(*sdb);
+
+    TagsParser parser;
+    parser.parse(way->tags, worker);
+
+    std::string refs{"'{"};
+    bool is_first{true};
+    for (const auto &ref: std::as_const(way->refs)) {
+        if (is_first) {
+            is_first = false;
+        } else {
+            refs.append(",");
+        }
+        refs.append(std::to_string(ref));
+    }
+    refs.append("}'");
+
+    // First: upsert in middle table
+    const std::string middle_sql{str(format(R"sql(
+INSERT INTO %1%.planet_osm_ways
+  (id, nodes, tags)
+  VALUES ($1, %2%, %3%)
+ON CONFLICT (id) DO
+  UPDATE
+  SET nodes = %2%, tags = %3%
+  WHERE %1%.planet_osm_ways.id = $1
+)sql") % schema % refs % parser.tags_array_literal)};
+
+    // No upsert here because planet_osm_roads/line have no PK ...
+    const std::string delete_roads_sql{str(format("DELETE FROM %1%.planet_osm_roads WHERE osm_id = $1") % schema)};
+    const std::string delete_line_sql{str(format("DELETE FROM %1%.planet_osm_line WHERE osm_id = $1") % schema)};
+
+    std::string insert_sql;
+
+    if (parser.is_polygon && !way->isClosed()) {
+        log_debug(_("Way %1% is tagged as polygon but it isn't closed! Storing as linestring."), way->id);
+    }
+
+    if (parser.is_polygon && way->isClosed()) {
+        // Insert
+        insert_sql = str(format(R"sql(
+    INSERT INTO %1%.planet_osm_%2%
+      (osm_id, way, tags %3%)
+    VALUES ($1, ST_SetSRID( ST_MakePolygon( ST_MakeLine( ARRAY(
+      SELECT ST_MakePoint(n.lon/10000000 , n.lat/10000000) FROM %1%.planet_osm_nodes n
+      JOIN UNNEST(%6%::bigint[]) WITH ORDINALITY t(id, ord) USING (id) ORDER BY t.ord ))), 4326 ),
+    %5% %4%)
+    )sql") % schema % "polygon" %
+                         parser.tag_field_names % parser.tag_field_values % parser.tags_hstore_literal % refs);
+
+    } else {
+        // Decide if it's a road or a line
+        const std::string way_type{parser.is_road ? "roads" : "line"};
+
+        // Insert
+        insert_sql = str(format(R"sql(
+    INSERT INTO %1%.planet_osm_%2%
+      (osm_id, way, tags %3%)
+    VALUES ($1, ST_SetSRID( ST_MakeLine( ARRAY(
+      SELECT ST_MakePoint(n.lon/10000000 , n.lat/10000000) FROM %1%.planet_osm_nodes n
+      JOIN UNNEST(%6%::bigint[]) WITH ORDINALITY t(id, ord) USING (id) ORDER BY t.ord )), 4326 ),
+    %5% %4%)
+    )sql") % schema % way_type %
+                         parser.tag_field_names % parser.tag_field_values % parser.tags_hstore_literal % refs);
+    }
+
+    std::cerr << middle_sql << std::endl;
+    std::cerr << insert_sql << std::endl;
+
+    try {
+        worker.exec("BEGIN;");
+        worker.exec_params0(middle_sql, way->id);
+        worker.exec_params0(delete_line_sql, way->id);
+        worker.exec_params0(delete_roads_sql, way->id);
+        worker.exec_params0(insert_sql, way->id);
+        worker.exec("COMMIT;");
+    } catch (const std::exception &ex) {
+        log_error(_("Couldn't upsert way/road record: %1%"), ex.what());
+        worker.exec("ROLLBACK;");
+        return false;
+    }
+
     return true;
 }
 
@@ -173,102 +359,8 @@ Osm2Pgsql::upsertNode(const std::shared_ptr<osmobjects::OsmNode> &node) const
     WHERE %1%.planet_osm_nodes.id = $1
   )sql") % schema)};
 
-    // Process tags, this is the list of tag names that map to table columns
-    static const std::set<std::string> tags_to_fields{"access",
-                                                      "addr:housename",
-                                                      "addr:housenumber",
-                                                      "addr:interpolation",
-                                                      "admin_level",
-                                                      "aerialway",
-                                                      "aeroway",
-                                                      "amenity",
-                                                      "area",
-                                                      "barrier",
-                                                      "bicycle",
-                                                      "brand",
-                                                      "bridge",
-                                                      "boundary",
-                                                      "building",
-                                                      "capital",
-                                                      "construction",
-                                                      "covered",
-                                                      "culvert",
-                                                      "cutting",
-                                                      "denomination",
-                                                      "disused",
-                                                      "ele",
-                                                      "embankment",
-                                                      "foot",
-                                                      "generator:source",
-                                                      "harbour",
-                                                      "highway",
-                                                      "historic",
-                                                      "horse",
-                                                      "intermittent",
-                                                      "junction",
-                                                      "landuse",
-                                                      "layer",
-                                                      "leisure",
-                                                      "lock",
-                                                      "man_made",
-                                                      "military",
-                                                      "motorcar",
-                                                      "name",
-                                                      "natural",
-                                                      "office",
-                                                      "oneway",
-                                                      "operator",
-                                                      "place",
-                                                      "population",
-                                                      "power",
-                                                      "power_source",
-                                                      "public_transport",
-                                                      "railway",
-                                                      "ref",
-                                                      "religion",
-                                                      "route",
-                                                      "service",
-                                                      "shop",
-                                                      "sport",
-                                                      "surface",
-                                                      "toll",
-                                                      "tourism",
-                                                      "tower:type",
-                                                      "tunnel",
-                                                      "water",
-                                                      "waterway",
-                                                      "wetland",
-                                                      "width",
-                                                      "wood"};
-
-    std::string tag_field_names;
-    std::string tag_field_values;
-    std::string tag_field_updates;
-    std::string tags_literal{"'"};
-
-    const std::regex tags_escape_re{R"re((["=>]))re"};
-
-    static const auto separator{", "};
-
-    for (const auto &tag: std::as_const(node->tags)) {
-        if (!tag.second.empty()) {
-            // Tags mapped to columns
-            if (tags_to_fields.find(tag.first) != tags_to_fields.cend()) {
-                tag_field_names.append(separator + worker.quote_name(tag.first));
-                const auto value{"'" + worker.esc(tag.second) + "'"};
-                tag_field_values.append(separator + value);
-                tag_field_updates.append(separator + worker.quote_name(tag.first) + " = " + value);
-            } else { // Tags added to "tags"
-                const auto tag_value{worker.esc(tag.second)};
-                const auto tag_name{worker.esc(tag.first)};
-                // Escape = and > and "
-                const auto tag_name_safe{std::regex_replace(tag_name, tags_escape_re, R"raw(\$1)raw")};
-                const auto tag_value_safe{std::regex_replace(tag_value, tags_escape_re, R"raw(\$1)raw")};
-                tags_literal.append((tags_literal.size() > 1 ? ", " : "") + tag_name_safe + " => \"" + tag_value_safe + '"');
-            }
-        }
-    }
-    tags_literal.append("'");
+    TagsParser parser;
+    parser.parse(node->tags, worker);
 
     // No upsert here because planet_osm_point has no PK ...
     const std::string delete_sql{str(format(R"sql(DELETE FROM %1%.planet_osm_point WHERE osm_id = $1)sql") % schema)};
@@ -277,11 +369,11 @@ Osm2Pgsql::upsertNode(const std::shared_ptr<osmobjects::OsmNode> &node) const
   INSERT INTO %1%.planet_osm_point
     (osm_id, way, tags %2%)
     VALUES ($1, public.ST_SetSRID(public.ST_MakePoint($2, $3), 4326), %4% %3%)
-  )sql") % schema % tag_field_names % tag_field_values %
-                                     tags_literal)};
+  )sql") % schema % parser.tag_field_names %
+                                     parser.tag_field_values % parser.tags_hstore_literal)};
 
     //std::cerr << middle_sql << std::endl;
-    std::cerr << insert_sql << std::endl;
+    //std::cerr << insert_sql << std::endl;
 
     try {
         worker.exec("BEGIN;");
@@ -399,6 +491,52 @@ void
 Osm2Pgsql::setSchema(const std::string &newSchema)
 {
     schema = newSchema;
+}
+
+void
+Osm2Pgsql::TagsParser::parse(const std::map<std::string, std::string> &tags, const pqxx::nontransaction &worker)
+{
+
+    for (const auto &tag: tags) {
+        if (z_index_map.find(tag) != z_index_map.cend()) {
+            is_road = z_index_map.at(tag).second;
+            z_order += z_index_map.at(tag).first;
+        }
+        if (!tag.second.empty()) {
+            if (polygon_tags.find(tag.first) != polygon_tags.cend() || (tag.first == "area" && tag.second == "yes")) {
+                is_polygon = true;
+            }
+            if (tags_array_literal.size() > 2) {
+                tags_array_literal.append(",");
+            }
+            tags_array_literal.append(tag.first + "," + worker.esc(tag.second));
+            if (tag.first == "layer") {
+                try {
+                    z_order += std::stoi(tag.second) * 10;
+                } catch (const std::exception &ex) {
+                    log_error(_("Error converting layer to integer: %1%"), ex.what());
+                }
+            }
+
+            // Tags mapped to columns
+            if (tags_to_fields.find(tag.first) != tags_to_fields.cend()) {
+                tag_field_names.append(separator + worker.quote_name(tag.first));
+                const auto value{"'" + worker.esc(tag.second) + "'"};
+                tag_field_values.append(separator + value);
+                tag_field_updates.append(separator + worker.quote_name(tag.first) + " = " + value);
+            } else { // Tags added to "tags"
+                const auto tag_value{worker.esc(tag.second)};
+                const auto tag_name{worker.esc(tag.first)};
+                // Escape = and > and "
+                const auto tag_name_safe{std::regex_replace(tag_name, tags_escape_re, R"raw(\$1)raw")};
+                const auto tag_value_safe{std::regex_replace(tag_value, tags_escape_re, R"raw(\$1)raw")};
+                tags_hstore_literal.append((tags_hstore_literal.size() > 1 ? ", " : "") + tag_name_safe + " => \"" +
+                                           tag_value_safe + '"');
+            }
+        }
+    }
+    tags_array_literal.append("}'");
+    tags_hstore_literal.append("'");
 }
 
 } // namespace osm2pgsql

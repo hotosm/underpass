@@ -25,6 +25,8 @@
 #include "unconfig.h"
 #endif
 
+#include <regex>
+#include <pqxx/nontransaction>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "pq.hh"
 #include <boost/date_time.hpp>
@@ -111,7 +113,34 @@ class Osm2Pgsql : public pq::Pq {
     /// Get last timestamp in the DB
     bool getLastUpdateFromDb();
 
-    /// Write an osm
+    struct TagsParser {
+
+        std::string tag_field_names;
+        std::string tag_field_values;
+        std::string tag_field_updates;
+        std::string tags_hstore_literal{"'"};
+        std::string tags_array_literal{"'{"};
+
+        bool is_road = false;
+        bool is_polygon = false;
+        int z_order = 0;
+
+        static const std::regex tags_escape_re;
+        static constexpr auto separator{", "};
+
+        /// These tags are stored in columns
+        static const std::set<std::string> tags_to_fields;
+
+        /// These tags make a polygon
+        static const std::set<std::string> polygon_tags;
+
+        /// Array used to specify z_order per key/value combination.
+        /// Each element has the form {key, value}, {z_order, is_road}.
+        /// If is_road=1, the object will be added to planet_osm_roads.
+        static const std::map<std::pair<std::string, std::string>, std::pair<bool, int>> z_index_map;
+
+        void parse(const std::map<std::string, std::string> &tags, const pqxx::nontransaction &worker);
+    };
 
     ptime last_update = not_a_date_time;
     std::string dburl;

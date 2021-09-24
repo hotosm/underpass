@@ -18,6 +18,7 @@
    <tag k="name" v="Traffic light"/>
    <tag k="highway" v="traffic_signals"/>
  </node>
+ <node id="11" lat="49" lon="2.9" user="some_user" uid="1" version="1" changeset="1" timestamp="2012-07-10T00:00:00Z"/>
  <way id="1" user="some_user" uid="1" version="1" changeset="1" timestamp="2012-07-10T00:00:00Z">
   <nd ref="1"/>
   <nd ref="10"/>
@@ -29,6 +30,7 @@
   <tag k="area" v="yes"/>
   <tag k="natural" v="wood"/>
   <nd ref="1"/>
+  <nd ref="11"/>
   <nd ref="4"/>
   <nd ref="2"/>
   <nd ref="5"/>
