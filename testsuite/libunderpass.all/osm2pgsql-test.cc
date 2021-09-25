@@ -233,20 +233,10 @@ main(int argc, char *argv[])
         results = testosm2pgsql.query("SELECT ST_AsText(way), \"natural\", tags FROM " +
                                       testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_polygon WHERE osm_id = 201");
 
-        COMPARE(results.at(0)["st_astext"].as(std::string()), "POLYGON((1 50,1 50,1 49,1 49,1 50))",
+        COMPARE(results.at(0)["st_astext"].as(std::string()), "POLYGON((1.7 50,1.9 50,1.9 49.5,1.7 49.5,1.7 50))",
                 "Osm2Pgsql::updateDatabase() - verify new polygon geom");
 
         COMPARE(results.at(0)["natural"].as(std::string()), "wood", "Osm2Pgsql::updateDatabase() - verify new polygon natural");
-
-        // Check multipolygons from relations
-        results =
-            testosm2pgsql.query("SELECT ST_AsText(way), \"natural\", tags FROM " + testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
-                                ".planet_osm_polygon WHERE \"natural\" = 'grassland'");
-
-        // verify grassland
-        COMPARE(results.at(0)["st_astext"].as(std::string()),
-                "POLYGON((1.7 49.5,1.9 49.5,1.9 50,1.7 50,1.7 49.5),(1.75 49.6,1.75 49.9,1.85 49.9,1.85 49.6,1.75 49.6))",
-                "Osm2Pgsql::updateDatabase() - verify new multipolygon geom");
 
         // verify grassland relation
         results =
@@ -256,6 +246,28 @@ main(int argc, char *argv[])
         COMPARE(results.at(0)["parts"].as(std::string()), "{201,202}",
                 "Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 parts");
         COMPARE(results.at(0)["members"].as(std::string()), "{w201,outer,w202,inner}",
-                "Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 parts");
+                "Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 members");
+        COMPARE(results.at(0)["tags"].as(std::string()), "{natural,grassland,type,multipolygon}",
+                "Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 tags");
+
+        // Check multipolygons from relations
+        results = testosm2pgsql.query("SELECT way_area, ST_AsText(way), \"natural\", tags FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                      ".planet_osm_polygon WHERE \"natural\" = 'grassland'");
+
+        // Verify grassland multipolygon
+        COMPARE(results.at(0)["st_astext"].as(std::string()),
+                "POLYGON((1.7 50,1.9 50,1.9 49.5,1.7 49.5,1.7 50),(1.75 49.9,1.85 49.9,1.85 49.6,1.75 49.6,1.75 49.9))",
+                "Osm2Pgsql::updateDatabase() - verify new multipolygon geom");
+
+        COMPARE(results.at(0)["natural"].as(std::string()), "grassland",
+                "Osm2Pgsql::updateDatabase() - verify new multipolygon geom");
+
+        COMPARE(results.at(0)["tags"].as(std::string()), R"("natural"=>"grassland", "way_area"=>"0.07")",
+                "Osm2Pgsql::updateDatabase() - verify new multipolygon tags");
+
+        COMPARE(results.at(0)["way_area"].as(double()), 0.07, "Osm2Pgsql::updateDatabase() - verify new multipolygon way_area");
+
+        // Test that moving a node changes ways and polygons
     }
 }

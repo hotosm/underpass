@@ -113,7 +113,7 @@ class Osm2Pgsql : public pq::Pq {
     /// Get last timestamp in the DB
     bool getLastUpdateFromDb();
 
-    struct TagsParser {
+    struct TagParser {
 
         std::string tag_field_names;
         std::string tag_field_values;
@@ -129,7 +129,7 @@ class Osm2Pgsql : public pq::Pq {
         static constexpr auto separator{", "};
 
         /// These tags are stored in columns
-        static const std::set<std::string> tags_to_fields;
+        static const std::set<std::string> column_stored_tags;
 
         /// These tags make a polygon
         static const std::set<std::string> polygon_tags;
