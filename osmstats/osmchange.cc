@@ -344,6 +344,7 @@ OsmChangeFile::on_start_element(const Glib::ustring &name,
                 tmp.erase(19); // Drop the final 'Z'
                 // change->setTimestamp(tmp);
                 change->obj->timestamp = time_from_string(tmp);
+		change->final_entry = change->obj->timestamp;
             } else {
                 // obj->tags[cache] = attr_pair.value;
                 cache.clear();
@@ -354,6 +355,7 @@ OsmChangeFile::on_start_element(const Glib::ustring &name,
             tmp[10] = ' '; // Drop the 'T' in the middle
             tmp.erase(19); // Drop the final 'Z'
             change->obj->timestamp = time_from_string(tmp);
+	    change->final_entry = change->obj->timestamp;
             // change->setTimestamp(tmp);
         } else if (attr_pair.name == "id") {
             // change->setChangeID(std::stol(attr_pair.value));
@@ -419,6 +421,8 @@ OsmChange::dump(void)
             // rel->dump( << std::endl;
         }
     }
+    std::cerr << "Final timestamp: " << to_simple_string(final_entry) << std::endl;
+    
 }
 
 void

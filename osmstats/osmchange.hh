@@ -223,16 +223,7 @@ class OsmChange {
         return tmp;
     };
 
-#if 0
-    /// Get a specific node in this change
-    std::shared_ptr<osmobjects::OsmNode> getNode(int index) { return nodes[index]; };
-    /// Get the current node in this change
-    std::shared_ptr<osmobjects::OsmNode> currentNode(void) { return nodes.back(); };
-    /// Get a specific way in this change
-    std::shared_ptr<osmobjects::OsmWay> getWay(int index) { return ways[index]; };
-    /// Get a specific relation in this change
-    std::shared_ptr<osmobjects::OsmRelation> getRelation(int index) { return relations[index]; };
-#endif
+    ptime final_entry;	///< The timestamp of the last change in the file
     osmobjects::action_t action = osmobjects::none; ///< The change action
     osmtype_t type;                                 ///< The OSM object type
     std::list<std::shared_ptr<osmobjects::OsmNode>>
