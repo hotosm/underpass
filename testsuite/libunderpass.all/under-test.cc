@@ -64,20 +64,37 @@ main(int argc, char* argv[])
 
     ptime tstamp = time_from_string("2014-09-18 12:03:29");
     auto state = under.getState(replication::changeset, tstamp);
-    state->dump();
-    if (state->path.compare("https://planet.openstreetmap.org/replication/changesets/000/972/927")) {
-        runtest.fail("Underpass::getState(changeset)");
-    } else {
-        runtest.pass("Underpass::getState(changeset)");
-    }
+    // state->dump();
+    if (state->sequence > 0) {
+        if (state->path.compare("https://planet.openstreetmap.org/replication/changesets/000/972/927")) {
+            runtest.fail("Underpass::getState(changeset)");
+        } else {
+            runtest.pass("Underpass::getState(changeset)");
+        }
 
-    tstamp = time_from_string("2014-09-18 14:03:29");
-    state = under.getState(replication::minutely, tstamp);
-    state->dump();
-    if (state->path.compare("https://planet.openstreetmap.org/replication/minute/001/053/674")) {
-        runtest.fail("Underpass::getState(minutely)");
+        tstamp = time_from_string("2014-09-18 14:03:29");
+        state = under.getState(replication::minutely, tstamp);
+        state->dump();
+        if (state->path.compare("https://planet.openstreetmap.org/replication/minute/001/053/674")) {
+            runtest.fail("Underpass::getState(minutely)");
+        } else {
+            runtest.pass("Underpass::getState(minutely)");
+        }
     } else {
-        runtest.pass("Underpass::getState(minutely)");
+        if (state->path.compare("https://planet.openstreetmap.org/replication/changesets/000/972/927")) {
+            runtest.xfail("Underpass::getState(changeset)");
+        } else {
+            runtest.pass("Underpass::getState(changeset)");
+        }
+
+        tstamp = time_from_string("2014-09-18 14:03:29");
+        state = under.getState(replication::minutely, tstamp);
+        state->dump();
+        if (state->path.compare("https://planet.openstreetmap.org/replication/minute/001/053/674")) {
+            runtest.xfail("Underpass::getState(minutely)");
+        } else {
+            runtest.pass("Underpass::getState(minutely)");
+        }
     }
 
     std::cout << "Done..." << std::endl;
