@@ -47,7 +47,9 @@ BOOST_LIBS = \
 AM_CXXFLAGS = \
         -DPKGLIBDIR=\"$(pkglibdir)\" \
         -DTOPSRCDIR=\"$(top_srcdir)\" \
-        -DSRCDIR=\"$(srcdir)\"
+        -DSRCDIR=\"$(srcdir)\" \
+	-DBOOST_LOCALE_HIDE_AUTO_PTR \
+	-Wno-deprecated-declarations
 
 yaml_test_SOURCES = yaml-test.cc
 yaml_test_LDFLAGS = -L../..
