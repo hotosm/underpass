@@ -84,10 +84,12 @@ replicator_LDADD = libunderpass.la $(BOOST_LIBS)
 
 AM_CXXFLAGS = \
 	-rdynamic \
+	-Wno-deprecated-declarations
+
+AM_CPPFLAGS = \
 	-DPKGLIBDIR=\"$(pkglibdir)\" \
 	-DSRCDIR=\"$(srcdir)\" \
-	-DBOOST_LOCALE_HIDE_AUTO_PTR \
-	-Wno-deprecated-declarations
+	-DBOOST_LOCALE_HIDE_AUTO_PTR
 
 pkgdata_DATA = $(SQL_FILES) data/priority.geojson data/setupdb.sh
 
