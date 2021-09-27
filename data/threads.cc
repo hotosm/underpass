@@ -155,8 +155,8 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
             ptime now = boost::posix_time::microsec_clock::local_time();
             boost::posix_time::time_duration delta;
             if (changefile->changes.size() > 0) {
-                delta = now - changefile->changes.front()->created_at;
-                // log_debug("DELTA: %1%", (delta.hours()*60) + delta.minutes());
+                delta = now - changefile->changes.front()->closed_at;
+		// log_debug("DELTA1: %1%", (delta.hours()*60) + delta.minutes());
                 if ((delta.hours() * 60) + delta.minutes() <= 1) {
                     std::this_thread::sleep_for(std::chrono::minutes{1});
                 }
@@ -167,17 +167,14 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly,
             std::string file = remote.url + ".osc.gz";
             ptime now = boost::posix_time::microsec_clock::local_time();
             timer.startTimer();
-            auto osmchange =
-                threadOsmChange(remote, poly, ostats, osm2pgsql, validator);
+            auto osmchange = threadOsmChange(remote, poly, ostats, osm2pgsql, validator);
             // FIXME: There is probably a better way to determine when to delay,
             // or when to just keep processing files when catching up.
             timer.endTimer("osmChange");
             boost::posix_time::time_duration delta;
-            if (osmchange->changes.size() > 0 &&
-                osmchange->changes.front()->nodes.size() > 0) {
-                delta =
-                    now - osmchange->changes.front()->nodes.back()->timestamp;
-                // log_debug("DELTA: %1%", (delta.hours()*60) + delta.minutes());
+            if (osmchange->changes.size() > 0) {
+                delta = now - osmchange->changes.back()->final_entry;
+                // log_debug("DELTA2: %1%", (delta.hours()*60) + delta.minutes());
             }
             if ((delta.hours() * 60) + delta.minutes() <= 1) {
                 // log_debug("DELTA: %1%", (delta.hours()*60) + delta.minutes());
