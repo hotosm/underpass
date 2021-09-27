@@ -1,3 +1,10 @@
+underpass (20210927) unstable; urgency=low
+
+   * Updated after merging in osm2pgsql patch, and bug calculating
+     statistics for modified ways is fixed.
+
+ -- Rob Savoye <rob.savoye@hotosm.org>  Mon,  27 Sep 2021 13:05:01 -0600
+
 underpass (20210830) unstable; urgency=low
 
   * Updated after merging in initial valdation support.
