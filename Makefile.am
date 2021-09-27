@@ -79,7 +79,7 @@ libunderpass_la_SOURCES = \
 libunderpass_la_LDFLAGS = -avoid-version
 
 bin_PROGRAMS = replicator
-replicator_SOURCES = replicator.cc
+replicator_SOURCES = replicator.cc replicatorconfig.hh
 replicator_LDADD = libunderpass.la $(BOOST_LIBS)
 
 AM_CXXFLAGS = \
