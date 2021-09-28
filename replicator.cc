@@ -469,8 +469,7 @@ main(int argc, char *argv[])
                 exit(-1);
             }
 
-            auto state2 =
-                planet.fetchData(replication::changeset, state->timestamp,
+            auto state2 = planet.fetchData(replication::changeset, state->timestamp,
                                  replicator_config.underpass_db_url);
             if (!state2->isValid()) {
                 std::cerr << "ERROR: No changeset path!" << std::endl;
@@ -479,7 +478,7 @@ main(int argc, char *argv[])
 
             state2->dump();
             clast = replicator_config.planet_server + "/" + datadir +
-                    "changesets" + state2->path;
+                    "changesets/" + state2->path;
             remote.parse(clast);
             // remote.dump();
             changesets_thread = std::thread(
