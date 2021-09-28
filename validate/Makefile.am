@@ -38,11 +38,16 @@ libhotosm_la_SOURCES = \
 
 libhotosm_la_LDFLAGS = -module -avoid-version
 
-AM_CPPFLAGS = -I$(top_srcdir)
 AM_CXXFLAGS = \
+	-rdynamic \
+	-Wno-deprecated-declarations
+
+AM_CPPFLAGS = \
 	-DPKGLIBDIR=\"$(pkglibdir)\" \
-	-DSRCDIR=\"$(srcdir)\"
+	-DSRCDIR=\"$(srcdir)\" \
+	-DBOOST_LOCALE_HIDE_AUTO_PTR
 
 install-data-hook:
 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
 	cp -uvp .libs/libhotosm.so $(DESTDIR)/$(pkglibdir)
+	cp -uvp $(top_srcdir)/validate/*.yaml $(DESTDIR)/$(pkglibdir)

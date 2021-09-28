@@ -51,6 +51,13 @@ SQL_FILES = \
 	data/osmstats.sql \
 	data/geoboundaries.sql
 
+YAML_FILES = \
+	validate/building.yaml \
+	validate/highway.yaml \
+	validate/place.yaml \
+	validate/statistics.yaml \
+	validate/wastepoints.yaml
+
 # inst_HEADERS = hotosm.hh hottm.hh
 libunderpass_la_SOURCES = \
 	timer.hh \
@@ -95,6 +102,7 @@ pkgdata_DATA = $(SQL_FILES) data/priority.geojson data/setupdb.sh
 
 EXTRA_DIST = \
 	$(SQL_FILES) \
+	$(YAML_FILES) \
 	testsuite \
 	data/priority.geojson \
 	po \
