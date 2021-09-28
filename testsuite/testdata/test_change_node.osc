@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version="0.6" generator="manually_generated/1.8.0">
+  <modify>
+    <node id="221" lon="1.759" lat="49.99" user="some_user" uid="1" version="2" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+  </modify>
+  <delete>
+    <node id="224" lon="1.75" lat="49.8" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+  </delete>
+  <modify>
+     <way id="202" user="some_user" uid="1" version="2" changeset="1" timestamp="2021-09-10T00:00:00Z">
+        <tag k="area" v="yes"/>
+        <nd ref="221"/>
+        <nd ref="222"/>
+        <nd ref="223"/>
+        <nd ref="221"/>
+     </way>
+  </modify>
+</osmChange>

@@ -30,8 +30,13 @@
     <!-- multipolygon parts inner -->
     <node id="221" lon="1.75" lat="49.9" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
     <node id="222" lon="1.85" lat="49.9" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
-    <node id="223" lon="1.85" lat="49.6" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
-    <node id="224" lon="1.75" lat="49.6" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+    <node id="223" lon="1.85" lat="49.8" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+    <node id="224" lon="1.75" lat="49.8" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+    <!-- multipolygon parts inner -->
+    <node id="321" lon="1.75" lat="49.7" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+    <node id="322" lon="1.85" lat="49.7" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+    <node id="323" lon="1.85" lat="49.6" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+    <node id="324" lon="1.75" lat="49.6" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
  </create>
  <modify>
    <!-- remove node 10 -->
@@ -71,9 +76,18 @@
      <nd ref="224"/>
      <nd ref="221"/>
   </way>
+  <way id="203" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z">
+    <tag k="area" v="yes"/>
+    <nd ref="321"/>
+    <nd ref="322"/>
+    <nd ref="323"/>
+    <nd ref="324"/>
+    <nd ref="321"/>
+  </way>
   <relation id="6" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-07-10T00:00:00Z">
     <member type="way" ref="201" role="outer"/>
     <member type="way" ref="202" role="inner"/>
+    <member type="way" ref="203" role="inner"/>
     <tag k="type" v="multipolygon"/>
     <tag k="natural" v="grassland"/>
   </relation>

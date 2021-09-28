@@ -18,7 +18,7 @@ osm2pgsql \
     --extra-attributes \
     --create \
     -r xml \
-    simple_test.osm
+    test_initial.osm
 
 ```
 

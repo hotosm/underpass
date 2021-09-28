@@ -242,10 +242,10 @@ main(int argc, char *argv[])
         results =
             testosm2pgsql.query("SELECT * FROM " + testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_rels WHERE id = 6");
 
-        COMPARE(results.at(0)["rel_off"].as(int()), 2, "Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 rel_off");
-        COMPARE(results.at(0)["parts"].as(std::string()), "{201,202}",
+        COMPARE(results.at(0)["rel_off"].as(int()), 3, "Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 rel_off");
+        COMPARE(results.at(0)["parts"].as(std::string()), "{201,202,203}",
                 "Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 parts");
-        COMPARE(results.at(0)["members"].as(std::string()), "{w201,outer,w202,inner}",
+        COMPARE(results.at(0)["members"].as(std::string()), "{w201,outer,w202,inner,w203,inner}",
                 "Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 members");
         COMPARE(results.at(0)["tags"].as(std::string()), "{natural,grassland,type,multipolygon}",
                 "Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 tags");
@@ -256,18 +256,59 @@ main(int argc, char *argv[])
                                       ".planet_osm_polygon WHERE \"natural\" = 'grassland'");
 
         // Verify grassland multipolygon
-        COMPARE(results.at(0)["st_astext"].as(std::string()),
-                "POLYGON((1.7 50,1.9 50,1.9 49.5,1.7 49.5,1.7 50),(1.75 49.9,1.85 49.9,1.85 49.6,1.75 49.6,1.75 49.9))",
-                "Osm2Pgsql::updateDatabase() - verify new multipolygon geom");
+        COMPARE(
+            results.at(0)["st_astext"].as(std::string()),
+            "POLYGON((1.7 50,1.9 50,1.9 49.5,1.7 49.5,1.7 50),(1.75 49.9,1.85 49.9,1.85 49.8,1.75 49.8,1.75 49.9),(1.75 49.7,1.85 49.7,1.85 49.6,1.75 49.6,1.75 49.7))",
+            "Osm2Pgsql::updateDatabase() - verify new multipolygon geom");
 
         COMPARE(results.at(0)["natural"].as(std::string()), "grassland",
                 "Osm2Pgsql::updateDatabase() - verify new multipolygon geom");
 
-        COMPARE(results.at(0)["tags"].as(std::string()), R"("natural"=>"grassland", "way_area"=>"0.07")",
+        COMPARE(results.at(0)["tags"].as(std::string()), R"("type"=>"multipolygon")",
                 "Osm2Pgsql::updateDatabase() - verify new multipolygon tags");
 
-        COMPARE(results.at(0)["way_area"].as(double()), 0.07, "Osm2Pgsql::updateDatabase() - verify new multipolygon way_area");
+        COMPARE(results.at(0)["way_area"].as(double()), 0.08, "Osm2Pgsql::updateDatabase() - verify new multipolygon way_area");
+    }
 
-        // Test that moving a node changes ways and polygons
+    // Test moving and deleting nodes change polygons
+    std::ifstream ifs_node(testosm2pgsql.source_tree_root / "testsuite" / "testdata" / "test_change_node.osc");
+    const std::string xml_node{std::istreambuf_iterator<char>{ifs_node}, {}};
+
+    // Test update from osm changes
+    std::shared_ptr<OsmChangeFile> osm_changes_node = std::make_shared<OsmChangeFile>();
+    std::stringstream xml_stream_node{xml_node};
+    osm_changes_node->readXML(xml_stream_node);
+
+    // Read the osm change and process it
+    if (!testosm2pgsql.updateDatabase(osm_changes_node)) {
+        //if (!testosm2pgsql.updateDatabase(xml)) {
+        runtest.fail("Osm2Pgsql::updateDatabase() nodes");
+        exit(EXIT_FAILURE);
+    } else {
+        // Check for changes!
+        results =
+            testosm2pgsql.query("SELECT * FROM " + testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_ways WHERE id = 202");
+
+        COMPARE(results.at(0)["nodes"].as(std::string()), "{221,222,223,221}", "Osm2Pgsql::updateDatabase() - verify changed way");
+
+        // Check multipolygons from relations
+        results = testosm2pgsql.query("SELECT way_area, ST_AsText(way), \"natural\", tags FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                      ".planet_osm_polygon WHERE \"natural\" = 'grassland'");
+
+        // Verify grassland multipolygon
+        COMPARE(
+            results.at(0)["st_astext"].as(std::string()),
+            "POLYGON((1.7 50,1.9 50,1.9 49.5,1.7 49.5,1.7 50),(1.75 49.7,1.85 49.7,1.85 49.6,1.75 49.6,1.75 49.7),(1.759 49.99,1.85 49.9,1.85 49.8,1.759 49.99))",
+            "Osm2Pgsql::updateDatabase() - verify chsnged multipolygon geom");
+
+        COMPARE(results.at(0)["natural"].as(std::string()), "grassland",
+                "Osm2Pgsql::updateDatabase() - verify changed multipolygon geom");
+
+        COMPARE(results.at(0)["tags"].as(std::string()), R"("type"=>"multipolygon")",
+                "Osm2Pgsql::updateDatabase() - verify changed multipolygon tags");
+
+        COMPARE(results.at(0)["way_area"].as(double()), 0.08545,
+                "Osm2Pgsql::updateDatabase() - verify changed multipolygon way_area");
     }
 }

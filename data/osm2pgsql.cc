@@ -34,6 +34,8 @@ using namespace boost::process;
 #include <boost/format.hpp>
 using boost::format;
 
+#include <boost/algorithm/string.hpp>
+
 #include "osm2pgsql.hh"
 #include "data/osmobjects.hh"
 using namespace osmobjects;
@@ -255,10 +257,11 @@ Osm2Pgsql::upsertWay(const std::shared_ptr<osmobjects::OsmWay> &way) const
     // Preconditions
     assert(static_cast<bool>(sdb));
 
-    pqxx::nontransaction worker(*sdb);
-
     TagParser parser;
-    parser.parse(way->tags, worker);
+    {
+        pqxx::nontransaction worker(*sdb);
+        parser.parse(way->tags, worker);
+    }
 
     std::string refs{"'{"};
     bool is_first{true};
@@ -274,18 +277,21 @@ Osm2Pgsql::upsertWay(const std::shared_ptr<osmobjects::OsmWay> &way) const
 
     // First: upsert in middle table
     const std::string middle_sql{str(format(R"sql(
-INSERT INTO %1%.planet_osm_ways
-  (id, nodes, tags)
-  VALUES ($1, %2%, %3%)
-ON CONFLICT (id) DO
-  UPDATE
-  SET nodes = %2%, tags = %3%
-  WHERE %1%.planet_osm_ways.id = $1
-)sql") % schema % refs % parser.tags_array_literal)};
+      INSERT INTO %1%.planet_osm_ways
+        (id, nodes, tags)
+        VALUES ($1, %2%, %3%)
+      ON CONFLICT (id) DO
+        UPDATE
+        SET nodes = %2%, tags = %3%
+        WHERE %1%.planet_osm_ways.id = $1
+      )sql") % schema % refs % parser.tags_array_literal)};
 
     // No upsert here because planet_osm_roads/line have no PK ...
     const std::string delete_roads_sql{str(format("DELETE FROM %1%.planet_osm_roads WHERE osm_id = $1") % schema)};
     const std::string delete_line_sql{str(format("DELETE FROM %1%.planet_osm_line WHERE osm_id = $1") % schema)};
+    const std::string delete_polygon_sql{str(format("DELETE FROM %1%.planet_osm_polygon WHERE osm_id = $1") % schema)};
+    const std::string update_way_area_sql{
+        str(format("UPDATE %1%.planet_osm_polygon SET way_area = ST_Area(way) WHERE osm_id = $1") % schema)};
 
     std::string insert_sql;
 
@@ -296,13 +302,13 @@ ON CONFLICT (id) DO
     if (parser.is_polygon && way->isClosed()) {
         // Insert
         insert_sql = str(format(R"sql(
-    INSERT INTO %1%.planet_osm_%2%
-      (osm_id, way, tags %3%)
-    VALUES ($1, ST_SetSRID( ST_MakePolygon( ST_MakeLine( ARRAY(
-      SELECT ST_MakePoint(n.lon/10000000.0 , n.lat/10000000.0) FROM %1%.planet_osm_nodes n
-      JOIN UNNEST(%6%::bigint[]) WITH ORDINALITY t(id, ord) USING (id) ORDER BY t.ord ))), 4326 ),
-    %5% %4%)
-    )sql") % schema % "polygon" %
+          INSERT INTO %1%.planet_osm_%2%
+            (osm_id, way, tags %3%)
+          VALUES ($1, ST_SetSRID( ST_MakePolygon( ST_MakeLine( ARRAY(
+            SELECT ST_MakePoint(n.lon/10000000.0 , n.lat/10000000.0) FROM %1%.planet_osm_nodes n
+            JOIN UNNEST(%6%::bigint[]) WITH ORDINALITY t(id, ord) USING (id) ORDER BY t.ord ))), 4326 ),
+          %5% %4%)
+        )sql") % schema % "polygon" %
                          parser.tag_field_names % parser.tag_field_values % parser.tags_hstore_literal % refs);
 
     } else {
@@ -311,30 +317,96 @@ ON CONFLICT (id) DO
 
         // Insert
         insert_sql = str(format(R"sql(
-    INSERT INTO %1%.planet_osm_%2%
-      (osm_id, way, tags %3%)
-    VALUES ($1, ST_SetSRID( ST_MakeLine( ARRAY(
-      SELECT ST_MakePoint(n.lon/10000000.0 , n.lat/10000000.0) FROM %1%.planet_osm_nodes n
-      JOIN UNNEST(%6%::bigint[]) WITH ORDINALITY t(id, ord) USING (id) ORDER BY t.ord )), 4326 ),
-    %5% %4%)
-    )sql") % schema % way_type %
-                         parser.tag_field_names % parser.tag_field_values % parser.tags_hstore_literal % refs);
+          INSERT INTO %1%.planet_osm_%2%
+            (osm_id, way, tags %3%)
+          VALUES ($1, ST_SetSRID( ST_MakeLine( ARRAY(
+            SELECT ST_MakePoint(n.lon/10000000.0 , n.lat/10000000.0) FROM %1%.planet_osm_nodes n
+            JOIN UNNEST(%6%::bigint[]) WITH ORDINALITY t(id, ord) USING (id) ORDER BY t.ord )), 4326 ),
+          %5% %4%)
+          )sql") % schema %
+                         way_type % parser.tag_field_names % parser.tag_field_values % parser.tags_hstore_literal % refs);
     }
 
+    // Collect multipolygons that need update
+    const std::string polygons_sql{str(format(R"sql(
+      SELECT - id AS id, parts FROM %1%.planet_osm_rels
+        WHERE $1 = ANY (parts) AND hstore(tags) -> 'type' = 'multipolygon'
+       )sql") % schema)};
+
+    pqxx::work worker(*sdb);
+
+    const auto results{worker.exec_params(polygons_sql, way->id)};
+
+    std::vector<Polygon> polygons;
+    polygons.reserve(results.size());
+
+    for (const auto &res: results) {
+        const std::string parts{res["parts"].as(std::string())};
+        if (parts.size() > 2) {
+            std::vector<std::string> rings;
+            boost::split(rings, parts.substr(1, parts.size() - 2), [](char c) { return c == ','; });
+            if (rings.size() > 1) {
+                Polygon polygon{std::stol(rings[0])};
+                const auto inner_rings{std::vector<std::string>(rings.cbegin() + 1, rings.cend())};
+                std::string inner_rings_sql;
+                for (const auto &ring: std::as_const(inner_rings)) {
+                    inner_rings_sql.append((inner_rings_sql.empty() ? "" : ",") + ring);
+                }
+                polygon.inner = inner_rings_sql;
+                polygon.id = res["id"].as(long());
+                polygons.push_back(polygon);
+            }
+        }
+    }
+
+    worker.commit();
+
+    pqxx::nontransaction worker_nt(*sdb);
     //std::cerr << middle_sql << std::endl;
     //std::cerr << insert_sql << std::endl;
 
     try {
-        worker.exec("BEGIN;");
-        worker.exec_params0(middle_sql, way->id);
-        worker.exec_params0(delete_line_sql, way->id);
-        worker.exec_params0(delete_roads_sql, way->id);
-        worker.exec_params0(insert_sql, way->id);
-        // TODO: update way_area for polygons
-        worker.exec("COMMIT;");
+        worker_nt.exec("BEGIN;");
+        worker_nt.exec_params0(middle_sql, way->id);
+        worker_nt.exec_params0(delete_line_sql, way->id);
+        worker_nt.exec_params0(delete_roads_sql, way->id);
+        worker_nt.exec_params0(delete_polygon_sql, way->id);
+        worker_nt.exec_params0(insert_sql, way->id);
+
+        if (parser.is_polygon && way->isClosed()) {
+            worker_nt.exec_params0(update_way_area_sql, way->id);
+        }
+
+        // Update multi polygons
+        for (const auto &polygon: polygons) {
+            const auto polygon_update_sql{str(format(R"sql(
+            UPDATE %1%.planet_osm_polygon SET way =
+                (SELECT ST_MakePolygon( ST_SetSRID(ST_MakeLine( ARRAY(
+                SELECT ST_MakePoint(n.lon/10000000.0 , n.lat/10000000.0)
+                  FROM %1%.planet_osm_nodes n
+                  JOIN UNNEST(w.nodes)
+                  WITH ORDINALITY t(id, ord) USING (id) ORDER BY t.ord )), 4326),
+                ARRAY(SELECT ST_ExteriorRing(p.way) FROM %1%.planet_osm_polygon p WHERE p.osm_id IN(%4%)))
+                FROM %1%.planet_osm_ways w WHERE w.id = %3%)
+            WHERE osm_id = %2%
+          )sql") % schema % polygon.id % polygon.outer %
+                                              polygon.inner)};
+            //std::cerr << polygon_update_sql << std::endl;
+
+            const auto results{worker_nt.exec0(polygon_update_sql)};
+            if (results.affected_rows() > 0) {
+                const auto update_sql = str(format(R"sql(
+                UPDATE %1%.planet_osm_polygon SET
+                  way_area = ST_Area(way)
+                WHERE osm_id = %2%)sql") % schema %
+                                            polygon.id);
+                worker_nt.exec0(update_sql);
+            }
+        }
+        worker_nt.exec("COMMIT;");
     } catch (const std::exception &ex) {
         log_error(_("Couldn't upsert way/road record: %1%"), ex.what());
-        worker.exec("ROLLBACK;");
+        worker_nt.exec("ROLLBACK;");
         return false;
     }
 
@@ -402,13 +474,6 @@ Osm2Pgsql::upsertRelation(const std::shared_ptr<osmobjects::OsmRelation> &relati
 
     // Multipolygons
     const bool is_multi_polygon{relation->tags.find("type") != relation->tags.end() && relation->tags.at("type") == "multipolygon"};
-
-    // Collect polygons
-    struct Polygon {
-        Polygon(long outer_ring) : outer(outer_ring){};
-        long outer;
-        std::string inner;
-    };
 
     std::vector<Polygon> polygons;
 
@@ -526,14 +591,21 @@ Osm2Pgsql::upsertRelation(const std::shared_ptr<osmobjects::OsmRelation> &relati
                                             poly.inner %
                                             /* 5 */ parser.tag_field_names % parser.tag_field_values % parser.tags_hstore_literal);
                 worker.exec0("DELETE FROM " + schema + ".planet_osm_polygon WHERE osm_id = -" + std::to_string(relation->id));
-                // TODO: update way area
-                std::cerr << insert_sql << std::endl;
+                //std::cerr << insert_sql << std::endl;
                 worker.exec0(insert_sql);
+                // Update area and tags from outer
+                const auto update_sql = str(format(R"sql(
+                    UPDATE %1%.planet_osm_polygon SET
+                      way_area = ST_Area(way)
+                    WHERE osm_id = -%2%)sql") %
+                                            schema % relation->id);
+                worker.exec0(update_sql);
+                //std::cerr << update_sql << std::endl;
             }
         }
         worker.exec("COMMIT;");
     } catch (const std::exception &ex) {
-        log_error(_("Couldn't upsert relation records: %1%"), ex.what());
+        log_error(_("Couldn't upsert polygon records: %1%"), ex.what());
         worker.exec("ROLLBACK;");
         return false;
     }

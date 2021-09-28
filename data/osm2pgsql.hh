@@ -113,6 +113,13 @@ class Osm2Pgsql : public pq::Pq {
     /// Get last timestamp in the DB
     bool getLastUpdateFromDb();
 
+    struct Polygon {
+        Polygon(long outer_ring) : outer(outer_ring){};
+        long outer;
+        std::string inner;
+        long id = std::numeric_limits<long>::lowest();
+    };
+
     struct TagParser {
 
         std::string tag_field_names;
