@@ -43,6 +43,7 @@ AM_CXXFLAGS = \
 	-Wno-deprecated-declarations
 
 AM_CPPFLAGS = \
+	-I$(top_srcdir) \
 	-DPKGLIBDIR=\"$(pkglibdir)\" \
 	-DSRCDIR=\"$(srcdir)\" \
 	-DBOOST_LOCALE_HIDE_AUTO_PTR
