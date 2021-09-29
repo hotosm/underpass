@@ -443,7 +443,7 @@ Osm2Pgsql::upsertWay(const std::shared_ptr<osmobjects::OsmWay> &way) const
            WHERE osm_id = %2%
          )sql") % schema % poly_it->first % multi_polygons_parts_sql)};
 
-                std::cerr << polygon_update_sql << std::endl;
+                //std::cerr << polygon_update_sql << std::endl;
 
                 const auto results{worker_nt.exec0(polygon_update_sql)};
 
@@ -702,7 +702,8 @@ Osm2Pgsql::upsertRelation(const std::shared_ptr<osmobjects::OsmRelation> &relati
                                       parser.tag_field_names % parser.tag_field_values % parser.tags_hstore_literal %
                                       multi_polygons_parts_sql)};
 
-            std::cerr << insert_sql << std::endl;
+            //std::cerr << insert_sql << std::endl;
+
             worker.exec0(insert_sql);
 
             // Update area
@@ -712,6 +713,7 @@ Osm2Pgsql::upsertRelation(const std::shared_ptr<osmobjects::OsmRelation> &relati
                WHERE osm_id = -%2%)sql") %
                                         schema % relation->id);
             worker.exec0(update_sql);
+
             //std::cerr << update_sql << std::endl;
         }
         worker.exec("COMMIT;");
