@@ -18,6 +18,7 @@
         <tag k="foo" v="bar"/>
         <tag k="bar" v="baz"/>
         <tag k="crazy=>tag" v="crazy'&quot;=>values"/>
+        <tag k="crazy\n'{}&quot;=>&quot;tag" v="crazy'&quot;=>&quot;\n{}values"/>
         <tag k="shop" v="department_store"/>
         <tag k="addr:housename" v="My house name at N°5" />
     </node>
@@ -37,6 +38,18 @@
     <node id="322" lon="1.85" lat="49.7" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
     <node id="323" lon="1.85" lat="49.6" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
     <node id="324" lon="1.75" lat="49.6" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+
+    <!-- another outer ring -->
+    <node id="421" lon="1.5" lat="49.7" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+    <node id="422" lon="1.6" lat="49.7" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+    <node id="423" lon="1.6" lat="49.6" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+    <node id="424" lon="1.5" lat="49.6" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+    <!-- multipolygon parts inner -->
+    <node id="521" lon="1.51" lat="49.68" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+    <node id="522" lon="1.59" lat="49.68" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+    <node id="523" lon="1.59" lat="49.62" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+    <node id="524" lon="1.51" lat="49.62" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+
  </create>
  <modify>
    <!-- remove node 10 -->
@@ -84,12 +97,36 @@
     <nd ref="324"/>
     <nd ref="321"/>
   </way>
+
+    <!-- multipolygon outer -->
+    <way id="204" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z">
+        <tag k="area" v="yes"/>
+        <tag k="natural" v="wood"/>
+        <nd ref="421"/>
+        <nd ref="422"/>
+        <nd ref="423"/>
+        <nd ref="424"/>
+        <nd ref="421"/>
+     </way>
+    <!-- multipolygon inner -->
+     <way id="205" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z">
+        <tag k="area" v="yes"/>
+        <nd ref="521"/>
+        <nd ref="522"/>
+        <nd ref="523"/>
+        <nd ref="524"/>
+        <nd ref="521"/>
+     </way>
+
   <relation id="6" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-07-10T00:00:00Z">
-    <member type="way" ref="201" role="outer"/>
     <member type="way" ref="202" role="inner"/>
+    <member type="way" ref="201" role="outer"/>
     <member type="way" ref="203" role="inner"/>
+    <member type="way" ref="204" role="outer"/>
+    <member type="way" ref="205" role="inner"/>
     <tag k="type" v="multipolygon"/>
     <tag k="natural" v="grassland"/>
+    <tag k="crazy\n'{}&quot;tag&quot;" v="crazy'&quot;=>&quot;\n{}values"/>
   </relation>
 </create>
 </osmChange>

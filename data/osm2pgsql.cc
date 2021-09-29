@@ -49,7 +49,7 @@ const std::string Osm2Pgsql::OSM2PGSQL_DEFAULT_SCHEMA_NAME = "osm2pgsql_pgsql";
 
 logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
 
-const std::regex Osm2Pgsql::TagParser::tags_escape_re = std::regex(R"re((["=>]))re");
+const std::regex Osm2Pgsql::TagParser::tags_escape_re = std::regex(R"re(("))re");
 
 const std::set<std::string> Osm2Pgsql::TagParser::polygon_tags = {
     "aeroway", "amenity", "building", "harbour",          "historic", "landuse", "leisure", "man_made", "military", "natural",
@@ -260,7 +260,11 @@ Osm2Pgsql::upsertWay(const std::shared_ptr<osmobjects::OsmWay> &way) const
     TagParser parser;
     {
         pqxx::nontransaction worker(*sdb);
-        parser.parse(way->tags, worker);
+        auto tags{way->tags};
+        tags.emplace("osm_version", std::to_string(way->version));
+        tags.emplace("osm_changeset", std::to_string(way->change_id));
+        tags.emplace("osm_timestamp", to_iso_extended_string(way->timestamp) + "Z");
+        parser.parse(tags, worker);
     }
 
     std::string refs{"'{"};
@@ -329,7 +333,7 @@ Osm2Pgsql::upsertWay(const std::shared_ptr<osmobjects::OsmWay> &way) const
 
     // Collect multipolygons that need update
     const std::string polygons_sql{str(format(R"sql(
-      SELECT - id AS id, parts FROM %1%.planet_osm_rels
+      SELECT - id AS id, members, parts FROM %1%.planet_osm_rels
         WHERE $1 = ANY (parts) AND hstore(tags) -> 'type' = 'multipolygon'
        )sql") % schema)};
 
@@ -337,25 +341,56 @@ Osm2Pgsql::upsertWay(const std::shared_ptr<osmobjects::OsmWay> &way) const
 
     const auto results{worker.exec_params(polygons_sql, way->id)};
 
-    std::vector<Polygon> polygons;
-    polygons.reserve(results.size());
+    std::map<long, std::list<Polygon>> polygons_map;
 
     for (const auto &res: results) {
         const std::string parts{res["parts"].as(std::string())};
+        const std::string members{res["members"].as(std::string())};
+        std::list<Polygon> polygons;
+        // Unsure if a multipolygon can have a single outer ring and no inner rings, assuming NOT
         if (parts.size() > 2) {
-            std::vector<std::string> rings;
-            boost::split(rings, parts.substr(1, parts.size() - 2), [](char c) { return c == ','; });
-            if (rings.size() > 1) {
-                Polygon polygon{std::stol(rings[0])};
-                const auto inner_rings{std::vector<std::string>(rings.cbegin() + 1, rings.cend())};
-                std::string inner_rings_sql;
-                for (const auto &ring: std::as_const(inner_rings)) {
-                    inner_rings_sql.append((inner_rings_sql.empty() ? "" : ",") + ring);
+            std::vector<std::string> members_list;
+            boost::split(members_list, members.substr(1, members.size() - 2), [](char c) { return c == ','; });
+            std::vector<std::string> parts_list;
+            boost::split(parts_list, parts.substr(1, parts.size() - 2), [](char c) { return c == ','; });
+            if (parts_list.size() > 1 && members_list.size() == 2 * parts_list.size()) {
+                for (int idx = 0; idx < parts_list.size(); ++idx) {
+                    try {
+                        const auto way_id{std::stol(parts_list[idx])};
+                        const auto role{members_list[idx * 2 + 1]};
+                        if (role == "inner") {
+                            // Found in the wild a polygon where inner rings are listed before outer rings
+                            // In this case we create a polygon with no outer ring, hoping that we'll get it later
+                            if (polygons.size() == 0) {
+                                Polygon poly{};
+                                polygons.push_back(Polygon());
+                                polygons.back().id = res["id"].as(long());
+                            }
+                            if (!polygons.back().inner.empty()) {
+                                polygons.back().inner.push_back(',');
+                            }
+                            polygons.back().inner.append(std::to_string(way_id));
+                        } else if (role == "outer") {
+                            // Handle the case where a polygon with inner rings but without outer ring was created
+                            if (polygons.size() > 0 && polygons.back().outer == std::numeric_limits<long>::lowest()) {
+                                polygons.back().outer = way_id;
+                            } else {
+                                polygons.push_back(Polygon(way_id));
+                                polygons.back().id = res["id"].as(long());
+                            }
+                        }
+                    } catch (const std::exception &) {
+                        log_error(_("Error parsing parts from relation %1%."), res["id"].as(std::string()));
+                    }
                 }
-                polygon.inner = inner_rings_sql;
-                polygon.id = res["id"].as(long());
-                polygons.push_back(polygon);
+            } else {
+                log_error(_("Size mismatch error parsing parts and members from multipolygon relation %1%."),
+                          res["id"].as(std::string()));
             }
+        }
+        if (polygons.size() > 0) {
+            const long poly_id{res["id"].as(long())};
+            polygons_map.emplace(poly_id, polygons);
         }
     }
 
@@ -378,31 +413,52 @@ Osm2Pgsql::upsertWay(const std::shared_ptr<osmobjects::OsmWay> &way) const
         }
 
         // Update multi polygons
-        for (const auto &polygon: polygons) {
-            const auto polygon_update_sql{str(format(R"sql(
-            UPDATE %1%.planet_osm_polygon SET way =
-                (SELECT ST_MakePolygon( ST_SetSRID(ST_MakeLine( ARRAY(
-                SELECT ST_MakePoint(n.lon/10000000.0 , n.lat/10000000.0)
-                  FROM %1%.planet_osm_nodes n
-                  JOIN UNNEST(w.nodes)
-                  WITH ORDINALITY t(id, ord) USING (id) ORDER BY t.ord )), 4326),
-                ARRAY(SELECT ST_ExteriorRing(p.way) FROM %1%.planet_osm_polygon p WHERE p.osm_id IN(%4%)))
-                FROM %1%.planet_osm_ways w WHERE w.id = %3%)
-            WHERE osm_id = %2%
-          )sql") % schema % polygon.id % polygon.outer %
-                                              polygon.inner)};
-            //std::cerr << polygon_update_sql << std::endl;
 
-            const auto results{worker_nt.exec0(polygon_update_sql)};
-            if (results.affected_rows() > 0) {
-                const auto update_sql = str(format(R"sql(
-                UPDATE %1%.planet_osm_polygon SET
-                  way_area = ST_Area(way)
-                WHERE osm_id = %2%)sql") % schema %
-                                            polygon.id);
-                worker_nt.exec0(update_sql);
+        for (auto poly_it = polygons_map.cbegin(); poly_it != polygons_map.cend(); ++poly_it) {
+            std::string multi_polygons_parts_sql;
+            for (const auto &poly: std::as_const(poly_it->second)) {
+                const auto inner_id_sql{poly.inner.empty() ? std::to_string(std::numeric_limits<long>::lowest()) : poly.inner};
+
+                if (poly.outer == std::numeric_limits<long>::lowest()) {
+                    log_error(_("A polygon with no outer rings is invalid! Skipping relation %1%."), poly.id);
+                } else {
+                    if (!multi_polygons_parts_sql.empty()) {
+                        multi_polygons_parts_sql.append(", ");
+                    }
+                    multi_polygons_parts_sql.append(str(format(R"sql(
+               (SELECT ST_MakePolygon( ST_SetSRID(ST_MakeLine( ARRAY(
+               SELECT ST_MakePoint(n.lon/10000000.0 , n.lat/10000000.0)
+                 FROM %1%.planet_osm_nodes n
+                 JOIN UNNEST(w.nodes)
+                 WITH ORDINALITY t(id, ord) USING (id) ORDER BY t.ord )), 4326),
+               ARRAY(SELECT ST_ExteriorRing(p.way) FROM %1%.planet_osm_polygon p WHERE p.osm_id IN(%3%)))
+               FROM %1%.planet_osm_ways w WHERE w.id = %2%)
+               )sql") % schema % poly.outer % inner_id_sql));
+                }
             }
+
+            if (!multi_polygons_parts_sql.empty()) {
+                const auto polygon_update_sql{str(format(R"sql(
+           UPDATE %1%.planet_osm_polygon SET way = ST_Collect(ARRAY[%3%])
+           WHERE osm_id = %2%
+         )sql") % schema % poly_it->first % multi_polygons_parts_sql)};
+
+                std::cerr << polygon_update_sql << std::endl;
+
+                const auto results{worker_nt.exec0(polygon_update_sql)};
+
+                if (results.affected_rows() > 0) {
+                    const auto update_sql = str(format(R"sql(
+               UPDATE %1%.planet_osm_polygon SET
+                 way_area = ST_Area(way)
+               WHERE osm_id = %2%)sql") % schema %
+                                                poly_it->first);
+                    worker_nt.exec0(update_sql);
+                }
+
+            } // iterator end
         }
+
         worker_nt.exec("COMMIT;");
     } catch (const std::exception &ex) {
         log_error(_("Couldn't upsert way/road record: %1%"), ex.what());
@@ -433,7 +489,11 @@ Osm2Pgsql::upsertNode(const std::shared_ptr<osmobjects::OsmNode> &node) const
       )sql") % schema)};
 
     TagParser parser;
-    parser.parse(node->tags, worker);
+    auto tags{node->tags};
+    tags.emplace("osm_version", std::to_string(node->version));
+    tags.emplace("osm_changeset", std::to_string(node->change_id));
+    tags.emplace("osm_timestamp", to_iso_extended_string(node->timestamp) + "Z");
+    parser.parse(tags, worker);
 
     // No upsert here because planet_osm_point has no PK ...
     const std::string delete_sql{str(format(R"sql(DELETE FROM %1%.planet_osm_point WHERE osm_id = $1)sql") % schema)};
@@ -470,12 +530,16 @@ Osm2Pgsql::upsertRelation(const std::shared_ptr<osmobjects::OsmRelation> &relati
     pqxx::nontransaction worker(*sdb);
 
     TagParser parser;
-    parser.parse(relation->tags, worker);
+    auto tags{relation->tags};
+    tags.emplace("osm_version", std::to_string(relation->version));
+    tags.emplace("osm_changeset", std::to_string(relation->change_id));
+    tags.emplace("osm_timestamp", to_iso_extended_string(relation->timestamp) + "Z");
+    parser.parse(tags, worker);
 
     // Multipolygons
     const bool is_multi_polygon{relation->tags.find("type") != relation->tags.end() && relation->tags.at("type") == "multipolygon"};
 
-    std::vector<Polygon> polygons;
+    std::list<Polygon> polygons;
 
     // First: upsert in middle table
     // The member attribute is an array with IDs, where all node members come first,
@@ -495,45 +559,78 @@ Osm2Pgsql::upsertRelation(const std::shared_ptr<osmobjects::OsmRelation> &relati
     std::string members{"'{"};
     std::string parts{"'{"};
 
-    // Default past end
-    auto way_off{relation->members.size()};
-    auto rel_off{relation->members.size()};
-
-    // Not sure if the members are already ordered, let's assume they are
-    unsigned int idx{0};
+    // Reorder members
+    std::list<const osmobjects::OsmRelationMember *> nodes;
+    std::list<const osmobjects::OsmRelationMember *> ways;
+    std::list<const osmobjects::OsmRelationMember *> relations;
     for (const auto &rel: std::as_const(relation->members)) {
         switch (rel.type) {
             case osmobjects::osmtype_t::way:
             {
-                if (members.size() > 2) {
-                    members.push_back(',');
-                } else {
-                    way_off = idx;
-                }
-                members.append("w" + std::to_string(rel.ref) + "," + rel.role);
-                if (rel.role == "inner") {
-                    if (!polygons.front().inner.empty()) {
-                        polygons.front().inner.push_back(',');
+                ways.push_back(&rel);
+                break;
+            }
+            case osmobjects::osmtype_t::node:
+            {
+                nodes.push_back(&rel);
+                break;
+            }
+            case osmobjects::osmtype_t::relation:
+            {
+                relations.push_back(&rel);
+                break;
+            }
+            case osmobjects::osmtype_t::empty:
+            case osmobjects::osmtype_t::member:
+                break;
+        }
+    };
+
+    int way_off = nodes.size();
+    int rel_off = nodes.size() + ways.size();
+
+    std::list<const osmobjects::OsmRelationMember *> all_members;
+    all_members.insert(all_members.end(), nodes.begin(), nodes.end());
+    all_members.insert(all_members.end(), ways.begin(), ways.end());
+    all_members.insert(all_members.end(), relations.begin(), relations.end());
+
+    for (const auto &rel: std::as_const(all_members)) {
+        if (members.size() > 2) {
+            members.push_back(',');
+        }
+        switch (rel->type) {
+            case osmobjects::osmtype_t::way:
+            {
+                members.append("w" + std::to_string(rel->ref) + ",\"" + rel->role + "\"");
+                if (rel->role == "inner") {
+                    // Found in the wild a polygon where inner rings are listed before outer rings
+                    // In this case we create a polygon with no outer ring, hoping that we'll get it later
+                    if (polygons.size() == 0) {
+                        Polygon poly{};
+                        polygons.push_back(Polygon());
                     }
-                    polygons.front().inner.append(std::to_string(rel.ref));
-                } else if (rel.role == "outer") {
-                    polygons.push_back(Polygon(rel.ref));
+                    if (!polygons.back().inner.empty()) {
+                        polygons.back().inner.push_back(',');
+                    }
+                    polygons.back().inner.append(std::to_string(rel->ref));
+                } else if (rel->role == "outer") {
+                    // Handle the case where a polygon with inner rings but without outer ring was created
+                    if (polygons.size() > 0 && polygons.back().outer == std::numeric_limits<long>::lowest()) {
+                        polygons.back().outer = rel->ref;
+                    } else {
+                        polygons.push_back(Polygon(rel->ref));
+                    }
                 }
                 break;
             }
             case osmobjects::osmtype_t::relation:
             {
-                if (members.size() > 2) {
-                    members.push_back(',');
-                } else {
-                    rel_off = idx;
-                }
-                members.append("w" + std::to_string(rel.ref) + "," + rel.role);
+                members.append("w" + std::to_string(rel->ref) + ",\"" + rel->role + "\"");
                 break;
             }
             case osmobjects::osmtype_t::node:
             {
-                members.append("w" + std::to_string(rel.ref) + "," + rel.role);
+                members.append("w" + std::to_string(rel->ref) + ",\"" + rel->role + "\"");
                 break;
             }
             case osmobjects::osmtype_t::empty:
@@ -542,14 +639,12 @@ Osm2Pgsql::upsertRelation(const std::shared_ptr<osmobjects::OsmRelation> &relati
         }
 
         // Store part id
-        if (rel.type != osmobjects::osmtype_t::empty && rel.type != osmobjects::osmtype_t::member) {
+        if (rel->type != osmobjects::osmtype_t::empty && rel->type != osmobjects::osmtype_t::member) {
             if (parts.size() > 2) {
                 parts.push_back(',');
             }
-            parts.append(std::to_string(rel.ref));
+            parts.append(std::to_string(rel->ref));
         }
-
-        idx++;
     }
 
     members.append("}'");
@@ -576,32 +671,48 @@ Osm2Pgsql::upsertRelation(const std::shared_ptr<osmobjects::OsmRelation> &relati
     try {
         worker.exec("BEGIN;");
         worker.exec_params0(middle_sql, relation->id);
+        worker.exec0("DELETE FROM " + schema + ".planet_osm_polygon WHERE osm_id = -" + std::to_string(relation->id));
+        std::string multi_polygons_parts_sql;
         if (is_multi_polygon) {
             for (const auto &poly: std::as_const(polygons)) {
-                const auto insert_sql = str(format(R"sql(
-          INSERT INTO %1%.planet_osm_polygon (osm_id, way, tags %5% )
-            VALUES (-%2%, (SELECT ST_MakePolygon( ST_SetSRID(ST_MakeLine( ARRAY(
-                SELECT ST_MakePoint(n.lon/10000000.0 , n.lat/10000000.0)
-                  FROM %1%.planet_osm_nodes n
-                  JOIN UNNEST(w.nodes)
-                  WITH ORDINALITY t(id, ord) USING (id) ORDER BY t.ord )), 4326),
-                ARRAY(SELECT ST_ExteriorRing(p.way) FROM %1%.planet_osm_polygon p WHERE p.osm_id IN(%4%)))
-                FROM %1%.planet_osm_ways w WHERE w.id = %3%), %7% %6%)
-      )sql") % schema % relation->id % poly.outer %
-                                            poly.inner %
-                                            /* 5 */ parser.tag_field_names % parser.tag_field_values % parser.tags_hstore_literal);
-                worker.exec0("DELETE FROM " + schema + ".planet_osm_polygon WHERE osm_id = -" + std::to_string(relation->id));
-                //std::cerr << insert_sql << std::endl;
-                worker.exec0(insert_sql);
-                // Update area and tags from outer
-                const auto update_sql = str(format(R"sql(
-                    UPDATE %1%.planet_osm_polygon SET
-                      way_area = ST_Area(way)
-                    WHERE osm_id = -%2%)sql") %
-                                            schema % relation->id);
-                worker.exec0(update_sql);
-                //std::cerr << update_sql << std::endl;
+                const auto inner_id_sql{poly.inner.empty() ? std::to_string(std::numeric_limits<long>::lowest()) : poly.inner};
+                if (poly.outer == std::numeric_limits<long>::lowest()) {
+                    log_error(_("A polygon with no outer rings is invalid! Skipping relation %1%."), relation->id);
+                } else {
+                    if (!multi_polygons_parts_sql.empty()) {
+                        multi_polygons_parts_sql.append(", ");
+                    }
+                    multi_polygons_parts_sql.append(str(format(R"sql(
+                  (SELECT ST_MakePolygon( ST_SetSRID(ST_MakeLine( ARRAY(
+                  SELECT ST_MakePoint(n.lon/10000000.0 , n.lat/10000000.0)
+                    FROM %1%.planet_osm_nodes n
+                    JOIN UNNEST(w.nodes)
+                    WITH ORDINALITY t(id, ord) USING (id) ORDER BY t.ord )), 4326),
+                  ARRAY(SELECT ST_ExteriorRing(p.way) FROM %1%.planet_osm_polygon p WHERE p.osm_id IN(%4%)))
+                  FROM %1%.planet_osm_ways w WHERE w.id = %3%)
+                  )sql") % schema % relation->id % poly.outer %
+                                                        inner_id_sql));
+                }
             }
+
+            const auto insert_sql{str(format(R"sql(
+             INSERT INTO %1%.planet_osm_polygon (osm_id, way, tags %3% )
+                 VALUES (-%2%, ST_Collect(ARRAY[%6%]), %5% %4%)
+             )sql") % schema % relation->id %
+                                      parser.tag_field_names % parser.tag_field_values % parser.tags_hstore_literal %
+                                      multi_polygons_parts_sql)};
+
+            std::cerr << insert_sql << std::endl;
+            worker.exec0(insert_sql);
+
+            // Update area
+            const auto update_sql = str(format(R"sql(
+               UPDATE %1%.planet_osm_polygon SET
+                 way_area = ST_Area(way)
+               WHERE osm_id = -%2%)sql") %
+                                        schema % relation->id);
+            worker.exec0(update_sql);
+            //std::cerr << update_sql << std::endl;
         }
         worker.exec("COMMIT;");
     } catch (const std::exception &ex) {
@@ -669,17 +780,17 @@ bool
 Osm2Pgsql::getLastUpdateFromDb()
 {
     if (isOpen()) {
-        const std::string sql{R"sql(
+        const std::string sql{str(format(R"sql(
         SELECT MAX(foo.ts) AS ts FROM(
-          SELECT MAX(tags -> 'osm_timestamp') AS ts FROM osm2pgsql_pgsql.planet_osm_point
+          SELECT MAX(tags -> 'osm_timestamp') AS ts FROM %1%.planet_osm_point
           UNION
-          SELECT MAX(tags -> 'osm_timestamp') AS ts FROM osm2pgsql_pgsql.planet_osm_line
+          SELECT MAX(tags -> 'osm_timestamp') AS ts FROM %1%.planet_osm_line
           UNION
-          SELECT MAX(tags -> 'osm_timestamp') AS ts FROM osm2pgsql_pgsql.planet_osm_polygon
+          SELECT MAX(tags -> 'osm_timestamp') AS ts FROM %1%.planet_osm_polygon
           UNION
-          SELECT MAX(tags -> 'osm_timestamp') AS ts FROM osm2pgsql_pgsql.planet_osm_roads
+          SELECT MAX(tags -> 'osm_timestamp') AS ts FROM %1%.planet_osm_roads
         ) AS foo
-      )sql"};
+      )sql") % schema)};
         try {
             const auto result{query(sql)};
             const auto row{result.at(0)};
@@ -725,10 +836,17 @@ Osm2Pgsql::TagParser::parse(const std::map<std::string, std::string> &tags, cons
             if (polygon_tags.find(tag.first) != polygon_tags.cend() || (tag.first == "area" && tag.second == "yes")) {
                 is_polygon = true;
             }
-            if (tags_array_literal.size() > 2) {
+            if (tags_array_literal.size() > 3) {
                 tags_array_literal.append(",");
             }
-            tags_array_literal.append(tag.first + "," + worker.esc(tag.second));
+            // Array literal needs backslash before double quotes
+            const auto tag_value{worker.esc(tag.second)};
+            const auto tag_name{worker.esc(tag.first)};
+            const auto tag_name_safe{std::regex_replace(tag_name, tags_escape_re, R"raw(\\$1)raw")};
+            const auto tag_value_safe{std::regex_replace(tag_value, tags_escape_re, R"raw(\\$1)raw")};
+            tags_array_literal.append('"' + tag_name_safe + "\",\"" + tag_value_safe + '"');
+
+            // z order
             if (tag.first == "layer") {
                 try {
                     z_order += std::stoi(tag.second) * 10;
@@ -737,19 +855,14 @@ Osm2Pgsql::TagParser::parse(const std::map<std::string, std::string> &tags, cons
                 }
             }
 
-            // Tags mapped to columns
+            // Tags stored into columns
             if (column_stored_tags.find(tag.first) != column_stored_tags.cend()) {
                 tag_field_names.append(separator + worker.quote_name(tag.first));
-                const auto value{"'" + worker.esc(tag.second) + "'"};
+                const auto value{"E'" + worker.esc(tag.second) + "'"};
                 tag_field_values.append(separator + value);
                 tag_field_updates.append(separator + worker.quote_name(tag.first) + " = " + value);
             } else { // Tags added to "tags"
-                const auto tag_value{worker.esc(tag.second)};
-                const auto tag_name{worker.esc(tag.first)};
-                // Escape = and > and "
-                const auto tag_name_safe{std::regex_replace(tag_name, tags_escape_re, R"raw(\$1)raw")};
-                const auto tag_value_safe{std::regex_replace(tag_value, tags_escape_re, R"raw(\$1)raw")};
-                tags_hstore_literal.append((tags_hstore_literal.size() > 1 ? ", " : "") + tag_name_safe + " => \"" +
+                tags_hstore_literal.append((tags_hstore_literal.size() > 3 ? ", \"" : "\"") + tag_name_safe + "\" => \"" +
                                            tag_value_safe + '"');
             }
         }

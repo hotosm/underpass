@@ -172,16 +172,14 @@ StateFile::StateFile(const std::string &file, bool memory)
             const std::string key = line.substr(0, pos);
             const std::string value = line.substr(pos + 1);
 
-            const std::vector<std::string> skipKeys{
-                "txnMaxQueried", "txnActiveList", "txnReadyList", "txnMax"};
+            const std::vector<std::string> skipKeys{"txnMaxQueried", "txnActiveList", "txnReadyList", "txnMax"};
             if (key == "sequenceNumber") {
                 sequence = std::stol(value);
             } else if (std::count(skipKeys.begin(), skipKeys.end(), key)) {
             } else if (key == "timestamp") {
                 pos = value.find('\\', pos + 1);
-                std::string tstamp =
-                    value.substr(0, pos);           // get the date and the hour
-                tstamp += value.substr(pos + 1, 3); // get minutes
+                std::string tstamp = value.substr(0, pos); // get the date and the hour
+                tstamp += value.substr(pos + 1, 3);        // get minutes
                 pos = value.find('\\', pos + 1);
                 tstamp += value.substr(pos + 1, 3); // get seconds
                 timestamp = from_iso_extended_string(tstamp);
@@ -210,11 +208,8 @@ bool
 StateFile::isValid() const
 {
     return timestamp != boost::posix_time::not_a_date_time &&
-           sequence >=
-               (frequency == Underpass::freq_to_string(frequency_t::changeset)
-                    ? 0
-                    : 1) &&
-           !path.empty() && !frequency.empty();
+           sequence >= (frequency == Underpass::freq_to_string(frequency_t::changeset) ? 0 : 1) && !path.empty() &&
+           !frequency.empty();
 }
 
 // parse a replication file containing changesets
@@ -237,8 +232,7 @@ Replication::mergeToDB()
 }
 
 std::shared_ptr<std::vector<std::string>> &
-Planet::getLinks(GumboNode *node,
-                 std::shared_ptr<std::vector<std::string>> &links)
+Planet::getLinks(GumboNode *node, std::shared_ptr<std::vector<std::string>> &links)
 {
     // if (node->type == GUMBO_NODE_TEXT) {
     //     std::string val = std::string(node->v.text.text);
@@ -247,8 +241,7 @@ Planet::getLinks(GumboNode *node,
 
     if (node->type == GUMBO_NODE_ELEMENT) {
         GumboAttribute *href;
-        if (node->v.element.tag == GUMBO_TAG_A &&
-            (href = gumbo_get_attribute(&node->v.element.attributes, "href"))) {
+        if (node->v.element.tag == GUMBO_TAG_A && (href = gumbo_get_attribute(&node->v.element.attributes, "href"))) {
             // All the directories are a 3 digit number, and all the files
             // start with a 3 digit number
             if (href->value[0] >= 48 && href->value[0] <= 57) {
@@ -340,8 +333,7 @@ Planet::downloadFile(const std::string &url)
                 }
             }
 
-            for (auto body = std::begin(parser.get().body());
-                 body != std::end(parser.get().body()); ++body) {
+            for (auto body = std::begin(parser.get().body()); body != std::end(parser.get().body()); ++body) {
                 data->push_back(static_cast<unsigned char>(*body));
             }
 
@@ -396,16 +388,13 @@ Planet::dump(void)
         std::cerr << "Changeset at: " << it->first << it->second << std::endl;
     }
     for (auto it = std::begin(minute); it != std::end(minute); ++it) {
-        std::cerr << "Minutely at: " << it->first << ": " << it->second
-                  << std::endl;
+        std::cerr << "Minutely at: " << it->first << ": " << it->second << std::endl;
     }
     for (auto it = std::begin(hour); it != std::end(hour); ++it) {
-        std::cerr << "Minutely at: " << it->first << ": " << it->second
-                  << std::endl;
+        std::cerr << "Minutely at: " << it->first << ": " << it->second << std::endl;
     }
     for (auto it = std::begin(day); it != std::end(day); ++it) {
-        std::cerr << "Daily at: " << it->first << ": " << it->second
-                  << std::endl;
+        std::cerr << "Daily at: " << it->first << ": " << it->second << std::endl;
     }
 }
 
@@ -431,8 +420,7 @@ Planet::connectServer(const std::string &planet)
     }
 
     auto const results = resolver.resolve(tmp, std::to_string(port));
-    boost::asio::connect(stream.next_layer(), results.begin(), results.end(),
-                         ec);
+    boost::asio::connect(stream.next_layer(), results.begin(), results.end(), ec);
     if (ec) {
         log_error(_("stream connect failed %1%"), ec.message());
         return false;
@@ -513,9 +501,13 @@ Planet::scanDirectory(const std::string &dir)
 }
 
 std::shared_ptr<replication::StateFile>
-Planet::fetchData(frequency_t freq, const std::string &path,
-                  const std::string &underpass_dburl)
+Planet::fetchData(frequency_t freq, const std::string &path, const std::string &underpass_dburl)
 {
+    // Make sure path starts with a slash
+    auto sanitized_path{path};
+    if (sanitized_path.size() == 0 || sanitized_path[0] != '/') {
+        sanitized_path.insert(0, 1, '/');
+    }
     std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
     // First search in the cache
     bool use_cache{!underpass_dburl.empty()};
@@ -529,10 +521,8 @@ Planet::fetchData(frequency_t freq, const std::string &path,
         } else {
             RemoteURL url;
             try {
-                url.parse("https://" + remote.domain + "/replication/" +
-                          Underpass::freq_to_string(freq) + path);
-                const long sequence{url.major * 1000000 + url.minor * 1000 +
-                                    url.index};
+                url.parse("https://" + remote.domain + "/replication/" + Underpass::freq_to_string(freq) + path);
+                const long sequence{url.major * 1000000 + url.minor * 1000 + url.index};
                 state = underpass.getState(freq, sequence);
             } catch (const std::exception &ex) {
                 // Ignore...
@@ -541,90 +531,68 @@ Planet::fetchData(frequency_t freq, const std::string &path,
     }
 
     if (!state->isValid()) {
-        const auto full_path{"/replication/" + Underpass::freq_to_string(freq) +
-                             path + ".state.txt"};
+        const auto full_path{"/replication/" + Underpass::freq_to_string(freq) + path + ".state.txt"};
         auto data = downloadFile(full_path);
         if (data->size() == 0) {
             // There is a chance that for old changeset files we have no state!
             if (freq == frequency_t::changeset) {
-                const auto osm_gz_full_path{"/replication/" +
-                                            Underpass::freq_to_string(freq) +
-                                            path + ".osm.gz"};
+                const auto osm_gz_full_path{"/replication/" + Underpass::freq_to_string(freq) + path + ".osm.gz"};
                 data = downloadFile(osm_gz_full_path);
                 if (data->size() == 0) {
-                    log_error(_("StateFile (osm.gz) not found: %1%"),
-                              osm_gz_full_path);
+                    log_error(_("StateFile (osm.gz) not found: %1%"), osm_gz_full_path);
                 } else {
                     // Extract timestamp from osm.gz
                     try {
-                        boost::iostreams::filtering_streambuf<
-                            boost::iostreams::input>
-                            inbuf;
+                        boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
                         inbuf.push(boost::iostreams::gzip_decompressor());
-                        boost::iostreams::array_source arrs{
-                            reinterpret_cast<char const *>(data->data()),
-                            data->size()};
+                        boost::iostreams::array_source arrs{reinterpret_cast<char const *>(data->data()), data->size()};
                         inbuf.push(arrs);
                         std::istream instream(&inbuf);
                         try {
                             changeset::ChangeSetFile changeset;
                             changeset.readXML(instream);
                             if (changeset.changes.size() > 0) {
-                                const auto timestamp{
-                                    changeset.changes.back()->closed_at};
+                                const auto timestamp{changeset.changes.back()->closed_at};
                                 if (timestamp != not_a_date_time) {
                                     RemoteURL url;
                                     try {
-                                        url.parse("https://" + remote.domain +
-                                                  osm_gz_full_path);
-                                        state->frequency =
-                                            Underpass::freq_to_string(freq);
+                                        url.parse("https://" + remote.domain + osm_gz_full_path);
+                                        state->frequency = Underpass::freq_to_string(freq);
                                         state->sequence = url.sequence();
                                         state->path = path;
                                         state->timestamp = timestamp;
                                         state->closed_at = timestamp;
-                                        state->created_at =
-                                            changeset.changes.front()
-                                                ->created_at;
+                                        state->created_at = changeset.changes.front()->created_at;
                                     } catch (const std::exception &ex) {
-                                        log_error(
-                                            _("Couldn't get sequence from: %1%"),
-                                            osm_gz_full_path);
+                                        log_error(_("Couldn't get sequence from: %1%"), osm_gz_full_path);
                                     }
                                 } else {
-                                    log_error(
-                                        _("Couldn't get timestamp from: %1%"),
-                                        osm_gz_full_path);
+                                    log_error(_("Couldn't get timestamp from: %1%"), osm_gz_full_path);
                                 }
                             } else {
-                                log_error(_("Couldn't parse empty: %1%"),
-                                          osm_gz_full_path);
+                                log_error(_("Couldn't parse empty: %1%"), osm_gz_full_path);
                             }
                         } catch (std::exception &e) {
-                            log_error(_("Couldn't parse: %1% %2%"),
-                                      osm_gz_full_path, e.what());
+                            log_error(_("Couldn't parse: %1% %2%"), osm_gz_full_path, e.what());
                         }
                     } catch (std::exception &e) {
                         log_error(_("%1% is corrupted!"), remote.url);
                     }
-                    log_debug(_("Timestamp extracted from osm.gz for path %1%"),
-                              path);
+                    log_debug(_("Timestamp extracted from osm.gz for path %1%"), path);
                 }
             } else {
                 log_error(_("StateFile not found: %1%"), full_path);
             }
         } else {
             const std::string tmp(data->begin(), data->end());
-            auto state_candidate =
-                std::make_shared<replication::StateFile>(tmp, true);
+            auto state_candidate = std::make_shared<replication::StateFile>(tmp, true);
             state_candidate->path = path;
             state_candidate->frequency = Underpass::freq_to_string(freq);
             if (state_candidate->isValid()) {
                 state = state_candidate;
                 if (use_cache) {
                     if (!underpass.writeState(*state.get())) {
-                        log_error(_(
-                            "Could not store cached state in the underpass DB!"));
+                        log_error(_("Could not store cached state in the underpass DB!"));
                     }
                 }
             } else {
@@ -638,16 +606,14 @@ Planet::fetchData(frequency_t freq, const std::string &path,
 std::string
 Planet::sequenceToPath(long sequence)
 {
-    return str(format("/%03d/%03d/%03d") % (sequence / 1000000) %
-               (sequence / 1000 % 1000) % (sequence % 1000));
+    return str(format("/%03d/%03d/%03d") % (sequence / 1000000) % (sequence / 1000 % 1000) % (sequence % 1000));
 }
 
 std::shared_ptr<StateFile>
 Planet::fetchDataLast(frequency_t freq, const std::string &underpass_dburl)
 {
     const bool is_changeset{freq == frequency_t::changeset};
-    const auto url{str(format("https://%1%/replication/%2%/state.%3%") %
-                       remote.domain % Underpass::freq_to_string(freq) %
+    const auto url{str(format("https://%1%/replication/%2%/state.%3%") % remote.domain % Underpass::freq_to_string(freq) %
                        (is_changeset ? "yaml" : "txt"))};
     const auto last_state_info{downloadFile(url)};
     // Find sequence number
@@ -655,35 +621,29 @@ Planet::fetchDataLast(frequency_t freq, const std::string &underpass_dburl)
         log_error(_("Empty response retrieving last state from: %1%"), url);
         return std::make_shared<StateFile>();
     } else {
-        const std::string last_state_str(last_state_info->begin(),
-                                         last_state_info->end());
+        const std::string last_state_str(last_state_info->begin(), last_state_info->end());
         static const std::regex re{R"re([\s\S]*sequenceNumber=(\d+)[\s\S]*)re"};
         static const std::regex yamlre{R"re([\s\S]*sequence: (\d+)[\s\S]*)re"};
         try {
-            const long last_sequence = std::stol(std::regex_replace(
-                last_state_str, is_changeset ? yamlre : re, "$1"));
+            const long last_sequence = std::stol(std::regex_replace(last_state_str, is_changeset ? yamlre : re, "$1"));
             log_debug(_("Last sequence: %1%"), last_sequence);
             return fetchData(freq, last_sequence, underpass_dburl);
         } catch (const std::exception &ex) {
-            log_error(_("Error converting sequenceNumber to long from: %1%"),
-                      url);
+            log_error(_("Error converting sequenceNumber to long from: %1%"), url);
             return std::make_shared<StateFile>();
         }
     }
 }
 
 std::shared_ptr<StateFile>
-Planet::fetchDataFirst(frequency_t freq, const std::string &underpass_dburl,
-                       bool force_scan)
+Planet::fetchDataFirst(frequency_t freq, const std::string &underpass_dburl, bool force_scan)
 {
     const bool is_changeset{freq == frequency_t::changeset};
     std::shared_ptr<StateFile> state =
-        force_scan ? std::make_shared<StateFile>()
-                   : fetchData(freq, is_changeset ? 0 : 1, underpass_dburl);
+        force_scan ? std::make_shared<StateFile>() : fetchData(freq, is_changeset ? 0 : 1, underpass_dburl);
     // Go the hard way and scan the index
     if (!state->isValid()) {
-        const auto base_path{"/replication/" + Underpass::freq_to_string(freq) +
-                             '/'};
+        const auto base_path{"/replication/" + Underpass::freq_to_string(freq) + '/'};
         auto path{base_path};
         std::string partial_path;
         bool scanning{true};
@@ -693,74 +653,56 @@ Planet::fetchDataFirst(frequency_t freq, const std::string &underpass_dburl,
             if (links->size() > 0) {
                 const auto first_link{links->at(0)};
                 // First link is ???.osc.gz, second is the ???.state.txt that we are looking for
-                if ((first_link.rfind(".osc.gz") != std::string::npos ||
-                     first_link.rfind(".osm.gz") != std::string::npos) &&
-                    links->size() > 1 &&
-                    links->at(1).rfind(".state.txt") != std::string::npos) {
+                if ((first_link.rfind(".osc.gz") != std::string::npos || first_link.rfind(".osm.gz") != std::string::npos) &&
+                    links->size() > 1 && links->at(1).rfind(".state.txt") != std::string::npos) {
                     // Download
                     path.append(links->at(1));
                     partial_path.append(first_link.substr(0, 3));
                     const auto data{downloadFile(remote.url + path)};
                     if (data->size() == 0) {
-                        log_debug(_("FetchDataFirst download failed for: %1%"),
-                                  remote.url + path);
+                        log_debug(_("FetchDataFirst download failed for: %1%"), remote.url + path);
                     } else {
-                        const std::string tmp_string{data->begin(),
-                                                     data->end()};
+                        const std::string tmp_string{data->begin(), data->end()};
                         state = std::make_shared<StateFile>(tmp_string, true);
                         state->path = '/' + partial_path;
                         state->frequency = Underpass::freq_to_string(freq);
-                        log_debug(_("FetchDataFirst found %1% for: %2%"),
-                                  state->sequence, remote.url + path);
+                        log_debug(_("FetchDataFirst found %1% for: %2%"), state->sequence, remote.url + path);
                     }
                     scanning = false;
-                } else if (is_changeset &&
-                           first_link.rfind(".osm.gz") != std::string::npos) {
+                } else if (is_changeset && first_link.rfind(".osm.gz") != std::string::npos) {
                     // An old changeset without state file
                     path.append(links->at(0));
                     partial_path.append(first_link.substr(0, 3));
                     const auto osm_gz_full_path{remote.url + path};
                     const auto data{downloadFile(osm_gz_full_path)};
                     if (data->size() == 0) {
-                        log_debug(_("FetchDataFirst download failed for: %1%"),
-                                  osm_gz_full_path);
+                        log_debug(_("FetchDataFirst download failed for: %1%"), osm_gz_full_path);
                     } else {
                         // Extract timestamp from osm.gz
                         try {
-                            boost::iostreams::filtering_streambuf<
-                                boost::iostreams::input>
-                                inbuf;
+                            boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
                             inbuf.push(boost::iostreams::gzip_decompressor());
-                            boost::iostreams::array_source arrs{
-                                reinterpret_cast<char const *>(data->data()),
-                                data->size()};
+                            boost::iostreams::array_source arrs{reinterpret_cast<char const *>(data->data()), data->size()};
                             inbuf.push(arrs);
                             std::istream instream(&inbuf);
                             try {
                                 changeset::ChangeSetFile changeset;
                                 changeset.readXML(instream);
                                 if (changeset.changes.size() > 0) {
-                                    const auto timestamp{
-                                        changeset.changes.back()->closed_at};
+                                    const auto timestamp{changeset.changes.back()->closed_at};
                                     if (timestamp != not_a_date_time) {
                                         RemoteURL url;
                                         try {
-                                            url.parse("https://" +
-                                                      remote.domain +
-                                                      osm_gz_full_path);
-                                            state->frequency =
-                                                Underpass::freq_to_string(freq);
+                                            url.parse("https://" + remote.domain + osm_gz_full_path);
+                                            state->frequency = Underpass::freq_to_string(freq);
                                             state->sequence = url.sequence();
                                             state->path = '/' + partial_path;
                                             state->timestamp = timestamp;
                                             state->closed_at = timestamp;
-                                            state->created_at =
-                                                changeset.changes.front()
-                                                    ->created_at;
+                                            state->created_at = changeset.changes.front()->created_at;
                                             log_debug(_("FetchDataFirst found "
                                                         "%1% for: %2%"),
-                                                      state->sequence,
-                                                      osm_gz_full_path);
+                                                      state->sequence, osm_gz_full_path);
                                             scanning = false;
                                         } catch (const std::exception &ex) {
                                             log_error(_("Couldn't get sequence "
@@ -773,19 +715,15 @@ Planet::fetchDataFirst(frequency_t freq, const std::string &underpass_dburl,
                                                   osm_gz_full_path);
                                     }
                                 } else {
-                                    log_error(_("Couldn't parse empty: %1%"),
-                                              osm_gz_full_path);
+                                    log_error(_("Couldn't parse empty: %1%"), osm_gz_full_path);
                                 }
                             } catch (std::exception &e) {
-                                log_error(_("Couldn't parse: %1% %2%"),
-                                          osm_gz_full_path, e.what());
+                                log_error(_("Couldn't parse: %1% %2%"), osm_gz_full_path, e.what());
                             }
                         } catch (std::exception &e) {
                             log_error(_("%1% is corrupted!"), remote.url);
                         }
-                        log_debug(
-                            _("Timestamp extracted from osm.gz for path %1%"),
-                            path);
+                        log_debug(_("Timestamp extracted from osm.gz for path %1%"), path);
                     }
                 }
                 partial_path.append(first_link);
@@ -800,8 +738,7 @@ Planet::fetchDataFirst(frequency_t freq, const std::string &underpass_dburl,
 }
 
 std::shared_ptr<StateFile>
-Planet::fetchDataLessThan(frequency_t freq, ptime timestamp,
-                          const std::string &underpass_dburl)
+Planet::fetchDataLessThan(frequency_t freq, ptime timestamp, const std::string &underpass_dburl)
 {
     std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
     // First search in the cache
@@ -819,9 +756,7 @@ Planet::fetchDataLessThan(frequency_t freq, ptime timestamp,
 
     // Cache miss or disabled?
     if (!state->isValid()) {
-        log_debug(_("Cache miss for: %1% - %2%"),
-                  Underpass::freq_to_string(freq),
-                  to_iso_extended_string(timestamp));
+        log_debug(_("Cache miss for: %1% - %2%"), Underpass::freq_to_string(freq), to_iso_extended_string(timestamp));
         if (connectServer()) {
             state = fetchData(freq, 1, underpass_dburl);
             if (state->timestamp >= timestamp) {
@@ -837,27 +772,22 @@ Planet::fetchDataLessThan(frequency_t freq, ptime timestamp,
             }
 
         } else {
-            log_error(
-                _("Could not fetch data from URL: server is not connected!"));
+            log_error(_("Could not fetch data from URL: server is not connected!"));
         }
     } else {
-        log_debug(_("Cache hit for: %1% - %2%"),
-                  Underpass::freq_to_string(freq),
-                  to_iso_extended_string(timestamp));
+        log_debug(_("Cache hit for: %1% - %2%"), Underpass::freq_to_string(freq), to_iso_extended_string(timestamp));
     }
     return state;
 }
 
 std::shared_ptr<StateFile>
-Planet::fetchDataLessThan(frequency_t freq, long sequence,
-                          const std::string &underpass_dburl)
+Planet::fetchDataLessThan(frequency_t freq, long sequence, const std::string &underpass_dburl)
 {
     return fetchData(freq, sequence - 1, underpass_dburl);
 }
 
 std::shared_ptr<StateFile>
-Planet::fetchData(frequency_t freq, ptime timestamp,
-                  const std::string &underpass_dburl)
+Planet::fetchData(frequency_t freq, ptime timestamp, const std::string &underpass_dburl)
 {
     std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
 
@@ -895,31 +825,24 @@ Planet::fetchData(frequency_t freq, ptime timestamp,
     }
 
     // abs is missing from boost 1.70
-    const auto duration_abs = [](const time_duration &d) -> time_duration {
-        return d.is_negative() ? d.invert_sign() : d;
-    };
+    const auto duration_abs = [](const time_duration &d) -> time_duration { return d.is_negative() ? d.invert_sign() : d; };
 
     // Cache miss or disabled?
     if (!state->isValid()) {
-        log_debug(_("Cache miss for: %1% - %2%"),
-                  Underpass::freq_to_string(freq),
-                  to_iso_extended_string(timestamp));
+        log_debug(_("Cache miss for: %1% - %2%"), Underpass::freq_to_string(freq), to_iso_extended_string(timestamp));
         // We need a range for the search
-        auto greater_state{
-            fetchDataGreaterThan(freq, timestamp, underpass_dburl)};
+        auto greater_state{fetchDataGreaterThan(freq, timestamp, underpass_dburl)};
         auto lesser_state{fetchDataLessThan(freq, timestamp, underpass_dburl)};
         // Since the previous calls do not return valid states for equality
         // we need to check the boundaries
         if (!greater_state->isValid() || !lesser_state->isValid()) {
             const auto first_state{fetchDataFirst(freq, underpass_dburl)};
-            if (duration_abs(first_state->timestamp - timestamp) <
-                acceptable_delta) {
+            if (duration_abs(first_state->timestamp - timestamp) < acceptable_delta) {
                 state = first_state;
             }
             if (!state->isValid()) {
                 const auto last_state{fetchDataLast(freq, underpass_dburl)};
-                if (duration_abs(last_state->timestamp - timestamp) <
-                    acceptable_delta) {
+                if (duration_abs(last_state->timestamp - timestamp) < acceptable_delta) {
                     state = last_state;
                 }
             }
@@ -929,34 +852,22 @@ Planet::fetchData(frequency_t freq, ptime timestamp,
             long old_sequence_candidate{-1};
             long offset{0};
             while (loop_counter < 10) {
-                const auto distance_seconds{
-                    (greater_state->timestamp - lesser_state->timestamp)
-                        .total_seconds()};
-                const auto lower_end_seconds{
-                    (timestamp - lesser_state->timestamp).total_seconds()};
-                const double ratio{static_cast<double>(lower_end_seconds) /
-                                   distance_seconds};
+                const auto distance_seconds{(greater_state->timestamp - lesser_state->timestamp).total_seconds()};
+                const auto lower_end_seconds{(timestamp - lesser_state->timestamp).total_seconds()};
+                const double ratio{static_cast<double>(lower_end_seconds) / distance_seconds};
                 long sequence_candidate{static_cast<long>(
-                    lesser_state->sequence +
-                    std::max<long>(
-                        1, (greater_state->sequence - lesser_state->sequence) *
-                               ratio))};
+                    lesser_state->sequence + std::max<long>(1, (greater_state->sequence - lesser_state->sequence) * ratio))};
                 // Here comes the fun part, sometimes the sequence number for
                 // changesets is off by one, so we cannot really exit here
-                if (offset < 1 &&
-                    sequence_candidate == old_sequence_candidate) {
+                if (offset < 1 && sequence_candidate == old_sequence_candidate) {
                     offset++;
                     sequence_candidate++;
                 }
                 if (sequence_candidate != old_sequence_candidate) {
                     old_sequence_candidate = sequence_candidate;
-                    const auto candidate{
-                        fetchData(freq, sequence_candidate, underpass_dburl)};
-                    log_debug(
-                        _("Checking candidate for %1% (loop: %2%) %3% - %4%"),
-                        to_iso_extended_string(timestamp), loop_counter,
-                        to_iso_extended_string(candidate->timestamp),
-                        candidate->sequence);
+                    const auto candidate{fetchData(freq, sequence_candidate, underpass_dburl)};
+                    log_debug(_("Checking candidate for %1% (loop: %2%) %3% - %4%"), to_iso_extended_string(timestamp),
+                              loop_counter, to_iso_extended_string(candidate->timestamp), candidate->sequence);
                     if (!candidate->isValid()) {
                         log_debug(_("No valid state for timestamp: %1% - "
                                     "candidate is not valid."),
@@ -964,13 +875,11 @@ Planet::fetchData(frequency_t freq, ptime timestamp,
                         loop_counter = 10;
                     } else {
                         // Check if it is within time range
-                        if (duration_abs(candidate->timestamp - timestamp) <
-                                acceptable_delta &&
+                        if (duration_abs(candidate->timestamp - timestamp) < acceptable_delta &&
                             candidate->timestamp >= timestamp) {
                             log_debug(_("State found for timestamp: %1% - "
                                         "loops: %2%."),
-                                      to_iso_extended_string(timestamp),
-                                      loop_counter);
+                                      to_iso_extended_string(timestamp), loop_counter);
                             state = candidate;
                             loop_counter = 10;
                         } else if (candidate->timestamp < timestamp) {
@@ -989,30 +898,24 @@ Planet::fetchData(frequency_t freq, ptime timestamp,
             } // loop end
         }
     } else {
-        log_debug(_("Cache hit for: %1% - %2%"),
-                  Underpass::freq_to_string(freq),
-                  to_iso_extended_string(timestamp));
+        log_debug(_("Cache hit for: %1% - %2%"), Underpass::freq_to_string(freq), to_iso_extended_string(timestamp));
     }
 
     if (!state->isValid()) {
-        log_debug(_("No valid state for timestamp: %1%."),
-                  to_iso_extended_string(timestamp));
+        log_debug(_("No valid state for timestamp: %1%."), to_iso_extended_string(timestamp));
     } else {
         // We need to make sure that there isn't a closer match within the freq acceptable_delta
         const auto previous_candidate{fetchData(freq, state->sequence - 1)};
-        if (previous_candidate->isValid() &&
-            previous_candidate->timestamp >= timestamp) {
+        if (previous_candidate->isValid() && previous_candidate->timestamp >= timestamp) {
             state = previous_candidate;
-            log_debug(_("Previous state found for timestamp %1% : %2%."),
-                      to_iso_extended_string(timestamp), state->sequence);
+            log_debug(_("Previous state found for timestamp %1% : %2%."), to_iso_extended_string(timestamp), state->sequence);
         }
     }
     return state;
 }
 
 std::shared_ptr<StateFile>
-Planet::fetchData(frequency_t freq, long sequence,
-                  const std::string &underpass_dburl)
+Planet::fetchData(frequency_t freq, long sequence, const std::string &underpass_dburl)
 {
     std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
     if (sequence < (freq == frequency_t::changeset ? 0 : 1)) {
@@ -1037,15 +940,13 @@ Planet::fetchData(frequency_t freq, long sequence,
     }
     // Cache miss or disabled?
     if (!state->isValid()) {
-        log_debug(_("Cache miss for: %1% - sequence: %2%"),
-                  Underpass::freq_to_string(freq), sequence);
+        log_debug(_("Cache miss for: %1% - sequence: %2%"), Underpass::freq_to_string(freq), sequence);
         if (connectServer()) {
             state = fetchData(freq, sequenceToPath(sequence), underpass_dburl);
             // Might be off by one on changesets
             if (state->sequence == sequence - 1) {
                 log_debug(_("Offsetting +1 sequence: %1%"), sequence);
-                state = fetchData(freq, sequenceToPath(sequence + 1),
-                                  underpass_dburl);
+                state = fetchData(freq, sequenceToPath(sequence + 1), underpass_dburl);
             }
             if (state->isValid()) {
                 if (use_cache) {
@@ -1055,31 +956,26 @@ Planet::fetchData(frequency_t freq, long sequence,
                     }
                 }
             } else {
-                log_error(_("Invalid state fetched for sequence: %1%"),
-                          sequence);
+                log_error(_("Invalid state fetched for sequence: %1%"), sequence);
             }
 
         } else {
-            log_error(
-                _("Could not fetch data from URL: server is not connected!"));
+            log_error(_("Could not fetch data from URL: server is not connected!"));
         }
     } else {
-        log_debug(_("Cache hit for: %1% - sequence: %2%"),
-                  Underpass::freq_to_string(freq), sequence);
+        log_debug(_("Cache hit for: %1% - sequence: %2%"), Underpass::freq_to_string(freq), sequence);
     }
     return state;
 }
 
 std::shared_ptr<StateFile>
-Planet::fetchDataGreaterThan(frequency_t freq, long sequence,
-                             const std::string &underpass_dburl)
+Planet::fetchDataGreaterThan(frequency_t freq, long sequence, const std::string &underpass_dburl)
 {
     return fetchData(freq, sequence + 1, underpass_dburl);
 }
 
 std::shared_ptr<StateFile>
-Planet::fetchDataGreaterThan(frequency_t freq, ptime timestamp,
-                             const std::string &underpass_dburl)
+Planet::fetchDataGreaterThan(frequency_t freq, ptime timestamp, const std::string &underpass_dburl)
 {
     std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
     // First search in the cache
@@ -1098,9 +994,7 @@ Planet::fetchDataGreaterThan(frequency_t freq, ptime timestamp,
 
     // Cache miss or disabled?
     if (!state->isValid()) {
-        log_debug(_("Cache miss for: %1% - %2%"),
-                  Underpass::freq_to_string(freq),
-                  to_iso_extended_string(timestamp));
+        log_debug(_("Cache miss for: %1% - %2%"), Underpass::freq_to_string(freq), to_iso_extended_string(timestamp));
         if (connectServer()) {
             state = fetchDataLast(freq, underpass_dburl);
             if (state->timestamp <= timestamp) {
@@ -1116,20 +1010,15 @@ Planet::fetchDataGreaterThan(frequency_t freq, ptime timestamp,
             }
 
         } else {
-            log_error(
-                _("Could not fetch data from URL: server is not connected!"));
+            log_error(_("Could not fetch data from URL: server is not connected!"));
         }
     } else {
-        log_debug(_("Cache hit for: %1% - %2%"),
-                  Underpass::freq_to_string(freq),
-                  to_iso_extended_string(timestamp));
+        log_debug(_("Cache hit for: %1% - %2%"), Underpass::freq_to_string(freq), to_iso_extended_string(timestamp));
     }
     return state;
 }
 
-RemoteURL::RemoteURL(void) : major(0), minor(0), index(0), frequency(minutely)
-{
-}
+RemoteURL::RemoteURL(void) : major(0), minor(0), index(0), frequency(minutely) {}
 
 void
 RemoteURL::parse(const std::string &rurl)

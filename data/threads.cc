@@ -355,13 +355,10 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
                 std::cerr << e.what() << std::endl;
             }
 
-            // TODO: Start own thread to update pgsql DB
-            if (!changes_xml.str().empty()) {
-                if (o2pgsql.isOpen()) {
-                    o2pgsql.updateDatabase(changes_xml.str());
-                } else {
-                    log_debug(_("osm2pgsql DB is closed, couldn't store changes!"));
-                }
+            if (o2pgsql.isOpen()) {
+                o2pgsql.updateDatabase(osmchanges);
+            } else {
+                log_debug(_("osm2pgsql DB is closed, couldn't store changes!"));
             }
 
         } catch (std::exception &e) {

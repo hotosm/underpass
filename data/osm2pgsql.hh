@@ -114,8 +114,9 @@ class Osm2Pgsql : public pq::Pq {
     bool getLastUpdateFromDb();
 
     struct Polygon {
+        Polygon() = default;
         Polygon(long outer_ring) : outer(outer_ring){};
-        long outer;
+        long outer = std::numeric_limits<long>::lowest();
         std::string inner;
         long id = std::numeric_limits<long>::lowest();
     };
@@ -125,8 +126,8 @@ class Osm2Pgsql : public pq::Pq {
         std::string tag_field_names;
         std::string tag_field_values;
         std::string tag_field_updates;
-        std::string tags_hstore_literal{"'"};
-        std::string tags_array_literal{"'{"};
+        std::string tags_hstore_literal{"E'"};
+        std::string tags_array_literal{"E'{"};
 
         bool is_road = false;
         bool is_polygon = false;

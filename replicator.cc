@@ -100,15 +100,11 @@ operator<<(std::ostream &os, const std::vector<T> &v)
 class Replicator : public replication::Replication {
   public:
     /// Create a new instance, and read in the geoboundaries file.
-    Replicator(void)
-    {
-        auto hashes = std::make_shared<std::map<std::string, int>>();
-    };
+    Replicator(void) { auto hashes = std::make_shared<std::map<std::string, int>>(); };
 
     /// Initialize the raw_user, raw_hashtags, and raw_changeset tables
     /// in the OSM stats database from a changeset file
-    bool initializeRaw(std::vector<std::string> &rawfile,
-                       const std::string &database)
+    bool initializeRaw(std::vector<std::string> &rawfile, const std::string &database)
     {
         for (auto it = std::begin(rawfile); it != std::end(rawfile); ++it) {
             changes->importChanges(*it);
@@ -163,8 +159,7 @@ class Replicator : public replication::Replication {
     //    std::string baseurl;                                ///< base URL for
     //    the planet server
   private:
-    std::shared_ptr<changeset::ChangeSetFile>
-        changes; ///< All the changes in the file
+    std::shared_ptr<changeset::ChangeSetFile> changes;  ///< All the changes in the file
     std::shared_ptr<std::map<std::string, int>> hashes; ///< Existing hashtags
 };
 
@@ -201,7 +196,7 @@ main(int argc, char *argv[])
                                                      "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
             ("upserver", opts::value<std::string>(), "Underpass database server for internal use (defaults to localhost/underpass), "
                                                      "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
-            ("osm2pgsqlserver", opts::value<std::string>(), "Osm2pgsql database server (defaults to localhost/osm2pgsql), "
+            ("osm2pgsqlserver", opts::value<std::string>(), "Osm2pgsql database server (defaults to an empty string), "
                                                      "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
             ("tmusersfrequency", opts::value<std::string>(), "Frequency in seconds for the Tasking Manager database users "
                                                              "synchronization: -1 (disabled), 0 (single shot), > 0 (interval in seconds)")
@@ -219,11 +214,7 @@ main(int argc, char *argv[])
             ("debug,d", "Enable debug messages for developers");
         // clang-format on
 
-        opts::store(opts::command_line_parser(argc, argv)
-                        .options(desc)
-                        .positional(p)
-                        .run(),
-                    vm);
+        opts::store(opts::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
         opts::notify(vm);
 
         if (vm.count("help")) {
@@ -262,8 +253,7 @@ main(int argc, char *argv[])
 
     // Osm2pgsql options
     if (vm.count("osm2pgsqlserver")) {
-        replicator_config.osm2pgsql_db_url =
-            vm["osm2pgsqlserver"].as<std::string>();
+        replicator_config.osm2pgsql_db_url = vm["osm2pgsqlserver"].as<std::string>();
     }
 
     // Underpass DB for internal use
@@ -281,15 +271,13 @@ main(int argc, char *argv[])
         }
 
         if (boost::algorithm::ends_with(replicator_config.planet_server, "/")) {
-            replicator_config.planet_server.resize(
-                replicator_config.planet_server.size() - 1);
+            replicator_config.planet_server.resize(replicator_config.planet_server.size() - 1);
         }
     }
 
     // TM users options
     if (vm.count("tmserver")) {
-        replicator_config.taskingmanager_db_url =
-            vm["tmserver"].as<std::string>();
+        replicator_config.taskingmanager_db_url = vm["tmserver"].as<std::string>();
     }
 
     if (vm.count("tmusersfrequency")) {
@@ -339,12 +327,9 @@ main(int argc, char *argv[])
         delete ptr;
     };
 
-    std::unique_ptr<std::thread, decltype(stopTmUserSyncMonitor)>
-        tmUserSyncMonitorThread(nullptr, stopTmUserSyncMonitor);
+    std::unique_ptr<std::thread, decltype(stopTmUserSyncMonitor)> tmUserSyncMonitorThread(nullptr, stopTmUserSyncMonitor);
     if (replicator_config.taskingmanager_users_update_frequency >= 0) {
-        tmUserSyncMonitorThread.reset(
-            new std::thread(threads::threadTMUsersSync,
-                            std::ref(tmUserSyncIsActive), replicator_config));
+        tmUserSyncMonitorThread.reset(new std::thread(threads::threadTMUsersSync, std::ref(tmUserSyncIsActive), replicator_config));
     }
 
     // End of Tasking Manager user sync setup
@@ -358,8 +343,7 @@ main(int argc, char *argv[])
         changeset->areaFilter(geou.boundary);
         osmstats::QueryOSMStats ostats;
         if (ostats.connect(replicator_config.osmstats_db_url)) {
-            for (auto it = std::begin(changeset->changes);
-                 it != std::end(changeset->changes); ++it) {
+            for (auto it = std::begin(changeset->changes); it != std::end(changeset->changes); ++it) {
                 ostats.applyChange(*it->get());
             }
         } else {
@@ -381,8 +365,7 @@ main(int argc, char *argv[])
     }
 
     // Make sure the path starts with a slash
-    if (!replicator_config.starting_url_path.empty() &&
-        replicator_config.starting_url_path[0] != '/') {
+    if (!replicator_config.starting_url_path.empty() && replicator_config.starting_url_path[0] != '/') {
         replicator_config.starting_url_path.insert(0, 1, '/');
     }
 
@@ -409,10 +392,8 @@ main(int argc, char *argv[])
         }
     }
 
-    const std::string fullurl{
-        replicator_config.planet_server + "/" + datadir +
-        Underpass::freq_to_string(replicator_config.frequency) +
-        replicator_config.starting_url_path};
+    const std::string fullurl{replicator_config.planet_server + "/" + datadir +
+                              Underpass::freq_to_string(replicator_config.frequency) + replicator_config.starting_url_path};
     replication::RemoteURL remote(fullurl);
     //     remote.dump();
     // Specify a timestamp used by other options
@@ -439,8 +420,7 @@ main(int argc, char *argv[])
     std::string clast;
 
     if (vm.count("monitor")) {
-        if (starttime.is_not_a_date_time() &&
-            replicator_config.starting_url_path.size() == 0) {
+        if (starttime.is_not_a_date_time() && replicator_config.starting_url_path.size() == 0) {
             log_error("ERROR: You need to supply either a timestamp or URL!");
             //         if (timestamp.is_not_a_date_time()) {
             //             timestamp = ostats.getLastUpdate();
@@ -455,42 +435,34 @@ main(int argc, char *argv[])
         if (!replicator_config.starting_url_path.empty()) {
 
             // remote.dump();
-            osmchanges_updates_thread = std::thread(
-                threads::startMonitor, std::ref(remote),
-                std::ref(geou.boundary), std::ref(replicator_config));
+            osmchanges_updates_thread =
+                std::thread(threads::startMonitor, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
 
-            auto state = planet.fetchData(replicator_config.frequency,
-                                          replicator_config.starting_url_path,
+            auto state = planet.fetchData(replicator_config.frequency, replicator_config.starting_url_path,
                                           replicator_config.underpass_db_url);
 
             if (!state->isValid()) {
-                std::cerr << "ERROR: Invalid state from path!"
-                          << replicator_config.starting_url_path << std::endl;
+                std::cerr << "ERROR: Invalid state from path!" << replicator_config.starting_url_path << std::endl;
                 exit(-1);
             }
 
-            auto state2 = planet.fetchData(replication::changeset, state->timestamp,
-                                 replicator_config.underpass_db_url);
+            auto state2 = planet.fetchData(replication::changeset, state->timestamp, replicator_config.underpass_db_url);
             if (!state2->isValid()) {
                 std::cerr << "ERROR: No changeset path!" << std::endl;
                 exit(-1);
             }
 
             state2->dump();
-            clast = replicator_config.planet_server + "/" + datadir +
-                    "changesets/" + state2->path;
+            clast = replicator_config.planet_server + "/" + datadir + "changesets" + state2->path;
             remote.parse(clast);
             // remote.dump();
-            changesets_thread = std::thread(
-                threads::startMonitor, std::ref(remote),
-                std::ref(geou.boundary), std::ref(replicator_config));
+            changesets_thread =
+                std::thread(threads::startMonitor, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
         } else if (!starttime.is_not_a_date_time()) {
             // No URL, use the timestamp
             auto state = under.getState(replicator_config.frequency, starttime);
             if (state->isValid()) {
-                auto tmp =
-                    planet.fetchData(replicator_config.frequency, starttime,
-                                     replicator_config.underpass_db_url);
+                auto tmp = planet.fetchData(replicator_config.frequency, starttime, replicator_config.underpass_db_url);
                 if (tmp->path.empty()) {
                     std::cerr << "ERROR: No last path!" << std::endl;
                     exit(-1);
@@ -502,8 +474,7 @@ main(int argc, char *argv[])
                 // last = replicator.baseurl + under.freq_to_string(frequency) +
                 // "/" + state->path;
             }
-            log_debug(_("Last minutely is "),
-                      replicator_config.starting_url_path);
+            log_debug(_("Last minutely is "), replicator_config.starting_url_path);
             // mthread = std::thread(threads::startMonitor, std::ref(remote));
         }
 
