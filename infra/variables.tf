@@ -19,7 +19,7 @@ variable "ssh_key_pair_name" {
 
 variable "database_instance_type" {
   type    = string
-  default = "db.t3.micro"
+  default = "db.t4g.micro"
 }
 
 variable "database_engine_version" {
