@@ -259,7 +259,7 @@ resource "aws_db_instance" "underpass" {
   final_snapshot_identifier = var.database_final_snapshot_identifier
 
   tags = {
-    name = "underpass"
+    Name = "underpass"
     Role = "Database server"
   }
 }
