@@ -291,11 +291,15 @@ Planet::downloadFile(const std::string &url)
     // Look up the domain name
     auto const results = resolver.resolve(remote.domain, std::to_string(port));
 
-    // Make the connection on the IP address we get from a lookup
-    boost::asio::connect(stream.next_layer(), results.begin(), results.end());
-
-    // Perform the SSL handshake
-    stream.handshake(ssl::stream_base::client);
+    try {
+        // Make the connection on the IP address we get from a lookup
+        boost::asio::connect(stream.next_layer(), results.begin(), results.end());
+        // Perform the SSL handshake
+        stream.handshake(ssl::stream_base::client);
+    } catch (boost::system::system_error ex) {
+        log_error(_("stream write failed: %1%"), ex.what());
+        return data;
+    }
 
     // Set up an HTTP GET request message
     http::request<http::string_body> req{http::verb::get, url, version};
