@@ -96,13 +96,53 @@ class Osm2Pgsql : public pq::Pq {
     ///
     bool updateDatabase(const std::shared_ptr<OsmChangeFile> &osm_changes) const;
 
+    ///
+    /// \brief upsertWay inserts or updates a way in the osm2pgsql DB.
+    /// \param way the way that will be inserted or updated.
+    /// \return TRUE on success, errors are logged.
+    ///
     bool upsertWay(const std::shared_ptr<osmobjects::OsmWay> &way) const;
+
+    ///
+    /// \brief upsertNode inserts or updates a node in the osm2pgsql DB.
+    /// \param node the node that will be inserted or updated.
+    /// \return TRUE on success, errors are logged.
+    ///
     bool upsertNode(const std::shared_ptr<osmobjects::OsmNode> &node) const;
+
+    ///
+    /// \brief upsertRelation inserts or updates a relation in the osm2pgsql DB.
+    /// \param relation the relation that will be inserted or updated.
+    /// \return TRUE on success, errors are logged.
+    ///
     bool upsertRelation(const std::shared_ptr<osmobjects::OsmRelation> &relation) const;
+
+    ///
+    /// \brief removeWay removes a way from the osm2pgsql DB.
+    /// \param way to be removed.
+    /// \return TRUE on success, errors are logged.
+    ///
     bool removeWay(const std::shared_ptr<osmobjects::OsmWay> &way) const;
+
+    ///
+    /// \brief removeNode removes a node from the osm2pgsql DB.
+    /// \param node to be removed.
+    /// \return TRUE on success, errors are logged.
+    ///
     bool removeNode(const std::shared_ptr<osmobjects::OsmNode> &node) const;
+
+    ///
+    /// \brief removeRelation removes a relation from the osm2pgsql DB.
+    /// \param relation to be removed.
+    /// \return TRUE on success, errors are logged.
+    ///
     bool removeRelation(const std::shared_ptr<osmobjects::OsmRelation> &relation) const;
 
+    ///
+    /// \brief connects to the DB using \a dburl
+    /// \param dburl the connection string to the DB.
+    /// \return TRUE on success.
+    ///
     bool connect(const std::string &dburl);
 
     ///

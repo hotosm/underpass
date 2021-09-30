@@ -563,6 +563,9 @@ bool
 Osm2Pgsql::upsertRelation(const std::shared_ptr<osmobjects::OsmRelation> &relation) const
 {
 
+    // Preconditions
+    assert(static_cast<bool>(sdb));
+
     pqxx::nontransaction worker(*sdb);
 
     TagParser parser;
@@ -767,6 +770,37 @@ Osm2Pgsql::removeWay(const std::shared_ptr<osmobjects::OsmWay> &way) const
     // Preconditions
     assert(static_cast<bool>(sdb));
 
+    // delete from middle table
+    const std::string middle_sql{str(format(R"sql(
+  DELETE FROM %1%.planet_osm_ways WHERE id = $1
+  )sql") % schema)};
+
+    // Delete from roads
+    const std::string roads_sql{str(format(R"sql(
+  DELETE FROM %1%.planet_osm_roads WHERE osm_id = $1
+  )sql") % schema)};
+
+    // Delete from lines
+    const std::string line_sql{str(format(R"sql(
+  DELETE FROM %1%.planet_osm_line WHERE osm_id = $1
+  )sql") % schema)};
+
+    // Delete from polygons
+    const std::string polygon_sql{str(format(R"sql(
+  DELETE FROM %1%.planet_osm_polygon WHERE osm_id = $1
+  )sql") % schema)};
+
+    try {
+        pqxx::work worker(*sdb);
+        worker.exec_params0(middle_sql, way->id);
+        worker.exec_params0(roads_sql, way->id);
+        worker.exec_params0(line_sql, way->id);
+        worker.exec_params0(polygon_sql, way->id);
+        worker.commit();
+    } catch (const std::exception &ex) {
+        log_error(_("Couldn't remove way record: %1%"), ex.what());
+        return false;
+    }
     return true;
 }
 
@@ -776,18 +810,18 @@ Osm2Pgsql::removeNode(const std::shared_ptr<osmobjects::OsmNode> &node) const
     // Preconditions
     assert(static_cast<bool>(sdb));
 
-    // upsert in middle nodes table
+    // delete from middle nodes table
     const std::string middle_sql{str(format(R"sql(
   DELETE FROM %1%.planet_osm_nodes WHERE id = $1
   )sql") % schema)};
-    // upsert in point table
+    // delete from point table
     const std::string sql{str(format(R"sql(
   DELETE FROM %1%.planet_osm_point WHERE osm_id = $1
   )sql") % schema)};
     try {
         pqxx::work worker(*sdb);
-        worker.exec_params(middle_sql, node->id);
-        worker.exec_params(sql, node->id);
+        worker.exec_params0(middle_sql, node->id);
+        worker.exec_params0(sql, node->id);
         worker.commit();
     } catch (const std::exception &ex) {
         log_error(_("Couldn't remove node record: %1%"), ex.what());
@@ -799,6 +833,28 @@ Osm2Pgsql::removeNode(const std::shared_ptr<osmobjects::OsmNode> &node) const
 bool
 Osm2Pgsql::removeRelation(const std::shared_ptr<osmobjects::OsmRelation> &relation) const
 {
+    // Preconditions
+    assert(static_cast<bool>(sdb));
+
+    // delete from middle table
+    const std::string middle_sql{str(format(R"sql(
+  DELETE FROM %1%.planet_osm_rels WHERE id = $1
+  )sql") % schema)};
+
+    // Delete from multi polygons
+    const std::string polygon_sql{str(format(R"sql(
+  DELETE FROM %1%.planet_osm_polygon WHERE osm_id = -%2%
+  )sql") % schema % relation->id)};
+
+    try {
+        pqxx::work worker(*sdb);
+        worker.exec_params0(middle_sql, relation->id);
+        worker.exec0(polygon_sql);
+        worker.commit();
+    } catch (const std::exception &ex) {
+        log_error(_("Couldn't remove relation record: %1%"), ex.what());
+        return false;
+    }
     return true;
 }
 

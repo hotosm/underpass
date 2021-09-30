@@ -42,23 +42,23 @@ using namespace boost::filesystem;
 
 TestState runtest;
 
-#define VERIFY(condition, message)                                                                                                 \
-    if (condition) {                                                                                                               \
-        runtest.pass(message);                                                                                                     \
-    } else {                                                                                                                       \
-        runtest.fail(message);                                                                                                     \
-        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__ << std::endl;                                                   \
-        exit(EXIT_FAILURE);                                                                                                        \
+#define VERIFY(condition, message)                                               \
+    if (condition) {                                                             \
+        runtest.pass(message);                                                   \
+    } else {                                                                     \
+        runtest.fail(message);                                                   \
+        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__ << std::endl; \
+        exit(EXIT_FAILURE);                                                      \
     }
 
-#define COMPARE(first, second, message)                                                                                            \
-    if (first == second) {                                                                                                         \
-        runtest.pass(message);                                                                                                     \
-    } else {                                                                                                                       \
-        runtest.fail(message);                                                                                                     \
-        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__ << std::endl;                                                   \
-        std::cerr << "Values are not equal: " << first << " != " << second << std::endl;                                           \
-        exit(EXIT_FAILURE);                                                                                                        \
+#define COMPARE(first, second, message)                                                  \
+    if (first == second) {                                                               \
+        runtest.pass(message);                                                           \
+    } else {                                                                             \
+        runtest.fail(message);                                                           \
+        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__ << std::endl;         \
+        std::cerr << "Values are not equal: " << first << " != " << second << std::endl; \
+        exit(EXIT_FAILURE);                                                              \
     }
 
 class TestOsm2Pgsql : public Osm2Pgsql {
@@ -320,5 +320,31 @@ main(int argc, char *argv[])
 
         COMPARE(results.at(0)["way_area"].as(double()), 0.09065,
                 "Osm2Pgsql::updateDatabase() - verify changed multipolygon way_area");
+
+        // Test way 8 deleted
+        results = testosm2pgsql.query("SELECT * FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                      ".planet_osm_polygon WHERE osm_id = 8");
+        COMPARE(results.size(), 0,
+                "Osm2Pgsql::updateDatabase() - verify way was deleted from polygon");
+
+        results = testosm2pgsql.query("SELECT * FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                      ".planet_osm_ways WHERE id = 8");
+        COMPARE(results.size(), 0,
+                "Osm2Pgsql::updateDatabase() - verify way was deleted from ways");
+
+        // Test that relation 1 and its multipolygon are gone
+        results = testosm2pgsql.query("SELECT * FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                      ".planet_osm_polygon WHERE osm_id = -1");
+        COMPARE(results.size(), 0,
+                "Osm2Pgsql::updateDatabase() - verify relation was deleted from rels");
+
+        results = testosm2pgsql.query("SELECT * FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                      ".planet_osm_rels WHERE id = 1");
+        COMPARE(results.size(), 0,
+                "Osm2Pgsql::updateDatabase() - verify multipolygon was deleted from polygon");
     }
 }
