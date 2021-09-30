@@ -261,10 +261,13 @@ AM_GNU_GETTEXT([external])
 AM_CONDITIONAL([HAS_GETTEXT], [test x"$gt_use_preinstalled_gnugettext" != x"no"])
 AC_SUBST([POMAKEFILEDEPS])
 
+SRCDIR=${srcdir}
+AC_SUBST(SRCDIR)
+
 AC_CONFIG_FILES([
-validate/Makefile
 Makefile
 doc/Doxyfile
+validate/Makefile
 testsuite/Makefile
 testsuite/libunderpass.all/Makefile
 redhat/underpass.spec
