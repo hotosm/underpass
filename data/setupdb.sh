@@ -38,41 +38,21 @@ EOF
 dropdb="yes"
 datahost="https://www.senecass.com/projects/Mapping/underpass/"
 
+# This file is created at install time with all the database
+# connection parameters
 if test -e /etc/default/underpass; then
     . /etc/default/underpass
-    dbhost="${PGHOST}"
-    dbuser="${PGUSER}"
-    dbpass="${PGPASSWORD}"
-else 
-    dbhost="localhost"
-    dbuser="postgres"
-    dbpass=""
 fi
 
-OPTS="`getopt -o hu:s:p:r,d: -l help,dbuser:,dbpasswd:,dbserver:,recreate,datahost:`"
+OPTS="`getopt -o hu:s:p:r,d: -l help,recreate`"
 while test $# -gt 0; do
     case $1 in
-	-s|--dbserver) dbhost=$2;;
-	-u|--dbuser) dbuser=$2;;
-	-p|--dbpasswd) dbpass=$2 ;;
 	-r|--recreate) dropdb="yes" ;;
-	-d|--datahost) datahost=$2 ;;
         -h|--help) usage ;;
         --) break ;;
     esac
     shift
 done
-
-if test x"${dbhost}" = x"localhost"; then
-    host=""
-else
-    host="--host=${dbhost}"
-fi
-if test x"${dbuser}" != x"postgres" -a x"${dbuser}" != x"root"; then
-    user="--username=${dbuser}"
-else
-    user=""
-fi
 
 if test $(grep -c postgres /etc/passwd) -eq 0; then
     echo "You need to install postgresql-all to create the databases"
@@ -81,69 +61,90 @@ if test $(grep -c postgres /etc/passwd) -eq 0; then
 fi
 
 # Create the user account
-sudo -u postgres createuser --createdb underpass
+sudo -u postgres createuser --createdb ${OSMSTATS_DBUSER}
 if test $? -gt 1; then
-    echo "WARNING: createuser ${dbuser} failed!"
+    echo "WARNING: createuser ${OSMSTATS_DBUSER} failed!"
 fi
-sudo -u postgres psql -c "ALTER USER ${dbuser} WITH PASSWORD \'${dbpass}\'" >& /dev/null
+sudo -u postgres psql -c "ALTER USER ${OSMSTATS_DBPASS} WITH PASSWORD \'${OSMSTATS_DBPASS}\'" >& /dev/null
 
 # Note that the user running this script must have the right permissions.
 
-databases="underpass pgsnapshot osmstats"
 
-for dbname in ${databases}; do
-    echo "Setting up database ${dbname}..."
-    if test x"${dropdb}" = x"yes"; then
-	sudo -u postgres dropdb ${host} --if-exists ${dbname} >& /dev/null
+echo -n "Replace current authentication defaults (default yes)? "
+read tmp
+if test x"${tmp}" != x -a x"${tmp}" = x"no"; then
+    exit
+fi
+
+# The prefix for the database connection parameter environment variables
+dbs="OSMSTATS UNDERPASS"
+dbs="OSMSTATS"
+
+databases="underpass osmstats"
+extensions="hstore postgis fuzzymatch"
+
+for config in ${dbs}; do
+    dbname=$(eval "echo \$$(echo ${config}_DBNAME)")
+    dbhost=$(eval "echo \$$(echo ${config}_DBHOST)")
+    dbuser=$(eval "echo \$$(echo ${config}_DBUSER)")
+    dbpass=$(eval "echo \$$(echo ${config}_DBPASS)")
+    if test x"${dbhost}" != x"localhost" -a x"${dbhost}" != x; then
+	host="--host=${dbhost}"
+    else
+	host=""
     fi
+    if test x"${dbuser}" != x; then
+	dbuser="--username=${dbuser}"
+    fi
+
+    echo "Setting up database ${dbname}..."
+    sudo -u postgres dropdb ${host} --if-exists ${dbname} >& /dev/null
     exists="`psql ${host} ${user} -l | grep -c ${dbname}`"
     # exists=0
     if test "${exists}" -eq 0; then
-	echo "Creating postgresql database ${dbname}"
-	sudo -u postgres createdb ${host} -T template0 -O ${dbuser} ${dbname} >& /dev/null
+	echo "Creating postgresql database ${OSMSTATS_DBNAME}"
+	sudo -u postgres createdb ${host} -T template0 -O ${OSMSTATS_DBUSER} ${OSMSTATS_DBNAME} >& /dev/null
 	if test $? -gt 1; then
 	    echo "WARNING: createdb ${dbname} failed!"
 	    exit
 	fi
-	sudo -u postgres psql ${host} -d ${dbname} ${user} -c 'create extension hstore;' >& /dev/null
-	if test $? -gt 2; then
-	    echo "ERROR: couldn't add hstore extension!"
-	    exit
-	fi
-	sudo -u ${user} psql ${host} -d ${dbname} ${user} -c 'create extension postgis;' >& /dev/null
-	if test $? -gt 2; then
-	    echo "ERROR: couldn't add postgis extension!"
-	    exit
-	fi
-	sudo -u postgres psql ${host} -d ${dbname} ${user} -c 'create extension fuzzystrmatch;' >& /dev/null
-	if test $? -gt 2; then
-	    echo "ERROR: couldn't add fuzzystrmatch extension!"
-	    exit
-	fi
-	# Populate the database with data
-	sudo -u postgres psql ${host} -d ${dbname} -f /usr/share/underpass/${dbname}.sql
-	if test $? -gt 2; then
-	    echo "ERROR: couldn't add fuzzystrmatch extension!"
-	    exit
-	fi
+	for ext in ${extensions}; do
+	    sudo -u postgres psql ${host} -d ${dbname} ${user} -c "CREATE EXTENSION ${ext};" >& /dev/null
+	    if test $? -gt 2; then
+		echo "ERROR: couldn't add ${ext} extension!"
+		exit
+	    fi
+	done
     else
 	echo "Postgresql database ${dbname} already exists, not creating."
     fi
 done
 
-if test x"$opts{'datahost']" = x; then
-    echo -n "Do you want to download bootstrap data ? Files may be large: "
-    read tmp
-    if test x"${tmp}" = x -a x"${tmp}" != x"no"; then
-	for dbname in ${databases}; do
-	    echo "Downloading bootstrap data for database ${dbname}..."
-	    url="https://$opts{'datahost']/underpass/${dbname}.sql.bz2"
-	    wget -c --directory /tmp/ ${url}
-	    if test $? > 0; then
-		echo "ERROR: Couldn't download ${url}!"
-	    fi
-	done
-	bunzip /tmp/${dbname}.sql
-	sudo -u postgres psql ${host} -d ${dbname} ${user} -f /tmp/${dbname}.sql
-    fi
+sudo -u postgres psql ${host} -d ${OSMSTATS_DBNAME} --username ${OSMSTATS_DBUSER} -f /usr/share/underpass/osmstats.sql >& /dev/null
+if test $? -gt 2; then
+    echo "ERROR: couldn't create statistics database schema for Galaxy!"
+    exit
 fi
+
+echo sudo -u postgres psql ${host} -d ${UNDERPASS_DBNAME}  --username ${UNDERPASS_DBUSER} -f /usr/share/underpass/underpass.sql >& /dev/null
+if test $? -gt 2; then
+    echo "ERROR: couldn't create database schema for Underpass!"
+    exit
+fi
+
+# if test x"$opts{'datahost']" = x; then
+#     echo -n "Do you want to download bootstrap data ? Files may be large: "
+#     read tmp
+#     if test x"${tmp}" = x -a x"${tmp}" != x"no"; then
+# 	for dbname in ${databases}; do
+# 	    echo "Downloading bootstrap data for database ${dbname}..."
+# 	    url="https://$opts{'datahost']/underpass/${dbname}.sql.bz2"
+# 	    wget -c --directory /tmp/ ${url}
+# 	    if test $? > 0; then
+# 		echo "ERROR: Couldn't download ${url}!"
+# 	    fi
+# 	done
+# 	bunzip /tmp/${dbname}.sql
+# 	sudo -u postgres psql ${host} -d ${dbname} ${user} -f /tmp/${dbname}.sql
+#     fi
+# fi
