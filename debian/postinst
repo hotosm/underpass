@@ -19,59 +19,117 @@
 
 set -e
 
-dbhost="localhost"
-dbuser="underpass"
-dbpass="galaxy"
+# Note that these are just placeholders, and should be changes at either
+# configure time, or edit /etc/default/underpass
+
+# More user friendly strings for the prompt
+declare -Ag names
+names['dbhost']="Database hostname"
+names['dbuser']="Database User name"
+names['dbpass']="Database password"
+names['dbname']="Database Name"
+
+prompt()
+{
+    eval $1
+    echo "Database configuration for ${config['title']} "
+    echo "# Database configuration for ${config['title']}" >> /etc/default/underpass
+
+    for i in ${!config[@]}; do
+	if test x"$i" == x"title" -o x"$i" == x"prefix"; then
+	    continue
+	fi
+	VAR=$(echo $i | tr "[:lower:]" "[:upper:]")
+	envvar=$(eval "echo \$$(echo ${config['prefix']}_${VAR})")
+	if test x"${envvar}" != x; then
+	    default="${envvar}"
+	else
+	    default="${config[$i]}"
+	fi
+	echo -n "    Enter a value for the ${names[${i}]} (${default}):"
+	read htmp
+	if test x"${htmp}" != x; then
+	    value=${htmp}
+	else
+	    value=${config[$i]}
+	fi
+	echo "export ${config['prefix']}_${VAR}=${value}" >> /etc/default/underpass
+
+    done
+}
+
+# Gotta be root to write to /etc
+if test $(whoami) != "root"; then
+    echo "This must be executed as the root user"
+    exit
+fi
 
 if [ "$1" = "configure" ]; then
-    echo -n "Database hostname (default ${dbhost}): "
-    read htmp
-    if test x"${htmp}" != x; then
-	dbhost=${htmp}
-    fi
-    echo -n "Database user name (if needed, default ${dbuser}): "
-    read utmp
-    if test x"${utmp}" != x; then
-	dbuser=${utmp}
-    fi
-
-    echo -n "Database passwd (if any needed) ?: "
-    read ptmp
-    if test x"${ptmp}" != x; then
-	dbpass=${ptmp}
-    fi
-
-    if test -e /etc/default/underpass; then
-	echo -n "Replace current authentication defaults (default yes)? "
-	read tmp
-	if test x"${tmp}" != x -a x"${tmp}" != x"no"; then
-	    echo "PGHOST=${dbhost}" > /etc/default/underpass
-	    echo "PGUSER=${dbuser}" >> /etc/default/underpass
-	    echo "PGPASSWORD=${dbpass}" >> /etc/default/underpass
-	fi
-    else
-	echo -n "Create authentication defaults (default yes)? "
-	read tmp
-	if test x"${tmp}" != x -o x"${tmp}" != x"no"; then
-	    echo "PGHOST=${dbhost}" > /etc/default/underpass
-	    echo "PGUSER=${dbuser}" >> /etc/default/underpass
-	    echo "PGPASSWORD=${dbpass}" >> /etc/default/underpass
-	fi
-    fi
-
-    args=""
-    if test x"${dbhost}" -a x"${dbhost}" != x"localhost"; then
-	args="${args} --dbserver ${dbhost} "
-    fi
-    if test x"${dbuser}" -a x"${dbuser}" != x"${USER}"; then
-	args="${args} --dbuser ${dbuser} "
-    fi
-    if test x"${dbpass}"; then
-	args="${args} --dbpasswd ${dbpass} "
-    fi
-    echo -n "Replace current database ? (default no)? "
+    echo -n "Replace current authentication defaults (default yes)? "
     read tmp
-    if test x"${tmp}" != x -a x"${tmp}" != x"no"; then
-	/usr/bin/bash /usr/share/underpass/setupdb.sh ${args}
+    if test x"${tmp}" != x -a x"${tmp}" = x"no"; then
+	if test -e /etc/default/underpass; then
+	    echo "/etc/default/underpass exists"
+	fi
+	exit
     fi
+
+    # Load the existing values, if they exist
+    if test -e /etc/default/underpass; then
+	. /etc/default/underpass
+    fi
+
+    # values are loaded, delete the file as it'll get recreated
+    if test -e /etc/default/underpass -a -w /etc/default/underpass; then
+	rm  -f /etc/default/underpass
+	touch /etc/default/underpass
+    fi
+
+    # For the output database for raw OSM data
+    declare -Ag config
+    config['title']="OSM Map"
+    config['prefix']="OSM2PGSQL"
+    config['dbhost']="localhost"
+    config['dbuser']="underpass"
+    config['dbpass']="galaxy"
+    config['dbname']="osm2pgsql"
+    
+    prompt "$(declare -p config)"
+    
+    # For the Galaxy OSM Stats database
+    config['title']="OSM Statistics"
+    config['prefix']="OSMSTATS"
+    config['dbhost']="localhost"
+    config['dbuser']="underpass"
+    config['dbpass']="galaxy"
+    config['dbname']="osmstats"
+    
+    prompt "$(declare -p config)"
+    
+    # For the tasking manager
+    config['title']="Tasking Manager"
+    config['prefix']="TASKINGMANAGER"
+    config['dbhost']="localhost"
+    config['dbuser']="underpass"
+    config['dbpass']="galaxy"
+    config['dbname']="tm4"
+    
+    prompt "$(declare -p config)"
+
+    # For Underpass's states table, although this will be depreciated soon.
+    # declare -Ag upconfig
+    # upconfig['title']="Underpass"
+    # upconfig['dbhost']="localhost"
+    # upconfig['dbuser']="underpass"
+    # upconfig['dbpass']="galaxy"
+    # upconfig['dbname']="underpass"
+    
+    # prompt "$(declare -p config)"
+
+    # echo -n "Replace current database ? (default no)? "
+    # read tmp
+    # if test x"${tmp}" != x -a x"${tmp}" != x"no"; then
+    # 	echo /usr/bin/bash /usr/share/underpass/setupdb.sh ${args}
+    # fi
 fi
+
