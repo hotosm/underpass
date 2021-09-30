@@ -74,12 +74,20 @@ class Osm2Pgsql : public pq::Pq {
     ///
     ptime getLastUpdate();
 
+#if 0
+
+    // osm2pgsql fork is disabled but left in the sources because it may be useful to
+    // compare the results of the original application with those of our clone
+    // implementation.
+
     ///
     /// \brief updateDatabase updates the DB with osm changes.
     /// \param osm_changes input data (decompressed) from an OSC file.
     /// \return TRUE on success, errors are logged.
     ///
     bool updateDatabase(const std::string &osm_changes);
+
+#endif
 
     ///
     /// \brief updateDatabase updates the DB with osm changes.

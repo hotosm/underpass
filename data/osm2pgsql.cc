@@ -193,6 +193,12 @@ Osm2Pgsql::getLastUpdate()
     return last_update;
 }
 
+#if 0
+
+// osm2pgsql fork is disabled but left in the sources because it may be useful to
+// compare the results of the original application with those of our clone
+// implementation.
+
 bool
 Osm2Pgsql::updateDatabase(const std::string &osm_changes)
 {
@@ -228,6 +234,7 @@ Osm2Pgsql::updateDatabase(const std::string &osm_changes)
     }
     return result;
 }
+#endif
 
 bool
 Osm2Pgsql::updateDatabase(const std::shared_ptr<OsmChangeFile> &osm_changes) const

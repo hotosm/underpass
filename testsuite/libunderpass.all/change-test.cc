@@ -40,26 +40,26 @@ using namespace changeset;
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
-#define VERIFY(condition, message)                                             \
-    if (condition) {                                                           \
-        runtest.pass(message);                                                 \
-    } else {                                                                   \
-        runtest.fail(message);                                                 \
-        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__             \
-                  << std::endl;                                                \
-        exit(EXIT_FAILURE);                                                    \
+#define VERIFY(condition, message)                                 \
+    if (condition) {                                               \
+        runtest.pass(message);                                     \
+    } else {                                                       \
+        runtest.fail(message);                                     \
+        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__ \
+                  << std::endl;                                    \
+        exit(EXIT_FAILURE);                                        \
     }
 
-#define COMPARE(first, second, message)                                        \
-    if (first == second) {                                                     \
-        runtest.pass(message);                                                 \
-    } else {                                                                   \
-        runtest.fail(message);                                                 \
-        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__             \
-                  << std::endl;                                                \
-        std::cerr << "Values are not equal: " << first << " != " << second     \
-                  << std::endl;                                                \
-        exit(EXIT_FAILURE);                                                    \
+#define COMPARE(first, second, message)                                    \
+    if (first == second) {                                                 \
+        runtest.pass(message);                                             \
+    } else {                                                               \
+        runtest.fail(message);                                             \
+        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__         \
+                  << std::endl;                                            \
+        std::cerr << "Values are not equal: " << first << " != " << second \
+                  << std::endl;                                            \
+        exit(EXIT_FAILURE);                                                \
     }
 
 TestState runtest;
@@ -89,7 +89,7 @@ main(int argc, char *argv[])
 
     const std::string basedir{getenv("UNDERPASS_SOURCE_TREE_ROOT")
                                   ? getenv("UNDERPASS_SOURCE_TREE_ROOT")
-                                  : DATADIR};
+                                  : SRCDIR};
 
     const auto test_data_dir{basedir + "/testsuite/testdata"};
 
@@ -183,11 +183,17 @@ main(int argc, char *argv[])
         "MULTIPOLYGON(((0 0, 0 0.1, 0.1 0.1, 0.1 0, 0 0)))", null_island_poly);
 
     testco.areaFilter(null_island_poly);
-    if (testco.changes.size() == 0) {
-        runtest.pass("ChangeSetFile::areaFilter(null_island_poly)");
-    } else {
-        runtest.fail("ChangeSetFile::areaFilter(null_island_poly)");
+
+    std::list<std::shared_ptr<osmobjects::OsmNode>> priority_nodes;
+    for (const auto &change: testco.changes) {
+        for (const auto &node: change->nodes) {
+            if (node->priority) {
+                priority_nodes.push_back(node);
+            }
+        }
     }
+
+    COMPARE(priority_nodes.size(), 0, "ChangeSetFile::areaFilter(null_island_poly)");
 
     // Contains a single node from the hospital lat="22.9890996" lon="114.4398219
     multipolygon_t single_node_poly;
@@ -198,9 +204,18 @@ main(int argc, char *argv[])
     testco.nodecache.clear();
     testco.readChanges(test_data_dir + "/123.osc");
     testco.areaFilter(single_node_poly);
-    COMPARE(testco.changes.size(), 1,
+
+    priority_nodes.clear();
+    for (const auto &change: testco.changes) {
+        for (const auto &node: change->nodes) {
+            if (node->priority) {
+                priority_nodes.push_back(node);
+            }
+        }
+    }
+    COMPARE(priority_nodes.size(), 1,
             "ChangeSetFile::areaFilter(single_node_poly) - size");
-    COMPARE(testco.changes.front()->obj->id, 67365141L,
+    COMPARE(priority_nodes.front()->id, 5776216755L,
             "ChangeSetFile::areaFilter(single_node_poly) - id");
 
     // Test relations
