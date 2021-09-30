@@ -35,6 +35,7 @@ RUN apt-get update \
         vim \
         wait-for-it \
         cmake \
+        doxygen \
     && mkdir /libpqxx && cd /libpqxx \
     && wget https://github.com/jtv/libpqxx/archive/7.6.0.zip \
     && unzip 7.6.0.zip \
