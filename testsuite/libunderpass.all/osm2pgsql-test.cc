@@ -42,6 +42,25 @@ using namespace boost::filesystem;
 
 TestState runtest;
 
+#define VERIFY(condition, message)                                               \
+    if (condition) {                                                             \
+        runtest.pass(message);                                                   \
+    } else {                                                                     \
+        runtest.fail(message);                                                   \
+        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__ << std::endl; \
+        exit(EXIT_FAILURE);                                                      \
+    }
+
+#define COMPARE(first, second, message)                                                  \
+    if (first == second) {                                                               \
+        runtest.pass(message);                                                           \
+    } else {                                                                             \
+        runtest.fail(message);                                                           \
+        std::cerr << "Failing at: " << __FILE__ << ':' << __LINE__ << std::endl;         \
+        std::cerr << "Values are not equal: " << first << " != " << second << std::endl; \
+        exit(EXIT_FAILURE);                                                              \
+    }
+
 class TestOsm2Pgsql : public Osm2Pgsql {
   public:
     TestOsm2Pgsql() = default;
@@ -53,12 +72,8 @@ class TestOsm2Pgsql : public Osm2Pgsql {
         logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
         dbglogfile.setVerbosity();
 
-        const std::string dbconn{getenv("UNDERPASS_TEST_DB_CONN")
-                                     ? getenv("UNDERPASS_TEST_DB_CONN")
-                                     : ""};
-        source_tree_root = getenv("UNDERPASS_SOURCE_TREE_ROOT")
-                               ? getenv("UNDERPASS_SOURCE_TREE_ROOT")
-                               : SRCDIR;
+        const std::string dbconn{getenv("UNDERPASS_TEST_DB_CONN") ? getenv("UNDERPASS_TEST_DB_CONN") : ""};
+        source_tree_root = getenv("UNDERPASS_SOURCE_TREE_ROOT") ? getenv("UNDERPASS_SOURCE_TREE_ROOT") : SRCDIR;
 
         const std::string test_osm2pgsql_db_name{"osm2pgsql_test"};
 
@@ -78,49 +93,29 @@ class TestOsm2Pgsql : public Osm2Pgsql {
 
             // Create schema
             const path base_path{source_tree_root / "testsuite"};
-            const auto schema_path{base_path / "testdata" /
-                                   "pgsql_test_schema.sql"};
+            const auto schema_path{base_path / "testdata" / "pgsql_test_schema.sql"};
             std::ifstream schema_definition(schema_path);
-            std::string sql((std::istreambuf_iterator<char>(schema_definition)),
-                            std::istreambuf_iterator<char>());
+            std::string sql((std::istreambuf_iterator<char>(schema_definition)), std::istreambuf_iterator<char>());
 
             assert(!sql.empty());
             worker.exec0(sql);
 
             // Load a minimal data set for testing
-            const auto data_path{base_path / "testdata" /
-                                 "pgsql_test_data.sql.gz"};
-            std::ifstream data_definition(data_path, std::ios_base::in |
-                                                         std::ios_base::binary);
-            boost::iostreams::filtering_streambuf<boost::iostreams::input>
-                inbuf;
+            const auto data_path{base_path / "testdata" / "pgsql_test_data.sql.gz"};
+            std::ifstream data_definition(data_path, std::ios_base::in | std::ios_base::binary);
+            boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
             inbuf.push(boost::iostreams::gzip_decompressor());
             inbuf.push(data_definition);
             std::istream instream(&inbuf);
-            std::string data_sql((std::istreambuf_iterator<char>(instream)),
-                                 std::istreambuf_iterator<char>());
+            std::string data_sql((std::istreambuf_iterator<char>(instream)), std::istreambuf_iterator<char>());
             assert(!data_sql.empty());
             worker.exec0(data_sql);
-
-            // Load changes
-            const auto changes_data_path{base_path / "testdata" /
-                                         "simple_test.osc"};
-            std::ifstream osm_change(changes_data_path,
-                                     std::ios_base::in | std::ios_base::binary);
-            boost::iostreams::filtering_istream osm_change_inbuf;
-            osm_change_inbuf.push(osm_change);
-            std::stringstream sstream;
-            auto bytes_written =
-                boost::iostreams::copy(osm_change_inbuf, sstream);
-            osm_changes = sstream.str();
-            assert(bytes_written > 0);
         }
 
         return true;
     };
 
     std::string source_tree_root;
-    std::string osm_changes;
 };
 
 int
@@ -136,70 +131,220 @@ main(int argc, char *argv[])
     TestOsm2Pgsql testosm2pgsql;
 
     // Test that default constructed object have a schema set
-    assert(testosm2pgsql.getSchema().compare(
-               testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME) == 0);
+    assert(testosm2pgsql.getSchema().compare(testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME) == 0);
 
     testosm2pgsql.init_test_case();
 
     const std::string test_osm2pgsql_db_name{"osm2pgsql_test"};
     std::string osm2pgsql_conn;
     if (getenv("PGHOST") && getenv("PGUSER") && getenv("PGPASSWORD")) {
-        osm2pgsql_conn = std::string(getenv("PGUSER")) + ":" +
-                         std::string(getenv("PGPASSWORD")) + "@" +
-                         std::string(getenv("PGHOST")) + "/" +
-                         test_osm2pgsql_db_name;
+        osm2pgsql_conn = std::string(getenv("PGUSER")) + ":" + std::string(getenv("PGPASSWORD")) + "@" +
+                         std::string(getenv("PGHOST")) + "/" + test_osm2pgsql_db_name;
     } else {
         osm2pgsql_conn = test_osm2pgsql_db_name;
     }
 
-    if (testosm2pgsql.connect(osm2pgsql_conn)) {
-        runtest.pass("Osm2Pgsql::connect()");
-    } else {
-        runtest.fail("Osm2Pgsql::connect()");
-        exit(EXIT_FAILURE);
-    }
+    VERIFY(testosm2pgsql.connect(osm2pgsql_conn), "Osm2Pgsql::connect()");
 
     const auto last_update{testosm2pgsql.getLastUpdate()};
-    std::cout << "ts: " << to_iso_extended_string(last_update) << std::endl;
-    if (!last_update.is_not_a_date_time() &&
-        to_iso_extended_string(last_update).compare("2021-08-05T23:38:28") ==
-            0) {
-        runtest.pass("Osm2Pgsql::getLastUpdate()");
-    } else {
-        runtest.fail("Osm2Pgsql::getLastUpdate()");
-        exit(EXIT_FAILURE);
-    }
 
-    // Read the osm change from file and process it
-    if (!testosm2pgsql.updateDatabase(testosm2pgsql.osm_changes)) {
+    VERIFY(!last_update.is_not_a_date_time() && to_iso_extended_string(last_update) == "2021-08-05T23:38:28",
+           "Osm2Pgsql::getLastUpdate()");
+
+    // Read OSC from file
+    std::ifstream ifs(testosm2pgsql.source_tree_root / "testsuite" / "testdata" / "test_change.osc");
+    const std::string xml{std::istreambuf_iterator<char>{ifs}, {}};
+
+    // Test update from osm changes
+    std::shared_ptr<OsmChangeFile> osm_changes = std::make_shared<OsmChangeFile>();
+    std::stringstream xml_stream{xml};
+    osm_changes->readXML(xml_stream);
+
+    auto results{testosm2pgsql.query("SELECT ST_Contains(ST_MakeLine(way), ST_SetSRID(ST_MakePoint(2.4060, 49.590), 4326)) FROM " +
+                                     testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_roads WHERE osm_id = 1")};
+
+    VERIFY(results.at(0)["st_contains"].as(std::string()) == "t",
+           "OsmChangeFile::readXML(xml_stream) - verify initial road 1 geometry");
+
+    // Test that semaphore is in points
+    results = testosm2pgsql.query("SELECT osm_id FROM " + testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                  ".planet_osm_point WHERE osm_id = 10");
+
+    COMPARE(results.size(), 1, "OsmChangeFile::readXML(xml_stream) - verify traffic light 10 is in points");
+
+    // Read the osm change and process it
+    if (!testosm2pgsql.updateDatabase(osm_changes)) {
+        //if (!testosm2pgsql.updateDatabase(xml)) {
         runtest.fail("Osm2Pgsql::updateDatabase()");
         exit(EXIT_FAILURE);
     } else {
         // Check for changes!
-        const auto results{
-            testosm2pgsql.query("SELECT name, ST_X(way) AS x FROM " +
-                                testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
-                                ".planet_osm_point ORDER BY name")};
-        if (results.at(0)["name"]
-                .as(std::string())
-                .compare("Some interesting point new name") != 0) {
-            runtest.fail("Osm2Pgsql::updateDatabase() - retrieve 0");
-            exit(EXIT_FAILURE);
-        }
-        if (results.at(1)["name"]
-                .as(std::string())
-                .compare("Some other interesting point (44)") != 0) {
-            runtest.fail("Osm2Pgsql::updateDatabase() - retrieve 1");
-            exit(EXIT_FAILURE);
-        }
-        if (results.at(0)["x"].as(double()) != 3.12) {
-            runtest.fail("Osm2Pgsql::updateDatabase() - retrieve X 0");
-            exit(EXIT_FAILURE);
-        }
-        if (results.at(1)["x"].as(double()) != 3.0) {
-            runtest.fail("Osm2Pgsql::updateDatabase() - retrieve X 1");
-            exit(EXIT_FAILURE);
-        }
-        runtest.pass("Osm2Pgsql::updateDatabase()");
+        results = testosm2pgsql.query(
+            "SELECT osm_id, name, ST_X(way) AS x, shop, tags -> 'crazy=>tag' as crazy, \"addr:housename\" FROM " +
+            testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_point ORDER BY name");
+
+        COMPARE(results.at(0)["name"].as(std::string()), "Some interesting point new name",
+                "Osm2Pgsql::updateDatabase() - retrieve 0");
+
+        COMPARE(results.at(1)["name"].as(std::string()), "Some other interesting point (44)",
+                "Osm2Pgsql::updateDatabase() - retrieve 1");
+
+        COMPARE(results.at(1)["shop"].as(std::string()), "department_store", "Osm2Pgsql::updateDatabase() - retrieve shop 44");
+
+        COMPARE(results.at(1)["osm_id"].as(int()), 44, "Osm2Pgsql::updateDatabase() - retrieve shop id 44");
+
+        COMPARE(results.at(1)["addr:housename"].as(std::string()), "My house name at N°5",
+                "Osm2Pgsql::updateDatabase() - retrieve 1 addr:housename");
+
+        COMPARE(results.at(1)["crazy"].as(std::string()), "crazy'\"=>values", "Osm2Pgsql::updateDatabase() - retrieve 1 tags");
+
+        COMPARE(results.at(1)["osm_id"].as(int()), 44, "Osm2Pgsql::updateDatabase() - retrieve osm_id 44");
+
+        COMPARE(results.at(0)["x"].as(double()), 3.12, "Osm2Pgsql::updateDatabase() - retrieve X 0");
+
+        COMPARE(results.at(1)["x"].as(double()), 3.0, "Osm2Pgsql::updateDatabase() - retrieve X 1");
+
+        results =
+            testosm2pgsql.query("SELECT * FROM " + testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_nodes WHERE id = 11");
+
+        COMPARE(results.size(), 0, "Osm2Pgsql::updateDatabase() - verify node 11 is gone from points");
+
+        // Verify way 2 which has been altered
+        results =
+            testosm2pgsql.query("SELECT * FROM " + testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_ways WHERE id = 2");
+
+        // verify node 11 is gone
+        COMPARE(results.at(0)["nodes"].as(std::string()), "{1,4,2,5,1}",
+                "Osm2Pgsql::updateDatabase() - verify changed way 2 nodes");
+
+        results = testosm2pgsql.query("SELECT ST_Contains(ST_MakeLine(way), ST_SetSRID(ST_MakePoint(2.4060, 49.590), 4326)) FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_roads WHERE osm_id = 1");
+
+        VERIFY(results.at(0)["st_contains"].as(std::string()) == "f",
+               "OsmChangeFile::updateDatabase() - verify final road 1 geometry");
+
+        // Test that semaphore was removed from points
+        results = testosm2pgsql.query("SELECT osm_id FROM " + testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                      ".planet_osm_point WHERE osm_id = 10");
+
+        COMPARE(results.size(), 0, "OsmChangeFile::updateDatabase() - verify traffic light 10 is gone");
+
+        // Check individual polygons from ways
+        results = testosm2pgsql.query("SELECT ST_AsText(way), \"natural\", tags FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_polygon WHERE osm_id = 201");
+
+        COMPARE(results.at(0)["st_astext"].as(std::string()), "POLYGON((1.7 50,1.9 50,1.9 49.5,1.7 49.5,1.7 50))",
+                "Osm2Pgsql::updateDatabase() - verify new polygon geom");
+
+        COMPARE(results.at(0)["natural"].as(std::string()), "wood", "Osm2Pgsql::updateDatabase() - verify new polygon natural");
+
+        // verify grassland relation
+        results =
+            testosm2pgsql.query("SELECT * FROM " + testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_rels WHERE id = 6");
+
+        COMPARE(results.at(0)["rel_off"].as(int()), 5, "Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 rel_off");
+        COMPARE(results.at(0)["parts"].as(std::string()), "{202,201,203,204,205}",
+                "Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 parts");
+        COMPARE(results.at(0)["members"].as(std::string()), "{w202,inner,w201,outer,w203,inner,w204,outer,w205,inner}",
+                "Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 members");
+        COMPARE(results.at(0)["tags"].as(std::string()), R"tags({"crazy
+'{}\"tag\"","crazy'\"=>\"
+{}values",natural,grassland,osm_changeset,1,osm_timestamp,2021-07-10T00:00:00Z,osm_version,1,type,multipolygon})tags",
+                "Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 tags");
+
+        // Check multipolygons from relations
+        results = testosm2pgsql.query("SELECT way_area, ST_AsText(way), \"natural\", tags FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                      ".planet_osm_polygon WHERE \"natural\" = 'grassland'");
+
+        // Verify grassland multipolygon
+        COMPARE(
+            results.at(0)["st_astext"].as(std::string()),
+            "MULTIPOLYGON(((1.7 50,1.9 50,1.9 49.5,1.7 49.5,1.7 50),(1.75 49.9,1.85 49.9,1.85 49.8,1.75 49.8,1.75 49.9),(1.75 49.7,1.85 49.7,1.85 49.6,1.75 49.6,1.75 49.7)),((1.5 49.7,1.6 49.7,1.6 49.6,1.5 49.6,1.5 49.7),(1.51 49.68,1.59 49.68,1.59 49.62,1.51 49.62,1.51 49.68)))",
+            "Osm2Pgsql::updateDatabase() - verify new multipolygon geom");
+
+        COMPARE(results.at(0)["natural"].as(std::string()), "grassland",
+                "Osm2Pgsql::updateDatabase() - verify new multipolygon geom");
+
+        COMPARE(
+            results.at(0)["tags"].as(std::string()),
+            R"tags("type"=>"multipolygon", "osm_version"=>"1", "osm_changeset"=>"1", "osm_timestamp"=>"2021-07-10T00:00:00Z", "crazy
+'{}\"tag\""=>"crazy'\"=>\"
+{}values")tags",
+            "Osm2Pgsql::updateDatabase() - verify new multipolygon tags");
+
+        COMPARE(results.at(0)["way_area"].as(double()), 0.0852, "Osm2Pgsql::updateDatabase() - verify new multipolygon way_area");
+    }
+
+    // Test moving and deleting nodes change polygons
+    std::ifstream ifs_node(testosm2pgsql.source_tree_root / "testsuite" / "testdata" / "test_change_node.osc");
+    const std::string xml_node{std::istreambuf_iterator<char>{ifs_node}, {}};
+
+    // Test update from osm changes
+    std::shared_ptr<OsmChangeFile> osm_changes_node = std::make_shared<OsmChangeFile>();
+    std::stringstream xml_stream_node{xml_node};
+    osm_changes_node->readXML(xml_stream_node);
+
+    // Read the osm change and process it
+    if (!testosm2pgsql.updateDatabase(osm_changes_node)) {
+        //if (!testosm2pgsql.updateDatabase(xml)) {
+        runtest.fail("Osm2Pgsql::updateDatabase() nodes");
+        exit(EXIT_FAILURE);
+    } else {
+        // Check for changes!
+        results =
+            testosm2pgsql.query("SELECT * FROM " + testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_ways WHERE id = 202");
+
+        COMPARE(results.at(0)["nodes"].as(std::string()), "{221,222,223,221}", "Osm2Pgsql::updateDatabase() - verify changed way");
+
+        // Check multipolygons from relations
+        results = testosm2pgsql.query("SELECT way_area, ST_AsText(way), \"natural\", tags FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                      ".planet_osm_polygon WHERE \"natural\" = 'grassland'");
+
+        // Verify grassland multipolygon
+        COMPARE(
+            results.at(0)["st_astext"].as(std::string()),
+            "MULTIPOLYGON(((1.7 50,1.9 50,1.9 49.5,1.7 49.5,1.7 50),(1.75 49.7,1.85 49.7,1.85 49.6,1.75 49.6,1.75 49.7),(1.759 49.99,1.85 49.9,1.85 49.8,1.759 49.99)),((1.5 49.7,1.6 49.7,1.6 49.6,1.5 49.6,1.5 49.7),(1.51 49.68,1.59 49.68,1.59 49.62,1.51 49.62,1.51 49.68)))",
+            "Osm2Pgsql::updateDatabase() - verify changed multipolygon geom");
+
+        COMPARE(results.at(0)["natural"].as(std::string()), "grassland",
+                "Osm2Pgsql::updateDatabase() - verify changed multipolygon geom");
+
+        COMPARE(
+            results.at(0)["tags"].as(std::string()),
+            R"tags("type"=>"multipolygon", "osm_version"=>"1", "osm_changeset"=>"1", "osm_timestamp"=>"2021-07-10T00:00:00Z", "crazy
+'{}\"tag\""=>"crazy'\"=>\"
+{}values")tags",
+            "Osm2Pgsql::updateDatabase() - verify changed multipolygon tags");
+
+        COMPARE(results.at(0)["way_area"].as(double()), 0.09065,
+                "Osm2Pgsql::updateDatabase() - verify changed multipolygon way_area");
+
+        // Test way 8 deleted
+        results = testosm2pgsql.query("SELECT * FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                      ".planet_osm_polygon WHERE osm_id = 8");
+        COMPARE(results.size(), 0,
+                "Osm2Pgsql::updateDatabase() - verify way was deleted from polygon");
+
+        results = testosm2pgsql.query("SELECT * FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                      ".planet_osm_ways WHERE id = 8");
+        COMPARE(results.size(), 0,
+                "Osm2Pgsql::updateDatabase() - verify way was deleted from ways");
+
+        // Test that relation 1 and its multipolygon are gone
+        results = testosm2pgsql.query("SELECT * FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                      ".planet_osm_polygon WHERE osm_id = -1");
+        COMPARE(results.size(), 0,
+                "Osm2Pgsql::updateDatabase() - verify relation was deleted from rels");
+
+        results = testosm2pgsql.query("SELECT * FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                      ".planet_osm_rels WHERE id = 1");
+        COMPARE(results.size(), 0,
+                "Osm2Pgsql::updateDatabase() - verify multipolygon was deleted from polygon");
     }
 }

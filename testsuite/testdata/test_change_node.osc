@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version="0.6" generator="manually_generated/1.8.0">
+  <modify>
+    <node id="221" lon="1.759" lat="49.99" user="some_user" uid="1" version="2" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+  </modify>
+  <delete>
+    <node id="224" lon="1.75" lat="49.8" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+  </delete>
+  <modify>
+     <way id="202" user="some_user" uid="1" version="2" changeset="1" timestamp="2021-09-10T00:00:00Z">
+        <tag k="area" v="yes"/>
+        <nd ref="221"/>
+        <nd ref="222"/>
+        <nd ref="223"/>
+        <nd ref="221"/>
+     </way>
+  </modify>
+  <delete>
+    <way id="8" user="some_user" uid="1" version="1" changeset="1" timestamp="2012-07-10T00:00:00Z">
+      <tag k="area" v="yes"/>
+      <tag k="name" v="standalone_polygon"/>
+      <nd ref="1"/>
+      <nd ref="4"/>
+      <nd ref="2"/>
+      <nd ref="5"/>
+      <nd ref="1"/>
+    </way>
+    <relation id="1" user="some_user" uid="1" version="1" changeset="1" timestamp="2012-07-10T00:00:00Z">
+      <member type="way" ref="2" role="outer"/>
+      <member type="way" ref="3" role="inner"/>
+      <tag k="type" v="multipolygon"/>
+      <tag k="natural" v="forest"/>
+    </relation>
+  </delete>
+</osmChange>

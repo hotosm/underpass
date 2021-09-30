@@ -343,7 +343,7 @@ QueryOSMStats::applyChange(const changeset::ChangeSet &change)
     // 	query += "\', closed_at=\'" + to_simple_string(change.closed_at);
     // }
     query += "\', bbox=" + bbox.substr(2) + ")'))";
-    log_debug(_("QUERY: %1%"), query);
+    // log_debug(_("QUERY: %1%"), query);
     result = worker.exec(query);
 
     // Commit the results to the database
@@ -364,9 +364,12 @@ QueryOSMStats::applyChange(const ValidateStatus &validation)
         {osmobjects::way, "way"},
         {osmobjects::relation, "relation"}};
     std::map<valerror_t, std::string> status = {
-        {notags, "notags"},         {complete, "complete"},
-        {incomplete, "incomplete"}, {badvalue, "badvalue"},
-        {correct, "correct"},       {badgeom, "badgeom"}};
+        {notags, "notags"},
+        {complete, "complete"},
+        {incomplete, "incomplete"},
+        {badvalue, "badvalue"},
+        {correct, "correct"},
+        {badgeom, "badgeom"}};
     std::string query =
         "INSERT INTO validation (osm_id, angle, user_id, type, status, timestamp, location) VALUES(";
     boost::format fmt(

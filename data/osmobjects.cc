@@ -145,4 +145,16 @@ OsmRelationMember::dump() const
     std::cerr << "\t\t\tRole: " << role << std::endl;
 }
 
+int
+OsmNode::getZ_order() const
+{
+    return z_order;
+}
+
+void
+OsmNode::setZ_order(int newZ_order)
+{
+    z_order = newZ_order;
+}
+
 } // namespace osmobjects
