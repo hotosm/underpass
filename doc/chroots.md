@@ -29,15 +29,17 @@ type these shell commands. Some of the programs used to build packages
 need these, which aren't present in the chroot, as they have to be
 shared from the host platform.
 
-- mount -t proc proc /proc
-- mount --rbind /sys sys/
-- mount --rbind /dev dev/
+```
+mount -t proc proc /proc
+mount --rbind /sys sys/
+mount --rbind /dev dev/
+```
 
 Once that initial setup is done, it's time to download more
 packages. The default config file for a chroot is limited to just the
 main repository. Not all of the packages Underpass depends on are in
 main, so add *universe* to get the rest, and then `apt-get
-update`. Your /etc/apt/sources.list file should now look like this:
+update`. Your `/etc/apt/sources.list` file should now look like this:
 
 ```
 deb http://archive.ubuntu.com/ubuntu focal main universe
@@ -69,10 +71,9 @@ Start by installing packages needed to build Underpass.
 
 ```
 sudo apt-get -y install \
-    git gcc g++ pkg-config make debhelper debconf chrpath \
-    ccache  devscripts gpg \
-    libboost-all-dev libgdal-dev libxml++2.6-dev libosmium2-dev libpq-dev libgumbo-dev
-libssl-dev libpq5-dev
+    git gcc g++ pkg-config make debhelper debconf chrpath ccache devscripts gpg \
+    libgdal-dev libosmium2-dev libpq-dev libgumbo-dev \
+    libssl-dev libpq5-dev libxml++2.6-dev libboost-all-dev
 ```
 
 ## Ubuntu Focal (20.04 LTS)
