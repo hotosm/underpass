@@ -139,6 +139,9 @@ class Osm2Pgsql : public pq::Pq {
         /// These tags are stored in columns
         static const std::set<std::string> column_stored_tags;
 
+        /// These additional tags are stored in columns for points
+        static const std::set<std::string> column_points_stored_tags;
+
         /// These tags make a polygon
         static const std::set<std::string> polygon_tags;
 
@@ -147,7 +150,7 @@ class Osm2Pgsql : public pq::Pq {
         /// If is_road=1, the object will be added to planet_osm_roads.
         static const std::map<std::pair<std::string, std::string>, std::pair<bool, int>> z_index_map;
 
-        void parse(const std::map<std::string, std::string> &tags, const pqxx::nontransaction &worker);
+        void parse(const std::map<std::string, std::string> &tags, const pqxx::nontransaction &worker, bool is_point);
     };
 
     ptime last_update = not_a_date_time;

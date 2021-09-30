@@ -326,10 +326,10 @@ Planet::downloadFile(const std::string &url)
             // Check the magic number of the file
             const auto is_gzipped{parser.get().body()[0] == 0x1f};
             if (is_gzipped) {
-                log_debug(_("Downloaded body is gzipped"));
+                //log_debug(_("Downloaded body is gzipped"));
             } else {
                 if (parser.get().body()[0] == '<') {
-                    log_debug(_("Downloaded body is XML/HTML"));
+                    //log_debug(_("Downloaded body is XML/HTML"));
                 }
             }
 
