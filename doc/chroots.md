@@ -56,7 +56,7 @@ export LANG=C
 export GPG_TTY="$(tty)"
 ```
 
-To create signed packages, you need a *GPG* key pair setup, so mjight
+To create signed packages, you need a *GPG* key pair setup, so might
 as well do that now. Type `gpg --full-generate-key`, and answer the
 questions. This will only work if you've execute the mount commands as
 documented above. 
