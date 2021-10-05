@@ -58,7 +58,7 @@ class Osm2Pgsql : public pq::Pq {
     ///
     /// \brief Osm2Pgsql constructs an Osm2Pgsql from arguments.
     /// \param dburl the DB url in the form USER:PASSSWORD@HOST/DATABASENAME
-    /// \param schema name of the osm2pgsql schema, defaults to "osm2pgsql_pgsql".
+    /// \param schema name of the osm2pgsql schema, defaults to "public".
     ///
     Osm2Pgsql(const std::string &dburl, const std::string &schema = OSM2PGSQL_DEFAULT_SCHEMA_NAME);
 
@@ -204,7 +204,7 @@ class Osm2Pgsql : public pq::Pq {
     ptime last_update = not_a_date_time;
     std::string dburl;
 
-    /// Default schema name for osm2pgsql ("osm2pgsql_pgsql"), for simplicity, we are using
+    /// Default schema name for osm2pgsql ("public"), for simplicity, we are using
     /// the same schema for data and "middle" tables.
     std::string schema = OSM2PGSQL_DEFAULT_SCHEMA_NAME;
 };

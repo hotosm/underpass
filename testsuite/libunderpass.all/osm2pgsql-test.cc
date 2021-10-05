@@ -93,7 +93,7 @@ class TestOsm2Pgsql : public Osm2Pgsql {
 
             // Create schema
             const path base_path{source_tree_root / "testsuite"};
-            const auto schema_path{base_path / "testdata" / "pgsql_test_schema.sql"};
+            const auto schema_path{base_path / "testdata" / "osm2pgsql_test_schema.sql"};
             std::ifstream schema_definition(schema_path);
             std::string sql((std::istreambuf_iterator<char>(schema_definition)), std::istreambuf_iterator<char>());
 
@@ -101,7 +101,7 @@ class TestOsm2Pgsql : public Osm2Pgsql {
             worker.exec0(sql);
 
             // Load a minimal data set for testing
-            const auto data_path{base_path / "testdata" / "pgsql_test_data.sql.gz"};
+            const auto data_path{base_path / "testdata" / "osm2pgsql_test_data.sql.gz"};
             std::ifstream data_definition(data_path, std::ios_base::in | std::ios_base::binary);
             boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
             inbuf.push(boost::iostreams::gzip_decompressor());
