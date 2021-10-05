@@ -45,7 +45,7 @@ using namespace logger;
 
 namespace osm2pgsql {
 
-const std::string Osm2Pgsql::OSM2PGSQL_DEFAULT_SCHEMA_NAME = "osm2pgsql_pgsql";
+const std::string Osm2Pgsql::OSM2PGSQL_DEFAULT_SCHEMA_NAME = "public";
 
 logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
 

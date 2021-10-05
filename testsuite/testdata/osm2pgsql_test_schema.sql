@@ -23,13 +23,43 @@ SET row_security = off;
 CREATE SCHEMA osm2pgsql_pgsql;
 
 
+--
+-- Name: hstore; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS hstore WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION hstore; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON EXTENSION hstore IS 'data type for storing sets of (key, value) pairs';
+
+
+--
+-- Name: postgis; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION postgis; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON EXTENSION postgis IS 'PostGIS geometry, geography, and raster spatial types and functions';
+
+
 SET default_tablespace = '';
 
+SET default_table_access_method = heap;
+
 --
--- Name: planet_osm_line; Type: TABLE; Schema: osm2pgsql_pgsql; Owner: -
+-- Name: planet_osm_line; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE osm2pgsql_pgsql.planet_osm_line (
+CREATE TABLE public.planet_osm_line (
     osm_id bigint,
     access text,
     "addr:housename" text,
@@ -104,10 +134,21 @@ CREATE TABLE osm2pgsql_pgsql.planet_osm_line (
 
 
 --
--- Name: planet_osm_point; Type: TABLE; Schema: osm2pgsql_pgsql; Owner: -
+-- Name: planet_osm_nodes; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE osm2pgsql_pgsql.planet_osm_point (
+CREATE TABLE public.planet_osm_nodes (
+    id bigint NOT NULL,
+    lat integer NOT NULL,
+    lon integer NOT NULL
+);
+
+
+--
+-- Name: planet_osm_point; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.planet_osm_point (
     osm_id bigint,
     access text,
     "addr:housename" text,
@@ -182,10 +223,10 @@ CREATE TABLE osm2pgsql_pgsql.planet_osm_point (
 
 
 --
--- Name: planet_osm_polygon; Type: TABLE; Schema: osm2pgsql_pgsql; Owner: -
+-- Name: planet_osm_polygon; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE osm2pgsql_pgsql.planet_osm_polygon (
+CREATE TABLE public.planet_osm_polygon (
     osm_id bigint,
     access text,
     "addr:housename" text,
@@ -260,10 +301,24 @@ CREATE TABLE osm2pgsql_pgsql.planet_osm_polygon (
 
 
 --
--- Name: planet_osm_roads; Type: TABLE; Schema: osm2pgsql_pgsql; Owner: -
+-- Name: planet_osm_rels; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE osm2pgsql_pgsql.planet_osm_roads (
+CREATE TABLE public.planet_osm_rels (
+    id bigint NOT NULL,
+    way_off smallint,
+    rel_off smallint,
+    parts bigint[],
+    members text[],
+    tags text[]
+);
+
+
+--
+-- Name: planet_osm_roads; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.planet_osm_roads (
     osm_id bigint,
     access text,
     "addr:housename" text,
@@ -338,35 +393,10 @@ CREATE TABLE osm2pgsql_pgsql.planet_osm_roads (
 
 
 --
--- Name: planet_osm_nodes; Type: TABLE; Schema: osm2pgsql_pgsql; Owner: -
+-- Name: planet_osm_ways; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE osm2pgsql_pgsql.planet_osm_nodes (
-    id bigint NOT NULL,
-    lat integer NOT NULL,
-    lon integer NOT NULL
-);
-
-
---
--- Name: planet_osm_rels; Type: TABLE; Schema: osm2pgsql_pgsql; Owner: -
---
-
-CREATE TABLE osm2pgsql_pgsql.planet_osm_rels (
-    id bigint NOT NULL,
-    way_off smallint,
-    rel_off smallint,
-    parts bigint[],
-    members text[],
-    tags text[]
-);
-
-
---
--- Name: planet_osm_ways; Type: TABLE; Schema: osm2pgsql_pgsql; Owner: -
---
-
-CREATE TABLE osm2pgsql_pgsql.planet_osm_ways (
+CREATE TABLE public.planet_osm_ways (
     id bigint NOT NULL,
     nodes bigint[] NOT NULL,
     tags text[]
@@ -374,97 +404,97 @@ CREATE TABLE osm2pgsql_pgsql.planet_osm_ways (
 
 
 --
--- Name: planet_osm_nodes planet_osm_nodes_pkey; Type: CONSTRAINT; Schema: osm2pgsql_pgsql; Owner: -
+-- Name: planet_osm_nodes planet_osm_nodes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY osm2pgsql_pgsql.planet_osm_nodes
+ALTER TABLE ONLY public.planet_osm_nodes
     ADD CONSTRAINT planet_osm_nodes_pkey PRIMARY KEY (id);
 
 
 --
--- Name: planet_osm_rels planet_osm_rels_pkey; Type: CONSTRAINT; Schema: osm2pgsql_pgsql; Owner: -
+-- Name: planet_osm_rels planet_osm_rels_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY osm2pgsql_pgsql.planet_osm_rels
+ALTER TABLE ONLY public.planet_osm_rels
     ADD CONSTRAINT planet_osm_rels_pkey PRIMARY KEY (id);
 
 
 --
--- Name: planet_osm_ways planet_osm_ways_pkey; Type: CONSTRAINT; Schema: osm2pgsql_pgsql; Owner: -
+-- Name: planet_osm_ways planet_osm_ways_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY osm2pgsql_pgsql.planet_osm_ways
+ALTER TABLE ONLY public.planet_osm_ways
     ADD CONSTRAINT planet_osm_ways_pkey PRIMARY KEY (id);
 
 
 --
--- Name: planet_osm_line_osm_id_idx; Type: INDEX; Schema: osm2pgsql_pgsql; Owner: -
+-- Name: planet_osm_line_osm_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX planet_osm_line_osm_id_idx ON osm2pgsql_pgsql.planet_osm_line USING btree (osm_id);
-
-
---
--- Name: planet_osm_line_way_idx; Type: INDEX; Schema: osm2pgsql_pgsql; Owner: -
---
-
-CREATE INDEX planet_osm_line_way_idx ON osm2pgsql_pgsql.planet_osm_line USING gist (way);
+CREATE INDEX planet_osm_line_osm_id_idx ON public.planet_osm_line USING btree (osm_id);
 
 
 --
--- Name: planet_osm_point_osm_id_idx; Type: INDEX; Schema: osm2pgsql_pgsql; Owner: -
+-- Name: planet_osm_line_way_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX planet_osm_point_osm_id_idx ON osm2pgsql_pgsql.planet_osm_point USING btree (osm_id);
-
-
---
--- Name: planet_osm_point_way_idx; Type: INDEX; Schema: osm2pgsql_pgsql; Owner: -
---
-
-CREATE INDEX planet_osm_point_way_idx ON osm2pgsql_pgsql.planet_osm_point USING gist (way);
+CREATE INDEX planet_osm_line_way_idx ON public.planet_osm_line USING gist (way);
 
 
 --
--- Name: planet_osm_polygon_osm_id_idx; Type: INDEX; Schema: osm2pgsql_pgsql; Owner: -
+-- Name: planet_osm_point_osm_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX planet_osm_polygon_osm_id_idx ON osm2pgsql_pgsql.planet_osm_polygon USING btree (osm_id);
-
-
---
--- Name: planet_osm_polygon_way_idx; Type: INDEX; Schema: osm2pgsql_pgsql; Owner: -
---
-
-CREATE INDEX planet_osm_polygon_way_idx ON osm2pgsql_pgsql.planet_osm_polygon USING gist (way);
+CREATE INDEX planet_osm_point_osm_id_idx ON public.planet_osm_point USING btree (osm_id);
 
 
 --
--- Name: planet_osm_roads_osm_id_idx; Type: INDEX; Schema: osm2pgsql_pgsql; Owner: -
+-- Name: planet_osm_point_way_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX planet_osm_roads_osm_id_idx ON osm2pgsql_pgsql.planet_osm_roads USING btree (osm_id);
-
-
---
--- Name: planet_osm_roads_way_idx; Type: INDEX; Schema: osm2pgsql_pgsql; Owner: -
---
-
-CREATE INDEX planet_osm_roads_way_idx ON osm2pgsql_pgsql.planet_osm_roads USING gist (way);
+CREATE INDEX planet_osm_point_way_idx ON public.planet_osm_point USING gist (way);
 
 
 --
--- Name: planet_osm_rels_parts_idx; Type: INDEX; Schema: osm2pgsql_pgsql; Owner: -
+-- Name: planet_osm_polygon_osm_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX planet_osm_rels_parts_idx ON osm2pgsql_pgsql.planet_osm_rels USING gin (parts) WITH (fastupdate=off);
+CREATE INDEX planet_osm_polygon_osm_id_idx ON public.planet_osm_polygon USING btree (osm_id);
 
 
 --
--- Name: planet_osm_ways_nodes_idx; Type: INDEX; Schema: osm2pgsql_pgsql; Owner: -
+-- Name: planet_osm_polygon_way_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX planet_osm_ways_nodes_idx ON osm2pgsql_pgsql.planet_osm_ways USING gin (nodes) WITH (fastupdate=off);
+CREATE INDEX planet_osm_polygon_way_idx ON public.planet_osm_polygon USING gist (way);
+
+
+--
+-- Name: planet_osm_rels_parts_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX planet_osm_rels_parts_idx ON public.planet_osm_rels USING gin (parts) WITH (fastupdate=off);
+
+
+--
+-- Name: planet_osm_roads_osm_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX planet_osm_roads_osm_id_idx ON public.planet_osm_roads USING btree (osm_id);
+
+
+--
+-- Name: planet_osm_roads_way_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX planet_osm_roads_way_idx ON public.planet_osm_roads USING gist (way);
+
+
+--
+-- Name: planet_osm_ways_nodes_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX planet_osm_ways_nodes_idx ON public.planet_osm_ways USING gin (nodes) WITH (fastupdate=off);
 
 
 --
