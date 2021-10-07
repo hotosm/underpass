@@ -130,6 +130,9 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     }
 
     for (auto vit = std::begin(node.tags); vit != std::end(node.tags); ++vit) {
+	if (node.action == osmobjects::remove) {
+	    continue;
+	}
         if (tests.containsKey(vit->first)) {
             // std::cerr << "Matched key " << vit->first << "!" << std::endl;
             keyexists++;
@@ -220,6 +223,9 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
         values = false;
     }
     for (auto vit = std::begin(way.tags); vit != std::end(way.tags); ++vit) {
+	if (way.action == osmobjects::remove) {
+	    continue;
+	}
         if (tests.containsKey(vit->first)) {
             // std::cerr << "Matched key " << vit->first << "!" << std::endl;
             keyexists++;
@@ -227,6 +233,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             if (!minimal) {
                 status->status.insert(incomplete);
             }
+	    continue;
         }
         if (tests.containsValue(vit->first, vit->second)) {
             // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
@@ -234,13 +241,12 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             // status->status.insert(correct);
         } else {
             if (!values) {
-                status->status.insert(badvalue);
+		status->status.insert(badvalue);
             }
         }
         if (!values) {
-            if (vit->first == "building" && vit->second == "residential" &&
-                !way.tags.count("name")) {
-                status->status.insert(badvalue);
+            if ((vit->first == "building" && vit->second == "commercial") && !way.tags.count("name")) {
+		status->status.insert(badvalue);
             }
         }
 
@@ -274,7 +280,9 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     }
     if (keyexists == tests.tags.size() && valexists == tests.tags.size()) {
         status->status.clear();
-        status->status.insert(complete);
+        if (!minimal) {
+	    status->status.insert(complete);
+	}
     } else {
         if (!minimal) {
             status->status.insert(incomplete);
