@@ -734,27 +734,29 @@ Osm2Pgsql::upsertRelation(const std::shared_ptr<osmobjects::OsmRelation> &relati
                 }
             }
 
-            const auto insert_sql{str(format(R"sql(
-             INSERT INTO %1%.planet_osm_polygon (osm_id, way, tags %3% )
-                 VALUES (-%2%, ST_Collect(ARRAY[%6%]), %5% %4%)
-             )sql") % schema % relation->id %
-                                      parser.tag_field_names % parser.tag_field_values % parser.tags_hstore_literal %
-                                      multi_polygons_parts_sql)};
+            if (!multi_polygons_parts_sql.empty()) {
+                const auto insert_sql{str(format(R"sql(
+               INSERT INTO %1%.planet_osm_polygon (osm_id, way, tags %3% )
+                   VALUES (-%2%, ST_Collect(ARRAY[%6%]), %5% %4%)
+               )sql") % schema % relation->id %
+                                          parser.tag_field_names % parser.tag_field_values % parser.tags_hstore_literal %
+                                          multi_polygons_parts_sql)};
 
-            //std::cerr << insert_sql << std::endl;
+                //std::cerr << insert_sql << std::endl;
 
-            worker.exec0(insert_sql);
+                worker.exec0(insert_sql);
 
-            // Update area
-            const auto update_sql = str(format(R"sql(
-               UPDATE %1%.planet_osm_polygon SET
-                 way_area = ST_Area(way)
-               WHERE osm_id = -%2%)sql") %
-                                        schema % relation->id);
-            worker.exec0(update_sql);
-
-            //std::cerr << update_sql << std::endl;
+                // Update area
+                const auto update_sql = str(format(R"sql(
+                 UPDATE %1%.planet_osm_polygon SET
+                   way_area = ST_Area(way)
+                 WHERE osm_id = -%2%)sql") %
+                                            schema % relation->id);
+                worker.exec0(update_sql);
+                //std::cerr << update_sql << std::endl;
+            }
         }
+
         worker.exec("COMMIT;");
     } catch (const std::exception &ex) {
         log_error(_("Couldn't upsert polygon records: %1%"), ex.what());

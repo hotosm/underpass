@@ -152,7 +152,7 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly, cons
             boost::posix_time::time_duration delta;
             if (changefile->changes.size() > 0) {
                 delta = now - changefile->changes.front()->closed_at;
-		// log_debug("DELTA1: %1%", (delta.hours()*60) + delta.minutes());
+                // log_debug("DELTA1: %1%", (delta.hours()*60) + delta.minutes());
                 if ((delta.hours() * 60) + delta.minutes() <= 1) {
                     std::this_thread::sleep_for(std::chrono::minutes{1});
                 }
@@ -355,12 +355,6 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
                 std::cerr << e.what() << std::endl;
             }
 
-            if (o2pgsql.isOpen()) {
-                o2pgsql.updateDatabase(osmchanges);
-            } else {
-                log_debug(_("osm2pgsql DB is closed, couldn't store changes!"));
-            }
-
         } catch (std::exception &e) {
             log_error(_("%1% is corrupted!"), remote.url);
             std::cerr << e.what() << std::endl;
@@ -398,6 +392,12 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
     //timer.startTimer();
     osmchanges->areaFilter(poly);
     //timer.endTimer("osmchanges::areaFilter");
+
+    if (o2pgsql.isOpen()) {
+        o2pgsql.updateDatabase(osmchanges);
+    } else {
+        log_debug(_("osm2pgsql DB is closed, changes will not be stored!"));
+    }
 
     timer.startTimer();
     // These stats are for the entire file
