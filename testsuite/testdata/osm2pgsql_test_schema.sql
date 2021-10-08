@@ -53,7 +53,7 @@ COMMENT ON EXTENSION postgis IS 'PostGIS geometry, geography, and raster spatial
 
 SET default_tablespace = '';
 
-SET default_table_access_method = heap;
+-- SET default_table_access_method = heap;
 
 --
 -- Name: planet_osm_line; Type: TABLE; Schema: public; Owner: -
