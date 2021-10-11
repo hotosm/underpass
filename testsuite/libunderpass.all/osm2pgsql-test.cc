@@ -278,7 +278,7 @@ main(int argc, char *argv[])
 
     // Test moving and deleting nodes change polygons
     std::ifstream ifs_node(testosm2pgsql.source_tree_root / "testsuite" / "testdata" / "test_change_node.osc");
-    const std::string xml_node{std::istreambuf_iterator<char>{ifs_node}, {}};
+    std::string xml_node{std::istreambuf_iterator<char>{ifs_node}, {}};
 
     // Test update from osm changes
     std::shared_ptr<OsmChangeFile> osm_changes_node = std::make_shared<OsmChangeFile>();
@@ -346,5 +346,37 @@ main(int argc, char *argv[])
                                       ".planet_osm_rels WHERE id = 1");
         COMPARE(results.size(), 0,
                 "Osm2Pgsql::updateDatabase() - verify multipolygon was deleted from polygon");
+    }
+
+    // Test multipolygon made from unclosed ways
+    ifs_node = testosm2pgsql.source_tree_root / "testsuite" / "testdata" / "test_multipolygon.osc";
+    xml_node = std::string({std::istreambuf_iterator<char>{ifs_node}, {}});
+
+    // Test update from osm changes
+    osm_changes_node = std::make_shared<OsmChangeFile>();
+    xml_stream_node = std::stringstream(xml_node);
+    osm_changes_node->readXML(xml_stream_node);
+
+    // Read the osm change and process it
+    if (!testosm2pgsql.updateDatabase(osm_changes_node)) {
+        runtest.fail("Osm2Pgsql::updateDatabase() nodes");
+        exit(EXIT_FAILURE);
+    } else {
+        // Check for changes!
+        results = testosm2pgsql.query("SELECT ST_AsText(way) AS geom, *  FROM " +
+                                      testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME +
+                                      ".planet_osm_polygon WHERE osm_id = -641");
+
+        COMPARE(results.at(0)["geom"].as(std::string()), "POLYGON((1.4 48,1.4 48.5,1.5 48.5,1.4 48),(1.41 48.3,1.41 48.4,1.43 48.4,1.41 48.3))",
+                "Osm2Pgsql::updateDatabase() - verify not closed multipolygon geometry");
+
+        COMPARE(results.at(0)["place"].as(std::string()), "island",
+                "Osm2Pgsql::updateDatabase() - verify not closed multipolygon place");
+
+        COMPARE(results.at(0)["name"].as(std::string()), "Isla",
+                "Osm2Pgsql::updateDatabase() - verify not closed multipolygon name");
+
+        COMPARE(results.at(0)["tags"].as(std::string()), R"tags("type"=>"multipolygon", "osm_version"=>"1", "osm_changeset"=>"1", "osm_timestamp"=>"2012-07-10T00:00:00Z")tags",
+                "Osm2Pgsql::updateDatabase() - verify not closed multipolygon tags");
     }
 }

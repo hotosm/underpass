@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version="0.6" generator="manually_generated/1.8.0">
+    <create>
+        <node id="621" lon="1.4" lat="48" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+        <node id="622" lon="1.4" lat="48.5" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+        <node id="623" lon="1.5" lat="48.5" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+        <!-- inner -->
+        'POLYGON((1.4170479180300859 48.38748824034688312, 1.4275380399214761 48.38748824034688312, 1.4275380399214761 48.39158980284689449, 1.4170479180300859 48.39158980284689449, 1.4170479180300859 48.38748824034688312))
+
+        <node id="721" lon="1.41" lat="48.3" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+        <node id="722" lon="1.41" lat="48.4" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+        <node id="723" lon="1.43" lat="48.4" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
+
+
+        <way id="631" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z">
+            <nd ref="623"/>
+            <nd ref="622"/>
+            <nd ref="621"/>
+            <tag k="natural" v="coastline"/>
+        </way>
+        <way id="632" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z">
+            <nd ref="621"/>
+            <nd ref="623"/>
+            <tag k="natural" v="coastline"/>
+        </way>
+
+        <way id="731" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z">
+            <nd ref="723"/>
+            <nd ref="722"/>
+            <nd ref="721"/>
+            <tag k="natural" v="coastline"/>
+        </way>
+        <way id="732" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z">
+            <nd ref="721"/>
+            <nd ref="723"/>
+            <tag k="natural" v="coastline"/>
+        </way>
+
+        <relation id="641" user="some_user" uid="1" version="1" changeset="1" timestamp="2012-07-10T00:00:00Z">
+            <member type="way" ref="631" role="outer"/>
+            <member type="way" ref="632" role="outer"/>
+            <member type="way" ref="731" role="inner"/>
+            <member type="way" ref="732" role="inner"/>
+            <tag k="name" v="Isla"/>
+            <tag k="place" v="island"/>
+            <tag k="type" v="multipolygon"/>
+        </relation>
+    </create>
+</osmChange>

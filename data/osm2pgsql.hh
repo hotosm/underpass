@@ -163,8 +163,11 @@ class Osm2Pgsql : public pq::Pq {
 
     struct Polygon {
         Polygon() = default;
-        Polygon(long outer_ring) : outer(outer_ring){};
-        long outer = std::numeric_limits<long>::lowest();
+        Polygon(long outer_ring)
+        {
+            outer.push_back(outer_ring);
+        };
+        std::list<long> outer;
         std::string inner;
         long id = std::numeric_limits<long>::lowest();
     };
@@ -200,6 +203,9 @@ class Osm2Pgsql : public pq::Pq {
 
         void parse(const std::map<std::string, std::string> &tags, const pqxx::nontransaction &worker, bool is_point);
     };
+
+    // Returns a list of not closed ways and their being/end nodes
+    std::map<long, std::pair<long, long>> notClosedWays(const std::list<long> line_ids, pqxx::nontransaction &worker) const;
 
     ptime last_update = not_a_date_time;
     std::string dburl;
