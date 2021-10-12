@@ -182,6 +182,7 @@ class Osm2Pgsql : public pq::Pq {
 
         bool is_road = false;
         bool is_polygon = false;
+        bool has_generic_key = false;
         int z_order = 0;
 
         static const std::regex tags_escape_re;
@@ -195,6 +196,9 @@ class Osm2Pgsql : public pq::Pq {
 
         /// These tags make a polygon
         static const std::set<std::string> polygon_tags;
+
+        /// Objects without any of the following keys will be deleted
+        static const std::set<std::string> generic_keys;
 
         /// Array used to specify z_order per key/value combination.
         /// Each element has the form {key, value}, {z_order, is_road}.

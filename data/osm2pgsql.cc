@@ -151,6 +151,77 @@ const std::set<std::string> Osm2Pgsql::TagParser::column_points_stored_tags = {
 };
 
 
+const std::set<std::string> Osm2Pgsql::TagParser::generic_keys = {
+    "access",
+    "addr:housename",
+    "addr:housenumber",
+    "addr:interpolation",
+    "admin_level",
+    "aerialway",
+    "aeroway",
+    "amenity",
+    "area",
+    "barrier",
+    "bicycle",
+    "boundary",
+    "brand",
+    "bridge",
+    "building",
+    "capital",
+    "construction",
+    "covered",
+    "culvert",
+    "cutting",
+    "denomination",
+    "disused",
+    "ele",
+    "embarkment",
+    "foot",
+    "generation:source",
+    "harbour",
+    "highway",
+    "historic",
+    "hours",
+    "intermittent",
+    "junction",
+    "landuse",
+    "layer",
+    "leisure",
+    "lock",
+    "man_made",
+    "military",
+    "motor_car",
+    "name",
+    "natural",
+    "office",
+    "oneway",
+    "operator",
+    "place",
+    "population",
+    "power",
+    "power_source",
+    "public_transport",
+    "railway",
+    "ref",
+    "religion",
+    "route",
+    "service",
+    "shop",
+    "sport",
+    "surface",
+    "toll",
+    "tourism",
+    "tower:type",
+    "tracktype",
+    "tunnel",
+    "type",
+    "water",
+    "waterway",
+    "wetland",
+    "width",
+    "wood"
+};
+
 const std::map<std::pair<std::string, std::string>, std::pair<bool, int>> Osm2Pgsql::TagParser::z_index_map = {
     {{"railway", ""}, {5, 1}},
     {{"boundary", "administrative "}, {0, 1}},
@@ -542,10 +613,10 @@ Osm2Pgsql::upsertNode(const std::shared_ptr<osmobjects::OsmNode> &node) const
     const std::string delete_sql{str(format(R"sql(DELETE FROM %1%.planet_osm_point WHERE osm_id = $1)sql") % schema)};
     // Insert
     const std::string insert_sql{str(format(R"sql(
-  INSERT INTO %1%.planet_osm_point
-    (osm_id, way, tags %2%)
-    VALUES ($1, public.ST_SetSRID(public.ST_MakePoint($2, $3), 4326), %4% %3%)
-  )sql") % schema % parser.tag_field_names %
+      INSERT INTO %1%.planet_osm_point
+        (osm_id, way, tags %2%)
+        VALUES ($1, public.ST_SetSRID(public.ST_MakePoint($2, $3), 4326), %4% %3%)
+      )sql") % schema % parser.tag_field_names %
                                      parser.tag_field_values % parser.tags_hstore_literal)};
 
     //std::cerr << middle_sql << std::endl;
@@ -556,7 +627,10 @@ Osm2Pgsql::upsertNode(const std::shared_ptr<osmobjects::OsmNode> &node) const
         worker.exec_params0(middle_sql, node->id, static_cast<int>(node->point.x() * 10000000),
                             static_cast<int>(node->point.y() * 10000000));
         worker.exec_params0(delete_sql, node->id);
-        worker.exec_params0(insert_sql, node->id, node->point.x(), node->point.y());
+        // Filter out nodes without any generic key
+        if (parser.has_generic_key) {
+            worker.exec_params0(insert_sql, node->id, node->point.x(), node->point.y());
+        }
         worker.exec("COMMIT;");
     } catch (const std::exception &ex) {
         log_error(_("Couldn't upsert node/points record: %1%"), ex.what());
@@ -592,15 +666,15 @@ Osm2Pgsql::upsertRelation(const std::shared_ptr<osmobjects::OsmRelation> &relati
     // then all way members, then all relation members, and way_off is the index of the
     // first way member and rel_off the index of the first relation member.
     /*
-   Column  |   Type   | Collation | Nullable | Default
-  ---------+----------+-----------+----------+---------
-   id      | bigint   |           | not null |
-   way_off | smallint |           |          |
-   rel_off | smallint |           |          |
-   parts   | bigint[] |           |          |
-   members | text[]   |           |          |
-   tags    | text[]   |           |          |
- */
+     Column  |   Type   | Collation | Nullable | Default
+    ---------+----------+-----------+----------+---------
+     id      | bigint   |           | not null |
+     way_off | smallint |           |          |
+     rel_off | smallint |           |          |
+     parts   | bigint[] |           |          |
+     members | text[]   |           |          |
+     tags    | text[]   |           |          |
+    */
 
     std::string members{"'{"};
     std::string parts{"'{"};
@@ -1037,6 +1111,9 @@ Osm2Pgsql::TagParser::parse(const std::map<std::string, std::string> &tags, cons
             z_order += z_index_map.at(tag).first;
         }
         if (!tag.second.empty()) {
+            if (generic_keys.find(tag.first) != generic_keys.cend()) {
+                has_generic_key = true;
+            }
             if (polygon_tags.find(tag.first) != polygon_tags.cend() || (tag.first == "area" && tag.second == "yes")) {
                 is_polygon = true;
             }
