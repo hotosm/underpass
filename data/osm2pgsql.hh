@@ -163,8 +163,11 @@ class Osm2Pgsql : public pq::Pq {
 
     struct Polygon {
         Polygon() = default;
-        Polygon(long outer_ring) : outer(outer_ring){};
-        long outer = std::numeric_limits<long>::lowest();
+        Polygon(long outer_ring)
+        {
+            outer.push_back(outer_ring);
+        };
+        std::list<long> outer;
         std::string inner;
         long id = std::numeric_limits<long>::lowest();
     };
@@ -179,6 +182,7 @@ class Osm2Pgsql : public pq::Pq {
 
         bool is_road = false;
         bool is_polygon = false;
+        bool has_generic_key = false;
         int z_order = 0;
 
         static const std::regex tags_escape_re;
@@ -193,6 +197,9 @@ class Osm2Pgsql : public pq::Pq {
         /// These tags make a polygon
         static const std::set<std::string> polygon_tags;
 
+        /// Objects without any of the following keys will be deleted
+        static const std::set<std::string> generic_keys;
+
         /// Array used to specify z_order per key/value combination.
         /// Each element has the form {key, value}, {z_order, is_road}.
         /// If is_road=1, the object will be added to planet_osm_roads.
@@ -200,6 +207,9 @@ class Osm2Pgsql : public pq::Pq {
 
         void parse(const std::map<std::string, std::string> &tags, const pqxx::nontransaction &worker, bool is_point);
     };
+
+    // Returns a list of not closed ways and their being/end nodes
+    std::map<long, std::pair<long, long>> notClosedWays(const std::list<long> line_ids, pqxx::nontransaction &worker) const;
 
     ptime last_update = not_a_date_time;
     std::string dburl;
