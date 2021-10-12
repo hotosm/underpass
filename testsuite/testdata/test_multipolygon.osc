@@ -5,8 +5,6 @@
         <node id="622" lon="1.4" lat="48.5" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
         <node id="623" lon="1.5" lat="48.5" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
         <!-- inner -->
-        'POLYGON((1.4170479180300859 48.38748824034688312, 1.4275380399214761 48.38748824034688312, 1.4275380399214761 48.39158980284689449, 1.4170479180300859 48.39158980284689449, 1.4170479180300859 48.38748824034688312))
-
         <node id="721" lon="1.41" lat="48.3" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
         <node id="722" lon="1.41" lat="48.4" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>
         <node id="723" lon="1.43" lat="48.4" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-09-10T00:00:00Z"/>

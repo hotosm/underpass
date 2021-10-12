@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version="0.6" generator="manually_generated/1.8.0">
+    <modify>
+        <node id="622" lon="1.4" lat="48.51" user="some_user" uid="1" version="2" changeset="1" timestamp="2021-09-11T00:00:00Z"/>
+        <node id="623" lon="1.5" lat="48.51" user="some_user" uid="1" version="2" changeset="1" timestamp="2021-09-11T00:00:00Z"/>
+        <!-- inner -->
+        <node id="722" lon="1.41" lat="48.41" user="some_user" uid="1" version="2" changeset="1" timestamp="2021-09-11T00:00:00Z"/>
+        <node id="723" lon="1.43" lat="48.41" user="some_user" uid="1" version="2" changeset="1" timestamp="2021-09-11T00:00:00Z"/>
+    </modify>
+</osmChange>
