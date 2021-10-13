@@ -5,29 +5,30 @@ config:
       - yes
 
 tags:
-    - highway
-        - trunk
-        - tertiary
-        - secondary
-        - unclassified
-        - track
-        - residential
-        - path
-        - service
-        - bridge
+  - highway:
+      - trunk
+      - primary
+      - tertiary
+      - secondary
+      - unclassified
+      - track
+      - residential
+      - path
+      - service
+      - bridge
 
-    - smoothness:
-        - good
-        - bad
-        - very bad
-        - horrible
-        - impassable
-        - very_horrible
+  - smoothness:
+      - good
+      - bad
+      - very bad
+      - horrible
+      - impassable
+      - very_horrible
 
-    - surface:
-        - dirt
-        - asphalt
-        - paved
-        - grassy
-        - unpaved
-        - gravel
+  - surface:
+      - dirt
+      - asphalt
+      - paved
+      - grassy
+      - unpaved
+      - gravel
