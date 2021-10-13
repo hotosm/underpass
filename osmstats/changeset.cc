@@ -65,6 +65,8 @@ using namespace boost::gregorian;
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/tokenizer.hpp>
+#include <boost/tokenizer.hpp>
+#include <boost/timer/timer.hpp>
 
 #include "osmstats/changeset.hh"
 #include "osmstats/osmstats.hh"
@@ -183,20 +185,18 @@ ChangeSetFile::readChanges(const std::string &file)
 void
 ChangeSetFile::areaFilter(const multipolygon_t &poly)
 {
+#if TIMING_DEBUG_X
+    boost::timer::auto_cpu_timer timer("ChangeSetFile::areaFilter: took %w seconds\n");
+#endif
     // log_debug(_("Pre filtering changeset size is %1%"), changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
         ChangeSet *change = it->get();
         point_t pt;
-        boost::geometry::append(change->bbox,
-                                point_t(change->max_lon, change->max_lat));
-        boost::geometry::append(change->bbox,
-                                point_t(change->max_lon, change->min_lat));
-        boost::geometry::append(change->bbox,
-                                point_t(change->min_lon, change->min_lat));
-        boost::geometry::append(change->bbox,
-                                point_t(change->min_lon, change->max_lat));
-        boost::geometry::append(change->bbox,
-                                point_t(change->max_lon, change->max_lat));
+        boost::geometry::append(change->bbox, point_t(change->max_lon, change->max_lat));
+        boost::geometry::append(change->bbox, point_t(change->max_lon, change->min_lat));
+        boost::geometry::append(change->bbox, point_t(change->min_lon, change->min_lat));
+        boost::geometry::append(change->bbox, point_t(change->min_lon, change->max_lat));
+        boost::geometry::append(change->bbox, point_t(change->max_lon, change->max_lat));
         boost::geometry::centroid(change->bbox, pt);
         if (poly.empty()) {
             // log_debug(_("Accepting changeset %1% as in priority area because area information is missing"),

@@ -131,7 +131,9 @@ OsmChangeFile::readChanges(const std::string &file)
 bool
 OsmChangeFile::readXML(std::istream &xml)
 {
+#if TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("OsmChangeFile::readXML: took %w seconds\n");
+#endif
     // On non-english numeric locales using decimal separator different than '.'
     // this is necessary to parse lat-lon with std::stod correctly without
     // loosing precision
@@ -444,7 +446,9 @@ OsmChangeFile::dump(void)
 void
 OsmChangeFile::areaFilter(const multipolygon_t &poly)
 {
-    // boost::timer::auto_cpu_timer timer("OsmChangeFile::areaFilter: took %w seconds\n");
+#if TIMING_DEBUG_X
+    boost::timer::auto_cpu_timer timer("OsmChangeFile::areaFilter: took %w seconds\n");
+#endif
     std::map<long, bool> priority;
     // log_debug(_("Pre filtering size is %1%"), changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
@@ -517,7 +521,9 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
 std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>>
 OsmChangeFile::collectStats(const multipolygon_t &poly)
 {
+#if TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("OsmChangeFile::collectStats: took %w seconds\n");
+#endif
     // FIXME: stuff to extract for MERL
     // names added to villages, neigborhood, or citys
     // facilities added (aggregated by schools, clinics, water points, bridges,
@@ -832,7 +838,9 @@ std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 OsmChangeFile::validateNodes(const multipolygon_t &poly,
                              std::shared_ptr<Validate> &plugin)
 {
+#if TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("OsmChangeFile::validateNodes: took %w seconds\n");
+#endif
     auto totals =
         std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
@@ -879,7 +887,9 @@ std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 OsmChangeFile::validateWays(const multipolygon_t &poly,
                             std::shared_ptr<Validate> &plugin)
 {
+#if TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("OsmChangeFile::validateWays: took %w seconds\n");
+#endif
     auto totals = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();

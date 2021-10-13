@@ -304,10 +304,10 @@ QueryOSMStats::applyChange(const changeset::ChangeSet &change)
         // return false;
     }
 
-    if (change.num_changes == 0) {
-        log_debug(_("WARNING: no changes!"), change.id);
-        return false;
-    }
+    // if (change.num_changes == 0) {
+    //     log_debug(_("WARNING: no changes!"), change.id);
+    //     return false;
+    // }
 
     // Add the bounding box of the changeset here next
     // long_high,lat_high,
@@ -358,6 +358,9 @@ QueryOSMStats::applyChange(const ValidateStatus &validation)
     log_debug(_("Applying Validation data"));
     validation.dump();
 
+    if (validation.angle == 0 && validation.status.size() == 0) {
+	return true;
+    }
     std::map<osmobjects::osmtype_t, std::string> objtypes = {
         {osmobjects::empty, "empty"},
         {osmobjects::node, "node"},
@@ -371,10 +374,11 @@ QueryOSMStats::applyChange(const ValidateStatus &validation)
         {correct, "correct"},
         {badgeom, "badgeom"}};
     std::string query =
-        "INSERT INTO validation (osm_id, angle, user_id, type, status, timestamp, location) VALUES(";
+        "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, timestamp, location) VALUES(";
     boost::format fmt(
-        "%d, %g, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)");
+        "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)");
     fmt % validation.osm_id;
+    fmt % validation.change_id;
     fmt % validation.angle;
     fmt % validation.user_id;
     fmt % objtypes[validation.objtype];
