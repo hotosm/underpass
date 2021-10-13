@@ -56,12 +56,14 @@ tags:
       - kitchen
       - roof
       - construction
+      - grocery
       - school
       - clinic
       - hospital
       - office
       - public
       - church
+      - chapel
       - mosque
       - temple
       - service
@@ -83,3 +85,13 @@ tags:
       - latrines
       - toilet
       - toilets
+      - bunker
+      - dormitory
+      - guard_house
+      - cowshed
+      - storage_tank
+      - garage
+      - garages
+      - wayside_shrine
+      - store
+      - supermarket
