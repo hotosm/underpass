@@ -387,7 +387,7 @@ main(int argc, char *argv[])
         } else if (strfreq[0] == 'd') {
             replicator_config.frequency = replication::daily;
         } else {
-            std::cerr << "ERROR: Invalid frequency!" << std::endl;
+            log_debug(_("Invalid frequency!"));
             exit(-1);
         }
     }
@@ -442,7 +442,7 @@ main(int argc, char *argv[])
                                           replicator_config.underpass_db_url);
 
             if (!state->isValid()) {
-                std::cerr << "ERROR: Invalid state from path!" << replicator_config.starting_url_path << std::endl;
+                //std::cerr << "ERROR: Invalid state from path!" << replicator_config.starting_url_path << std::endl;
                 exit(-1);
             }
 
