@@ -309,7 +309,7 @@ Planet::downloadFile(const std::string &url)
     // Send the HTTP request to the remote host
     try {
         http::write(stream, req);
-        log_debug(_("Downloading %1% ... "), url);
+        // log_debug(_("Downloading %1% ... "), url);
     } catch (boost::system::system_error ex) {
         log_error(_("stream write failed: %1%"), ex.what());
         return data;
