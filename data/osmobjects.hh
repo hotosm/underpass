@@ -34,7 +34,6 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
-#include <boost/progress.hpp>
 
 typedef boost::geometry::model::d2::point_xy<double> point_t;
 typedef boost::geometry::model::polygon<point_t> polygon_t;
