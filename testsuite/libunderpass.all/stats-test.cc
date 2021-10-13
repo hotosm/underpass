@@ -30,7 +30,6 @@
 #include "boost/date_time/gregorian/gregorian.hpp"
 
 #include "osmstats/osmstats.hh"
-#include "timer.hh"
 
 using namespace boost::posix_time;
 using namespace boost::gregorian;
@@ -48,7 +47,6 @@ main(int argc, char *argv[])
     std::string database = "osmstats";
 
     TestStats testos;
-    Timer timer;
     if (testos.connect(database)) {
         runtest.pass("taskingManager::connect()");
     } else {

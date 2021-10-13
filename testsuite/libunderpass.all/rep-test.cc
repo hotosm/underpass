@@ -31,7 +31,6 @@
 
 #include "osmstats/replication.hh"
 #include "data/osmobjects.hh"
-#include "timer.hh"
 
 using namespace boost::posix_time;
 using namespace boost::gregorian;
@@ -51,7 +50,6 @@ main(int argc, char *argv[])
 {
 
     TestRep tr;
-    Timer timer;
 
     // 000 tests
     auto result = tr.findData(replication::changeset, time_from_string("2014-09-07 10:23"));

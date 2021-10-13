@@ -30,7 +30,6 @@
 #include "data/import.hh"
 #include "data/threads.hh"
 #include "data/underpass.hh"
-#include "timer.hh"
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -52,7 +51,6 @@ int
 main(int argc, char* argv[])
 {
     std::string basedir = DATADIR;
-    Timer timer;
     
     Underpass under("underpass");
     

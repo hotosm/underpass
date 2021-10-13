@@ -53,8 +53,6 @@ void test_plugin(std::shared_ptr<Validate> &plugin);
 int
 main(int argc, char *argv[])
 {
-    Timer timer;
-
     logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
     dbglogfile.setWriteDisk(true);
     dbglogfile.setLogFilename("val-test.log");
