@@ -37,6 +37,7 @@ using boost::format;
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
+#include <boost/timer/timer.hpp>
 
 #include "osm2pgsql.hh"
 #include "data/osmobjects.hh"
@@ -275,7 +276,7 @@ Osm2Pgsql::getLastUpdate()
 bool
 Osm2Pgsql::updateDatabase(const std::string &osm_changes)
 {
-
+    boost::timer::auto_cpu_timer ttt("Osm2Pgsql::updateDatabase: took %w seconds\n");
     // -l for 4326
     std::string osm2pgsql_update_command{
         "osm2pgsql -l --append -r xml -s -C 300 -G --hstore-all --extra-attributes --middle-schema=" + schema +
