@@ -42,7 +42,8 @@ BOOST_LIBS = \
 	$(BOOST_PROGRAM_OPTIONS_LIB) \
 	$(BOOST_IOSTREAMS_LIB) \
 	$(BOOST_THREAD_LIB) \
-	$(BOOST_LOCALE_LIB)
+	$(BOOST_LOCALE_LIB) \
+	$(BOOST_TIMER_LIB)
 
 AM_CXXFLAGS = \
         -DPKGLIBDIR=\"$(pkglibdir)\" \
@@ -90,6 +91,7 @@ under_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 # Test the TM DB classes
 tm_test_SOURCES = tm-test.cc
 tm_test_LDFLAGS = -L../..
+tm_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
 tm_test_LDADD = -lpqxx -lunderpass  $(BOOST_LIBS)
 
 # Test the OSM Stats class
