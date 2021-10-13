@@ -51,6 +51,7 @@ using namespace boost::gregorian;
 #include <boost/program_options.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/regex.hpp>
+#include <boost/timer/timer.hpp>
 
 using namespace boost;
 namespace opts = boost::program_options;
@@ -64,7 +65,6 @@ namespace opts = boost::program_options;
 #include "data/underpass.hh"
 #include "log.hh"
 #include "replicatorconfig.hh"
-#include "timer.hh"
 
 using namespace osmstats;
 using namespace underpass;
@@ -456,8 +456,7 @@ main(int argc, char *argv[])
             clast = replicator_config.planet_server + "/" + datadir + "changesets" + state2->path;
             remote.parse(clast);
             // remote.dump();
-            changesets_thread =
-                std::thread(threads::startMonitor, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
+            changesets_thread = std::thread(threads::startMonitor, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
         } else if (!starttime.is_not_a_date_time()) {
             // No URL, use the timestamp
             auto state = under.getState(replicator_config.frequency, starttime);
