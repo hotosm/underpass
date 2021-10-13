@@ -52,7 +52,6 @@ using namespace boost::gregorian;
 
 #include "data/osmobjects.hh"
 #include "osmstats/osmstats.hh"
-#include "timer.hh"
 
 // Forward declaration
 namespace osmstats {
