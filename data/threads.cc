@@ -64,6 +64,7 @@ using tcp = net::ip::tcp;         // from <boost/asio/ip/tcp.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>
 #include <boost/dll/shared_library.hpp>
 #include <boost/function.hpp>
+#include <boost/timer/timer.hpp>
 
 #include "data/osmobjects.hh"
 #include "data/threads.hh"
@@ -74,7 +75,6 @@ using tcp = net::ip::tcp;         // from <boost/asio/ip/tcp.hpp>
 #include "osmstats/osmchange.hh"
 #include "osmstats/osmstats.hh"
 #include "osmstats/replication.hh"
-#include "timer.hh"
 #include "validate/validate.hh"
 
 std::mutex stream_mutex;
@@ -139,15 +139,12 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly, cons
 	    }
 	}
 #endif
-        Timer timer;
         // remote.dump();
         if (remote.frequency == replication::changeset) {
-            timer.startTimer();
             auto changefile = threadChangeSet(remote, poly, ostats);
             for (auto it = std::begin(changefile->changes); it != std::end(changefile->changes); ++it) {
                 ostats.applyChange(*it->get());
             }
-            timer.endTimer("changeSet");
             ptime now = boost::posix_time::microsec_clock::local_time();
             boost::posix_time::time_duration delta;
             if (changefile->changes.size() > 0) {
@@ -162,11 +159,9 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly, cons
         } else {
             std::string file = remote.url + ".osc.gz";
             ptime now = boost::posix_time::microsec_clock::local_time();
-            timer.startTimer();
             auto osmchange = threadOsmChange(remote, poly, ostats, osm2pgsql, validator);
             // FIXME: There is probably a better way to determine when to delay,
             // or when to just keep processing files when catching up.
-            timer.endTimer("osmChange");
             boost::posix_time::time_duration delta;
             if (osmchange->changes.size() > 0) {
                 delta = now - osmchange->changes.back()->final_entry;
@@ -189,7 +184,6 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly, cons
         }
         remote.Increment();
         // remote.dump();
-        // planet->endTimer("change file");
     }
 }
 
@@ -297,6 +291,7 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
     // osmstats::QueryOSMStats ostats;
     std::vector<std::string> result;
     auto osmchanges = std::make_shared<osmchange::OsmChangeFile>();
+    boost::timer::auto_cpu_timer timer("threadOsmChange: took %w seconds\n");
 
     auto data = std::make_shared<std::vector<unsigned char>>();
     // If the file is stored on disk, read it in instead of downloading
@@ -388,18 +383,12 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
     }
     //timer.stop();
     // log_debug("Took %1% to process validation", timer.wall);
-    Timer timer;
-    //timer.startTimer();
     osmchanges->areaFilter(poly);
-    //timer.endTimer("osmchanges::areaFilter");
 
     if (o2pgsql.isOpen()) {
         o2pgsql.updateDatabase(osmchanges);
-    } else {
-        log_debug(_("osm2pgsql DB is closed, changes will not be stored!"));
     }
 
-    timer.startTimer();
     // These stats are for the entire file
     auto stats = osmchanges->collectStats(poly);
     for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
@@ -409,22 +398,17 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
         // it->second->dump();
         ostats.applyChange(*it->second);
     }
-    timer.endTimer("collectStats");
 
-    timer.startTimer();
     auto nodeval = osmchanges->validateNodes(poly, plugin);
     // std::cerr << "SIZE " << nodeval->size() << std::endl;
     for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
         ostats.applyChange(*it->get());
     }
-    timer.endTimer("validate nodes");
-    timer.startTimer();
     auto wayval = osmchanges->validateWays(poly, plugin);
     // std::cerr << "SIZE " << wayval->size() << std::endl;
     for (auto it = wayval->begin(); it != wayval->end(); ++it) {
         ostats.applyChange(*it->get());
     }
-    timer.endTimer("validate ways");
 
     return osmchanges;
 }
@@ -438,6 +422,8 @@ threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly
     auto changeset = std::make_shared<changeset::ChangeSetFile>();
     auto state = std::make_shared<replication::StateFile>();
     auto data = std::make_shared<std::vector<unsigned char>>();
+    boost::timer::auto_cpu_timer ttt("threadChangeSet: took %w seconds\n");
+    
     // FIXME: this this be the datadir from the command line
 
     if (boost::filesystem::exists(remote.filespec)) {
