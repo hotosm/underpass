@@ -88,7 +88,7 @@ if [ "$1" = "configure" ]; then
     # For the output database for raw OSM data
     declare -Ag config
     config['title']="OSM Map"
-    config['prefix']="OSM2PGSQL"
+    config['prefix']="OSM2PGSQL "
     config['dbhost']="localhost"
     config['dbuser']="underpass"
     config['dbpass']="galaxy"
@@ -118,13 +118,14 @@ if [ "$1" = "configure" ]; then
 
     # For Underpass's states table, although this will be depreciated soon.
     # declare -Ag upconfig
-    # upconfig['title']="Underpass"
-    # upconfig['dbhost']="localhost"
-    # upconfig['dbuser']="underpass"
-    # upconfig['dbpass']="galaxy"
-    # upconfig['dbname']="underpass"
+    config['title']="Underpass"
+    config['prefix']="UNDERPASS"
+    config['dbhost']="localhost"
+    config['dbuser']="underpass"
+    config['dbpass']="galaxy"
+    config['dbname']="underpass"
     
-    # prompt "$(declare -p config)"
+    prompt "$(declare -p config)"
 
     # echo -n "Replace current database ? (default no)? "
     # read tmp
