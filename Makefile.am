@@ -61,7 +61,6 @@ YAML_FILES = \
 
 # inst_HEADERS = hotosm.hh hottm.hh
 libunderpass_la_SOURCES = \
-	timer.hh \
 	log.cc log.hh \
 	dsodefs.hh gettext.h \
 	hottm.cc hottm.hh \
@@ -98,6 +97,9 @@ AM_CPPFLAGS = \
 	-DPKGLIBDIR=\"$(pkglibdir)\" \
 	-DSRCDIR=\"$(srcdir)\" \
 	-DBOOST_LOCALE_HIDE_AUTO_PTR
+# Optionally timing can be turned on, which produces volumes of output which adds too much
+# clutter to the output. This should only be enabled when doing performance tuning.
+#	-DTIMING_DEBUG
 
 pkgdata_DATA = $(SQL_FILES) data/priority.geojson data/setupdb.sh
 
