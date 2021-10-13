@@ -50,14 +50,13 @@ using namespace boost::gregorian;
 #include <boost/units/systems/si/length.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
-#include <boost/progress.hpp>
+#include <boost/timer/timer.hpp>
 // #include <boost/multi_index_container.hpp>
 // #include <boost/multi_index/member.hpp>
 // #include <boost/multi_index/ordered_index.hpp>
 // using boost::multi_index_container;
 // using namespace boost::multi_index;
 
-#include "timer.hh"
 #include "validate/validate.hh"
 #include "data/osmobjects.hh"
 #include "osmstats/osmchange.hh"
@@ -132,6 +131,7 @@ OsmChangeFile::readChanges(const std::string &file)
 bool
 OsmChangeFile::readXML(std::istream &xml)
 {
+    boost::timer::auto_cpu_timer timer("OsmChangeFile::readXML: took %w seconds\n");
     // On non-english numeric locales using decimal separator different than '.'
     // this is necessary to parse lat-lon with std::stod correctly without
     // loosing precision
@@ -141,12 +141,9 @@ OsmChangeFile::readXML(std::istream &xml)
 #ifdef LIBXML
     // libxml calls on_element_start for each node, using a SAX parser,
     // and works well for large files.
-    Timer timer;
     try {
         set_substitute_entities(true);
-        timer.startTimer();
         parse_stream(xml);
-        timer.endTimer("libxml++");
     } catch (const xmlpp::exception &ex) {
         // FIXME: files downloaded seem to be missing a trailing \n,
         // so produce an error, but we can ignore this as the file is
@@ -161,15 +158,11 @@ OsmChangeFile::readXML(std::istream &xml)
     // hourly or minutely changes are small, so this is better for that
     // case.
     boost::property_tree::ptree pt;
-    Timer timer;
-    timer.startTimer();
 #ifdef USE_TMPFILE
     boost::property_tree::read_xml("tmp.xml", pt);
 #else
     boost::property_tree::read_xml(xml, pt);
 #endif
-
-    timer.endTimer("parse_tree");
 
     if (pt.empty()) {
         log_error(_("ERROR: XML data is empty!"));
@@ -451,6 +444,7 @@ OsmChangeFile::dump(void)
 void
 OsmChangeFile::areaFilter(const multipolygon_t &poly)
 {
+    // boost::timer::auto_cpu_timer timer("OsmChangeFile::areaFilter: took %w seconds\n");
     std::map<long, bool> priority;
     // log_debug(_("Pre filtering size is %1%"), changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
@@ -523,6 +517,7 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
 std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>>
 OsmChangeFile::collectStats(const multipolygon_t &poly)
 {
+    boost::timer::auto_cpu_timer timer("OsmChangeFile::collectStats: took %w seconds\n");
     // FIXME: stuff to extract for MERL
     // names added to villages, neigborhood, or citys
     // facilities added (aggregated by schools, clinics, water points, bridges,
@@ -837,6 +832,7 @@ std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 OsmChangeFile::validateNodes(const multipolygon_t &poly,
                              std::shared_ptr<Validate> &plugin)
 {
+    boost::timer::auto_cpu_timer timer("OsmChangeFile::validateNodes: took %w seconds\n");
     auto totals =
         std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
@@ -854,8 +850,7 @@ OsmChangeFile::validateNodes(const multipolygon_t &poly,
 		    continue;
 		}
             }
-            std::vector<std::string> node_tests = {"building", "place"
-                                                               "amenity"};
+            std::vector<std::string> node_tests = {"building", "place" "amenity" "place"};
             // "wastepoint";
             for (auto tit = std::begin(node_tests); tit != std::end(node_tests);
                  ++tit) {
@@ -884,6 +879,7 @@ std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 OsmChangeFile::validateWays(const multipolygon_t &poly,
                             std::shared_ptr<Validate> &plugin)
 {
+    boost::timer::auto_cpu_timer timer("OsmChangeFile::validateWays: took %w seconds\n");
     auto totals = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
@@ -897,7 +893,7 @@ OsmChangeFile::validateWays(const multipolygon_t &poly,
                 // log_debug(_("Validating Way %1% is in a priority area"), way->id);
             }
 
-            std::vector<std::string> way_tests = {"building", "highway", "waterway"};
+            std::vector<std::string> way_tests = {"building", "highway", "waterway" "place"};
             // FIXME: place
 
             for (auto wit = way_tests.begin(); wit != way_tests.end(); ++wit) {
