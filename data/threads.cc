@@ -169,7 +169,6 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly, cons
             }
             if ((delta.hours() * 60) + delta.minutes() <= 1) {
                 // log_debug("DELTA: %1%", (delta.hours()*60) + delta.minutes());
-                // planet->disconnectServer();
                 if (remote.frequency == replication::minutely) {
                     std::this_thread::sleep_for(std::chrono::minutes{1});
                 } else if (remote.frequency == replication::hourly) {
@@ -236,8 +235,6 @@ startStateThreads(const std::string &base, const std::string &file)
 
     //     // underpass::Underpass under;
     //     // under.connect();
-    //     //Timer timer;
-    //     //timer.startTimer();
     //     for (auto cit = std::begin(rng); cit != std::end(rng); ++cit) {
     //         log_debug(_("Chunk data: %1%"), *cit));
     //         for (auto it = std::begin(*cit); it != std::end(*cit); ++it) {
@@ -268,7 +265,6 @@ startStateThreads(const std::string &base, const std::string &file)
     // #endif
     //             }
     //         }
-    //         //timer.endTimer("chunk ");
     //         // Don't hit the server too hard while testing, it's not polite
     //         // std::this_thread::sleep_for(std::chrono::seconds{1});
     //         planet->disconnectServer();
@@ -280,7 +276,6 @@ startStateThreads(const std::string &base, const std::string &file)
     //     planet->ioc.reset();
     // #endif
     //     // planet->stream.socket().shutdown(tcp::socket::shutdown_both, ec);
-    //     //timer.endTimer("directory ");
 }
 
 // This thread get started for every osmChange file
@@ -291,7 +286,9 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
     // osmstats::QueryOSMStats ostats;
     std::vector<std::string> result;
     auto osmchanges = std::make_shared<osmchange::OsmChangeFile>();
+#if TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("threadOsmChange: took %w seconds\n");
+#endif
 
     auto data = std::make_shared<std::vector<unsigned char>>();
     // If the file is stored on disk, read it in instead of downloading
@@ -370,7 +367,6 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
     }
 #endif
 
-    //boost::timer::cpu_timer timer;
     for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
         osmchange::OsmChange *change = it->get();
         // change->dump();
@@ -381,8 +377,6 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
             osmobjects::OsmWay *way = it->get();
         }
     }
-    //timer.stop();
-    // log_debug("Took %1% to process validation", timer.wall);
     osmchanges->areaFilter(poly);
 
     if (o2pgsql.isOpen()) {
@@ -419,12 +413,12 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
 std::shared_ptr<changeset::ChangeSetFile>
 threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly, osmstats::QueryOSMStats &ostats)
 {
+#if TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("threadChangeSet: took %w seconds\n");
+#endif
     auto changeset = std::make_shared<changeset::ChangeSetFile>();
     auto state = std::make_shared<replication::StateFile>();
     auto data = std::make_shared<std::vector<unsigned char>>();
-    boost::timer::auto_cpu_timer ttt("threadChangeSet: took %w seconds\n");
-    
-    // FIXME: this this be the datadir from the command line
 
     if (boost::filesystem::exists(remote.filespec)) {
         log_debug(_("Reading ChangeSet: %1%"), remote.filespec);
@@ -482,16 +476,10 @@ threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly
             // return false;
         }
     }
-    // Apply the changes to the database
-    // for (auto it = std::begin(changeset.changes); it != std::end(changeset.changes); ++it) {
-    //     ostats.applyChange(*it);
-    // }
-    // changeset.dump();
 
-    //Timer timer;
-    //timer.startTimer();
+    std::cerr << "Closed At:  " << to_simple_string(changeset->changes.front()->closed_at) << std::endl;
+
     changeset->areaFilter(poly);
-    //timer.endTimer("changeset::areaFilter");
 
     // Apply the changes to the database
     for (auto it = std::begin(changeset->changes); it != std::end(changeset->changes); ++it) {

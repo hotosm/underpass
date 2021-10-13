@@ -60,15 +60,7 @@ if test $(grep -c postgres /etc/passwd) -eq 0; then
     exit 0;
 fi
 
-# Create the user account
-sudo -u postgres createuser --createdb ${OSMSTATS_DBUSER}
-if test $? -gt 1; then
-    echo "WARNING: createuser ${OSMSTATS_DBUSER} failed!"
-fi
-sudo -u postgres psql -c "ALTER USER ${OSMSTATS_DBPASS} WITH PASSWORD \'${OSMSTATS_DBPASS}\'" >& /dev/null
-
 # Note that the user running this script must have the right permissions.
-
 
 echo -n "Replace current authentication defaults (default yes)? "
 read tmp
@@ -77,7 +69,7 @@ if test x"${tmp}" != x -a x"${tmp}" = x"no"; then
 fi
 
 # The prefix for the database connection parameter environment variables
-dbs="OSMSTATS UNDERPASS"
+# dbs="OSMSTATS UNDERPASS"
 dbs="OSMSTATS"
 
 databases="underpass osmstats"
@@ -94,7 +86,7 @@ for config in ${dbs}; do
 	host=""
     fi
     if test x"${dbuser}" != x; then
-	dbuser="--username=${dbuser}"
+	user="--username=${dbuser}"
     fi
 
     echo "Setting up database ${dbname}..."
@@ -102,8 +94,8 @@ for config in ${dbs}; do
     exists="`psql ${host} ${user} -l | grep -c ${dbname}`"
     # exists=0
     if test "${exists}" -eq 0; then
-	echo "Creating postgresql database ${OSMSTATS_DBNAME}"
-	sudo -u postgres createdb ${host} -T template0 -O ${OSMSTATS_DBUSER} ${OSMSTATS_DBNAME} >& /dev/null
+	echo "Creating postgresql database ${dbname}"
+	sudo -u postgres createdb ${host} -T template0 -O ${dbuser} ${dbname} >& /dev/null
 	if test $? -gt 1; then
 	    echo "WARNING: createdb ${dbname} failed!"
 	    exit

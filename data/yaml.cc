@@ -56,8 +56,7 @@ Yaml::read(const std::string &fspec)
     try {
         yaml.open(filespec,  std::ifstream::in);
         log_debug(_("Opened %1%"), filespec);
-    }
-    catch(std::exception& e) {
+    } catch(std::exception& e) {
         log_error(_("Couildn't open %1% %2%"), filespec, e.what());
         return;
     }

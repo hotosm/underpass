@@ -276,7 +276,9 @@ Osm2Pgsql::getLastUpdate()
 bool
 Osm2Pgsql::updateDatabase(const std::string &osm_changes)
 {
-    boost::timer::auto_cpu_timer ttt("Osm2Pgsql::updateDatabase: took %w seconds\n");
+#if TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("Osm2Pgsql::updateDatabase: took %w seconds\n");
+#endif
     // -l for 4326
     std::string osm2pgsql_update_command{
         "osm2pgsql -l --append -r xml -s -C 300 -G --hstore-all --extra-attributes --middle-schema=" + schema +
@@ -313,6 +315,9 @@ Osm2Pgsql::updateDatabase(const std::string &osm_changes)
 bool
 Osm2Pgsql::updateDatabase(const std::shared_ptr<OsmChangeFile> &osm_changes) const
 {
+#if TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("Osm2Pgsql::updateDatabase: took %w seconds\n");
+#endif
     // Preconditions
     assert(static_cast<bool>(osm_changes));
 
