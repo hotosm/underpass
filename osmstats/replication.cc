@@ -909,10 +909,21 @@ Planet::fetchData(frequency_t freq, ptime timestamp, const std::string &underpas
         log_debug(_("No valid state for timestamp: %1%."), to_iso_extended_string(timestamp));
     } else {
         // We need to make sure that there isn't a closer match within the freq acceptable_delta
-        const auto previous_candidate{fetchData(freq, state->sequence - 1)};
-        if (previous_candidate->isValid() && previous_candidate->timestamp >= timestamp) {
+        int loop_counter = 1;
+        std::shared_ptr<StateFile> previous_candidate;
+        while (loop_counter <= 10) {
+            const auto previous_candidate_2{fetchData(freq, state->sequence - loop_counter)};
+            if (previous_candidate_2->isValid() && previous_candidate_2->timestamp >= timestamp) {
+                previous_candidate = previous_candidate_2;
+            } else {
+                loop_counter = 10;
+            }
+            loop_counter++;
+        }
+        if (previous_candidate && previous_candidate->isValid() && previous_candidate->timestamp >= timestamp) {
             state = previous_candidate;
             log_debug(_("Previous state found for timestamp %1% : %2%."), to_iso_extended_string(timestamp), state->sequence);
+            loop_counter = 10;
         }
     }
     return state;
