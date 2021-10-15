@@ -147,6 +147,33 @@ if test x"${conflation}" = x"yes"; then
   AC_DEFINE(USE_CONFLATION, [1], [Do additional conflation calculations ])
 fi
 
+jemalloc=yes
+AC_ARG_ENABLE(jemalloc,
+  AS_HELP_STRING([--enable-jemalloc], [Enable support for Jemalloc (default=yes)]),
+  [case "${enableval}" in
+     yes) jemalloc=yes ;;
+     no)  jemalloc=no ;;
+     *)   AC_MSG_ERROR([bad value ${enableval} for enable-jemalloc option]) ;;
+   esac], jemalloc=yes
+)
+AM_CONDITIONAL([JEMALLOC], [ test x"${jemalloc}" = x"yes" ])
+if test x"${jemalloc}" = x"yes"; then
+   AC_MSG_NOTICE([Using Jemalloc instead of system malloc])
+fi
+
+conflation=no
+AC_ARG_ENABLE(conflation,
+  AS_HELP_STRING([--enable-conflation], [Enable support for expensive conflation (default=no)]),
+  [case "${enableval}" in
+     yes) conflation=yes ;;
+     no)  conflation=no ;;
+     *)   AC_MSG_ERROR([bad value ${enableval} for enable-conflation option]) ;;
+   esac], conflation=no
+)
+if test x"${conflation}" = x"yes"; then
+  AC_DEFINE(USE_CONFLATION, [1], [Do additional conflation calculations ])
+fi
+
 dnl range-v3
 CPPFLAGS+=" $(pkg-config --cflags libpqxx)"
 CPPFLAGS+=" $(pkg-config --cflags gumbo)"

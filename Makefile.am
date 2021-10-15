@@ -83,15 +83,29 @@ libunderpass_la_SOURCES = \
 	data/pq.hh data/pq.cc \
 	data/setupdb.sh
 
+if JEMALLOC
+libunderpass_la_LDFLAGS = -avoid-version -ljemalloc
+else
 libunderpass_la_LDFLAGS = -avoid-version
+endif
 
 bin_PROGRAMS = replicator
 replicator_SOURCES = replicator.cc replicatorconfig.hh
 replicator_LDADD = libunderpass.la $(BOOST_LIBS)
 
+if JEMALLOC
+AM_CXXFLAGS = \
+	-rdynamic \
+	-Wno-deprecated-declarations \
+	-fno-builtin-malloc \
+	-fno-builtin-calloc \
+	-fno-builtin-realloc \
+	-fno-builtin-free
+else
 AM_CXXFLAGS = \
 	-rdynamic \
 	-Wno-deprecated-declarations
+endif
 
 AM_CPPFLAGS = \
 	-DPKGLIBDIR=\"$(pkglibdir)\" \
