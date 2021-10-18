@@ -923,7 +923,6 @@ Planet::fetchData(frequency_t freq, ptime timestamp, const std::string &underpas
         if (previous_candidate && previous_candidate->isValid() && previous_candidate->timestamp >= timestamp) {
             state = previous_candidate;
             log_debug(_("Previous state found for timestamp %1% : %2%."), to_iso_extended_string(timestamp), state->sequence);
-            loop_counter = 10;
         }
     }
     return state;

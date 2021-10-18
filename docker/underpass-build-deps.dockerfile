@@ -28,6 +28,7 @@ RUN apt-get update \
         librange-v3-dev \
         libyaml-cpp-dev \
         dejagnu \
+        libjemalloc-dev \
         wget \
         unzip \
         libxml++2.6-dev && rm -rf /var/lib/apt/lists/* \
