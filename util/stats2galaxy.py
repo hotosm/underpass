@@ -179,9 +179,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     user = Merge(args.indb, args.outdb, args.host)
-    #result = user.mergeUsers()
-
-    #result = user.mergeHashtags()
-
+    result = user.mergeUsers()
+    result = user.mergeHashtags()
     result = user.mergeStatistics()
 
