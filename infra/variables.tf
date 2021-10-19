@@ -1,3 +1,23 @@
+variable "deployment_environment" {
+  type = map(string)
+
+  default = {
+    demo       = "demo"
+    staging    = "staging"
+    production = ""
+  }
+}
+
+variable "instance_types" {
+  type = map(string)
+
+  default = {
+    api_server     = "t3.micro"
+    file_processor = "r6g.xlarge"
+    database       = "db.t4g.micro"
+  }
+}
+
 variable "aws_region" {
   type    = string
   default = "us-east-1"
@@ -17,14 +37,9 @@ variable "ssh_key_pair_name" {
   type = string
 }
 
-variable "database_instance_type" {
-  type    = string
-  default = "db.t4g.micro"
-}
-
 variable "database_engine_version" {
   type    = string
-  default = "12.7"
+  default = "12.8"
 }
 
 variable "database_name" {
@@ -35,17 +50,6 @@ variable "database_name" {
 variable "database_username" {
   type    = string
   default = "mineworker"
-}
-
-// Ubuntu Server 20.04 LTS (HVM)
-variable "database_storage_min_capacity" {
-  type    = number
-  default = 100
-}
-
-variable "database_storage_max_capacity" {
-  type    = number
-  default = 1000
 }
 
 variable "database_final_snapshot_identifier" {
@@ -67,35 +71,26 @@ variable "underpass_database_credentials" {
   }
 }
 
-// Memory optimized with at least 8GB like r5a.large
-variable "file_processor_instance_type" {
-  type    = string
-  default = "t3.micro"
+variable "server_count" {
+  type = map(number)
+
+  default = {
+    file_processor = 1
+    api_server     = 1
+  }
 }
 
-variable "file_processor_count" {
-  type    = number
-  default = 1
-}
+variable "disk_sizes" {
+  type = map(number)
 
-variable "file_processor_ebs_size" {
-  type    = number
-  default = 1000
-}
-
-variable "api_server_count" {
-  type    = number
-  default = 0
-}
-
-variable "api_server_ebs_size" {
-  type    = number
-  default = 100
-}
-
-variable "api_server_instance_type" {
-  type    = string
-  default = "t3.micro"
+  default = {
+    file_processor_root  = 36
+    file_processor_extra = 2000
+    api_server_root      = 10
+    api_server_extra     = 100
+    db_min               = 100
+    db_max               = 1000
+  }
 }
 
 variable "debfile_name" {
@@ -106,9 +101,4 @@ variable "debfile_name" {
 variable "libpqxx_version" {
   type    = string
   default = "7.6.1"
-}
-
-variable "file_processor_ami" {
-  type    = string
-  default = "ami-09e67e426f25ce0d7"
 }

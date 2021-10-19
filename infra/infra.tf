@@ -94,26 +94,31 @@ resource "aws_iam_role" "underpass" {
 }
 
 /** TODO
-* Needs to access S3 bucket
-* Add CloudWatchAgent
+* Monitoring:
+*   - Setup Newrelic Agent
+*   - Setup CloudWatchAgent
+* User Access (SSH Ingress):
+* App Access (Ports Ingress):
+*   - Port: ????
+* Service Access (IAM Egress):
+*   - Needs to access S3 bucket
 */
 resource "aws_instance" "file-processor" {
-  ami = data.aws_ami.ubuntu-latest.id
-  // ami           = var.file_processor_ami
-  instance_type = var.file_processor_instance_type
+  ami           = data.aws_ami.ubuntu_latest_arm.id
+  instance_type = lookup(var.instance_types, "file_processor", "r6g.xlarge")
 
   subnet_id              = aws_subnet.private[2].id
   vpc_security_group_ids = [aws_security_group.app.id]
 
   root_block_device {
-    volume_size = 10
+    volume_size = lookup(var.disk_sizes, "file_processor_root", 10)
     volume_type = "gp3"
     throughput  = 125
   }
 
   ebs_block_device {
     device_name = "/dev/sdb"
-    volume_size = var.file_processor_ebs_size
+    volume_size = lookup(var.disk_sizes, "file_processor_extra", 1000)
     volume_type = "gp3"
     throughput  = 125
   }
@@ -127,6 +132,7 @@ resource "aws_instance" "file-processor" {
   }
 
   // Install everything
+  /**
   user_data = templatefile(
     "${path.module}/bootstrap.tpl",
     {
@@ -134,8 +140,9 @@ resource "aws_instance" "file-processor" {
       libpqxx_version = var.libpqxx_version
     }
   )
+  */
 
-  count = var.file_processor_count
+  count = lookup(var.server_count, "file_processor", 1)
 
   lifecycle {
     create_before_destroy = false
@@ -155,27 +162,35 @@ resource "aws_eip" "underpass" {
 */
 
 /** TODO
-* Needs to access Database
-* Needs to be behind private ALB?
-* Needs to access Secrets manager entry for DB creds?
-* Add SSH key
+* Monitoring:
+*   - Setup Newrelic Agent
+*   - Setup CloudWatchAgent
+* User Access (SSH Ingress):
+*   - Add SSH key
+* App Access (Ports Ingress):
+*   - Port: ????
+*   - Needs to be behind private ALB?
+* Service Access (IAM Egress):
+*   - Needs to access S3 bucket
+*   - Needs to access Database
+*   - Needs to access Secrets manager entry for DB creds?
 */
 resource "aws_instance" "api" {
-  ami           = data.aws_ami.ubuntu-latest.id
-  instance_type = var.api_server_instance_type
+  ami           = data.aws_ami.ubuntu_latest.id
+  instance_type = lookup(var.instance_types, "api_server", "t3.micro")
 
   subnet_id              = aws_subnet.private[2].id
   vpc_security_group_ids = [aws_security_group.api.id]
 
   root_block_device {
-    volume_size = 10
+    volume_size = lookup(var.disk_sizes, "api_server_root", 10)
     volume_type = "gp3"
     throughput  = 125
   }
 
   ebs_block_device {
     device_name = "/dev/sdb"
-    volume_size = var.api_server_ebs_size
+    volume_size = lookup(var.disk_sizes, "api_server_extra", 100)
     volume_type = "gp3"
     throughput  = 125
   }
@@ -188,7 +203,7 @@ resource "aws_instance" "api" {
     Role = "API Server"
   }
 
-  count = var.api_server_count
+  count = lookup(var.server_count, "api_server", 1)
 
   lifecycle {
     create_before_destroy = false
@@ -246,17 +261,30 @@ resource "aws_secretsmanager_secret_version" "underpass_database_credentials" {
   ))
 }
 
+/** TODO
+* Monitoring:
+*   - Configure enhanced monitoring
+*   - Setup CloudWatch Alerts
+* User Access (Ingress):
+*   - hot_readonly and hot_readwrite roles
+*   - Enable IAM auth
+* App Access (tcp/5432 Ingress):
+*   - IP: file_processor.ip?
+* Backup:
+*   - Backup and snapshot expiry
+*/
 resource "aws_db_instance" "underpass" {
-  allocated_storage         = var.database_storage_min_capacity
-  max_allocated_storage     = var.database_storage_max_capacity # Storage auto-scaling
-  engine                    = "postgres"
-  engine_version            = var.database_engine_version
-  instance_class            = var.database_instance_type
-  name                      = var.database_name
-  username                  = var.database_username
-  password                  = random_password.underpass_database_password_string.result
-  skip_final_snapshot       = true
-  final_snapshot_identifier = var.database_final_snapshot_identifier
+  allocated_storage                   = lookup(var.disk_sizes, "db_min", 100)
+  max_allocated_storage               = lookup(var.disk_sizes, "db_max", 1000) # Storage auto-scaling
+  engine                              = "postgres"
+  engine_version                      = var.database_engine_version
+  instance_class                      = lookup(var.instance_types, "database", "db.t4g.micro")
+  name                                = var.database_name
+  username                            = var.database_username
+  password                            = random_password.underpass_database_password_string.result
+  skip_final_snapshot                 = true
+  final_snapshot_identifier           = var.database_final_snapshot_identifier
+  iam_database_authentication_enabled = true
 
   tags = {
     Name = "underpass"
