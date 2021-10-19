@@ -274,7 +274,7 @@ resource "aws_secretsmanager_secret_version" "underpass_database_credentials" {
 *   - Backup and snapshot expiry
 */
 resource "aws_db_instance" "underpass" {
-  identifier                          = trim(join("-", ["underpass", lookup(var.deployment_environment, "production", "dummy")]), "-")
+  identifier                          = trim(join("-", ["underpass", lookup(var.deployment_environment, "production", "0")]), "-")
   allocated_storage                   = lookup(var.disk_sizes, "db_min", 100)
   max_allocated_storage               = lookup(var.disk_sizes, "db_max", 1000) # Storage auto-scaling
   engine                              = "postgres"
