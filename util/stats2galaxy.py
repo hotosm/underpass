@@ -20,8 +20,12 @@
 
 import argparse
 import psycopg2
+import sys
+import os
 import epdb
 from codetiming import Timer
+import logging
+from progress.spinner import PixelSpinner
 
 
 class Pydb(object):
@@ -31,9 +35,22 @@ class Pydb(object):
         connect += db + "\'"
         if host is not None:
             connect += "host=\'" + host + "\'"
-        self.dbshell = psycopg2.connect(connect)
-        self.dbshell.autocommit = True
-        self.dbcursor = self.dbshell.cursor()
+        try:
+            self.dbshell = psycopg2.connect(connect)
+            self.dbshell.autocommit = True
+            self.dbcursor = self.dbshell.cursor()
+            if self.dbcursor.closed == 0:
+                logging.info("Opened cursor in %r" % db)
+        except Exception as e:
+            logging.error("Couldn't connect to database: %r" % e)
+        try:
+            self.dbshell = psycopg2.connect(connect)
+            self.dbshell.autocommit = True
+            self.dbcursor = self.dbshell.cursor()
+            if self.dbcursor.closed == 0:
+                logging.info("Opened cursor in %r" % db)
+        except Exception as e:
+            logging.error("Couldn't connect to database: %r" % e)
 
     def query(self, query):
         self.dbcursor.execute(query)
@@ -43,21 +60,25 @@ class Pydb(object):
 
 class Merge(object):
     def __init__(self, indb=None, outdb=None, host=None):
-        """Load a small bounding box for each country using the geoboundaries in the
-        osmstats database."""
+        """Load a small bounding box for each country using the modified raw_countries
+        table. Included in the source code for osm-stats-workers is a GeoJson file with
+        the boundries used to display country boundaries. As those boundaries were only
+        used by the front end, the boundaries are not in the database. The modified
+        raw_countries table is the same data with a new column added for the geometry."""
+        if indb is None:
+            indb = "leaderboard"
         self.indb = Pydb(indb, host)
-        self.outdb = Pydb(outdb, host)
         self.countries = dict()
-        geoquery = "SELECT cid,St_AsText(ST_Envelope(ST_Buffer(ST_Centroid(boundary), 10, 4))) FROM geoboundaries;"
-        self.outdb.dbcursor.execute(geoquery)
-        for row in self.outdb.dbcursor.fetchall():
+        geoquery = "SELECT id,St_AsText(ST_Envelope(ST_Buffer(ST_Centroid(boundary), 1, 4))) FROM raw_countries;"
+        log = PixelSpinner("Loading Country boundaries...")
+        self.indb.dbcursor.execute(geoquery)
+        for row in self.indb.dbcursor.fetchall():
+            log.next()
             self.countries[row[0]] = row[1]
-        # self.hashtags = dict()
-        # hashquery = "SELECT id,hashtag FROM raw_hashtags"
-        # self.indb.dbcursor.execute(hashquery)
-        # for row in self.indb.dbcursor.fetchall():
-        #     self.hashtags[row[0]] = row[1]
         self.timer = Timer()
+        if outdb is None:
+            outdb = "osmstats"
+        self.outdb = Pydb(outdb, host)
 
     def getBbox(self, cid):
         """Get the bounding box for a country"""
@@ -69,6 +90,7 @@ class Merge(object):
     def mergeUsers(self):
         """Merge the raw_users table from the leaderboard into osmstats"""
         inquery = "SELECT id,name FROM raw_users;"
+        logging.info("Merging leaderboard user table into Galaxy osmstats database")
         self.indb.dbcursor.execute(inquery)
         for entry in self.indb.dbcursor.fetchall():
             outquery = "INSERT INTO users(id,name) VALUES({id}, \'{name}\') ON CONFLICT(id) DO UPDATE SET id="
@@ -80,19 +102,24 @@ class Merge(object):
 
     def mergeHashtags(self):
         """Merge the raw_hashtags table from the leaderboard into osmstats"""
+        log = PixelSpinner("Merging leaderboard hashtags table into Galaxy osmstats database. this may take a will...")
         self.timer.start()
         inquery = "SELECT changeset_id,hashtag FROM raw_changesets_hashtags INNER JOIN raw_hashtags ON (raw_changesets_hashtags.hashtag_id = id);"
         self.indb.dbcursor.execute(inquery)
         self.timer.stop()
         for entry in self.indb.dbcursor.fetchall():
+            log.next()
             outquery = "INSERT INTO changesets(id,hashtags) VALUES({id}, ARRAY['{hashtags}']) ON CONFLICT(id) DO UPDATE SET id="
             # watch out for single quotes in user names
             fixed = entry[1].replace("'", "&apos;")
             outquery += str(entry[0]) + ", hashtags=ARRAY_APPEND(changesets.hashtags, '" + fixed + "')"
             self.outdb.dbcursor.execute(outquery.format(id=int(entry[0]), hashtags=fixed))
 
-    def mergeStatistics(self):
+    def mergeStatistics(self, timestamp):
         """Merge the raw_changesets table from the leaderboard into osmstats"""
+        log = PixelSpinner("Merging leaderboard statistics into Galaxy osmstats database")
+        log.next()
+
         self.timer.start()
         query = "SELECT id, road_km_added, road_km_modified, waterway_km_added, waterway_km_modified, roads_added, roads_modified, waterways_added, waterways_modified, buildings_added, buildings_modified, pois_added, pois_modified, editor, user_id, created_at, closed_at, updated_at,country_id FROM raw_changesets INNER JOIN raw_changesets_countries ON (raw_changesets_countries.changeset_id = id);"
         self.indb.dbcursor.execute(query)
@@ -118,7 +145,7 @@ class Merge(object):
             stats['updated_at'] = result[17]
             stats['country_id'] = result[18]
             if self.getBbox(result[18]) is None:
-                print("Country ID %s is not in the geoboundaries table" % result[18])
+                logging.warning("Country ID %s is not in the geoboundaries table" % result[18])
                 result = self.indb.dbcursor.fetchone()
                 continue                
             stats['bbox'] = "ST_Multi(ST_GeomFromText('" 
@@ -176,10 +203,26 @@ if __name__ == '__main__':
     parser.add_argument("--host", help='The database host (localhost)')
     parser.add_argument("--indb",  default="leaderboard", help='The input database (MM Leaderboard)')
     parser.add_argument("--outdb", default='osmstats', help='The output database (Galaxy)')
+    parser.add_argument("--verbose", default='yes', help='Enable verbosity')
+    parser.add_argument("--timestamp", help='timestamp')
     args = parser.parse_args()
 
+    # if verbose, dump to the terminal as well as the logfile.
+    if args.verbose == "yes":
+        if os.path.exists('stats2galaxy.log'):
+            os.remove('stats2galaxy.log')
+        logging.basicConfig(filename='stats2galaxy.log', level=logging.DEBUG)
+        root = logging.getLogger()
+        root.setLevel(logging.DEBUG)
+
+        ch = logging.StreamHandler(sys.stdout)
+        ch.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch.setFormatter(formatter)
+        root.addHandler(ch)
+
     user = Merge(args.indb, args.outdb, args.host)
-    result = user.mergeUsers()
-    result = user.mergeHashtags()
-    result = user.mergeStatistics()
+    # result = user.mergeUsers()
+    #result = user.mergeHashtags()
+    result = user.mergeStatistics(args.timestamp)
 
