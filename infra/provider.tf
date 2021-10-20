@@ -16,8 +16,8 @@ provider "aws" {
   default_tags {
     tags = {
       Project       = "underpass"
-      Maintainer    = "Yogesh Girikumar"
-      Documentation = "underpass-doc-stub"
+      Maintainer    = "Dakota_Benjamin and Yogesh_Girikumar"
+      Documentation = "https://docs.hotosm.org/underpass_infra"
     }
   }
 }
