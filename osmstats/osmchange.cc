@@ -893,8 +893,7 @@ OsmChangeFile::validateWays(const multipolygon_t &poly,
     auto totals = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
-        for (auto nit = std::begin(change->ways); nit != std::end(change->ways);
-             ++nit) {
+        for (auto nit = std::begin(change->ways); nit != std::end(change->ways); ++nit) {
             OsmWay *way = nit->get();
             if (!way->priority) {
                 // log_debug(_("Validating Way %1% is not in a priority area"), way->id);
@@ -924,6 +923,9 @@ OsmChangeFile::validateWays(const multipolygon_t &poly,
                     totals->push_back(status);
                 }
             }
+	    if (way->containsKey("building")) {
+		plugin->overlaps(change->ways, *way);
+	    }
         }
     }
     return totals;

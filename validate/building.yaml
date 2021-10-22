@@ -7,6 +7,8 @@ config:
       - no
   - values:
       - yes
+  - overlaps:
+      - yes
 
 tags:
   - building:levels

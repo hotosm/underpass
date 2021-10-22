@@ -32,10 +32,12 @@
 #include <unordered_set>
 
 #include <boost/config.hpp>
+#include <boost/geometry.hpp>
 #include <boost/date_time.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>
+#include <boost/timer/timer.hpp>
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
@@ -111,15 +113,6 @@ class ValidateStatus {
         }
         return false;
     }
-    std::unordered_set<valerror_t> status;
-    osmobjects::osmtype_t objtype;
-    long osm_id = 0;
-    long user_id = 0;
-    long change_id = 0;
-    ptime timestamp;
-    point_t center;
-    double angle = 0;
-
     void dump(void) const {
         std::cerr << "Dumping Validation Statistics" << std::endl;
         std::cerr << "\tOSM ID: " << osm_id << std::endl;
@@ -138,6 +131,14 @@ class ValidateStatus {
             std::cerr << "\tResult: " << results[stat] << std::endl;
         }
     }
+    std::unordered_set<valerror_t> status;
+    osmobjects::osmtype_t objtype;
+    long osm_id = 0;
+    long user_id = 0;
+    long change_id = 0;
+    ptime timestamp;
+    point_t center;
+    double angle = 0;
 };
 
 class BOOST_SYMBOL_VISIBLE Validate {
@@ -201,6 +202,24 @@ class BOOST_SYMBOL_VISIBLE Validate {
     checkTag(const std::string &key, const std::string &value) = 0;
     yaml::Yaml &operator[](const std::string &key) { return yamls[key]; };
 
+    bool overlaps(std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, const osmobjects::OsmWay &way) {
+	// This test only applies to buildings, as highways often overlap.
+	yaml::Yaml tests = yamls["building"];
+	if (tests.getConfig("overlaps") == "yes") {
+#if TIMING_DEBUG_X
+	    boost::timer::auto_cpu_timer timer("validate::overlaps: took %w seconds\n");
+#endif
+	    for (auto nit = std::begin(allways); nit != std::end(allways); ++nit) {
+		// nit->dump();
+		osmobjects::OsmWay *oldway = nit->get();
+		if (boost::geometry::overlaps(oldway->polygon, way.polygon)) {
+		    log_error(_("Building %1% overlaps with %2%"), way.id, oldway->id);
+		    return true;
+		}
+	    }
+	}
+	return false;
+    }
     double cornerAngle(const linestring_t &way) {
         // first segment
         double x1 = boost::geometry::get<0>(way[0]);
