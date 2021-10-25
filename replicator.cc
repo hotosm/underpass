@@ -517,20 +517,6 @@ main(int argc, char *argv[])
         exit(1);
     }
 
-    // replication::Replication rep(starttime, sequence);
-
-    // std::vector<std::string> files;
-    // files.push_back("004/139/998.state.txt");
-    // std::shared_ptr<std::vector<std::string>> links =
-    // rep.downloadFiles(files, true); std::cout << "Got "<< links->size() << "
-    // directories" << std::endl;
-    // // links = rep.downloadFiles(*links, true);
-    // // std::cout << "Got "<< links->size() << " directories" << std::endl;
-
-    // changeset::StateFile foo("/tmp/foo1.txt", false);
-    // changeset::StateFile bar("/tmp/foo2.txt", false);
-    // return 0;
-
     if (tmUserSyncMonitorThread) {
         if (tmUserSyncMonitorThread->joinable() && tmUserSyncIsActive) {
             tmUserSyncMonitorThread->join();
