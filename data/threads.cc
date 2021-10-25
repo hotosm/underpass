@@ -89,8 +89,56 @@ namespace threads {
 
 // Starting with this URL, download the file, incrementing
 void
-startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly, const replicatorconfig::ReplicatorConfig &config)
+startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &poly, const replicatorconfig::ReplicatorConfig &config)
 {
+
+    if (inr.frequency != frequency_t::changeset) {
+        log_error(_("Could not start monitoring thread for changesets: URL %1% does not appear to be a valid URL for changesets!"), inr.url);
+        return;
+    }
+
+    osmstats::QueryOSMStats ostats;
+    if (!ostats.connect(config.osmstats_db_url)) {
+        log_error(_("Could not connect to osmstats DB, aborting monitoring thread!"));
+        return;
+    }
+
+    osm2pgsql::Osm2Pgsql osm2pgsql(config.osm2pgsql_db_url);
+
+    replication::RemoteURL remote = inr;
+    auto planet = std::make_shared<replication::Planet>(remote);
+    bool mainloop = true;
+
+    // Process changesets or OSM changes depending on the remote frequency
+    while (mainloop) {
+        auto changefile = threadChangeSet(remote, poly, ostats);
+        for (auto it = std::begin(changefile->changes); it != std::end(changefile->changes); ++it) {
+            ostats.applyChange(*it->get());
+        }
+        ptime now = boost::posix_time::microsec_clock::local_time();
+        boost::posix_time::time_duration delta;
+        if (changefile->changes.size() > 0) {
+            delta = now - changefile->changes.front()->closed_at;
+            // log_debug("DELTA1: %1%", (delta.hours()*60) + delta.minutes());
+            if ((delta.hours() * 60) + delta.minutes() <= 1) {
+                std::this_thread::sleep_for(std::chrono::minutes{1});
+            }
+        } else {
+            log_debug(_("Processed ChangeSet: %1%"), remote.url);
+        }
+        remote.Increment();
+    }
+}
+
+// Starting with this URL, download the file, incrementing
+void
+startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &poly, const replicatorconfig::ReplicatorConfig &config)
+{
+
+    if (inr.frequency == frequency_t::changeset) {
+        log_error(_("Could not start monitoring thread for OSM changes: URL %1% does not appear to be a valid URL for changes!"), inr.url);
+        return;
+    }
 
     osmstats::QueryOSMStats ostats;
     if (!ostats.connect(config.osmstats_db_url)) {
@@ -121,68 +169,33 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly, cons
         exit(0);
     }
     auto validator = creator();
+
+    // Process changesets or OSM changes depending on the remote frequency
     while (mainloop) {
-        // Look for the statefile first
-#if 0
-	std::shared_ptr<replication::StateFile> exists;
-	exists = under.getState(remote.frequency, remote.subpath);
-	if (exists) {
-	    log_warning(_("Already stored in database: %1%"), remote.subpath);
-	    break;
-	} else {
-	    log_info(_("Downloading StateFile: %1% %2%"), remote.subpath ".state.txt");
-	    auto state = threadStateFile(planet->stream, remote.subpath + ".state.txt");
-	    if (state->timestamp != boost::posix_time::not_a_date_time && (state->sequence != 0 && state->path.size() != 0)) {
-		// state->dump();
-		under.writeState(*state);
-		break;
-	    }
-	}
-#endif
-        // remote.dump();
-        if (remote.frequency == replication::changeset) {
-            auto changefile = threadChangeSet(remote, poly, ostats);
-            for (auto it = std::begin(changefile->changes); it != std::end(changefile->changes); ++it) {
-                ostats.applyChange(*it->get());
+        std::string file = remote.url + ".osc.gz";
+        ptime now = boost::posix_time::microsec_clock::local_time();
+        auto osmchange = threadOsmChange(remote, poly, ostats, osm2pgsql, validator);
+        // FIXME: There is probably a better way to determine when to delay,
+        // or when to just keep processing files when catching up.
+        boost::posix_time::time_duration delta;
+        if (osmchange->changes.size() > 0) {
+            delta = now - osmchange->changes.back()->final_entry;
+            // log_debug("DELTA2: %1%", (delta.hours()*60) + delta.minutes());
+        }
+        if ((delta.hours() * 60) + delta.minutes() <= 1) {
+            // log_debug("DELTA: %1%", (delta.hours()*60) + delta.minutes());
+            if (remote.frequency == replication::minutely) {
+                std::this_thread::sleep_for(std::chrono::minutes{1});
+            } else if (remote.frequency == replication::hourly) {
+                std::this_thread::sleep_for(std::chrono::hours{1});
+            } else if (remote.frequency == replication::daily) {
+                std::this_thread::sleep_for(std::chrono::hours{24});
             }
-            ptime now = boost::posix_time::microsec_clock::local_time();
-            boost::posix_time::time_duration delta;
-            if (changefile->changes.size() > 0) {
-                delta = now - changefile->changes.front()->closed_at;
-                // log_debug("DELTA1: %1%", (delta.hours()*60) + delta.minutes());
-                if ((delta.hours() * 60) + delta.minutes() <= 1) {
-                    std::this_thread::sleep_for(std::chrono::minutes{1});
-                }
-            } else {
-                log_debug(_("Processed ChangeSet: %1%"), remote.url);
-            }
+            // planet.reset(new replication::Planet);
         } else {
-            std::string file = remote.url + ".osc.gz";
-            ptime now = boost::posix_time::microsec_clock::local_time();
-            auto osmchange = threadOsmChange(remote, poly, ostats, osm2pgsql, validator);
-            // FIXME: There is probably a better way to determine when to delay,
-            // or when to just keep processing files when catching up.
-            boost::posix_time::time_duration delta;
-            if (osmchange->changes.size() > 0) {
-                delta = now - osmchange->changes.back()->final_entry;
-                // log_debug("DELTA2: %1%", (delta.hours()*60) + delta.minutes());
-            }
-            if ((delta.hours() * 60) + delta.minutes() <= 1) {
-                // log_debug("DELTA: %1%", (delta.hours()*60) + delta.minutes());
-                if (remote.frequency == replication::minutely) {
-                    std::this_thread::sleep_for(std::chrono::minutes{1});
-                } else if (remote.frequency == replication::hourly) {
-                    std::this_thread::sleep_for(std::chrono::hours{1});
-                } else if (remote.frequency == replication::daily) {
-                    std::this_thread::sleep_for(std::chrono::hours{24});
-                }
-                // planet.reset(new replication::Planet);
-            } else {
-                log_debug(_("Processed OsmChange: %1%"), remote.url);
-            }
+            log_debug(_("Processed OsmChange: %1%"), remote.url);
         }
         remote.Increment();
-        // remote.dump();
     }
 }
 

@@ -89,12 +89,19 @@ namespace threads {
 extern void
 startStateThreads(const std::string &base, const std::string &file);
 
-/// This monitors the planet server for new files of the specified type.
+/// This monitors the planet server for new changesets files.
 /// It does a bulk download to catch up the database, then checks for the
 /// minutely change files and processes them.
 extern void
-startMonitor(const replication::RemoteURL &remote, const multipolygon_t &poly,
-             const replicatorconfig::ReplicatorConfig &config);
+startMonitorChangesets(const replication::RemoteURL &remote, const multipolygon_t &poly,
+                       const replicatorconfig::ReplicatorConfig &config);
+
+/// This monitors the planet server for new OSM changes files.
+/// It does a bulk download to catch up the database, then checks for the
+/// minutely change files and processes them.
+extern void
+startMonitorChanges(const replication::RemoteURL &remote, const multipolygon_t &poly,
+                    const replicatorconfig::ReplicatorConfig &config);
 
 /// Updates the states table in the Underpass database
 extern std::shared_ptr<replication::StateFile>

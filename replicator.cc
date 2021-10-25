@@ -421,81 +421,73 @@ main(int argc, char *argv[])
                   "parameter!");
     }
 
-    // At this point we must have a path, if the path was not passed we need to build one from
-    // the timestamp
-    if (replicator_config.starting_url_path.empty()) {
-        if (starttime == not_a_date_time) {
-            log_error("ERROR: could not determine the start path, you need to enter an \"url\" or a \"timestamp\"!");
-            exit(-1);
-        }
-
-        // Try to determine the path from the timestamp
-        std::string url_path{replicator_config.starting_url_path.empty() ? "/001/001/001" : replicator_config.starting_url_path};
-        const std::string fullurl{replicator_config.planet_server + "/" + datadir +
-                                  Underpass::freq_to_string(replicator_config.frequency) + url_path};
-        replication::RemoteURL remote(fullurl);
-        replication::Planet planet(remote);
-        const auto data{planet.fetchData(replicator_config.frequency, starttime, replicator_config.underpass_db_url)};
-        if (!data->isValid()) {
-            log_error("ERROR: could not determine the start path from timestamp!");
-            exit(-1);
-        } else {
-            replicator_config.starting_url_path = data->path;
-        }
-    }
-
-    // Still no path? Exit with error.
-    if (replicator_config.starting_url_path.empty()) {
-        log_error("ERROR: start path cannot be empty: you need to enter an \"url\" or a \"timestamp\"!");
-        exit(-1);
-    }
-
-    const std::string fullurl{replicator_config.planet_server + "/" + datadir +
-                              Underpass::freq_to_string(replicator_config.frequency) + replicator_config.starting_url_path};
-    replication::RemoteURL remote(fullurl);
-
-    replication::Planet planet(remote);
-    std::string clast;
-
     if (vm.count("monitor")) {
-        if (starttime.is_not_a_date_time() && replicator_config.starting_url_path.size() == 0) {
-            log_error("ERROR: You need to supply either a timestamp or URL!");
-            //         if (timestamp.is_not_a_date_time()) {
-            //             timestamp = ostats.getLastUpdate();
-            //         }
 
+        // At this point we must have a path, if the path was not passed we need to build one from
+        // the timestamp
+        if (replicator_config.starting_url_path.empty()) {
+            if (starttime == not_a_date_time) {
+                log_error("ERROR: could not determine the start path, you need to enter an \"url\" or a \"timestamp\"!");
+                exit(-1);
+            }
+
+            // Try to determine the path from the timestamp
+            std::string url_path{replicator_config.starting_url_path.empty() ? "/001/001/001" : replicator_config.starting_url_path};
+            const std::string fullurl{replicator_config.getPlanetServer() + "/" + datadir +
+                                      Underpass::freq_to_string(replicator_config.frequency) + url_path};
+            replication::RemoteURL remote(fullurl);
+            replication::Planet planet(remote);
+            const auto data{planet.fetchData(replicator_config.frequency, starttime, replicator_config.underpass_db_url)};
+            if (!data->isValid()) {
+                log_error("ERROR: could not determine the start path from timestamp!");
+                exit(-1);
+            } else {
+                replicator_config.starting_url_path = data->path;
+            }
+        }
+
+        // Still no path? Exit with error.
+        if (replicator_config.starting_url_path.empty()) {
+            log_error("ERROR: You need to supply either a timestamp or URL!");
             exit(-1);
         }
 
-        std::thread osmchanges_updates_thread;
-        std::thread changesets_thread;
+        const std::string fullurl{replicator_config.getPlanetServer() + "/" + datadir +
+                                  Underpass::freq_to_string(replicator_config.frequency) + replicator_config.starting_url_path};
+        replication::RemoteURL remote(fullurl);
 
-        if (!replicator_config.starting_url_path.empty()) {
+        replication::Planet planet(remote);
+        std::string clast;
 
-            // remote.dump();
-            osmchanges_updates_thread =
-                std::thread(threads::startMonitor, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
+        auto state = planet.fetchData(replicator_config.frequency, replicator_config.starting_url_path,
+                                      replicator_config.underpass_db_url);
 
-            auto state = planet.fetchData(replicator_config.frequency, replicator_config.starting_url_path,
-                                          replicator_config.underpass_db_url);
-
-            if (!state->isValid()) {
-                //std::cerr << "ERROR: Invalid state from path!" << replicator_config.starting_url_path << std::endl;
-                exit(-1);
-            }
-
-            auto state2 = planet.fetchData(replication::changeset, state->timestamp, replicator_config.underpass_db_url);
-            if (!state2->isValid()) {
-                std::cerr << "ERROR: No changeset path!" << std::endl;
-                exit(-1);
-            }
-
-            state2->dump();
-            clast = replicator_config.planet_server + "/" + datadir + "changesets" + state2->path;
-            remote.parse(clast);
-            // remote.dump();
-            changesets_thread = std::thread(threads::startMonitor, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
+        if (!state->isValid()) {
+            //std::cerr << "ERROR: Invalid state from path!" << replicator_config.starting_url_path << std::endl;
+            exit(-1);
         }
+
+        // Launch two separate threads, one for osmchanges and one for changesets
+        std::thread osmchanges_updates_thread;
+
+        // remote.dump();
+        osmchanges_updates_thread =
+            std::thread(threads::startMonitorChanges, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
+
+        auto state2 = planet.fetchData(replication::changeset, state->timestamp, replicator_config.underpass_db_url);
+        if (!state2->isValid()) {
+            std::cerr << "ERROR: No changeset path!" << std::endl;
+            exit(-1);
+        }
+
+        state2->dump();
+        clast = replicator_config.getPlanetServer() + "/" + datadir + "changesets" + state2->path;
+        remote.parse(clast);
+        // remote.dump();
+
+        // Changesets thread
+        std::thread changesets_thread;
+        changesets_thread = std::thread(threads::startMonitorChangesets, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
 
         log_info(_("Waiting..."));
         if (changesets_thread.joinable()) {

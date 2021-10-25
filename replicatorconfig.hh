@@ -35,6 +35,45 @@ using namespace underpass;
 namespace replicatorconfig {
 
 ///
+/// \brief The PlanetServer struct represents a planet server
+///
+struct PlanetServer {
+
+    PlanetServer(const std::string url, bool daily, bool hourly, bool minutely)
+        : url(url), has_daily(daily), has_hourly(hourly), has_minutely(minutely)
+    {
+    }
+
+    std::string url;
+    bool has_daily = true;
+    bool has_hourly = false;
+    bool has_minutely = false;
+    bool has_changeset = true;
+    bool is_valid = true;
+
+    // In case of errrors
+    std::string last_error_message;
+    ptime last_error_timestamp = not_a_date_time;
+
+    ///
+    /// \brief has_frequency returns TRUE if the \a frequency is supported by the server.
+    ///
+    bool has_frequency(frequency_t frequency)
+    {
+        switch (frequency) {
+            case frequency_t::daily:
+                return has_daily;
+            case frequency_t::hourly:
+                return has_hourly;
+            case frequency_t::minutely:
+                return has_minutely;
+            case frequency_t::changeset:
+                return has_changeset;
+        }
+    }
+};
+
+///
 /// \brief The ReplicatorConfig struct stores replicator configuration
 ///
 struct ReplicatorConfig {
@@ -80,17 +119,46 @@ struct ReplicatorConfig {
                 // Ignore
             }
         }
+
+        // Initialize servers
+        planet_servers = {
+            {"https://planet.maps.mail.ru", true, true, true},
+            {"https://download.openstreetmap.fr", true, true, true},
+            {"https://free.nchc.org.tw/osm.planet", true, false, false},
+        };
     };
 
     std::string underpass_db_url = "localhost/underpass";
     std::string osmstats_db_url = "localhost/osmstats";
     std::string taskingmanager_db_url = "localhost/taskingmanager";
     std::string osm2pgsql_db_url = "";
-    std::string planet_server = "https://planet.maps.mail.ru";
+    std::string planet_server;
+    std::vector<PlanetServer> planet_servers;
+
     frequency_t frequency = frequency_t::minutely;
-    std::string starting_url_path = ""; ///< Starting URL path (e.g. /000/000/001)
-    long taskingmanager_users_update_frequency =
-        -1; ///< Users synchronization: -1 (disabled), 0 (single shot), > 0 (interval in seconds)
+    std::string starting_url_path = "";              ///< Starting URL path (e.g. /000/000/001)
+    long taskingmanager_users_update_frequency = -1; ///< Users synchronization: -1 (disabled), 0 (single shot), > 0 (interval in seconds)
+
+    ///
+    /// \brief getPlanetServer returns either the command line supplied planet server
+    ///        or the first planet server from the hardcoded list.
+    ///
+    std::string getPlanetServer()
+    {
+        return planet_server.empty() ? planet_servers.front().url : planet_server;
+    }
+
+    ///
+    /// Returns a list of planet servers that support the given frequency.
+    ///
+    std::vector<PlanetServer> getPlanetServers(frequency_t frequency)
+    {
+        std::vector<PlanetServer> servers;
+        std::copy_if(planet_servers.begin(), planet_servers.end(), std::back_inserter(servers), [frequency](PlanetServer p) {
+            return p.has_frequency(frequency);
+        });
+        return servers;
+    }
 
     ///
     /// \brief dbConfigHelp
@@ -103,12 +171,11 @@ REPLICATOR_OSMSTATS_DB_URL=%1%
 REPLICATOR_UNDERPASS_DB_URL=%2%
 REPLICATOR_TASKINGMANAGER_DB_URL=%3%
 REPLICATOR_OSM2PGSQL_DB_URL=%3%
-REPLICATOR_PLANET_SERVER=%4%
-REPLICATOR_FREQUENCY=%5%
-REPLICATOR_STARTING_URL_PATH=%6%
-REPLICATOR_TASKINGMANAGER_USERS_UPDATE_FREQUENCY=%7%
+REPLICATOR_FREQUENCY=%4%
+REPLICATOR_STARTING_URL_PATH=%5%
+REPLICATOR_TASKINGMANAGER_USERS_UPDATE_FREQUENCY=%6%
       )raw") % osmstats_db_url %
-                   underpass_db_url % taskingmanager_db_url % osm2pgsql_db_url % planet_server %
+                   underpass_db_url % taskingmanager_db_url % osm2pgsql_db_url %
                    Underpass::freq_to_string(frequency) % starting_url_path % taskingmanager_users_update_frequency);
     };
 };
