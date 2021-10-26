@@ -74,7 +74,7 @@ QueryOSMStats::lookupHashtag(const std::string &hashtag)
 }
 
 bool
-QueryOSMStats::applyChange(const osmchange::ChangeStats &change)
+QueryOSMStats::applyChange(const osmchange::ChangeStats &change) const
 {
     // std::cout << "Applying OsmChange data" << std::endl;
 
@@ -168,16 +168,19 @@ QueryOSMStats::applyChange(const osmchange::ChangeStats &change)
     aquery += " WHERE changesets.id=" + std::to_string(change.change_id);
 
     // log_debug(_("QUERY stats: %1%"), aquery);
-    pqxx::work worker(*sdb);
-    pqxx::result result = worker.exec(aquery);
-
-    worker.commit();
+    // Serialize changes writing
+    {
+        std::scoped_lock write_lock{changes_write_mutex};
+        pqxx::work worker(*sdb);
+        pqxx::result result = worker.exec(aquery);
+        worker.commit();
+    }
 
     return true;
 }
 
 bool
-QueryOSMStats::applyChange(const changeset::ChangeSet &change)
+QueryOSMStats::applyChange(const changeset::ChangeSet &change) const
 {
     // log_debug(_("Applying ChangeSet data"));
     // change.dump();
@@ -187,9 +190,14 @@ QueryOSMStats::applyChange(const changeset::ChangeSet &change)
     query += std::to_string(change.uid) + ",\'" + sdb->esc(change.user);
     query += "\') ON CONFLICT DO NOTHING;";
     // log_debug(_("QUERY: %1%"), query);
-    pqxx::work worker(*sdb);
-    pqxx::result result = worker.exec(query);
-    // worker.commit();
+
+    // Serialize changes writing
+    {
+        std::scoped_lock write_lock{changes_write_mutex};
+        pqxx::work worker(*sdb);
+        pqxx::result result = worker.exec(query);
+        worker.commit();
+    }
 
     // If there are no hashtags in this changset, then it isn't part
     // of an organized map campaign, so we don't need to store those
@@ -344,22 +352,26 @@ QueryOSMStats::applyChange(const changeset::ChangeSet &change)
     // }
     query += "\', bbox=" + bbox.substr(2) + ")'))";
     // log_debug(_("QUERY: %1%"), query);
-    result = worker.exec(query);
 
-    // Commit the results to the database
-    worker.commit();
+    // Serialize changes writing
+    {
+        std::scoped_lock write_lock{changes_write_mutex};
+        pqxx::work worker(*sdb);
+        pqxx::result result = worker.exec(query);
+        worker.commit();
+    }
 
     return true;
 }
 
 bool
-QueryOSMStats::applyChange(const ValidateStatus &validation)
+QueryOSMStats::applyChange(const ValidateStatus &validation) const
 {
     log_debug(_("Applying Validation data"));
     validation.dump();
 
     if (validation.angle == 0 && validation.status.size() == 0) {
-	return true;
+        return true;
     }
     std::map<osmobjects::osmtype_t, std::string> objtypes = {
         {osmobjects::empty, "empty"},
@@ -398,9 +410,14 @@ QueryOSMStats::applyChange(const ValidateStatus &validation)
     query += ") ON CONFLICT (osm_id) DO UPDATE ";
     query += " SET status = ARRAY[" + tmp + " ]::status[]";
     // log_debug(_("QUERY: %1%"), query);
-    pqxx::work worker(*sdb);
-    pqxx::result result = worker.exec(query);
-    worker.commit();
+
+    // Serialize changes writing
+    {
+        std::scoped_lock write_lock{changes_write_mutex};
+        pqxx::work worker(*sdb);
+        pqxx::result result = worker.exec(query);
+        worker.commit();
+    }
     return true;
 }
 

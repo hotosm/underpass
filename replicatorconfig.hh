@@ -134,9 +134,11 @@ struct ReplicatorConfig {
     std::string osm2pgsql_db_url = "";
     std::string planet_server;
     std::vector<PlanetServer> planet_servers;
+    unsigned int concurrency = 1;
 
     frequency_t frequency = frequency_t::minutely;
     std::string starting_url_path = "";              ///< Starting URL path (e.g. /000/000/001)
+    ptime endtime = not_a_date_time;                 ///< Ending time for changesets and OSM changes import
     long taskingmanager_users_update_frequency = -1; ///< Users synchronization: -1 (disabled), 0 (single shot), > 0 (interval in seconds)
 
     ///

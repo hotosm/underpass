@@ -36,6 +36,10 @@
 #include <thread>
 #include <tuple>
 #include <vector>
+#include <thread>
+
+// Global thread pool
+#include "external/thread_pool.hpp"
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/date_time.hpp>
@@ -177,7 +181,6 @@ main(int argc, char *argv[])
     // bool encrypted = false;
     long sequence = 0;
     ptime starttime(not_a_date_time);
-    ptime endtime(not_a_date_time);
     std::string url;
 
     long tmusersfrequency{-1};
@@ -207,13 +210,14 @@ main(int argc, char *argv[])
             ("url,u", opts::value<std::string>(), "Starting URL path (ex. 000/075/000), takes precedence over 'timestamp' option")
             ("monitor,m", "Start monitoring")
             ("frequency,f", opts::value<std::string>(), "Update frequency (hourly, daily), default minutely)")
-            ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp")
+            ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp (can be used 2 times to set a range)")
             ("import,i", opts::value<std::string>(), "Initialize OSM database with datafile")
             ("boundary,b", opts::value<std::string>(), "Boundary polygon file name")
-            ("datadir,i", opts::value<std::string>(), "Base directory for cached files")
+            ("datadir", opts::value<std::string>(), "Base directory for cached files")
             ("verbose,v", "Enable verbosity")
             ("logstdout,l", "Enable logging to stdout, default is log to underpass.log")
-            ("changefile,c", opts::value<std::string>(), "Import change file")
+            ("changefile", opts::value<std::string>(), "Import change file")
+            ("concurrency,c", opts::value<int>(), "Concurrency")
             ("debug,d", "Enable debug messages for developers");
         // clang-format on
 
@@ -282,6 +286,18 @@ main(int argc, char *argv[])
     if (vm.count("tmserver")) {
         replicator_config.taskingmanager_db_url = vm["tmserver"].as<std::string>();
     }
+
+    if (vm.count("concurrecncy")) {
+        replicator_config.concurrency = vm["concurrecncy"].as<int>();
+        if (replicator_config.concurrency > std::thread::hardware_concurrency()) {
+            log_error("ERROR: concurrency cannot exceed the number of threads supported by hardware (%1%)!", std::thread::hardware_concurrency());
+        }
+    } else {
+        replicator_config.concurrency = std::thread::hardware_concurrency();
+    }
+
+    // Initialize the thread pool
+    thread_pool pool{replicator_config.concurrency};
 
     if (vm.count("tmusersfrequency")) {
         const auto freqValue{vm["tmusersfrequency"].as<std::string>()};
@@ -405,7 +421,7 @@ main(int argc, char *argv[])
             } else {
                 starttime = from_iso_extended_string(timestamps[0]);
                 if (timestamps.size() > 1) {
-                    endtime = from_iso_extended_string(timestamps[1]);
+                    replicator_config.endtime = from_iso_extended_string(timestamps[1]);
                 }
             }
         } catch (const std::exception &ex) {
@@ -457,45 +473,37 @@ main(int argc, char *argv[])
         replication::RemoteURL remote(fullurl);
 
         replication::Planet planet(remote);
-        std::string clast;
 
-        auto state = planet.fetchData(replicator_config.frequency, replicator_config.starting_url_path,
-                                      replicator_config.underpass_db_url);
+        auto changes_state = planet.fetchData(replicator_config.frequency, replicator_config.starting_url_path,
+                                              replicator_config.underpass_db_url);
 
-        if (!state->isValid()) {
+        if (!changes_state->isValid()) {
             //std::cerr << "ERROR: Invalid state from path!" << replicator_config.starting_url_path << std::endl;
             exit(-1);
         }
 
-        // Launch two separate threads, one for osmchanges and one for changesets
-        std::thread osmchanges_updates_thread;
-
         // remote.dump();
-        osmchanges_updates_thread =
-            std::thread(threads::startMonitorChanges, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
+        pool.push_task(threads::startMonitorChanges, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
 
-        auto state2 = planet.fetchData(replication::changeset, state->timestamp, replicator_config.underpass_db_url);
-        if (!state2->isValid()) {
+        auto changesets_state = planet.fetchData(replication::changeset, changes_state->timestamp, replicator_config.underpass_db_url);
+        if (!changesets_state->isValid()) {
             std::cerr << "ERROR: No changeset path!" << std::endl;
             exit(-1);
         }
 
-        state2->dump();
-        clast = replicator_config.getPlanetServer() + "/" + datadir + "changesets" + state2->path;
-        remote.parse(clast);
+        changesets_state->dump();
+
+        const std::string changesets_url{replicator_config.getPlanetServer() + "/" + datadir + "changesets" + changesets_state->path};
+        remote.parse(changesets_url);
         // remote.dump();
 
         // Changesets thread
-        std::thread changesets_thread;
-        changesets_thread = std::thread(threads::startMonitorChangesets, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
+        pool.push_task(threads::startMonitorChangesets, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config), std::ref(pool));
 
         log_info(_("Waiting..."));
-        if (changesets_thread.joinable()) {
-            changesets_thread.join();
-        }
-        if (osmchanges_updates_thread.joinable()) {
-            osmchanges_updates_thread.join();
-        }
+
+        pool.wait_for_tasks();
+
         exit(0);
     }
 

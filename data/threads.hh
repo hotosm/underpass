@@ -30,11 +30,12 @@
 #include <pqxx/pqxx>
 #include <string>
 #include <vector>
-
 #include <condition_variable>
 #include <mutex>
 #include <ogr_geometry.h>
 #include <thread>
+
+#include "external/thread_pool.hpp"
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/date_time.hpp>
@@ -94,7 +95,7 @@ startStateThreads(const std::string &base, const std::string &file);
 /// minutely change files and processes them.
 extern void
 startMonitorChangesets(const replication::RemoteURL &remote, const multipolygon_t &poly,
-                       const replicatorconfig::ReplicatorConfig &config);
+                       const replicatorconfig::ReplicatorConfig &config, thread_pool &pool);
 
 /// This monitors the planet server for new OSM changes files.
 /// It does a bulk download to catch up the database, then checks for the
@@ -120,7 +121,7 @@ threadOsmChange(const replication::RemoteURL &remote,
 //extern bool threadChangeSet(const std::string &file);
 extern std::shared_ptr<changeset::ChangeSetFile>
 threadChangeSet(const replication::RemoteURL &remote,
-                const multipolygon_t &poly, osmstats::QueryOSMStats &ostats);
+                const multipolygon_t &poly, std::shared_ptr<osmstats::QueryOSMStats> ostats);
 
 // extern bool threadChangeSet(const std::string &file, std::promise<bool> && result);
 
