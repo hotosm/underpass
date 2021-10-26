@@ -217,7 +217,7 @@ main(int argc, char *argv[])
             ("verbose,v", "Enable verbosity")
             ("logstdout,l", "Enable logging to stdout, default is log to underpass.log")
             ("changefile", opts::value<std::string>(), "Import change file")
-            ("concurrency,c", opts::value<int>(), "Concurrency")
+            ("concurrency,c", opts::value<std::string>(), "Concurrency")
             ("debug,d", "Enable debug messages for developers");
         // clang-format on
 
@@ -287,10 +287,17 @@ main(int argc, char *argv[])
         replicator_config.taskingmanager_db_url = vm["tmserver"].as<std::string>();
     }
 
-    if (vm.count("concurrecncy")) {
-        replicator_config.concurrency = vm["concurrecncy"].as<int>();
-        if (replicator_config.concurrency > std::thread::hardware_concurrency()) {
-            log_error("ERROR: concurrency cannot exceed the number of threads supported by hardware (%1%)!", std::thread::hardware_concurrency());
+    if (vm.count("concurrency")) {
+        const auto concurrency = vm["concurrency"].as<std::string>();
+        try {
+            // Set minimum required because we are starting separate threads for monitoring anyway
+            replicator_config.concurrency = std::max(3, std::stoi(concurrency));
+            if (replicator_config.concurrency > std::thread::hardware_concurrency()) {
+                log_error("ERROR: concurrency cannot exceed the number of threads supported by hardware (%1%)!", std::thread::hardware_concurrency());
+            }
+        } catch (const std::exception &) {
+            log_error("ERROR: error parsing \"concurrency\"!");
+            exit(-1);
         }
     } else {
         replicator_config.concurrency = std::thread::hardware_concurrency();

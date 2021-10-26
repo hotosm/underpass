@@ -87,7 +87,10 @@ namespace replication {
 // https://planet.openstreetmap.org/replication/changesets/
 //    dir/dir/???.osm.gz
 
-typedef enum { minutely, hourly, daily, changeset } frequency_t;
+typedef enum { minutely,
+               hourly,
+               daily,
+               changeset } frequency_t;
 
 /// \class StateFile
 /// \brief Data structure for state.txt files
@@ -130,19 +133,19 @@ class StateFile {
     {
         std::vector<std::string> result;
         boost::split(result, path, boost::is_any_of("/"));
-        return std::stol(result[4]);
+        return std::stol(result[1]);
     };
     long getMinor(void)
     {
         std::vector<std::string> result;
         boost::split(result, path, boost::is_any_of("/"));
-        return std::stol(result[5]);
+        return std::stol(result[2]);
     };
     long getIndex(void)
     {
         std::vector<std::string> result;
         boost::split(result, path, boost::is_any_of("/"));
-        return std::stol(result[6]);
+        return std::stol(result[3]);
     };
 
     ///
@@ -163,7 +166,7 @@ class StateFile {
     std::string frequency; ///< The time interval of this change file
     /// These two values are updated after the changset is parsed
     ptime created_at =
-        not_a_date_time; ///< The first timestamp in the changefile
+        not_a_date_time;               ///< The first timestamp in the changefile
     ptime closed_at = not_a_date_time; ///< The last timestamp in the changefile
 };
 
@@ -176,6 +179,7 @@ class RemoteURL {
     RemoteURL(const std::string &rurl) { parse(rurl); }
     /// Parse a URL into it's elements
     void parse(const std::string &rurl);
+    void updatePath(int major, int minor, int index);
     std::string domain;
     std::string datadir;
     std::string subpath;
@@ -190,7 +194,7 @@ class RemoteURL {
     void dump(void);
     void Increment(void);
     RemoteURL &operator=(const RemoteURL &inr);
-    long sequence();
+    long sequence() const;
 };
 
 /// \class Planet
