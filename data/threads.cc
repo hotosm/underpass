@@ -477,7 +477,7 @@ threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly
         }
     }
 
-    std::cerr << "Closed At:  " << to_simple_string(changeset->changes.front()->closed_at) << std::endl;
+    // std::cerr << "Closed At:  " << to_simple_string(changeset->changes.front()->closed_at) << std::endl;
 
     changeset->areaFilter(poly);
 
