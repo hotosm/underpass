@@ -430,7 +430,7 @@ main(int argc, char *argv[])
         }
 
         // Try to determine the path from the timestamp
-        std::string url_path{replicator_config.starting_url_path.empty() ? "001/001/001" : replicator_config.starting_url_path};
+        std::string url_path{replicator_config.starting_url_path.empty() ? "/001/001/001" : replicator_config.starting_url_path};
         const std::string fullurl{replicator_config.planet_server + "/" + datadir +
                                   Underpass::freq_to_string(replicator_config.frequency) + url_path};
         replication::RemoteURL remote(fullurl);
