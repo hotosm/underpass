@@ -106,9 +106,6 @@ struct ReplicatorConfig {
                 // Ignore
             }
         }
-        if (getenv("REPLICATOR_STARTING_URL_PATH")) {
-            starting_url_path = getenv("REPLICATOR_STARTING_URL_PATH");
-        }
         if (getenv("REPLICATOR_TASKINGMANAGER_USERS_UPDATE_FREQUENCY")) {
             try {
                 const auto tm_freq{std::atoi(getenv("REPLICATOR_TASKINGMANAGER_USERS_UPDATE_FREQUENCY"))};
@@ -137,8 +134,8 @@ struct ReplicatorConfig {
     unsigned int concurrency = 1;
 
     frequency_t frequency = frequency_t::minutely;
-    std::string starting_url_path = "";              ///< Starting URL path (e.g. /000/000/001)
-    ptime endtime = not_a_date_time;                 ///< Ending time for changesets and OSM changes import
+    ptime start_time = not_a_date_time;              ///< Starting time for changesets and OSM changes import
+    ptime end_time = not_a_date_time;                ///< Ending time for changesets and OSM changes import
     long taskingmanager_users_update_frequency = -1; ///< Users synchronization: -1 (disabled), 0 (single shot), > 0 (interval in seconds)
 
     ///
@@ -174,11 +171,10 @@ REPLICATOR_UNDERPASS_DB_URL=%2%
 REPLICATOR_TASKINGMANAGER_DB_URL=%3%
 REPLICATOR_OSM2PGSQL_DB_URL=%3%
 REPLICATOR_FREQUENCY=%4%
-REPLICATOR_STARTING_URL_PATH=%5%
-REPLICATOR_TASKINGMANAGER_USERS_UPDATE_FREQUENCY=%6%
+REPLICATOR_TASKINGMANAGER_USERS_UPDATE_FREQUENCY=%5%
       )raw") % osmstats_db_url %
                    underpass_db_url % taskingmanager_db_url % osm2pgsql_db_url %
-                   Underpass::freq_to_string(frequency) % starting_url_path % taskingmanager_users_update_frequency);
+                   Underpass::freq_to_string(frequency) % taskingmanager_users_update_frequency);
     };
 };
 

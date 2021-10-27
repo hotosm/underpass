@@ -93,10 +93,8 @@ void
 startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &poly, const replicatorconfig::ReplicatorConfig &config, thread_pool &pool)
 {
 
-    if (inr.frequency != frequency_t::changeset) {
-        log_error(_("Could not start monitoring thread for changesets: URL %1% does not appear to be a valid URL for changesets!"), inr.url);
-        return;
-    }
+    // This function is for changesets only!
+    assert(inr.frequency == frequency_t::changeset);
 
     std::shared_ptr<osmstats::QueryOSMStats> ostats = std::make_shared<osmstats::QueryOSMStats>();
     if (!ostats->connect(config.osmstats_db_url)) {
@@ -110,65 +108,110 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
     auto planet = std::make_shared<replication::Planet>(remote);
 
     // Set the catching up target
-    const auto last_state{planet->fetchDataLast(remote.frequency, config.underpass_db_url)};
+    auto last_state{config.end_time != not_a_date_time ? planet->fetchData(frequency_t::changeset, config.end_time, config.underpass_db_url) : planet->fetchDataLast(frequency_t::changeset, config.underpass_db_url)};
 
-    // Stores the last valid sequence + 1 in the planet
-    long current_pseudo_sequence{std::numeric_limits<long>::max()};
-    if (last_state->isValid()) {
-        current_pseudo_sequence = last_state->sequence + 1;
+    if (!last_state->isValid()) {
+        log_error(_("Could not get last valid sequence for changesets, aborting monitoring thread!"));
+        return;
     }
 
-    // Timestamp for when the current_pseudo_sequence was calculated
+    // Stores the last valid sequence (+ 1) in the planet
+    // we need this value to know when the catching up is
+    // probably finished.
+    long catchup_pseudo_sequence{last_state->sequence + 1};
+
+    // Timestamp for when the catchup_pseudo_sequence was calculated
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    // Loop flag
-    std::atomic_bool mainloop{true};
+    // Error flag: it is set from the async function on errors
+    std::atomic_bool error_flag{false};
 
-    // Process changesets
-    while (mainloop) {
+    // Catchup delay in seconds
+    int catchup_delay{50};
 
-        pool.push_task([&config, &mainloop, planet, remote, &poly, ostats]() {
-            auto changefile = threadChangeSet(remote, poly, ostats);
-            for (const auto &change: std::as_const(changefile->changes)) {
-                if (change->closed_at == not_a_date_time || config.endtime == not_a_date_time || change->closed_at <= config.endtime) {
-                    ostats->applyChange(*change.get());
-                }
-            }
-            if (config.endtime != not_a_date_time && changefile->changes.size() > 0 && changefile->last_closed_at > config.endtime) {
-                log_debug(_("Exiting Changesets because endtime was reached for URL: %1%"), remote.url);
-                mainloop = false;
-            } else if (changefile->download_error) {
-                // Check if this is past the last state
-                const auto last_state{planet->fetchDataLast(remote.frequency, config.underpass_db_url)};
-                if (last_state->sequence <= remote.sequence()) {
-                    log_debug(_("Catching up completed after: %1%"), remote.url);
-                } else {
-                    log_error(_("Fatal download error after: %1%!"), remote.url);
-                    mainloop = false;
-                }
-            } else if (changefile->parse_error) {
-                log_error(_("Fatal parse error after: %1%!"), remote.url);
-                mainloop = false;
+    // Store the last successfully fetched pseudo sequence
+    long int max_pseudo_sequence = -1;
+    std::mutex max_pseudo_sequence_mutex;
+
+    // Catchup done
+    std::atomic_bool catchup_done{false};
+
+    // Processes the changesets asynchronously
+    auto processChangesetFunction = [&config, &error_flag, planet, &poly, ostats, &max_pseudo_sequence, &max_pseudo_sequence_mutex](const replication::RemoteURL &remote, bool set_error_flag_on_download_error) -> long {
+        auto changefile = threadChangeSet(remote, poly, ostats);
+        for (const auto &change: std::as_const(changefile->changes)) {
+            ostats->applyChange(*change.get());
+        }
+        if (changefile->download_error) {
+            if (set_error_flag_on_download_error) {
+                log_error(_("Fatal download error after: %1%!"), remote.url);
+                error_flag = true;
             } else {
-                log_debug(_("Changeset processed: %1%"), remote.url);
+                log_debug(_("Download error after: %1%!"), remote.url);
             }
-        });
+        } else if (changefile->parse_error) {
+            log_error(_("Fatal parse error after: %1%!"), remote.url);
+            error_flag = true;
+        } else {
+            std::scoped_lock{max_pseudo_sequence_mutex};
+            const auto sequence{remote.sequence()};
+            max_pseudo_sequence = std::max(max_pseudo_sequence, sequence);
+            log_debug(_("Changeset processed (%1%): %2%"), sequence, remote.url);
+            return sequence;
+        }
+        return -1; // on error
+    };
 
-        if (mainloop) {
-            // If the queue is full, just wait a little
-            while (pool.get_tasks_queued() > pool.get_thread_count()) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    // Phase 1: multi-threaded catching up
+    while (!error_flag && remote.sequence() <= catchup_pseudo_sequence) {
+        pool.push_task(processChangesetFunction, remote, true);
+        if (!error_flag) {
+            while (pool.get_tasks_queued() > 0) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
+        }
 
-            remote.Increment();
+        remote.Increment();
 
+        // Move the target
+        if (max_pseudo_sequence != catchup_pseudo_sequence && config.end_time == not_a_date_time) {
             std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-            current_pseudo_sequence = std::max(current_pseudo_sequence, current_pseudo_sequence + std::chrono::duration_cast<std::chrono::minutes>(now - begin).count());
-            begin = now;
+            catchup_pseudo_sequence = std::max(catchup_pseudo_sequence, catchup_pseudo_sequence + std::chrono::duration_cast<std::chrono::minutes>(now - begin).count() - 5);
+        }
+    }
 
-            if (remote.sequence() > current_pseudo_sequence) {
-                log_debug(_("Waiting for new ChangeSet: %1%"), remote.url);
-                std::this_thread::sleep_for(std::chrono::minutes{1});
+    if (error_flag) {
+        log_error(_("Could not catch up changesets!"));
+        return;
+    }
+
+    log_debug(_("Catching up completed after: %1%"), remote.url);
+
+    // Phase 2: updates
+    const int max_retries{4};
+    error_flag = false;
+
+    if (config.end_time == not_a_date_time) {
+        // Process changesets
+        log_debug(_("Starting changesets updates: %1%"), remote.url);
+        int retry = 0;
+        while (!error_flag) {
+            const auto result{processChangesetFunction(remote, false)};
+            if (!error_flag) {
+                if (result != -1) {
+                    remote.Increment();
+                    catchup_delay = std::max(30, catchup_delay - 1);
+                    log_debug(_("Waiting %1% seconds for new ChangeSet (sequence: %2%): %3%"), catchup_delay, remote.sequence(), remote.url);
+                    std::this_thread::sleep_for(std::chrono::seconds{catchup_delay});
+                    retry = 0;
+                } else if (retry > max_retries) {
+                    log_error(_("Error while monitoring changeset updates (max retries exceeded)!"));
+                    return;
+                } else {
+                    retry++;
+                    log_debug(_("Waiting %1% seconds for new ChangeSet (sequence: %2%) retry %4%: %3%"), catchup_delay++, remote.sequence(), remote.url, retry);
+                    std::this_thread::sleep_for(std::chrono::seconds{catchup_delay++});
+                }
             }
         }
     }
@@ -225,7 +268,7 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
         if (osmchange->changes.size() > 0) {
             delta = now - osmchange->changes.back()->final_entry;
             // log_debug("DELTA2: %1%", (delta.hours()*60) + delta.minutes());
-            if (config.endtime != not_a_date_time && osmchange->changes.back()->final_entry >= config.endtime) {
+            if (config.end_time != not_a_date_time && osmchange->changes.back()->final_entry >= config.end_time) {
                 log_debug(_("Exiting OsmChange because endtime was reached"));
                 mainloop = false;
             }
