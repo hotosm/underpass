@@ -75,7 +75,10 @@ using namespace replicatorconfig;
 // Exit code when connection to DB fails
 #define EXIT_DB_FAILURE -1
 
-enum pathMatches { ROOT, DIRECTORY, SUBDIRECTORY, FILEPATH };
+enum pathMatches { ROOT,
+                   DIRECTORY,
+                   SUBDIRECTORY,
+                   FILEPATH };
 
 using namespace logger;
 
@@ -359,7 +362,7 @@ main(int argc, char *argv[])
     std::vector<std::string> rawfile;
     std::shared_ptr<std::vector<unsigned char>> data;
 
-    // This is a full URL to the DB server with osmstats files
+    // This is the path part (ex. 000/075/000), takes precedence over 'timestamp' option"
     if (vm.count("url")) {
         replicator_config.starting_url_path = vm["url"].as<std::string>();
     }
@@ -392,20 +395,22 @@ main(int argc, char *argv[])
         }
     }
 
-    const std::string fullurl{replicator_config.planet_server + "/" + datadir +
-                              Underpass::freq_to_string(replicator_config.frequency) + replicator_config.starting_url_path};
-    replication::RemoteURL remote(fullurl);
     //     remote.dump();
     // Specify a timestamp used by other options
     if (vm.count("timestamp")) {
-        auto timestamps = vm["timestamp"].as<std::vector<std::string>>();
-        if (timestamps[0] == "now") {
-            starttime = boost::posix_time::microsec_clock::local_time();
-        } else {
-            starttime = time_from_string(timestamps[0]);
-            if (timestamps.size() > 1) {
-                endtime = time_from_string(timestamps[1]);
+        try {
+            auto timestamps = vm["timestamp"].as<std::vector<std::string>>();
+            if (timestamps[0] == "now") {
+                starttime = boost::posix_time::microsec_clock::local_time();
+            } else {
+                starttime = from_iso_extended_string(timestamps[0]);
+                if (timestamps.size() > 1) {
+                    endtime = from_iso_extended_string(timestamps[1]);
+                }
             }
+        } catch (const std::exception &ex) {
+            log_error("ERROR: could not parse timestamps!");
+            exit(-1);
         }
     }
 
@@ -415,6 +420,39 @@ main(int argc, char *argv[])
         log_error("ERROR: could not connect to underpass DB, check 'upserver' "
                   "parameter!");
     }
+
+    // At this point we must have a path, if the path was not passed we need to build one from
+    // the timestamp
+    if (replicator_config.starting_url_path.empty()) {
+        if (starttime == not_a_date_time) {
+            log_error("ERROR: could not determine the start path, you need to enter an \"url\" or a \"timestamp\"!");
+            exit(-1);
+        }
+
+        // Try to determine the path from the timestamp
+        std::string url_path{replicator_config.starting_url_path.empty() ? "/001/001/001" : replicator_config.starting_url_path};
+        const std::string fullurl{replicator_config.planet_server + "/" + datadir +
+                                  Underpass::freq_to_string(replicator_config.frequency) + url_path};
+        replication::RemoteURL remote(fullurl);
+        replication::Planet planet(remote);
+        const auto data{planet.fetchData(replicator_config.frequency, starttime, replicator_config.underpass_db_url)};
+        if (!data->isValid()) {
+            log_error("ERROR: could not determine the start path from timestamp!");
+            exit(-1);
+        } else {
+            replicator_config.starting_url_path = data->path;
+        }
+    }
+
+    // Still no path? Exit with error.
+    if (replicator_config.starting_url_path.empty()) {
+        log_error("ERROR: start path cannot be empty: you need to enter an \"url\" or a \"timestamp\"!");
+        exit(-1);
+    }
+
+    const std::string fullurl{replicator_config.planet_server + "/" + datadir +
+                              Underpass::freq_to_string(replicator_config.frequency) + replicator_config.starting_url_path};
+    replication::RemoteURL remote(fullurl);
 
     replication::Planet planet(remote);
     std::string clast;
@@ -457,24 +495,6 @@ main(int argc, char *argv[])
             remote.parse(clast);
             // remote.dump();
             changesets_thread = std::thread(threads::startMonitor, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
-        } else if (!starttime.is_not_a_date_time()) {
-            // No URL, use the timestamp
-            auto state = under.getState(replicator_config.frequency, starttime);
-            if (state->isValid()) {
-                auto tmp = planet.fetchData(replicator_config.frequency, starttime, replicator_config.underpass_db_url);
-                if (tmp->path.empty()) {
-                    std::cerr << "ERROR: No last path!" << std::endl;
-                    exit(-1);
-                } else {
-                    // last = replicator.baseurl +
-                    // under.freq_to_string(frequency) + "/" + tmp->path;
-                }
-            } else {
-                // last = replicator.baseurl + under.freq_to_string(frequency) +
-                // "/" + state->path;
-            }
-            log_debug(_("Last minutely is "), replicator_config.starting_url_path);
-            // mthread = std::thread(threads::startMonitor, std::ref(remote));
         }
 
         log_info(_("Waiting..."));
