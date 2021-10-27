@@ -127,7 +127,7 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
     // Process changesets
     while (mainloop) {
 
-        pool.push_task([config, &mainloop, planet, remote, &poly, ostats]() {
+        pool.push_task([&config, &mainloop, planet, remote, &poly, ostats]() {
             auto changefile = threadChangeSet(remote, poly, ostats);
             for (const auto &change: std::as_const(changefile->changes)) {
                 if (change->closed_at == not_a_date_time || config.endtime == not_a_date_time || change->closed_at <= config.endtime) {
