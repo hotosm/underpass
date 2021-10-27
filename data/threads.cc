@@ -124,17 +124,10 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
     // Loop flag
     std::atomic_bool mainloop{true};
 
-    // When catching up is done, wait
-    std::atomic_bool catching_up{true};
-
-    // Stores the last valid downloaded path (e.g. 004/688/839), transformed to a sequence
-    // (which may be off by one if compared to the real sequence but we don't really care in this context)
-    std::atomic_long pseudo_sequence = -1;
-
     // Process changesets
     while (mainloop) {
 
-        pool.push_task([&catching_up, config, &mainloop, planet, remote, &poly, ostats, &pseudo_sequence]() {
+        pool.push_task([config, &mainloop, planet, remote, &poly, ostats]() {
             auto changefile = threadChangeSet(remote, poly, ostats);
             for (const auto &change: std::as_const(changefile->changes)) {
                 if (change->closed_at == not_a_date_time || config.endtime == not_a_date_time || change->closed_at <= config.endtime) {
@@ -149,7 +142,6 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
                 const auto last_state{planet->fetchDataLast(remote.frequency, config.underpass_db_url)};
                 if (last_state->sequence <= remote.sequence()) {
                     log_debug(_("Catching up completed after: %1%"), remote.url);
-                    catching_up = false;
                 } else {
                     log_error(_("Fatal download error after: %1%!"), remote.url);
                     mainloop = false;
@@ -158,14 +150,11 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
                 log_error(_("Fatal parse error after: %1%!"), remote.url);
                 mainloop = false;
             } else {
-                const long current_sequence{pseudo_sequence};
-                pseudo_sequence = std::max(current_sequence, remote.sequence());
                 log_debug(_("Changeset processed: %1%"), remote.url);
             }
         });
 
         if (mainloop) {
-
             // If the queue is full, just wait a little
             while (pool.get_tasks_queued() > pool.get_thread_count()) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
