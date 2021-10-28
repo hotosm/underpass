@@ -207,7 +207,7 @@ class Planet {
     {
         remote = url;
         if (!connectServer(url.domain)) {
-            throw std::runtime_error("Error connecting to server" + url.domain);
+            throw std::runtime_error("Error connecting to server " + url.domain);
         }
     };
     // Planet(const std::string &planet, const std::string &dir) {

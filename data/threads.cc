@@ -133,47 +133,67 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
     long int max_pseudo_sequence = -1;
     std::mutex max_pseudo_sequence_mutex;
 
+    // List of servers
+    auto servers{config.getPlanetServers(frequency_t::changeset)};
+
     // Processes the changesets asynchronously
-    auto processChangesetFunction = [&error_flag, &poly, ostats, &max_pseudo_sequence, &max_pseudo_sequence_mutex](const replication::RemoteURL &remote, bool set_error_flag_on_download_error) -> long {
-        const auto changefile{threadChangeSet(remote, poly, ostats)};
-        for (const auto &change: std::as_const(changefile->changes)) {
-            ostats->applyChange(*change.get());
-        }
-        if (changefile->download_error) {
-            if (set_error_flag_on_download_error) {
-                log_error(_("Fatal download error after: %1%!"), remote.url);
+    auto processChangesetFunction = [&error_flag, &poly, ostats, &max_pseudo_sequence, &max_pseudo_sequence_mutex](replication::RemoteURL remote, std::vector<replicatorconfig::PlanetServer> servers) {
+        int retry{0};
+        const int max_retries{4};
+        while (!error_flag) {
+            const auto changefile{threadChangeSet(remote, poly, ostats)};
+            for (const auto &change: std::as_const(changefile->changes)) {
+                ostats->applyChange(*change.get());
+            }
+            if (changefile->download_error) {
+                if (retry >= max_retries) {
+                    log_error(_("Fatal download error, max retries exceeded for: %1%!"), remote.url);
+                    error_flag = true;
+                } else {
+                    retry++;
+                    log_debug(_("Download error (retry %2%) after: %1%!"), remote.url, retry);
+                    // Get the next server ...
+                    if (servers.size() > 1 && retry < servers.size()) {
+                        std::rotate(servers.begin(), servers.begin() + 1, servers.end());
+                        const auto first_server{servers.front()};
+                        remote.replacePlanet(first_server.domain, first_server.datadir);
+                        log_debug(_("Server rotated to: %1%"), remote.domain);
+                    } else {
+                        // ... or just take a nap
+                        log_debug(_("Waiting after download error on: %1%"), remote.url);
+                        std::this_thread::sleep_for(std::chrono::seconds{1});
+                    }
+                }
+            } else if (changefile->parse_error) {
+                log_error(_("Fatal parse error after: %1%!"), remote.url);
                 error_flag = true;
             } else {
-                log_debug(_("Download error after: %1%!"), remote.url);
+                std::scoped_lock{max_pseudo_sequence_mutex};
+                const auto sequence{remote.sequence()};
+                max_pseudo_sequence = std::max(max_pseudo_sequence, sequence);
+                log_debug(_("Changeset processed (%1%): %2%"), sequence, remote.url);
+                break;
             }
-        } else if (changefile->parse_error) {
-            log_error(_("Fatal parse error after: %1%!"), remote.url);
-            error_flag = true;
-        } else {
-            std::scoped_lock{max_pseudo_sequence_mutex};
-            const auto sequence{remote.sequence()};
-            max_pseudo_sequence = std::max(max_pseudo_sequence, sequence);
-            log_debug(_("Changeset processed (%1%): %2%"), sequence, remote.url);
-            return sequence;
         }
-        return -1; // on error
     };
-
-    auto servers{config.getPlanetServers(frequency_t::changeset)};
 
     // Phase 1: multi-threaded catching up
     while (!error_flag && remote.sequence() <= catchup_pseudo_sequence) {
-        pool.push_task(processChangesetFunction, remote, true);
+
+        pool.push_task(processChangesetFunction, remote, servers);
         if (!error_flag) {
             while (pool.get_tasks_queued() > 0) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
         }
 
-        std::rotate(servers.begin(), servers.begin() + 1, servers.end());
+        if (servers.size() > 1) {
+            std::rotate(servers.begin(), servers.begin() + 1, servers.end());
+            const auto first_server{servers.front()};
+            remote.replacePlanet(first_server.domain, first_server.datadir);
+            log_debug(_("Server rotated to: %1%"), remote.domain);
+        }
 
-        const auto first_server{servers.front()};
-        remote.replacePlanet(first_server.domain, first_server.datadir);
         remote.Increment();
 
         // Move the target
@@ -195,26 +215,45 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
     error_flag = false;
 
     if (config.end_time == not_a_date_time) {
+
         // Process changesets
         log_debug(_("Starting changesets updates: %1%"), remote.url);
         int retry = 0;
+
+        // Start monitoring endless loop
         while (!error_flag) {
-            const auto result{processChangesetFunction(remote, false)};
-            if (!error_flag) {
-                if (result != -1) {
-                    remote.Increment();
-                    catchup_delay = std::max(30, catchup_delay - 1);
-                    log_debug(_("Waiting %1% seconds for new ChangeSet (sequence: %2%): %3%"), catchup_delay, remote.sequence(), remote.url);
-                    std::this_thread::sleep_for(std::chrono::seconds{catchup_delay});
-                    retry = 0;
-                } else if (retry > max_retries) {
-                    log_error(_("Error while monitoring changeset updates (max retries exceeded)!"));
-                    return;
+            const auto changefile{threadChangeSet(remote, poly, ostats)};
+            for (const auto &change: std::as_const(changefile->changes)) {
+                ostats->applyChange(*change.get());
+            }
+            if (changefile->download_error) {
+                log_debug(_("Download error after: %1%!"), remote.url);
+                if (retry > max_retries) {
+                    log_error(_("Error while monitoring changeset updates, max retries exceeded for: %1%!"), remote.url);
+                    error_flag = true;
                 } else {
                     retry++;
+
+                    if (servers.size() > 1) {
+                        std::rotate(servers.begin(), servers.begin() + 1, servers.end());
+                        const auto first_server{servers.front()};
+                        remote.replacePlanet(first_server.domain, first_server.datadir);
+                        log_debug(_("Server rotated to: %1%"), remote.domain);
+                    }
+
                     log_debug(_("Waiting %1% seconds for new ChangeSet (sequence: %2%) retry %4%: %3%"), catchup_delay++, remote.sequence(), remote.url, retry);
                     std::this_thread::sleep_for(std::chrono::seconds{catchup_delay++});
                 }
+            } else if (changefile->parse_error) {
+                log_error(_("Fatal parse error after: %1%!"), remote.url);
+                error_flag = true;
+            } else {
+                retry = 0;
+                log_debug(_("Changeset processed (%1%): %2%"), remote.sequence(), remote.url);
+                remote.Increment();
+                catchup_delay = std::max(30, catchup_delay - 1);
+                log_debug(_("Waiting %1% seconds for new ChangeSet (sequence: %2%): %3%"), catchup_delay, remote.sequence(), remote.url);
+                std::this_thread::sleep_for(std::chrono::seconds{catchup_delay});
             }
         }
     }
@@ -544,8 +583,12 @@ threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly
         close(fd);
     } else {
         log_debug(_("Downloading ChangeSet: %1%"), remote.url);
-        replication::Planet planet(remote);
-        data = planet.downloadFile(remote.url);
+        try {
+            replication::Planet planet(remote);
+            data = planet.downloadFile(remote.url);
+        } catch (const std::exception &ex) {
+            log_debug(_("Download error for %1%: %2%"), remote.url, ex.what());
+        }
     }
     if (data->size() == 0) {
         log_error(_("ChangeSet file not found: %1%"), remote.url);
