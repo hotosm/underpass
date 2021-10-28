@@ -43,8 +43,7 @@ BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
 	$(BOOST_THREAD_LIB) \
 	$(BOOST_REGEX_LIB) \
 	$(BOOST_SERIALIZATION_LIB) \
-	$(BOOST_LOCALE_LIB) \
-	$(BOOST_TIMER_LIB)
+	$(BOOST_LOCALE_LIB) 
 
 SQL_FILES = \
 	data/underpass.sql \
@@ -64,6 +63,7 @@ libunderpass_la_SOURCES = \
 	log.cc log.hh \
 	dsodefs.hh gettext.h \
 	hottm.cc hottm.hh \
+	replicatorconfig.hh \
 	hottm/tmdefs.hh \
 	hottm/tmusers.cc hottm/tmusers.hh \
 	hottm/tmteams.cc hottm/tmteams.hh \
@@ -90,7 +90,7 @@ libunderpass_la_LDFLAGS = -avoid-version
 endif
 
 bin_PROGRAMS = replicator
-replicator_SOURCES = replicator.cc replicatorconfig.hh
+replicator_SOURCES = replicator.cc 
 replicator_LDADD = libunderpass.la $(BOOST_LIBS)
 
 if JEMALLOC

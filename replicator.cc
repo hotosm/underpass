@@ -211,7 +211,7 @@ main(int argc, char *argv[])
             ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp (can be used 2 times to set a range)")
             ("import,i", opts::value<std::string>(), "Initialize OSM database with datafile")
             ("boundary,b", opts::value<std::string>(), "Boundary polygon file name")
-            ("datadir", opts::value<std::string>(), "Base directory for cached files")
+            ("datadir", opts::value<std::string>(), "Base directory for cached files (with ending slash)")
             ("verbose,v", "Enable verbosity")
             ("logstdout,l", "Enable logging to stdout, default is log to underpass.log")
             ("changefile", opts::value<std::string>(), "Import change file")
@@ -269,10 +269,9 @@ main(int argc, char *argv[])
     // Planet server
     if (vm.count("planet")) {
         replicator_config.planet_server = vm["planet"].as<std::string>();
-        // Little cleanup: we want something like https://planet.maps.mail.ru
-        if (replicator_config.planet_server.find("https://") != 0) {
-            log_error("ERROR: planet server must start with 'https://' !");
-            exit(-1);
+        // Strip https://
+        if (replicator_config.planet_server.find("https://") == 0) {
+            replicator_config.planet_server = replicator_config.planet_server.substr(8);
         }
 
         if (boost::algorithm::ends_with(replicator_config.planet_server, "/")) {
@@ -401,6 +400,9 @@ main(int argc, char *argv[])
         datadir = tmp;
     }
 
+    // Add datadir to config
+    replicator_config.datadir = datadir;
+
     if (vm.count("frequency")) {
         const auto strfreq = vm["frequency"].as<std::string>();
         if (strfreq[0] == 'm') {
@@ -453,20 +455,25 @@ main(int argc, char *argv[])
 
             // Try to determine the changesets path from the timestamp
             std::string url_path{starting_url_path.empty() ? "/001/001/001" : starting_url_path};
-            const std::string fullurl{replicator_config.getPlanetServer() + "/" + datadir +
+            const std::string fullurl{replicator_config.getPlanetServerReplicationUrl() + "/" +
                                       Underpass::freq_to_string(frequency_t::changeset) + url_path};
             replication::RemoteURL remote(fullurl);
-            replication::Planet planet(remote);
-            auto data{planet.fetchData(frequency_t::changeset, replicator_config.start_time, replicator_config.underpass_db_url)};
-            // Handle the case for "now"
-            if (!data->isValid() && vm.count("timestamp") > 0 && vm["timestamp"].as<std::vector<std::string>>()[0] == "now") {
-                data = planet.fetchDataLast(frequency_t::changeset, replicator_config.underpass_db_url);
-            }
-            if (!data->isValid()) {
-                log_error("ERROR: could not determine the start path from timestamp!");
+            try {
+                replication::Planet planet(remote);
+                auto data{planet.fetchData(frequency_t::changeset, replicator_config.start_time, replicator_config.underpass_db_url)};
+                // Handle the case for "now"
+                if (!data->isValid() && vm.count("timestamp") > 0 && vm["timestamp"].as<std::vector<std::string>>()[0] == "now") {
+                    data = planet.fetchDataLast(frequency_t::changeset, replicator_config.underpass_db_url);
+                }
+                if (!data->isValid()) {
+                    log_error("ERROR: could not determine the start path from timestamp!");
+                    exit(-1);
+                } else {
+                    replicator_config.start_time = data->timestamp;
+                }
+            } catch (const std::exception &ex) {
+                log_error("ERROR: could not connect to remote server %1%!", ex.what());
                 exit(-1);
-            } else {
-                replicator_config.start_time = data->timestamp;
             }
         }
 
@@ -476,8 +483,7 @@ main(int argc, char *argv[])
             exit(-1);
         }
 
-        const std::string fullurl{replicator_config.getPlanetServer() + "/" + datadir +
-                                  Underpass::freq_to_string(replicator_config.frequency) + "/000/000/000"};
+        const std::string fullurl{replicator_config.getPlanetServerReplicationUrl() + "/" + Underpass::freq_to_string(replicator_config.frequency) + "/000/000/000"};
         replication::RemoteURL remote(fullurl);
 
         replication::Planet planet(remote);
@@ -496,7 +502,7 @@ main(int argc, char *argv[])
             exit(-1);
         }
 
-        const std::string changesets_url{replicator_config.getPlanetServer() + "/" + datadir + "changesets" + changesets_state->path};
+        const std::string changesets_url{replicator_config.getPlanetServerReplicationUrl() + "/" + "changesets" + changesets_state->path};
         remote.parse(changesets_url);
 
         // Changesets thread

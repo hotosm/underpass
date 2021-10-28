@@ -133,12 +133,9 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
     long int max_pseudo_sequence = -1;
     std::mutex max_pseudo_sequence_mutex;
 
-    // Catchup done
-    std::atomic_bool catchup_done{false};
-
     // Processes the changesets asynchronously
-    auto processChangesetFunction = [&config, &error_flag, planet, &poly, ostats, &max_pseudo_sequence, &max_pseudo_sequence_mutex](const replication::RemoteURL &remote, bool set_error_flag_on_download_error) -> long {
-        auto changefile = threadChangeSet(remote, poly, ostats);
+    auto processChangesetFunction = [&error_flag, &poly, ostats, &max_pseudo_sequence, &max_pseudo_sequence_mutex](const replication::RemoteURL &remote, bool set_error_flag_on_download_error) -> long {
+        const auto changefile{threadChangeSet(remote, poly, ostats)};
         for (const auto &change: std::as_const(changefile->changes)) {
             ostats->applyChange(*change.get());
         }
@@ -162,6 +159,8 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
         return -1; // on error
     };
 
+    auto servers{config.getPlanetServers(frequency_t::changeset)};
+
     // Phase 1: multi-threaded catching up
     while (!error_flag && remote.sequence() <= catchup_pseudo_sequence) {
         pool.push_task(processChangesetFunction, remote, true);
@@ -171,6 +170,10 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
             }
         }
 
+        std::rotate(servers.begin(), servers.begin() + 1, servers.end());
+
+        const auto first_server{servers.front()};
+        remote.replacePlanet(first_server.domain, first_server.datadir);
         remote.Increment();
 
         // Move the target
@@ -181,7 +184,7 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
     }
 
     if (error_flag) {
-        log_error(_("Could not catch up changesets!"));
+        log_error(_("Could not catch up changesets, monitoring aborted!"));
         return;
     }
 
@@ -581,7 +584,7 @@ threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly
     }
 
     // Note: closed_at might be not_a_date_time because some records in changesets XML miss that attribute!
-    log_debug(_("Closed At:  %1%"), to_simple_string(changeset->last_closed_at));
+    // log_debug(_("Closed At:  %1%"), to_simple_string(changeset->last_closed_at));
 
     changeset->areaFilter(poly);
 

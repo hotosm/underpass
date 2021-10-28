@@ -39,26 +39,31 @@ namespace replicatorconfig {
 ///
 struct PlanetServer {
 
-    PlanetServer(const std::string url, bool daily, bool hourly, bool minutely)
-        : url(url), has_daily(daily), has_hourly(hourly), has_minutely(minutely)
+    ///
+    /// \brief PlanetServer
+    /// \param domin domain part (without https://)
+    /// \param datadir (usually "replication")
+    /// \param daily supports daily
+    /// \param hourly supports hourly
+    /// \param minutely supports minutely
+    /// \param changeset supports changeset
+    ///
+    PlanetServer(const std::string &url, const std::string &datadir, bool daily, bool hourly, bool minutely, bool changeset)
+        : domain(url), datadir(datadir), has_daily(daily), has_hourly(hourly), has_minutely(minutely), has_changeset(changeset)
     {
     }
 
-    std::string url;
-    bool has_daily = true;
+    std::string domain;
+    std::string datadir;
+    bool has_daily = false;
     bool has_hourly = false;
     bool has_minutely = false;
-    bool has_changeset = true;
-    bool is_valid = true;
-
-    // In case of errrors
-    std::string last_error_message;
-    ptime last_error_timestamp = not_a_date_time;
+    bool has_changeset = false;
 
     ///
     /// \brief has_frequency returns TRUE if the \a frequency is supported by the server.
     ///
-    bool has_frequency(frequency_t frequency)
+    bool has_frequency(frequency_t frequency) const
     {
         switch (frequency) {
             case frequency_t::daily:
@@ -70,6 +75,16 @@ struct PlanetServer {
             case frequency_t::changeset:
                 return has_changeset;
         }
+        return false;
+    }
+
+    ///
+    /// \brief baseUrl returns the full base url including the datadir
+    ///        (e.g. "https://free.nchc.org.tw/osm.planet/replcation" or "https://download.openstreetmap.fr/replication")
+    ///
+    std::string replicationUrl() const
+    {
+        return "https://" + domain + (datadir.empty() ? "" : "/" + datadir);
     }
 };
 
@@ -119,9 +134,12 @@ struct ReplicatorConfig {
 
         // Initialize servers
         planet_servers = {
-            {"https://planet.maps.mail.ru", true, true, true},
-            {"https://download.openstreetmap.fr", true, true, true},
-            {"https://free.nchc.org.tw/osm.planet", true, false, false},
+            {"planet.maps.mail.ru", "replication", true, true, true, true},
+            {"download.openstreetmap.fr", "replication", false, false, true, false},
+            // This is too slow:
+            // {"planet.openstreetmap.org", "replication", true, true, true, true},
+            // This is not up to date (one day late):
+            // {"free.nchc.org.tw", "osm.planet/replication", true, true, true, true},
         };
     };
 
@@ -130,6 +148,7 @@ struct ReplicatorConfig {
     std::string taskingmanager_db_url = "localhost/taskingmanager";
     std::string osm2pgsql_db_url = "";
     std::string planet_server;
+    std::string datadir;
     std::vector<PlanetServer> planet_servers;
     unsigned int concurrency = 1;
 
@@ -140,17 +159,22 @@ struct ReplicatorConfig {
 
     ///
     /// \brief getPlanetServer returns either the command line supplied planet server
-    ///        or the first planet server from the hardcoded list.
+    ///        replication URL or the first planet server replication URL from the hardcoded
+    ///        server list.
     ///
-    std::string getPlanetServer()
+    std::string getPlanetServerReplicationUrl() const
     {
-        return planet_server.empty() ? planet_servers.front().url : planet_server;
+        if (!planet_server.empty()) {
+            return "https://" + planet_server + (datadir.empty() ? "" : "/" + datadir);
+        } else {
+            return planet_servers.front().replicationUrl();
+        }
     }
 
     ///
     /// Returns a list of planet servers that support the given frequency.
     ///
-    std::vector<PlanetServer> getPlanetServers(frequency_t frequency)
+    std::vector<PlanetServer> getPlanetServers(frequency_t frequency) const
     {
         std::vector<PlanetServer> servers;
         std::copy_if(planet_servers.begin(), planet_servers.end(), std::back_inserter(servers), [frequency](PlanetServer p) {

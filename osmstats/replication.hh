@@ -54,7 +54,6 @@ namespace ssl = boost::asio::ssl; // from <boost/asio/ssl.hpp>
 using boost::format;
 
 #include "osmstats/changeset.hh"
-// #include "osmstats/osmstats.hh"
 
 namespace net = boost::asio;      // from <boost/asio.hpp>
 namespace ssl = boost::asio::ssl; // from <boost/asio/ssl.hpp>
@@ -191,6 +190,7 @@ class RemoteURL {
     int index;
     std::string filespec;
     std::string destdir;
+    void replacePlanet(const std::string &new_domain, const std::string &new_datadir);
     void dump(void);
     void Increment(void);
     RemoteURL &operator=(const RemoteURL &inr);
@@ -206,7 +206,9 @@ class Planet {
     Planet(const RemoteURL &url)
     {
         remote = url;
-        connectServer(url.domain);
+        if (!connectServer(url.domain)) {
+            throw std::runtime_error("Error connecting to server" + url.domain);
+        }
     };
     // Planet(const std::string &planet, const std::string &dir) {
     //     pserver = planet;
