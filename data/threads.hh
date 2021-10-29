@@ -30,11 +30,12 @@
 #include <pqxx/pqxx>
 #include <string>
 #include <vector>
-
 #include <condition_variable>
 #include <mutex>
 #include <ogr_geometry.h>
 #include <thread>
+
+#include "external/thread_pool.hpp"
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/date_time.hpp>
@@ -89,12 +90,19 @@ namespace threads {
 extern void
 startStateThreads(const std::string &base, const std::string &file);
 
-/// This monitors the planet server for new files of the specified type.
+/// This monitors the planet server for new changesets files.
 /// It does a bulk download to catch up the database, then checks for the
 /// minutely change files and processes them.
 extern void
-startMonitor(const replication::RemoteURL &remote, const multipolygon_t &poly,
-             const replicatorconfig::ReplicatorConfig &config);
+startMonitorChangesets(const replication::RemoteURL &remote, const multipolygon_t &poly,
+                       const replicatorconfig::ReplicatorConfig &config, thread_pool &pool);
+
+/// This monitors the planet server for new OSM changes files.
+/// It does a bulk download to catch up the database, then checks for the
+/// minutely change files and processes them.
+extern void
+startMonitorChanges(const replication::RemoteURL &remote, const multipolygon_t &poly,
+                    const replicatorconfig::ReplicatorConfig &config);
 
 /// Updates the states table in the Underpass database
 extern std::shared_ptr<replication::StateFile>
@@ -111,9 +119,9 @@ threadOsmChange(const replication::RemoteURL &remote,
 /// This updates several fields in the raw_changesets table, which are part of
 /// the changeset file, and don't need to be calculated.
 //extern bool threadChangeSet(const std::string &file);
-extern std::shared_ptr<changeset::ChangeSetFile>
+extern std::unique_ptr<changeset::ChangeSetFile>
 threadChangeSet(const replication::RemoteURL &remote,
-                const multipolygon_t &poly, osmstats::QueryOSMStats &ostats);
+                const multipolygon_t &poly, std::shared_ptr<osmstats::QueryOSMStats> ostats);
 
 // extern bool threadChangeSet(const std::string &file, std::promise<bool> && result);
 

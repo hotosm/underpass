@@ -36,6 +36,10 @@
 #include <thread>
 #include <tuple>
 #include <vector>
+#include <thread>
+
+// Global thread pool
+#include "external/thread_pool.hpp"
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/date_time.hpp>
@@ -173,12 +177,9 @@ main(int argc, char *argv[])
     // Store the file names for replication files
     std::string changeset;
     std::string osmchange;
-    // The update frequency between downloads
-    // bool encrypted = false;
-    long sequence = 0;
-    ptime starttime(not_a_date_time);
-    ptime endtime(not_a_date_time);
-    std::string url;
+
+    // The changesets URL path (e.g. "/001/001/999")
+    std::string starting_url_path;
 
     long tmusersfrequency{-1};
     std::string datadir = "replication/";
@@ -207,13 +208,14 @@ main(int argc, char *argv[])
             ("url,u", opts::value<std::string>(), "Starting URL path (ex. 000/075/000), takes precedence over 'timestamp' option")
             ("monitor,m", "Start monitoring")
             ("frequency,f", opts::value<std::string>(), "Update frequency (hourly, daily), default minutely)")
-            ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp")
+            ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp (can be used 2 times to set a range)")
             ("import,i", opts::value<std::string>(), "Initialize OSM database with datafile")
             ("boundary,b", opts::value<std::string>(), "Boundary polygon file name")
-            ("datadir,i", opts::value<std::string>(), "Base directory for cached files")
+            ("datadir", opts::value<std::string>(), "Base directory for cached files (with ending slash)")
             ("verbose,v", "Enable verbosity")
             ("logstdout,l", "Enable logging to stdout, default is log to underpass.log")
-            ("changefile,c", opts::value<std::string>(), "Import change file")
+            ("changefile", opts::value<std::string>(), "Import change file")
+            ("concurrency,c", opts::value<std::string>(), "Concurrency")
             ("debug,d", "Enable debug messages for developers");
         // clang-format on
 
@@ -267,10 +269,9 @@ main(int argc, char *argv[])
     // Planet server
     if (vm.count("planet")) {
         replicator_config.planet_server = vm["planet"].as<std::string>();
-        // Little cleanup: we want something like https://planet.maps.mail.ru
-        if (replicator_config.planet_server.find("https://") != 0) {
-            log_error("ERROR: planet server must start with 'https://' !");
-            exit(-1);
+        // Strip https://
+        if (replicator_config.planet_server.find("https://") == 0) {
+            replicator_config.planet_server = replicator_config.planet_server.substr(8);
         }
 
         if (boost::algorithm::ends_with(replicator_config.planet_server, "/")) {
@@ -282,6 +283,25 @@ main(int argc, char *argv[])
     if (vm.count("tmserver")) {
         replicator_config.taskingmanager_db_url = vm["tmserver"].as<std::string>();
     }
+
+    if (vm.count("concurrency")) {
+        const auto concurrency = vm["concurrency"].as<std::string>();
+        try {
+            // Set minimum required because we are starting separate threads for monitoring anyway
+            replicator_config.concurrency = std::max(3, std::stoi(concurrency));
+            if (replicator_config.concurrency > std::thread::hardware_concurrency()) {
+                log_error("ERROR: concurrency cannot exceed the number of threads supported by hardware (%1%)!", std::thread::hardware_concurrency());
+            }
+        } catch (const std::exception &) {
+            log_error("ERROR: error parsing \"concurrency\"!");
+            exit(-1);
+        }
+    } else {
+        replicator_config.concurrency = std::thread::hardware_concurrency();
+    }
+
+    // Initialize the thread pool
+    thread_pool pool{replicator_config.concurrency};
 
     if (vm.count("tmusersfrequency")) {
         const auto freqValue{vm["tmusersfrequency"].as<std::string>()};
@@ -362,14 +382,13 @@ main(int argc, char *argv[])
     std::vector<std::string> rawfile;
     std::shared_ptr<std::vector<unsigned char>> data;
 
-    // This is the path part (ex. 000/075/000), takes precedence over 'timestamp' option"
+    // This is the changesets path part (ex. 000/075/000), takes precedence over 'timestamp' option"
     if (vm.count("url")) {
-        replicator_config.starting_url_path = vm["url"].as<std::string>();
-    }
-
-    // Make sure the path starts with a slash
-    if (!replicator_config.starting_url_path.empty() && replicator_config.starting_url_path[0] != '/') {
-        replicator_config.starting_url_path.insert(0, 1, '/');
+        starting_url_path = vm["url"].as<std::string>();
+        // Make sure the path starts with a slash
+        if (!starting_url_path.empty() && starting_url_path[0] != '/') {
+            starting_url_path.insert(0, 1, '/');
+        }
     }
 
     // This is the default data directory on that server
@@ -380,6 +399,9 @@ main(int argc, char *argv[])
     if (tmp != 0) {
         datadir = tmp;
     }
+
+    // Add datadir to config
+    replicator_config.datadir = datadir;
 
     if (vm.count("frequency")) {
         const auto strfreq = vm["frequency"].as<std::string>();
@@ -395,17 +417,16 @@ main(int argc, char *argv[])
         }
     }
 
-    //     remote.dump();
     // Specify a timestamp used by other options
     if (vm.count("timestamp")) {
         try {
             auto timestamps = vm["timestamp"].as<std::vector<std::string>>();
             if (timestamps[0] == "now") {
-                starttime = boost::posix_time::microsec_clock::local_time();
+                replicator_config.start_time = boost::posix_time::second_clock::local_time();
             } else {
-                starttime = from_iso_extended_string(timestamps[0]);
+                replicator_config.start_time = from_iso_extended_string(timestamps[0]);
                 if (timestamps.size() > 1) {
-                    endtime = from_iso_extended_string(timestamps[1]);
+                    replicator_config.end_time = from_iso_extended_string(timestamps[1]);
                 }
             }
         } catch (const std::exception &ex) {
@@ -421,89 +442,76 @@ main(int argc, char *argv[])
                   "parameter!");
     }
 
-    // At this point we must have a path, if the path was not passed we need to build one from
-    // the timestamp
-    if (replicator_config.starting_url_path.empty()) {
-        if (starttime == not_a_date_time) {
-            log_error("ERROR: could not determine the start path, you need to enter an \"url\" or a \"timestamp\"!");
-            exit(-1);
-        }
-
-        // Try to determine the path from the timestamp
-        std::string url_path{replicator_config.starting_url_path.empty() ? "/001/001/001" : replicator_config.starting_url_path};
-        const std::string fullurl{replicator_config.planet_server + "/" + datadir +
-                                  Underpass::freq_to_string(replicator_config.frequency) + url_path};
-        replication::RemoteURL remote(fullurl);
-        replication::Planet planet(remote);
-        const auto data{planet.fetchData(replicator_config.frequency, starttime, replicator_config.underpass_db_url)};
-        if (!data->isValid()) {
-            log_error("ERROR: could not determine the start path from timestamp!");
-            exit(-1);
-        } else {
-            replicator_config.starting_url_path = data->path;
-        }
-    }
-
-    // Still no path? Exit with error.
-    if (replicator_config.starting_url_path.empty()) {
-        log_error("ERROR: start path cannot be empty: you need to enter an \"url\" or a \"timestamp\"!");
-        exit(-1);
-    }
-
-    const std::string fullurl{replicator_config.planet_server + "/" + datadir +
-                              Underpass::freq_to_string(replicator_config.frequency) + replicator_config.starting_url_path};
-    replication::RemoteURL remote(fullurl);
-
-    replication::Planet planet(remote);
-    std::string clast;
-
     if (vm.count("monitor")) {
-        if (starttime.is_not_a_date_time() && replicator_config.starting_url_path.size() == 0) {
-            log_error("ERROR: You need to supply either a timestamp or URL!");
-            //         if (timestamp.is_not_a_date_time()) {
-            //             timestamp = ostats.getLastUpdate();
-            //         }
 
+        // At this point we must have a path, if the path was not passed we need to build one from
+        // the timestamp
+        if (starting_url_path.empty()) {
+
+            if (replicator_config.start_time == not_a_date_time) {
+                log_error("ERROR: could not determine the start path, you need to enter an \"url\" or a \"timestamp\"!");
+                exit(-1);
+            }
+
+            // Try to determine the changesets path from the timestamp
+            std::string url_path{starting_url_path.empty() ? "/001/001/001" : starting_url_path};
+            const std::string fullurl{replicator_config.getPlanetServerReplicationUrl() + "/" +
+                                      Underpass::freq_to_string(frequency_t::changeset) + url_path};
+            replication::RemoteURL remote(fullurl);
+            try {
+                replication::Planet planet(remote);
+                auto data{planet.fetchData(frequency_t::changeset, replicator_config.start_time, replicator_config.underpass_db_url)};
+                // Handle the case for "now"
+                if (!data->isValid() && vm.count("timestamp") > 0 && vm["timestamp"].as<std::vector<std::string>>()[0] == "now") {
+                    data = planet.fetchDataLast(frequency_t::changeset, replicator_config.underpass_db_url);
+                }
+                if (!data->isValid()) {
+                    log_error("ERROR: could not determine the start path from timestamp!");
+                    exit(-1);
+                } else {
+                    replicator_config.start_time = data->timestamp;
+                }
+            } catch (const std::exception &ex) {
+                log_error("ERROR: could not connect to remote server %1%!", ex.what());
+                exit(-1);
+            }
+        }
+
+        // Still no start time? Exit with error.
+        if (replicator_config.start_time == not_a_date_time) {
+            std::cerr << "ERROR: You need to supply either a timestamp or starting path URL!" << std::endl;
             exit(-1);
         }
 
-        std::thread osmchanges_updates_thread;
-        std::thread changesets_thread;
+        const std::string fullurl{replicator_config.getPlanetServerReplicationUrl() + "/" + Underpass::freq_to_string(replicator_config.frequency) + "/000/000/000"};
+        replication::RemoteURL remote(fullurl);
 
-        if (!replicator_config.starting_url_path.empty()) {
+        replication::Planet planet(remote);
+        const auto changes_state = planet.fetchData(replicator_config.frequency, replicator_config.start_time, replicator_config.underpass_db_url);
 
-            // remote.dump();
-            osmchanges_updates_thread =
-                std::thread(threads::startMonitor, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
-
-            auto state = planet.fetchData(replicator_config.frequency, replicator_config.starting_url_path,
-                                          replicator_config.underpass_db_url);
-
-            if (!state->isValid()) {
-                //std::cerr << "ERROR: Invalid state from path!" << replicator_config.starting_url_path << std::endl;
-                exit(-1);
-            }
-
-            auto state2 = planet.fetchData(replication::changeset, state->timestamp, replicator_config.underpass_db_url);
-            if (!state2->isValid()) {
-                std::cerr << "ERROR: No changeset path!" << std::endl;
-                exit(-1);
-            }
-
-            state2->dump();
-            clast = replicator_config.planet_server + "/" + datadir + "changesets" + state2->path;
-            remote.parse(clast);
-            // remote.dump();
-            changesets_thread = std::thread(threads::startMonitor, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
+        if (!changes_state->isValid()) {
+            std::cerr << "ERROR: Invalid starting state for OSM changes!" << std::endl;
+            exit(-1);
         }
+
+        pool.push_task(threads::startMonitorChanges, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
+
+        const auto changesets_state = planet.fetchData(replication::changeset, replicator_config.start_time, replicator_config.underpass_db_url);
+        if (!changesets_state->isValid()) {
+            std::cerr << "ERROR: No changeset path!" << std::endl;
+            exit(-1);
+        }
+
+        const std::string changesets_url{replicator_config.getPlanetServerReplicationUrl() + "/" + "changesets" + changesets_state->path};
+        remote.parse(changesets_url);
+
+        // Changesets thread
+        pool.push_task(threads::startMonitorChangesets, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config), std::ref(pool));
 
         log_info(_("Waiting..."));
-        if (changesets_thread.joinable()) {
-            changesets_thread.join();
-        }
-        if (osmchanges_updates_thread.joinable()) {
-            osmchanges_updates_thread.join();
-        }
+
+        pool.wait_for_tasks();
+
         exit(0);
     }
 
@@ -520,24 +528,6 @@ main(int argc, char *argv[])
         std::string file = vm["import"].as<std::string>();
         import::ImportOSM osm(file, osmdb);
     }
-    if (sequence > 0 and !starttime.is_not_a_date_time()) {
-        log_error(_("Can only specify a timestamp or a sequence"));
-        exit(1);
-    }
-
-    // replication::Replication rep(starttime, sequence);
-
-    // std::vector<std::string> files;
-    // files.push_back("004/139/998.state.txt");
-    // std::shared_ptr<std::vector<std::string>> links =
-    // rep.downloadFiles(files, true); std::cout << "Got "<< links->size() << "
-    // directories" << std::endl;
-    // // links = rep.downloadFiles(*links, true);
-    // // std::cout << "Got "<< links->size() << " directories" << std::endl;
-
-    // changeset::StateFile foo("/tmp/foo1.txt", false);
-    // changeset::StateFile bar("/tmp/foo2.txt", false);
-    // return 0;
 
     if (tmUserSyncMonitorThread) {
         if (tmUserSyncMonitorThread->joinable() && tmUserSyncIsActive) {

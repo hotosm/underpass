@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <vector>
 #include <sstream>
+#include <chrono>
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/algorithm/string.hpp>
@@ -89,8 +90,184 @@ namespace threads {
 
 // Starting with this URL, download the file, incrementing
 void
-startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly, const replicatorconfig::ReplicatorConfig &config)
+startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &poly, const replicatorconfig::ReplicatorConfig &config, thread_pool &pool)
 {
+
+    // This function is for changesets only!
+    assert(inr.frequency == frequency_t::changeset);
+
+    std::shared_ptr<osmstats::QueryOSMStats> ostats = std::make_shared<osmstats::QueryOSMStats>();
+    if (!ostats->connect(config.osmstats_db_url)) {
+        log_error(_("Could not connect to osmstats DB, aborting monitoring thread!"));
+        return;
+    }
+
+    osm2pgsql::Osm2Pgsql osm2pgsql(config.osm2pgsql_db_url);
+
+    replication::RemoteURL remote = inr;
+    auto planet = std::make_shared<replication::Planet>(remote);
+
+    // Set the catching up target
+    auto last_state{config.end_time != not_a_date_time ? planet->fetchData(frequency_t::changeset, config.end_time, config.underpass_db_url) : planet->fetchDataLast(frequency_t::changeset, config.underpass_db_url)};
+
+    if (!last_state->isValid()) {
+        log_error(_("Could not get last valid sequence for changesets, aborting monitoring thread!"));
+        return;
+    }
+
+    // Stores the last valid sequence (+ 1) in the planet
+    // we need this value to know when the catching up is
+    // probably finished.
+    long catchup_pseudo_sequence{last_state->sequence + 1};
+
+    // Timestamp for when the catchup_pseudo_sequence was calculated
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+    // Error flag: it is set from the async function on errors
+    std::atomic_bool error_flag{false};
+
+    // Catchup delay in seconds
+    int catchup_delay{50};
+
+    // Store the last successfully fetched pseudo sequence
+    long int max_pseudo_sequence = -1;
+    std::mutex max_pseudo_sequence_mutex;
+
+    // List of servers
+    auto servers{config.getPlanetServers(frequency_t::changeset)};
+
+    // Processes the changesets asynchronously
+    auto processChangesetFunction = [&error_flag, &poly, ostats, &max_pseudo_sequence, &max_pseudo_sequence_mutex](replication::RemoteURL remote, std::vector<replicatorconfig::PlanetServer> servers) {
+        int retry{0};
+        const int max_retries{4};
+        while (!error_flag) {
+            const auto changefile{threadChangeSet(remote, poly, ostats)};
+            for (const auto &change: std::as_const(changefile->changes)) {
+                ostats->applyChange(*change.get());
+            }
+            if (changefile->download_error) {
+                if (retry >= max_retries) {
+                    log_error(_("Fatal download error, max retries exceeded for: %1%!"), remote.url);
+                    error_flag = true;
+                } else {
+                    retry++;
+                    log_debug(_("Download error (retry %2%) after: %1%!"), remote.url, retry);
+                    // Get the next server ...
+                    if (servers.size() > 1 && retry < servers.size()) {
+                        std::rotate(servers.begin(), servers.begin() + 1, servers.end());
+                        const auto first_server{servers.front()};
+                        remote.replacePlanet(first_server.domain, first_server.datadir);
+                        log_debug(_("Server rotated to: %1%"), remote.domain);
+                    } else {
+                        // ... or just take a nap
+                        log_debug(_("Waiting after download error on: %1%"), remote.url);
+                        std::this_thread::sleep_for(std::chrono::seconds{1});
+                    }
+                }
+            } else if (changefile->parse_error) {
+                log_error(_("Fatal parse error after: %1%!"), remote.url);
+                error_flag = true;
+            } else {
+                std::scoped_lock{max_pseudo_sequence_mutex};
+                const auto sequence{remote.sequence()};
+                max_pseudo_sequence = std::max(max_pseudo_sequence, sequence);
+                log_debug(_("Changeset processed (%1%): %2%"), sequence, remote.url);
+                break;
+            }
+        }
+    };
+
+    // Phase 1: multi-threaded catching up
+    while (!error_flag && remote.sequence() <= catchup_pseudo_sequence) {
+
+        pool.push_task(processChangesetFunction, remote, servers);
+        if (!error_flag) {
+            while (pool.get_tasks_queued() > 0) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+        }
+
+        if (servers.size() > 1) {
+            std::rotate(servers.begin(), servers.begin() + 1, servers.end());
+            const auto first_server{servers.front()};
+            remote.replacePlanet(first_server.domain, first_server.datadir);
+            log_debug(_("Server rotated to: %1%"), remote.domain);
+        }
+
+        remote.Increment();
+
+        // Move the target
+        if (max_pseudo_sequence != catchup_pseudo_sequence && config.end_time == not_a_date_time) {
+            std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+            catchup_pseudo_sequence = std::max(catchup_pseudo_sequence, catchup_pseudo_sequence + std::chrono::duration_cast<std::chrono::minutes>(now - begin).count() - 5);
+        }
+    }
+
+    if (error_flag) {
+        log_error(_("Could not catch up changesets, monitoring aborted!"));
+        return;
+    }
+
+    log_debug(_("Catching up completed after: %1%"), remote.url);
+
+    // Phase 2: updates
+    const int max_retries{4};
+    error_flag = false;
+
+    if (config.end_time == not_a_date_time) {
+
+        // Process changesets
+        log_debug(_("Starting changesets updates: %1%"), remote.url);
+        int retry = 0;
+
+        // Start monitoring endless loop
+        while (!error_flag) {
+            const auto changefile{threadChangeSet(remote, poly, ostats)};
+            for (const auto &change: std::as_const(changefile->changes)) {
+                ostats->applyChange(*change.get());
+            }
+            if (changefile->download_error) {
+                log_debug(_("Download error after: %1%!"), remote.url);
+                if (retry > max_retries) {
+                    log_error(_("Error while monitoring changeset updates, max retries exceeded for: %1%!"), remote.url);
+                    error_flag = true;
+                } else {
+                    retry++;
+
+                    if (servers.size() > 1) {
+                        std::rotate(servers.begin(), servers.begin() + 1, servers.end());
+                        const auto first_server{servers.front()};
+                        remote.replacePlanet(first_server.domain, first_server.datadir);
+                        log_debug(_("Server rotated to: %1%"), remote.domain);
+                    }
+
+                    log_debug(_("Waiting %1% seconds for new ChangeSet (sequence: %2%) retry %4%: %3%"), catchup_delay++, remote.sequence(), remote.url, retry);
+                    std::this_thread::sleep_for(std::chrono::seconds{catchup_delay++});
+                }
+            } else if (changefile->parse_error) {
+                log_error(_("Fatal parse error after: %1%!"), remote.url);
+                error_flag = true;
+            } else {
+                retry = 0;
+                log_debug(_("Changeset processed (%1%): %2%"), remote.sequence(), remote.url);
+                remote.Increment();
+                catchup_delay = std::max(30, catchup_delay - 1);
+                log_debug(_("Waiting %1% seconds for new ChangeSet (sequence: %2%): %3%"), catchup_delay, remote.sequence(), remote.url);
+                std::this_thread::sleep_for(std::chrono::seconds{catchup_delay});
+            }
+        }
+    }
+}
+
+// Starting with this URL, download the file, incrementing
+void
+startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &poly, const replicatorconfig::ReplicatorConfig &config)
+{
+
+    if (inr.frequency == frequency_t::changeset) {
+        log_error(_("Could not start monitoring thread for OSM changes: URL %1% does not appear to be a valid URL for changes!"), inr.url);
+        return;
+    }
 
     osmstats::QueryOSMStats ostats;
     if (!ostats.connect(config.osmstats_db_url)) {
@@ -121,52 +298,25 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly, cons
         exit(0);
     }
     auto validator = creator();
+
+    // Process OSM changes
     while (mainloop) {
-        // Look for the statefile first
-#if 0
-	std::shared_ptr<replication::StateFile> exists;
-	exists = under.getState(remote.frequency, remote.subpath);
-	if (exists) {
-	    log_warning(_("Already stored in database: %1%"), remote.subpath);
-	    break;
-	} else {
-	    log_info(_("Downloading StateFile: %1% %2%"), remote.subpath ".state.txt");
-	    auto state = threadStateFile(planet->stream, remote.subpath + ".state.txt");
-	    if (state->timestamp != boost::posix_time::not_a_date_time && (state->sequence != 0 && state->path.size() != 0)) {
-		// state->dump();
-		under.writeState(*state);
-		break;
-	    }
-	}
-#endif
-        // remote.dump();
-        if (remote.frequency == replication::changeset) {
-            auto changefile = threadChangeSet(remote, poly, ostats);
-            for (auto it = std::begin(changefile->changes); it != std::end(changefile->changes); ++it) {
-                ostats.applyChange(*it->get());
+        std::string file = remote.url + ".osc.gz";
+        ptime now = boost::posix_time::microsec_clock::local_time();
+        auto osmchange = threadOsmChange(remote, poly, ostats, osm2pgsql, validator);
+        // FIXME: There is probably a better way to determine when to delay,
+        // or when to just keep processing files when catching up.
+        boost::posix_time::time_duration delta;
+        if (osmchange->changes.size() > 0) {
+            delta = now - osmchange->changes.back()->final_entry;
+            // log_debug("DELTA2: %1%", (delta.hours()*60) + delta.minutes());
+            if (config.end_time != not_a_date_time && osmchange->changes.back()->final_entry >= config.end_time) {
+                log_debug(_("Exiting OsmChange because endtime was reached"));
+                mainloop = false;
             }
-            ptime now = boost::posix_time::microsec_clock::local_time();
-            boost::posix_time::time_duration delta;
-            if (changefile->changes.size() > 0) {
-                delta = now - changefile->changes.front()->closed_at;
-                // log_debug("DELTA1: %1%", (delta.hours()*60) + delta.minutes());
-                if ((delta.hours() * 60) + delta.minutes() <= 1) {
-                    std::this_thread::sleep_for(std::chrono::minutes{1});
-                }
-            } else {
-                log_debug(_("Processed ChangeSet: %1%"), remote.url);
-            }
-        } else {
-            std::string file = remote.url + ".osc.gz";
-            ptime now = boost::posix_time::microsec_clock::local_time();
-            auto osmchange = threadOsmChange(remote, poly, ostats, osm2pgsql, validator);
-            // FIXME: There is probably a better way to determine when to delay,
-            // or when to just keep processing files when catching up.
-            boost::posix_time::time_duration delta;
-            if (osmchange->changes.size() > 0) {
-                delta = now - osmchange->changes.back()->final_entry;
-                // log_debug("DELTA2: %1%", (delta.hours()*60) + delta.minutes());
-            }
+        }
+
+        if (mainloop) {
             if ((delta.hours() * 60) + delta.minutes() <= 1) {
                 // log_debug("DELTA: %1%", (delta.hours()*60) + delta.minutes());
                 if (remote.frequency == replication::minutely) {
@@ -180,9 +330,8 @@ startMonitor(const replication::RemoteURL &inr, const multipolygon_t &poly, cons
             } else {
                 log_debug(_("Processed OsmChange: %1%"), remote.url);
             }
+            remote.Increment();
         }
-        remote.Increment();
-        // remote.dump();
     }
 }
 
@@ -407,17 +556,14 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
     return osmchanges;
 }
 
-// This updates several fields in the changesets table, which are part of
-// the changeset file, and don't need to be calculated.
-//void threadChangeSet(const std::string &file, std::promise<bool> &&result)
-std::shared_ptr<changeset::ChangeSetFile>
-threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly, osmstats::QueryOSMStats &ostats)
+// This parses the changeset file into changesets
+std::unique_ptr<changeset::ChangeSetFile>
+threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly, std::shared_ptr<osmstats::QueryOSMStats> ostats)
 {
 #if TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("threadChangeSet: took %w seconds\n");
 #endif
-    auto changeset = std::make_shared<changeset::ChangeSetFile>();
-    auto state = std::make_shared<replication::StateFile>();
+    auto changeset = std::make_unique<changeset::ChangeSetFile>();
     auto data = std::make_shared<std::vector<unsigned char>>();
 
     if (boost::filesystem::exists(remote.filespec)) {
@@ -437,13 +583,16 @@ threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly
         close(fd);
     } else {
         log_debug(_("Downloading ChangeSet: %1%"), remote.url);
-        replication::Planet planet(remote);
-        data = planet.downloadFile(remote.url);
+        try {
+            replication::Planet planet(remote);
+            data = planet.downloadFile(remote.url);
+        } catch (const std::exception &ex) {
+            log_debug(_("Download error for %1%: %2%"), remote.url, ex.what());
+        }
     }
     if (data->size() == 0) {
         log_error(_("ChangeSet file not found: %1%"), remote.url);
-        //result.set_value(false);
-        return changeset;
+        changeset->download_error = true;
     } else {
         //result.set_value(true);
         // XML parsers expect every line to have a newline, including the end of file
@@ -468,34 +617,20 @@ threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly
                 changeset->readXML(instream);
             } catch (std::exception &e) {
                 log_error(_("Couldn't parse: %1% %2%"), remote.url, e.what());
-                // return false;
+                changeset->parse_error = true;
             }
             // change.readXML(instream);
         } catch (std::exception &e) {
             log_error(_("%1% is corrupted!"), remote.url);
-            // return false;
+            changeset->parse_error = true;
         }
     }
 
-    // std::cerr << "Closed At:  " << to_simple_string(changeset->changes.front()->closed_at) << std::endl;
+    // Note: closed_at might be not_a_date_time because some records in changesets XML miss that attribute!
+    // log_debug(_("Closed At:  %1%"), to_simple_string(changeset->last_closed_at));
 
     changeset->areaFilter(poly);
 
-    // Apply the changes to the database
-    for (auto it = std::begin(changeset->changes); it != std::end(changeset->changes); ++it) {
-        ostats.applyChange(*it->get());
-    }
-    //     changeset.dump();
-
-#if 0
-    // Create a stubbed state file to update the underpass database with more
-    // accurate timestamps, also used if there is no state.txt file.
-    if (changeset->changes.size() > 0) {
-        state->timestamp = changeset->changes.begin()->created_at;
-        state->created_at = changeset->changes.begin()->created_at;
-        state->closed_at = changeset->changes.end()->created_at;
-    }
-#endif
     return changeset;
 }
 

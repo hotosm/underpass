@@ -79,12 +79,12 @@ class RawChangeset {
     // protected:
     // These are from the OSM Stats 'raw_changesets' table
     std::map<std::string, long> counters;
-    long id;            ///< The change ID
-    std::string editor; ///< The editor used for this change
-    long user_id;       ///< The user ID
-    ptime created_at;   ///< The starting timestamp
-    ptime closed_at;    ///< The finished timestamp
-    bool verified;      ///< Whether this change has been validated
+    long id;                           ///< The change ID
+    std::string editor;                ///< The editor used for this change
+    long user_id;                      ///< The user ID
+    ptime created_at;                  ///< The starting timestamp
+    ptime closed_at;                   ///< The finished timestamp
+    bool verified;                     ///< Whether this change has been validated
     std::vector<long> augmented_diffs; ///< The diffs, currently unused
     ptime updated_at;                  ///< Time this change was updated
     //
@@ -186,9 +186,9 @@ class QueryOSMStats : public pq::Pq {
     int addComment(long id, const std::string &user);
 
     /// Apply a change to the database
-    bool applyChange(const changeset::ChangeSet &change);
-    bool applyChange(const osmchange::ChangeStats &change);
-    bool applyChange(const ValidateStatus &validation);
+    bool applyChange(const changeset::ChangeSet &change) const;
+    bool applyChange(const osmchange::ChangeStats &change) const;
+    bool applyChange(const ValidateStatus &validation) const;
 
     int lookupHashtag(const std::string &hashtag);
     bool hasHashtag(long changeid);
@@ -247,6 +247,9 @@ class QueryOSMStats : public pq::Pq {
     std::string db_url;
     std::vector<RawUser> users; ///< All the raw user data
     std::map<std::string, RawHashtag> hashtags;
+
+  private:
+    mutable std::mutex changes_write_mutex;
 };
 
 } // namespace osmstats

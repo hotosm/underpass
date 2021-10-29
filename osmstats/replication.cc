@@ -423,15 +423,20 @@ Planet::connectServer(const std::string &planet)
         remote.domain = tmp;
     }
 
-    auto const results = resolver.resolve(tmp, std::to_string(port));
-    boost::asio::connect(stream.next_layer(), results.begin(), results.end(), ec);
-    if (ec) {
-        log_error(_("stream connect failed %1%"), ec.message());
-        return false;
-    }
-    stream.handshake(ssl::stream_base::client, ec);
-    if (ec) {
-        log_error(_("stream handshake failed %1%"), ec.message());
+    try {
+        auto const results = resolver.resolve(tmp, std::to_string(port));
+        boost::asio::connect(stream.next_layer(), results.begin(), results.end(), ec);
+        if (ec) {
+            log_error(_("stream connect failed %1%"), ec.message());
+            return false;
+        }
+        stream.handshake(ssl::stream_base::client, ec);
+        if (ec) {
+            log_error(_("stream handshake failed %1%"), ec.message());
+            return false;
+        }
+    } catch (const std::exception &ex) {
+        log_error(_("Connection to %1% failed: %2%"), tmp, ex.what());
         return false;
     }
 
@@ -1072,6 +1077,40 @@ RemoteURL::parse(const std::string &rurl)
 }
 
 void
+RemoteURL::updatePath(int _major, int _minor, int _index)
+{
+    boost::format majorfmt("%03d");
+    boost::format minorfmt("%03d");
+    boost::format indexfmt("%03d");
+
+    major = _major;
+    minor = _minor;
+    index = _index;
+
+    majorfmt % (major);
+    minorfmt % (minor);
+    indexfmt % (index);
+
+    std::string newpath = majorfmt.str() + "/" + minorfmt.str() + "/" + indexfmt.str();
+    // log_debug(_("NEWPATH: " << newpath);
+    boost::algorithm::replace_all(url, subpath, newpath);
+    boost::algorithm::replace_all(destdir, subpath, newpath);
+    boost::algorithm::replace_all(filespec, subpath, newpath);
+    boost::algorithm::replace_all(url, subpath, newpath);
+    subpath = newpath;
+}
+
+void
+RemoteURL::replacePlanet(const std::string &new_domain, const std::string &new_datadir)
+{
+    const std::string old_url{"https://" + domain + "/" + datadir};
+    const std::string new_url{"https://" + new_domain + "/" + new_datadir};
+    boost::algorithm::replace_all(url, old_url, new_url);
+    domain = new_domain;
+    datadir = new_datadir;
+}
+
+void
 RemoteURL::Increment(void)
 {
     boost::format majorfmt("%03d");
@@ -1121,7 +1160,7 @@ RemoteURL::operator=(const RemoteURL &inr)
 }
 
 long
-RemoteURL::sequence()
+RemoteURL::sequence() const
 {
     return major * 1000000 + minor * 1000 + index;
 }

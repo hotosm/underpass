@@ -124,7 +124,7 @@ class ChangeSet {
     double max_lon =
         0.0; ///< The maximum longitude for the bounding box of this change
     int num_changes =
-        -1; ///< The number of changes in this changeset, -1 means unknown (because this tags started in 2018 and it's not there for older changesets)
+        -1;                 ///< The number of changes in this changeset, -1 means unknown (because this tags started in 2018 and it's not there for older changesets)
     int comments_count = 0; ///< The number of comments in this changeset, which
                             ///< appears to be unused
     std::vector<std::string>
@@ -189,9 +189,16 @@ class ChangeSetFile
     void dump(void);
     // protected:
     //     bool store;
-    std::string filename; ///< The filename of this changeset for disk files
-    std::list<std::shared_ptr<ChangeSet>>
-        changes; ///< Storage of all the changes in this data
+    std::string filename;                          ///< The filename of this changeset for disk files
+    std::list<std::shared_ptr<ChangeSet>> changes; ///< Storage of all the changes in this data
+
+    /// Set when a download error occourred.
+    bool download_error = false;
+    /// Set when a parse error occourred.
+    bool parse_error = false;
+
+    ptime last_closed_at = not_a_date_time;
+
     // std::shared_ptr<GeoUtil> boundaries; ///< A pointer to the geoboundary
     // data
 };

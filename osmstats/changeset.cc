@@ -401,6 +401,9 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
     if (name == "changeset") {
         auto change = std::make_shared<changeset::ChangeSet>(attributes);
         changes.push_back(change);
+        if (change->closed_at != not_a_date_time && (last_closed_at == not_a_date_time || change->closed_at > last_closed_at)) {
+            last_closed_at = change->closed_at;
+        }
         // changes.back().dump();
     } else if (name == "tag") {
         // We ignore most of the attributes, as they're not used for OSM stats.
