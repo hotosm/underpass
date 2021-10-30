@@ -561,7 +561,7 @@ Planet::fetchData(frequency_t freq, const std::string &path, const std::string &
                             changeset::ChangeSetFile changeset;
                             changeset.readXML(instream);
                             if (changeset.changes.size() > 0) {
-                                const auto timestamp{changeset.changes.back()->closed_at};
+                                const auto timestamp{changeset.last_closed_at};
                                 if (timestamp != not_a_date_time) {
                                     RemoteURL url;
                                     try {
@@ -911,7 +911,7 @@ Planet::fetchData(frequency_t freq, ptime timestamp, const std::string &underpas
     }
 
     if (!state->isValid()) {
-        log_debug(_("No valid state for timestamp: %1%."), to_iso_extended_string(timestamp));
+        log_debug(_("No valid state for %2% timestamp: %1%."), to_iso_extended_string(timestamp), Underpass::freq_to_string(freq));
     } else {
         // We need to make sure that there isn't a closer match within the freq acceptable_delta
         int loop_counter = 1;
@@ -938,8 +938,9 @@ Planet::fetchData(frequency_t freq, long sequence, const std::string &underpass_
 {
     std::shared_ptr<StateFile> state = std::make_shared<StateFile>();
     if (sequence < (freq == frequency_t::changeset ? 0 : 1)) {
-        log_error(_("Invalid sequence (must be > 0 for changes and >= 0 for "
-                    "changesets)!"));
+        log_debug(_("Invalid %1% sequence %2% (must be > 0 for changes and >= 0 for "
+                    "changesets)!"),
+                  Underpass::freq_to_string(freq), sequence);
         return state;
     }
 

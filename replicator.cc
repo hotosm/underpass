@@ -391,6 +391,29 @@ main(int argc, char *argv[])
         }
     }
 
+    if (!starting_url_path.empty() && vm.count("timestamp")) {
+        log_debug("ERROR: 'url' takes precedence over 'timestamp' arguments are mutually exclusive!");
+        exit(-1);
+    }
+
+    // Specify a timestamp used by other options
+    if (vm.count("timestamp")) {
+        try {
+            auto timestamps = vm["timestamp"].as<std::vector<std::string>>();
+            if (timestamps[0] == "now") {
+                replicator_config.start_time = boost::posix_time::second_clock::local_time();
+            } else {
+                replicator_config.start_time = from_iso_extended_string(timestamps[0]);
+                if (timestamps.size() > 1) {
+                    replicator_config.end_time = from_iso_extended_string(timestamps[1]);
+                }
+            }
+        } catch (const std::exception &ex) {
+            log_error("ERROR: could not parse timestamps!");
+            exit(-1);
+        }
+    }
+
     // This is the default data directory on that server
     if (vm.count("datadir")) {
         datadir = vm["datadir"].as<std::string>();
@@ -417,24 +440,6 @@ main(int argc, char *argv[])
         }
     }
 
-    // Specify a timestamp used by other options
-    if (vm.count("timestamp")) {
-        try {
-            auto timestamps = vm["timestamp"].as<std::vector<std::string>>();
-            if (timestamps[0] == "now") {
-                replicator_config.start_time = boost::posix_time::second_clock::local_time();
-            } else {
-                replicator_config.start_time = from_iso_extended_string(timestamps[0]);
-                if (timestamps.size() > 1) {
-                    replicator_config.end_time = from_iso_extended_string(timestamps[1]);
-                }
-            }
-        } catch (const std::exception &ex) {
-            log_error("ERROR: could not parse timestamps!");
-            exit(-1);
-        }
-    }
-
     // Check connection to underpass DB
     Underpass under;
     if (!under.connect(replicator_config.underpass_db_url)) {
@@ -443,6 +448,11 @@ main(int argc, char *argv[])
     }
 
     if (vm.count("monitor")) {
+
+        const std::string fullurl{replicator_config.getPlanetServerReplicationUrl() + "/" + Underpass::freq_to_string(replicator_config.frequency) + "/000/000/000"};
+        replication::RemoteURL remote(fullurl);
+
+        replication::Planet planet(remote);
 
         // At this point we must have a path, if the path was not passed we need to build one from
         // the timestamp
@@ -475,6 +485,10 @@ main(int argc, char *argv[])
                 log_error("ERROR: could not connect to remote server %1%!", ex.what());
                 exit(-1);
             }
+        } else {
+            // Get the timestamp from the path
+            const auto changesets_inital_state{planet.fetchData(replication::changeset, starting_url_path, replicator_config.underpass_db_url)};
+            replicator_config.start_time = changesets_inital_state->timestamp;
         }
 
         // Still no start time? Exit with error.
@@ -483,19 +497,28 @@ main(int argc, char *argv[])
             exit(-1);
         }
 
-        const std::string fullurl{replicator_config.getPlanetServerReplicationUrl() + "/" + Underpass::freq_to_string(replicator_config.frequency) + "/000/000/000"};
-        replication::RemoteURL remote(fullurl);
+        // OSM Changes monitoring
+        auto changes_state = planet.fetchData(replicator_config.frequency, replicator_config.start_time, replicator_config.underpass_db_url);
 
-        replication::Planet planet(remote);
-        const auto changes_state = planet.fetchData(replicator_config.frequency, replicator_config.start_time, replicator_config.underpass_db_url);
+        if (!changes_state->isValid()) {
+            const auto first_state{planet.fetchDataFirst(replicator_config.frequency, replicator_config.underpass_db_url)};
+            if (first_state->isValid() && (replicator_config.end_time == not_a_date_time || first_state->timestamp <= replicator_config.end_time) && first_state->timestamp >= replicator_config.start_time) {
+                log_info("Using first state for OSM changes %1%", Underpass::freq_to_string(replicator_config.frequency));
+                changes_state = first_state;
+            }
+        }
 
         if (!changes_state->isValid()) {
             std::cerr << "ERROR: Invalid starting state for OSM changes!" << std::endl;
             exit(-1);
         }
 
+        const std::string changes_url{replicator_config.getPlanetServerReplicationUrl() + "/" + Underpass::freq_to_string(replicator_config.frequency) + changes_state->path};
+        remote.parse(changes_url);
+
         pool.push_task(threads::startMonitorChanges, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
 
+        // Changesets monitoring
         const auto changesets_state = planet.fetchData(replication::changeset, replicator_config.start_time, replicator_config.underpass_db_url);
         if (!changesets_state->isValid()) {
             std::cerr << "ERROR: No changeset path!" << std::endl;
