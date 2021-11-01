@@ -93,7 +93,7 @@ CREATE TABLE public.users (
     projects_mapped integer[],
     mapping_level integer,
     gender int4,
-    "role" int4,
+    access int4,
     home public.geometry(Point,4326)
 );
 
