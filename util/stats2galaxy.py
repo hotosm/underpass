@@ -77,7 +77,7 @@ class Merge(object):
             self.countries[row[0]] = row[1]
         self.timer = Timer()
         if outdb is None:
-            outdb = "osmstats"
+            outdb = "galaxy"
         self.outdb = Pydb(outdb, host)
 
     def getBbox(self, cid):
@@ -222,7 +222,7 @@ if __name__ == '__main__':
         root.addHandler(ch)
 
     user = Merge(args.indb, args.outdb, args.host)
-    # result = user.mergeUsers()
-    #result = user.mergeHashtags()
+    result = user.mergeUsers()
+    result = user.mergeHashtags()
     result = user.mergeStatistics(args.timestamp)
 
