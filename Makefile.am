@@ -82,7 +82,8 @@ libunderpass_la_SOURCES = \
 	data/underpass.cc data/underpass.hh \
 	data/yaml.hh data/yaml.cc \
 	data/pq.hh data/pq.cc \
-	data/setupdb.sh
+	data/setupdb.sh \
+	external/thread_pool.hpp
 
 if JEMALLOC
 libunderpass_la_LDFLAGS = -avoid-version -ljemalloc
