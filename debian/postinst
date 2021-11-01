@@ -102,7 +102,7 @@ if [ "$1" = "configure" ]; then
     config['dbhost']="localhost"
     config['dbuser']="underpass"
     config['dbpass']="galaxy"
-    config['dbname']="osmstats"
+    config['dbname']="galaxy"
     
     prompt "$(declare -p config)"
     

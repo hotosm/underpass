@@ -122,7 +122,7 @@ ChangeSetFile::importChanges(const std::string &file)
 #endif
 
     osmstats::QueryOSMStats ostats;
-    ostats.connect("osmstats");
+    ostats.connect("galaxy");
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         // ostats.applyChange(*it);
     }

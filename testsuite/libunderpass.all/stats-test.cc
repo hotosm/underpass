@@ -44,7 +44,7 @@ class TestStats : public QueryOSMStats
 int
 main(int argc, char *argv[])
 {
-    std::string database = "osmstats";
+    std::string database = "galaxy";
 
     TestStats testos;
     if (testos.connect(database)) {
