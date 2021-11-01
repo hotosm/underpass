@@ -69,10 +69,10 @@ libunderpass_la_SOURCES = \
 	hottm/tmusers.cc hottm/tmusers.hh \
 	hottm/tmteams.cc hottm/tmteams.hh \
 	hottm/tmprojects.cc hottm/tmprojects.hh \
-	osmstats/osmstats.cc osmstats/osmstats.hh \
-	osmstats/changeset.cc osmstats/changeset.hh \
-	osmstats/osmchange.cc osmstats/osmchange.hh \
-	osmstats/replication.cc osmstats/replication.hh \
+	galaxy/galaxy.cc galaxy/galaxy.hh \
+	galaxy/changeset.cc galaxy/changeset.hh \
+	galaxy/osmchange.cc galaxy/osmchange.hh \
+	galaxy/replication.cc galaxy/replication.hh \
 	data/geoutil.cc data/geoutil.hh \
 	data/pgsnapshot.cc data/pgsnapshot.hh\
 	data/import.cc data/import.hh \
@@ -197,17 +197,17 @@ if ENABLE_PCH
 PCHFLAGS = \
         -I$(top_builddir) \
         -I$(top_srcdir) \
-        -I$(top_srcdir)/osmstats \
+        -I$(top_srcdir)/galaxy \
         -I$(top_srcdir)/data \
         -I$(top_srcdir)/hottm
 
 PCHHEADERS = \
         $(top_srcdir)/timer.hh \
         $(top_srcdir)/hottm.hh \
-        $(top_srcdir)/osmstats/osmstats.hh \
-        $(top_srcdir)/osmstats/replication.hh \
-        $(top_srcdir)/osmstats/osmchange.hh \
-        $(top_srcdir)/osmstats/changeset.hh \
+        $(top_srcdir)/galaxy/galaxy.hh \
+        $(top_srcdir)/galaxy/replication.hh \
+        $(top_srcdir)/galaxy/osmchange.hh \
+        $(top_srcdir)/galaxy/changeset.hh \
         $(top_srcdir)/data/import.hh \
         $(top_srcdir)/data/validate.hh \
         $(top_srcdir)/data/pgsnapshot.hh \

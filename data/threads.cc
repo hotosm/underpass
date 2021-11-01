@@ -72,16 +72,16 @@ using tcp = net::ip::tcp;         // from <boost/asio/ip/tcp.hpp>
 #include "data/underpass.hh"
 #include "hottm.hh"
 #include "log.hh"
-#include "osmstats/changeset.hh"
-#include "osmstats/osmchange.hh"
-#include "osmstats/osmstats.hh"
-#include "osmstats/replication.hh"
+#include "galaxy/changeset.hh"
+#include "galaxy/osmchange.hh"
+#include "galaxy/galaxy.hh"
+#include "galaxy/replication.hh"
 #include "validate/validate.hh"
 
 std::mutex stream_mutex;
 
 using namespace logger;
-using namespace osmstats;
+using namespace galaxy;
 using namespace tmdb;
 
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -96,9 +96,9 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
     // This function is for changesets only!
     assert(inr.frequency == frequency_t::changeset);
 
-    std::shared_ptr<osmstats::QueryOSMStats> ostats = std::make_shared<osmstats::QueryOSMStats>();
-    if (!ostats->connect(config.osmstats_db_url)) {
-        log_error(_("Could not connect to osmstats DB, aborting monitoring thread!"));
+    std::shared_ptr<galaxy::QueryGalaxy> ostats = std::make_shared<galaxy::QueryGalaxy>();
+    if (!ostats->connect(config.galaxy_db_url)) {
+        log_error(_("Could not connect to galaxy DB, aborting monitoring thread!"));
         return;
     }
 
@@ -269,9 +269,9 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
         return;
     }
 
-    osmstats::QueryOSMStats ostats;
-    if (!ostats.connect(config.osmstats_db_url)) {
-        log_error(_("Could not connect to osmstats DB, aborting monitoring thread!"));
+    galaxy::QueryGalaxy ostats;
+    if (!ostats.connect(config.galaxy_db_url)) {
+        log_error(_("Could not connect to galaxy DB, aborting monitoring thread!"));
         return;
     }
 
@@ -429,10 +429,10 @@ startStateThreads(const std::string &base, const std::string &file)
 
 // This thread get started for every osmChange file
 std::shared_ptr<osmchange::OsmChangeFile>
-threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly, osmstats::QueryOSMStats &ostats,
+threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly, galaxy::QueryGalaxy &ostats,
                 osm2pgsql::Osm2Pgsql &o2pgsql, std::shared_ptr<Validate> &plugin)
 {
-    // osmstats::QueryOSMStats ostats;
+    // galaxy::QueryGalaxy ostats;
     std::vector<std::string> result;
     auto osmchanges = std::make_shared<osmchange::OsmChangeFile>();
 #if TIMING_DEBUG
@@ -558,7 +558,7 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
 
 // This parses the changeset file into changesets
 std::unique_ptr<changeset::ChangeSetFile>
-threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly, std::shared_ptr<osmstats::QueryOSMStats> ostats)
+threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly, std::shared_ptr<galaxy::QueryGalaxy> ostats)
 {
 #if TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("threadChangeSet: took %w seconds\n");
@@ -639,7 +639,7 @@ threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly
 void
 threadStatistics(const std::string &database, ptime &timestamp)
 {
-    //osmstats::QueryOSMStats ostats;
+    //galaxy::QueryGalaxy ostats;
     replication::Replication repl;
 }
 
@@ -727,14 +727,14 @@ threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive, const replicatorconfig:
     // There is a lot of DB URI manipulations in this program, if the URL
     // contains a plain hostname we need to add a database name too
     // FIXME: handle all DB URIs in a consistent and documented way
-    auto osmStatsDbUrlWithDbName{config.osmstats_db_url};
-    if (config.osmstats_db_url.find('/') == std::string::npos) {
-        osmStatsDbUrlWithDbName.append("/osmstats");
+    auto galaxyDbUrlWithDbName{config.galaxy_db_url};
+    if (config.galaxy_db_url.find('/') == std::string::npos) {
+        galaxyDbUrlWithDbName.append("/galaxy");
     }
-    auto osmStats{QueryOSMStats()};
+    auto galaxy{QueryGalaxy()};
     // Connection errors are fatal: exit!
-    if (!osmStats.connect(osmStatsDbUrlWithDbName)) {
-        log_error("ERROR: couldn't connect to OSM Stats Underpass server: %1%!", osmStatsDbUrlWithDbName);
+    if (!galaxy.connect(galaxyDbUrlWithDbName)) {
+        log_error("ERROR: couldn't connect to OSM Stats Underpass server: %1%!", galaxyDbUrlWithDbName);
         return;
     }
 
@@ -757,7 +757,7 @@ threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive, const replicatorconfig:
         auto start{std::chrono::system_clock::now()};
         const auto users{taskingManager.getUsers()};
         // Sync and delete missing
-        const auto results{osmStats.syncUsers(users, true)};
+        const auto results{galaxy.syncUsers(users, true)};
         auto end{std::chrono::system_clock::now()};
         auto elapsed{std::chrono::duration_cast<std::chrono::seconds>(end - start)};
 

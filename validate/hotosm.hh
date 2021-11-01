@@ -32,6 +32,7 @@
 #include <iostream>
 
 #include <boost/config.hpp>
+#include <boost/geometry.hpp>
 #include <boost/dll/alias.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/date_time.hpp>

@@ -41,9 +41,9 @@ using namespace boost::gregorian;
 #include <boost/filesystem.hpp>
 
 #include "data/underpass.hh"
-#include "osmstats/changeset.hh"
-#include "osmstats/osmchange.hh"
-#include "osmstats/replication.hh"
+#include "galaxy/changeset.hh"
+#include "galaxy/osmchange.hh"
+#include "galaxy/replication.hh"
 
 #include "log.hh"
 using namespace logger;
@@ -217,7 +217,7 @@ Underpass::writeState(replication::StateFile &state)
         query += ", \'" + to_simple_string(state.closed_at) + "\'";
     }
     query += ") ON CONFLICT DO NOTHING;";
-    // log_debug(query);
+    log_debug(query);
     //db_mutex.lock();
     try {
         const auto result = worker.exec(query);
@@ -295,3 +295,8 @@ Underpass::stateFromQuery(const std::string &where, const std::string &order_by)
 }
 
 } // namespace underpass
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

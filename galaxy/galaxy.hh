@@ -42,8 +42,8 @@ using namespace boost::gregorian;
 #include "data/pq.hh"
 #include "hottm/tmdefs.hh"
 #include "hottm/tmusers.hh"
-#include "osmstats/changeset.hh"
-#include "osmstats/osmchange.hh"
+#include "galaxy/changeset.hh"
+#include "galaxy/osmchange.hh"
 
 using namespace tmdb;
 
@@ -56,10 +56,10 @@ class OsmChange;
 class ChangeStats;
 }; // namespace osmchange
 
-/// \namespace osmstats
-namespace osmstats {
+/// \namespace galaxy
+namespace galaxy {
 
-/// \file osmstats.hh
+/// \file galaxy.hh
 /// \brief This file is used to work with the OSM Stats database
 ///
 /// This manages the OSM Stats schema in a postgres database. This
@@ -145,18 +145,18 @@ class RawHashtag {
     std::string name; ///< The hashtag value
 };
 
-/// \class QueryOSMStats
+/// \class QueryGalaxy
 /// \brief This handles all direct database access
 ///
 /// This class handles all the queries to the OSM Stats database.
 /// This includes querying the database for existing data, as
 /// well as updating the data whenh applying a replication file.
-class QueryOSMStats : public pq::Pq {
+class QueryGalaxy : public pq::Pq {
   public:
-    QueryOSMStats(void);
-    QueryOSMStats(const std::string &dburl);
+    QueryGalaxy(void);
+    QueryGalaxy(const std::string &dburl);
     /// close the database connection
-    ~QueryOSMStats(void){};
+    ~QueryGalaxy(void){};
 
     bool readGeoBoundaries(const std::string &rawfile) { return false; };
 
@@ -164,7 +164,7 @@ class QueryOSMStats : public pq::Pq {
     /// the indexes for each user, country, or hashtag.
     bool populate(void);
 
-    /// Read changeset data from the osmstats database
+    /// Read changeset data from the galaxy database
     bool getRawChangeSets(std::vector<long> &changeset_id);
 
     /// Add a user to the internal data store
@@ -239,7 +239,7 @@ class QueryOSMStats : public pq::Pq {
      * \brief syncUsers synchronize users from TM DB into Underpass DB.
      * \param users list of users from TM DB to be synced.
      * \param purge default to FALSE, if TRUE users that are not in \a users but
-     *        still present in the OSMStats DB will be deleted.
+     *        still present in the Galaxy DB will be deleted.
      * \return a SyncResult object.
      */
     SyncResult syncUsers(const std::vector<TMUser> &users, bool purge = false);
@@ -252,6 +252,6 @@ class QueryOSMStats : public pq::Pq {
     mutable std::mutex changes_write_mutex;
 };
 
-} // namespace osmstats
+} // namespace galaxy
 
-#endif // EOF __OSMSTATS_HH__
+#endif // EOF __GALAXY_HH__

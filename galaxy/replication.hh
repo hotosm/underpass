@@ -53,7 +53,7 @@ namespace ssl = boost::asio::ssl; // from <boost/asio/ssl.hpp>
 #include <boost/format.hpp>
 using boost::format;
 
-#include "osmstats/changeset.hh"
+#include "galaxy/changeset.hh"
 
 namespace net = boost::asio;      // from <boost/asio.hpp>
 namespace ssl = boost::asio::ssl; // from <boost/asio/ssl.hpp>
@@ -423,3 +423,8 @@ struct membuf : std::streambuf {
 } // namespace replication
 
 #endif // EOF __REPLICATION_HH__
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

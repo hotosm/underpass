@@ -56,8 +56,8 @@ namespace http = beast::http;
 using tcp = net::ip::tcp;
 
 #include "data/pq.hh"
-#include "osmstats/osmstats.hh"
-#include "osmstats/replication.hh"
+#include "galaxy/galaxy.hh"
+#include "galaxy/replication.hh"
 
 namespace replication {
 class StateFile;
@@ -124,7 +124,7 @@ class Underpass : public pq::Pq {
     std::shared_ptr<replication::StateFile>
     getFirstState(replication::frequency_t freq);
 
-    std::shared_ptr<osmstats::RawCountry>
+    std::shared_ptr<galaxy::RawCountry>
     getCountry(double max_lat, double max_lon, double min_lat, double min_lon);
 
     std::string parsePath(const std::string &url)
@@ -174,3 +174,8 @@ class Underpass : public pq::Pq {
 } // namespace underpass
 
 #endif // EOF __UNDERPASS_HH__
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

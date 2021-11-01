@@ -206,7 +206,7 @@ class BOOST_SYMBOL_VISIBLE Validate {
 	// This test only applies to buildings, as highways often overlap.
 	yaml::Yaml tests = yamls["building"];
 	if (tests.getConfig("overlaps") == "yes") {
-#if TIMING_DEBUG_X
+#if TIMING_DEBUG
 	    boost::timer::auto_cpu_timer timer("validate::overlaps: took %w seconds\n");
 #endif
 	    for (auto nit = std::begin(allways); nit != std::end(allways); ++nit) {

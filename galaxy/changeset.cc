@@ -68,8 +68,8 @@ using namespace boost::gregorian;
 #include <boost/tokenizer.hpp>
 #include <boost/timer/timer.hpp>
 
-#include "osmstats/changeset.hh"
-#include "osmstats/osmstats.hh"
+#include "galaxy/changeset.hh"
+#include "galaxy/galaxy.hh"
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
@@ -121,7 +121,7 @@ ChangeSetFile::importChanges(const std::string &file)
     }
 #endif
 
-    osmstats::QueryOSMStats ostats;
+    galaxy::QueryGalaxy ostats;
     ostats.connect("galaxy");
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         // ostats.applyChange(*it);

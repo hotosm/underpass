@@ -62,15 +62,15 @@ namespace opts = boost::program_options;
 
 // #include "hotosm.hh"
 #include "data/geoutil.hh"
-#include "osmstats/changeset.hh"
-// #include "osmstats/replication.hh"
+#include "galaxy/changeset.hh"
+// #include "galaxy/replication.hh"
 #include "data/import.hh"
 #include "data/threads.hh"
 #include "data/underpass.hh"
 #include "log.hh"
 #include "replicatorconfig.hh"
 
-using namespace osmstats;
+using namespace galaxy;
 using namespace underpass;
 using namespace replicatorconfig;
 
@@ -128,7 +128,7 @@ class Replicator : public replication::Replication {
         return state->path;
     };
 #endif
-    // osmstats::RawCountry & findCountry() {
+    // galaxy::RawCountry & findCountry() {
     //     geou.inCountry();
 
     enum pathMatches matchUrl(const std::string &url)
@@ -194,7 +194,7 @@ main(int argc, char *argv[])
         // clang-format off
         desc.add_options()
             ("help,h", "display help")
-            ("server,s", opts::value<std::string>(), "Database server for replicator output (defaults to localhost/osmstats) "
+            ("server,s", opts::value<std::string>(), "Database server for replicator output (defaults to localhost/galaxy) "
                                                      "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
             ("tmserver", opts::value<std::string>(), "Tasking Manager database server for input  (defaults to localhost/taskingmanager), "
                                                      "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
@@ -321,7 +321,7 @@ main(int argc, char *argv[])
     }
 
     if (vm.count("server")) {
-        replicator_config.osmstats_db_url = vm["server"].as<std::string>();
+        replicator_config.galaxy_db_url = vm["server"].as<std::string>();
     }
 
     geoutil::GeoUtil geou;
@@ -364,13 +364,13 @@ main(int argc, char *argv[])
         auto changeset = std::make_shared<changeset::ChangeSetFile>();
         changeset->readChanges(file);
         changeset->areaFilter(geou.boundary);
-        osmstats::QueryOSMStats ostats;
-        if (ostats.connect(replicator_config.osmstats_db_url)) {
+        galaxy::QueryGalaxy ostats;
+        if (ostats.connect(replicator_config.galaxy_db_url)) {
             for (auto it = std::begin(changeset->changes); it != std::end(changeset->changes); ++it) {
                 ostats.applyChange(*it->get());
             }
         } else {
-            log_error("ERROR: could not connect to osmstats DB, check 'server' "
+            log_error("ERROR: could not connect to galaxy DB, check 'server' "
                       "parameter!");
             exit(-1);
         }

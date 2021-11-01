@@ -39,7 +39,7 @@ using namespace boost::gregorian;
 #include <ogrsf_frmts.h>
 #include <ogr_geometry.h>
 
-#include "osmstats/osmstats.hh"
+#include "galaxy/galaxy.hh"
 #include "data/osmobjects.hh"
 
 /// \file geoutil.hh
@@ -96,3 +96,8 @@ public:
 }       // EOF geoutil
 
 #endif  // EOF __GEOUTIL_HH__
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

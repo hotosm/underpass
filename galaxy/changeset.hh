@@ -51,10 +51,10 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "data/osmobjects.hh"
-#include "osmstats/osmstats.hh"
+#include "galaxy/galaxy.hh"
 
 // Forward declaration
-namespace osmstats {
+namespace galaxy {
 class RawCountry;
 };
 
@@ -104,7 +104,7 @@ class ChangeSet {
     /// Add the editor field
     void addEditor(std::string text) { editor = fixString(text); };
 
-    // osmstats::RawCountry country;
+    // galaxy::RawCountry country;
     int countryid = -1;
     // protected so testcases can access private data
     // protected:
@@ -205,3 +205,8 @@ class ChangeSetFile
 } // namespace changeset
 
 #endif // EOF __CHANGESET_HH__
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

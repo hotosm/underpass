@@ -46,22 +46,22 @@ using namespace boost::gregorian;
 #include "data/osmobjects.hh"
 #include "data/underpass.hh"
 #include "log.hh"
-#include "osmstats/changeset.hh"
-#include "osmstats/osmstats.hh"
+#include "galaxy/changeset.hh"
+#include "galaxy/galaxy.hh"
 #include "validate/validate.hh"
 using namespace logger;
 
 std::once_flag prepare_user_statement_flag;
 
-/// \namespace osmstats
-namespace osmstats {
+/// \namespace galaxy
+namespace galaxy {
 
-QueryOSMStats::QueryOSMStats(void) {}
+QueryGalaxy::QueryGalaxy(void) {}
 
-QueryOSMStats::QueryOSMStats(const std::string &dburl) { connect(dburl); };
+QueryGalaxy::QueryGalaxy(const std::string &dburl) { connect(dburl); };
 
 int
-QueryOSMStats::lookupHashtag(const std::string &hashtag)
+QueryGalaxy::lookupHashtag(const std::string &hashtag)
 {
     std::string query = "SELECT id FROM taw_hashtags WHERE hashtag=\'";
     query += hashtag + "\';";
@@ -74,7 +74,7 @@ QueryOSMStats::lookupHashtag(const std::string &hashtag)
 }
 
 bool
-QueryOSMStats::applyChange(const osmchange::ChangeStats &change) const
+QueryGalaxy::applyChange(const osmchange::ChangeStats &change) const
 {
     // std::cout << "Applying OsmChange data" << std::endl;
 
@@ -180,7 +180,7 @@ QueryOSMStats::applyChange(const osmchange::ChangeStats &change) const
 }
 
 bool
-QueryOSMStats::applyChange(const changeset::ChangeSet &change) const
+QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 {
     // log_debug(_("Applying ChangeSet data"));
     // change.dump();
@@ -223,7 +223,7 @@ QueryOSMStats::applyChange(const changeset::ChangeSet &change) const
     // pois_modified | updated_at the updated_at timestamp is set after the
     // change data has been processed
 
-    // osmstats=# UPDATE raw_changesets SET road_km_added = (SELECT
+    // galaxy=# UPDATE raw_changesets SET road_km_added = (SELECT
     // road_km_added
     // + 10.0 FROM raw_changesets WHERE road_km_added>0 AND user_id=649260 LIMIT
     // 1) WHERE user_id=649260;
@@ -365,7 +365,7 @@ QueryOSMStats::applyChange(const changeset::ChangeSet &change) const
 }
 
 bool
-QueryOSMStats::applyChange(const ValidateStatus &validation) const
+QueryGalaxy::applyChange(const ValidateStatus &validation) const
 {
     log_debug(_("Applying Validation data"));
     validation.dump();
@@ -422,7 +422,7 @@ QueryOSMStats::applyChange(const ValidateStatus &validation) const
 }
 
 bool
-QueryOSMStats::hasHashtag(long changeid)
+QueryGalaxy::hasHashtag(long changeid)
 {
 #if 0
     std::string query = "SELECT COUNT(hashtag_id) FROM changesets_hashtags WHERE changeset_id=" + std::to_string( changeid ) + ";";
@@ -441,7 +441,7 @@ QueryOSMStats::hasHashtag(long changeid)
 
 // Get the timestamp of the last update in the database
 ptime
-QueryOSMStats::getLastUpdate(void)
+QueryGalaxy::getLastUpdate(void)
 {
     std::string query = "SELECT MAX(created_at) FROM changesets;";
     // log_debug(_("QUERY: %1%"), query);
@@ -472,8 +472,8 @@ RawChangeset::dump(void)
     // log_debug(_("Updated At: \t\t %1%"). to_simple_string(updated_at));
 }
 
-QueryOSMStats::SyncResult
-QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool purge)
+QueryGalaxy::SyncResult
+QueryGalaxy::syncUsers(const std::vector<TMUser> &users, bool purge)
 {
     // Preconditions:
     assert(sdb);
@@ -487,7 +487,7 @@ QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool purge)
         currentIds.push_back(row.at(0).as(TaskingManagerIdType(0)));
     }
 
-    log_debug(_("OSMStats users count: %1%"), currentIds.size());
+    log_debug(_("Galaxy users count: %1%"), currentIds.size());
 
     SyncResult syncResult;
     std::vector<TaskingManagerIdType> updatedIds;
@@ -529,8 +529,8 @@ QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool purge)
               WHERE id = $1
             )sql"};
 
-        sdb->prepare("insert_osmstats_user", insertSql);
-        sdb->prepare("update_osmstats_user", updateSql);
+        sdb->prepare("insert_galaxy_user", insertSql);
+        sdb->prepare("update_galaxy_user", updateSql);
     });
 
     for (const auto &user: std::as_const(users)) {
@@ -559,7 +559,7 @@ QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool purge)
 
                 // clang-format off
                 const auto result{
-                    worker.exec_prepared0("update_osmstats_user",
+                    worker.exec_prepared0("update_galaxy_user",
                        user.id,
                        user.username,
                        user.name,
@@ -590,7 +590,7 @@ QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool purge)
             try {
                 // clang-format off
                 const auto result{
-                    worker.exec_prepared0("insert_osmstats_user",
+                    worker.exec_prepared0("insert_galaxy_user",
                        user.id,
                        user.username,
                        user.name,
@@ -660,7 +660,7 @@ QueryOSMStats::syncUsers(const std::vector<TMUser> &users, bool purge)
     return syncResult;
 };
 
-} // namespace osmstats
+} // namespace galaxy
 
 // local Variables:
 // mode: C++

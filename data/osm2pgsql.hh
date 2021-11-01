@@ -33,7 +33,7 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
-#include "osmstats/osmchange.hh"
+#include "galaxy/osmchange.hh"
 using namespace osmchange;
 
 /// \file osm2pgsql.hh
@@ -222,3 +222,8 @@ class Osm2Pgsql : public pq::Pq {
 } // namespace osm2pgsql
 
 #endif
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

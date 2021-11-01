@@ -44,7 +44,7 @@ using namespace boost::gregorian;
 
 #include "validate/validate.hh"
 #include "data/osmobjects.hh"
-#include "osmstats/osmchange.hh"
+#include "galaxy/osmchange.hh"
 #include <ogr_geometry.h>
 
 // forward declare geometry typedefs
@@ -225,10 +225,8 @@ class OsmChange {
     ptime final_entry;	///< The timestamp of the last change in the file
     osmobjects::action_t action = osmobjects::none; ///< The change action
     osmtype_t type;                                 ///< The OSM object type
-    std::list<std::shared_ptr<osmobjects::OsmNode>>
-        nodes; ///< The nodes in this change
-    std::list<std::shared_ptr<osmobjects::OsmWay>>
-        ways; ///< The ways in this change
+    std::list<std::shared_ptr<osmobjects::OsmNode>> nodes; ///< The nodes in this change
+    std::list<std::shared_ptr<osmobjects::OsmWay>> ways; ///< The ways in this change
     std::list<std::shared_ptr<osmobjects::OsmRelation>>
         relations; ///< The relations in this change
     std::shared_ptr<osmobjects::OsmObject> obj;

@@ -44,8 +44,8 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "data/geoutil.hh"
-#include "osmstats/changeset.hh"
-#include "osmstats/osmstats.hh"
+#include "galaxy/changeset.hh"
+#include "galaxy/galaxy.hh"
 #include <ogr_geometry.h>
 #include <ogrsf_frmts.h>
 
@@ -93,3 +93,8 @@ GeoUtil::readFile(const std::string &filespec)
 }
 
 } // namespace geoutil
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

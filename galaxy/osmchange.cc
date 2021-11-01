@@ -59,7 +59,7 @@ using namespace boost::gregorian;
 
 #include "validate/validate.hh"
 #include "data/osmobjects.hh"
-#include "osmstats/osmchange.hh"
+#include "galaxy/osmchange.hh"
 #include <ogr_geometry.h>
 
 using namespace osmobjects;

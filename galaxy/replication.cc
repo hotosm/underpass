@@ -77,8 +77,8 @@ namespace http = beast::http;     // from <boost/beast/http.hpp>
 using tcp = net::ip::tcp;         // from <boost/asio/ip/tcp.hpp>
 
 #include "data/underpass.hh"
-#include "osmstats/changeset.hh"
-#include "osmstats/replication.hh"
+#include "galaxy/changeset.hh"
+#include "galaxy/replication.hh"
 using namespace underpass;
 
 /// Control access to the database connection
@@ -1202,3 +1202,8 @@ RemoteURL::dump(void)
 }
 
 } // namespace replication
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

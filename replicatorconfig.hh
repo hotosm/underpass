@@ -26,7 +26,7 @@
 #endif
 
 #include "data/underpass.hh"
-#include "osmstats/replication.hh"
+#include "galaxy/replication.hh"
 #include <boost/format.hpp>
 #include <string>
 using namespace replication;
@@ -95,12 +95,12 @@ struct ReplicatorConfig {
 
     ///
     /// \brief ReplicatorConfig constructor: will try to initialize from uppercased same-name
-    ///        environment variables prefixed by REPLICATOR_ (e.g. REPLICATOR_OSMSTATS_DB_URL)
+    ///        environment variables prefixed by REPLICATOR_ (e.g. REPLICATOR_GALAXY_DB_URL)
     ///
     ReplicatorConfig()
     {
-        if (getenv("REPLICATOR_OSMSTATS_DB_URL")) {
-            osmstats_db_url = getenv("REPLICATOR_OSMSTATS_DB_URL");
+        if (getenv("REPLICATOR_GALAXY_DB_URL")) {
+            galaxy_db_url = getenv("REPLICATOR_GALAXY_DB_URL");
         }
         if (getenv("REPLICATOR_TASKINGMANAGER_DB_URL")) {
             taskingmanager_db_url = getenv("REPLICATOR_TASKINGMANAGER_DB_URL");
@@ -144,7 +144,7 @@ struct ReplicatorConfig {
     };
 
     std::string underpass_db_url = "localhost/underpass";
-    std::string osmstats_db_url = "localhost/osmstats";
+    std::string galaxy_db_url = "localhost/galaxy";
     std::string taskingmanager_db_url = "localhost/taskingmanager";
     std::string osm2pgsql_db_url = "";
     std::string planet_server;
@@ -190,13 +190,13 @@ struct ReplicatorConfig {
     std::string dbConfigHelp() const
     {
         return str(format(R"raw(
-REPLICATOR_OSMSTATS_DB_URL=%1%
+REPLICATOR_GALAXY_DB_URL=%1%
 REPLICATOR_UNDERPASS_DB_URL=%2%
 REPLICATOR_TASKINGMANAGER_DB_URL=%3%
 REPLICATOR_OSM2PGSQL_DB_URL=%3%
 REPLICATOR_FREQUENCY=%4%
 REPLICATOR_TASKINGMANAGER_USERS_UPDATE_FREQUENCY=%5%
-      )raw") % osmstats_db_url %
+      )raw") % galaxy_db_url %
                    underpass_db_url % taskingmanager_db_url % osm2pgsql_db_url %
                    Underpass::freq_to_string(frequency) % taskingmanager_users_update_frequency);
     };
@@ -205,3 +205,8 @@ REPLICATOR_TASKINGMANAGER_USERS_UPDATE_FREQUENCY=%5%
 } // namespace replicatorconfig
 
 #endif // EOF __REPLICATOR_CONFIG_HH__
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

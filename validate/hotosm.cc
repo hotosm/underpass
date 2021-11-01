@@ -42,7 +42,7 @@
 #include "data/yaml.hh"
 #include "hotosm.hh"
 #include "validate.hh"
-#include "osmstats/osmchange.hh"
+#include "galaxy/osmchange.hh"
 #include "log.hh"
 
 using namespace logger;
@@ -147,6 +147,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
             // status->status.insert(correct);
         } else {
             status->status.insert(badvalue);
+	    log_debug(_("Bad value: %1% for %2%"), vit->second, vit->first);
         }
         status->center = node.point;
     }

@@ -58,8 +58,8 @@ namespace http = beast::http;
 using tcp = net::ip::tcp;
 
 #include "data/osm2pgsql.hh"
-#include "osmstats/osmstats.hh"
-#include "osmstats/replication.hh"
+#include "galaxy/galaxy.hh"
+#include "galaxy/replication.hh"
 #include "replicatorconfig.hh"
 #include "validate/validate.hh"
 #include <ogr_geometry.h>
@@ -112,7 +112,7 @@ threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file);
 /// from a changeset file
 extern std::shared_ptr<osmchange::OsmChangeFile>
 threadOsmChange(const replication::RemoteURL &remote,
-                const multipolygon_t &poly, osmstats::QueryOSMStats &ostats,
+                const multipolygon_t &poly, galaxy::QueryGalaxy &ostats,
                 osm2pgsql::Osm2Pgsql &o2pgsql,
                 std::shared_ptr<Validate> &plugin);
 
@@ -121,7 +121,7 @@ threadOsmChange(const replication::RemoteURL &remote,
 //extern bool threadChangeSet(const std::string &file);
 extern std::unique_ptr<changeset::ChangeSetFile>
 threadChangeSet(const replication::RemoteURL &remote,
-                const multipolygon_t &poly, std::shared_ptr<osmstats::QueryOSMStats> ostats);
+                const multipolygon_t &poly, std::shared_ptr<galaxy::QueryGalaxy> ostats);
 
 // extern bool threadChangeSet(const std::string &file, std::promise<bool> && result);
 
@@ -144,7 +144,7 @@ threadOSM(const std::string &database, ptime &timestamp);
  *        this allows to abort the function fro client code.
  * \param tmDbUrl the TM database connection string in the form HOST or
            USER:PASSSWORD@HOST/DATABASENAME
- * \param osmStatsDbUrlthe OSMStats database connection string in the form HOST or
+ * \param galaxyDbUrlthe Galaxy database connection string in the form HOST or
           USER:PASSSWORD@HOST/DATABASENAME
  * \param tmusersfrequency TM user sync frequency in seconds (-1 -> disabled, 0 ->
           single shot, > 0 -> interval)
@@ -156,3 +156,8 @@ threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive,
 } // namespace threads
 
 #endif // EOF __THREADS_HH__
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

@@ -46,7 +46,7 @@ using namespace boost::gregorian;
 
 #include "data/pgsnapshot.hh"
 #include "data/import.hh"
-#include "osmstats/changeset.hh"
+#include "galaxy/changeset.hh"
 #include "log.hh"
 using namespace logger;
 
@@ -305,3 +305,7 @@ ImportOSM::ImportOSM(const std::string &file, const std::string &db)
 
 }       // EOF namespace import
 
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:
