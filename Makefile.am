@@ -49,7 +49,7 @@ BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
 SQL_FILES = \
 	data/underpass.sql \
 	data/pgsnapshot.sql \
-	data/osmstats.sql \
+	data/galaxy.sql \
 	data/geoboundaries.sql
 
 YAML_FILES = \
