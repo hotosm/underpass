@@ -93,6 +93,7 @@ CREATE TABLE public.users (
     projects_mapped integer[],
     mapping_level integer,
     gender int4,
+    age real,
     access int4,
     home public.geometry(Point,4326)
 );
@@ -106,10 +107,32 @@ ALTER TABLE ONLY public.users
 CREATE TABLE public.training (
     name text,
     local boolean,
-    organization text,
+    organization oid,
     tools text[],
     teams text[],
-    gender text,
     hours integer,
-    age real
+    when timestamp with time zone
 );
+CREATE TYPE public.units AS ENUM (
+       'country',
+       'region',
+       'microgrant',
+       'organization',
+       'osm',
+       'boundary',
+       'campaign',
+       'hot'
+);
+CREATE TYPE public.segments AS ENUM (
+       'new_existing',
+       'yourh_mappers',
+       'ngos',
+       'governments'
+);
+CREATE TABLE public.organization (
+       name text,
+       oid int,
+       unit units,
+       trainee segments
+);
+
