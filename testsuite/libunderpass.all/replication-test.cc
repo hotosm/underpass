@@ -25,7 +25,7 @@
 #include "hottm.hh"
 #include "log.hh"
 
-#include "osmstats/replication.hh"
+#include "galaxy/replication.hh"
 using namespace replication;
 #include "data/underpass.hh"
 using namespace underpass;

@@ -25,10 +25,10 @@
 
 #include "data/geoutil.hh"
 #include "log.hh"
-#include "osmstats/changeset.hh"
-#include "osmstats/osmchange.hh"
-#include "osmstats/osmstats.hh"
-#include "osmstats/replication.hh"
+#include "galaxy/changeset.hh"
+#include "galaxy/osmchange.hh"
+#include "galaxy/galaxy.hh"
+#include "galaxy/replication.hh"
 
 #include "boost/date_time/gregorian/gregorian.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"

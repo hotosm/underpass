@@ -24,7 +24,7 @@
 
 #include "hottm.hh"
 #include "log.hh"
-#include "osmstats/osmstats.hh"
+#include "galaxy/galaxy.hh"
 
 #include "boost/date_time/gregorian/gregorian.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -32,14 +32,14 @@
 #include <boost/date_time.hpp>
 
 using namespace tmdb;
-using namespace osmstats;
+using namespace galaxy;
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 using namespace boost::filesystem;
 
 TestState runtest;
 
-class TestOSMStats : public QueryOSMStats
+class TestOSMStats : public QueryGalaxy
 {
   public:
     //! Clear the test DB and fill it with with initial test data
@@ -93,25 +93,25 @@ class TestOSMStats : public QueryOSMStats
         }
 
         // Prepare OSMStats test database
-        const std::string test_osmstats_db_name{"osmstats_usersync_test"};
+        const std::string test_galaxy_db_name{"galaxy_usersync_test"};
 
         {
             pqxx::connection conn{dbconn};
             pqxx::nontransaction worker{conn};
-            worker.exec0("DROP DATABASE IF EXISTS " + test_osmstats_db_name);
-            worker.exec0("CREATE DATABASE " + test_osmstats_db_name);
+            worker.exec0("DROP DATABASE IF EXISTS " + test_galaxy_db_name);
+            worker.exec0("CREATE DATABASE " + test_galaxy_db_name);
             worker.commit();
         }
 
         {
-            pqxx::connection conn{dbconn + " dbname=" + test_osmstats_db_name};
+            pqxx::connection conn{dbconn + " dbname=" + test_galaxy_db_name};
             pqxx::nontransaction worker{conn};
             worker.exec0("CREATE EXTENSION postgis");
 
             // Create schema
             // TODO: get absolute base path
             const path base_path{source_tree_root / "data"};
-            const auto schema_path{base_path / "osmstats.sql"};
+            const auto schema_path{base_path / "galaxy.sql"};
             std::ifstream schema_definition(schema_path);
             std::string sql((std::istreambuf_iterator<char>(schema_definition)),
                             std::istreambuf_iterator<char>());
@@ -137,20 +137,20 @@ main(int argc, char *argv[])
 
     testosm.init_test_case();
 
-    const std::string test_osmstats_db_name{"osmstats_usersync_test"};
+    const std::string test_galaxy_db_name{"galaxy_usersync_test"};
     const std::string test_tm_db_name{"taskingmanager_usersync_test"};
-    std::string osmstats_conn;
+    std::string galaxy_conn;
     std::string tm_conn;
     if (getenv("PGHOST") && getenv("PGUSER") && getenv("PGPASSWORD")) {
-        osmstats_conn = std::string(getenv("PGUSER")) + ":" +
+        galaxy_conn = std::string(getenv("PGUSER")) + ":" +
                         std::string(getenv("PGPASSWORD")) + "@" +
                         std::string(getenv("PGHOST")) + "/" +
-                        test_osmstats_db_name;
+                        test_galaxy_db_name;
         tm_conn = std::string(getenv("PGUSER")) + ":" +
                   std::string(getenv("PGPASSWORD")) + "@" +
                   std::string(getenv("PGHOST")) + "/" + test_tm_db_name;
     } else {
-        osmstats_conn = test_osmstats_db_name;
+        galaxy_conn = test_galaxy_db_name;
         tm_conn = test_tm_db_name;
     }
 
@@ -163,9 +163,9 @@ main(int argc, char *argv[])
 
     // Start the real test
 
-    TestOSMStats testosmstats;
+    TestOSMStats testgalaxy;
 
-    if (testosmstats.connect(osmstats_conn)) {
+    if (testgalaxy.connect(galaxy_conn)) {
         runtest.pass("QueryOSMStats::connect()");
     } else {
         runtest.fail("QueryOSMStats::connect()");
@@ -173,7 +173,7 @@ main(int argc, char *argv[])
     }
 
     // Sync
-    auto result{testosmstats.syncUsers(users)};
+    auto result{testgalaxy.syncUsers(users)};
 
     if (result.created == 2 && result.updated == 0 && result.deleted == 0) {
         runtest.pass("QueryOSMStats::syncUsers() - create");
@@ -185,7 +185,7 @@ main(int argc, char *argv[])
     // TODO: add an API method to retrieve this list?
     const auto get_users = [&]() -> std::vector<TMUser> {
         std::vector<TMUser> users;
-        pqxx::nontransaction worker{*testosmstats.sdb};
+        pqxx::nontransaction worker{*testgalaxy.sdb};
         const auto users_result{worker.exec("SELECT * FROM users ORDER BY id")};
         pqxx::result::const_iterator it;
 
@@ -226,9 +226,9 @@ main(int argc, char *argv[])
     expectedBob.date_registered = time_from_string("2013-01-04 02:01:04.405");
     expectedBob.gender = TMUser::Gender::UNSET;
 
-    auto osmstats_users{get_users()};
-    if (osmstats_users.size() == 2 && osmstats_users.at(0) == expectedAlice &&
-        osmstats_users.at(1) == expectedBob) {
+    auto galaxy_users{get_users()};
+    if (galaxy_users.size() == 2 && galaxy_users.at(0) == expectedAlice &&
+        galaxy_users.at(1) == expectedBob) {
         runtest.pass("QueryOSMStats::syncUsers() - check create");
     } else {
         runtest.fail("QueryOSMStats::syncUsers() - check create");
@@ -240,12 +240,12 @@ main(int argc, char *argv[])
     users.at(0).name = users.at(0).id == 95488 ? "Bob" : "Alice in Wonderland";
     users.at(1).name = users.at(1).id == 95488 ? "Bob" : "Alice in Wonderland";
 
-    result = testosmstats.syncUsers(users);
+    result = testgalaxy.syncUsers(users);
 
-    osmstats_users = get_users();
+    galaxy_users = get_users();
     if (result.updated == 2 && result.created == 0 && result.deleted == 0 &&
-        osmstats_users.size() == 2 && osmstats_users.at(0) == expectedAlice &&
-        osmstats_users.at(1) == expectedBob) {
+        galaxy_users.size() == 2 && galaxy_users.at(0) == expectedAlice &&
+        galaxy_users.at(1) == expectedBob) {
         runtest.pass("QueryOSMStats::syncUsers() - update");
     } else {
         runtest.fail("QueryOSMStats::syncUsers() - update");
@@ -255,11 +255,11 @@ main(int argc, char *argv[])
     // Remove bob
     users.erase(std::remove_if(users.begin(), users.end(),
                                [](TMUser user) { return user.id == 95488; }));
-    result = testosmstats.syncUsers(users, true);
-    osmstats_users = get_users();
+    result = testgalaxy.syncUsers(users, true);
+    galaxy_users = get_users();
 
     if (result.updated == 1 && result.created == 0 && result.deleted == 1 &&
-        osmstats_users.size() == 1 && osmstats_users.at(0) == expectedAlice) {
+        galaxy_users.size() == 1 && galaxy_users.at(0) == expectedAlice) {
         runtest.pass("QueryOSMStats::syncUsers() - delete");
     } else {
         runtest.fail("QueryOSMStats::syncUsers() - delete");

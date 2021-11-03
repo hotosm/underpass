@@ -24,13 +24,13 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "osmstats/osmstats.hh"
+#include "galaxy/galaxy.hh"
 #include "data/yaml.hh"
 #include "log.hh"
 
 using namespace logger;
 
-using namespace osmstats;
+using namespace galaxy;
 
 TestState runtest;
 

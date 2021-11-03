@@ -23,17 +23,17 @@
 #include <pqxx/pqxx>
 
 #include "hottm.hh"
-#include "osmstats/osmstats.hh"
+#include "galaxy/galaxy.hh"
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/date_time/gregorian/gregorian.hpp"
 
-#include "osmstats/osmstats.hh"
+#include "galaxy/galaxy.hh"
 
 using namespace boost::posix_time;
 using namespace boost::gregorian;
-using namespace osmstats;
+using namespace galaxy;
 
 TestState runtest;
 

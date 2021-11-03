@@ -33,7 +33,7 @@
 
 #include "validate/hotosm.hh"
 #include "validate/validate.hh"
-#include "osmstats/osmstats.hh"
+#include "galaxy/galaxy.hh"
 #include "data/osmobjects.hh"
 #include "log.hh"
 
@@ -41,7 +41,7 @@ using namespace logger;
 
 using namespace boost::posix_time;
 using namespace boost::gregorian;
-using namespace osmstats;
+using namespace galaxy;
 
 TestState runtest;
 

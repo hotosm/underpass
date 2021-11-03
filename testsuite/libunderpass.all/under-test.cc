@@ -23,10 +23,10 @@
 #include <pqxx/pqxx>
 
 // #include "hotosm.hh"
-#include "osmstats/changeset.hh"
-// #include "osmstats/osmstats.hh"
+#include "galaxy/changeset.hh"
+// #include "galaxy/galaxy.hh"
 #include "data/geoutil.hh"
-// #include "osmstats/replication.hh"
+// #include "galaxy/replication.hh"
 #include "data/import.hh"
 #include "data/threads.hh"
 #include "data/underpass.hh"

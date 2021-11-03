@@ -24,8 +24,8 @@
 #include <libxml++/libxml++.h>
 
 #include "hottm.hh"
-#include "osmstats/osmstats.hh"
-#include "osmstats/changeset.hh"
+#include "galaxy/galaxy.hh"
+#include "galaxy/changeset.hh"
 
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
