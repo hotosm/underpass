@@ -108,8 +108,7 @@ CREATE TABLE public.training (
     name text,
     local boolean,
     organization oid,
-    tools text[],
-    teams text[],
+    topics text[],
     hours integer,
     timestamp timestamp with time zone
 );
@@ -125,14 +124,14 @@ CREATE TYPE public.units AS ENUM (
 );
 CREATE TYPE public.segments AS ENUM (
        'new_existing',
-       'yourh_mappers',
-       'ngos',
-       'governments'
+       'youth_mappers',
+       'ngo',
+       'government'
 );
 CREATE TABLE public.organization (
        name text,
        oid int,
-       unit units,
-       trainee segments
+       unit public.units,
+       trainee public.segments
 );
 
