@@ -111,7 +111,7 @@ CREATE TABLE public.training (
     tools text[],
     teams text[],
     hours integer,
-    when timestamp with time zone
+    timestamp timestamp with time zone
 );
 CREATE TYPE public.units AS ENUM (
        'country',
