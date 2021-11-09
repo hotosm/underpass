@@ -10,7 +10,9 @@ setup_basics() {
         git     \
         python3 \
         wget    \
-        unzip
+        unzip   \
+        netcat  \
+        postgresql-client
 }
 
 setup_dependencies() {
@@ -68,16 +70,22 @@ teardown() {
 }
 
 install_cloudwatchagent() {
+    _pf_arch=$(uname -m)
+    if [ $_pf_arch = 'x86_64' ]; then
+        _arch='amd64'
+    elif [ $_pf_arch = 'aarch64' ]; then
+        _arch='arm64'
+    fi
     _tempfile=$(mktemp -p /opt deb.XXXXX)
-    _deb_src="https://s3.amazonaws.com/amazoncloudwatch-agent/debian/amd64/latest/amazon-cloudwatch-agent.deb"
+    _deb_src="https://s3.amazonaws.com/amazoncloudwatch-agent/debian/$(_arch)/latest/amazon-cloudwatch-agent.deb"
     wget -O $${_tempfile} $${_deb_src} && \
     dpkg -i $${_tempfile} && \
     rm -f $${_tempfile}
 }
 
 setup_basics
-setup_dependencies
-setup_libpqxx
+#setup_dependencies
+#setup_libpqxx
 # setup_underpass_from_source
 # setup_underpass_from_deb
 install_cloudwatchagent

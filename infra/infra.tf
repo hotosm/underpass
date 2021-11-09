@@ -102,6 +102,9 @@ resource "aws_iam_role" "underpass" {
 *   - Port: ????
 * Service Access (IAM Egress):
 *   - Needs to access S3 bucket
+* Apps installed:
+*   - postgresql-client
+*   - netcat
 */
 resource "aws_instance" "file-processor" {
   ami           = data.aws_ami.ubuntu_latest_arm.id
