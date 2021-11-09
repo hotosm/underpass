@@ -283,6 +283,7 @@ tasks_mapped | The number of tasking manager tasks completed
 tasks_validated | The number of tasking manager tasks validated
 projects_mapped | The number of tasking manager tasks invalidated
 gender | The mappers gender, when available
+age | The age (optional) of the mapper
 home | The mappers home location, when available
 
 ## ground data table
@@ -306,22 +307,50 @@ Keyword | Description
 --------|------------
 name | The mappers name
 local | Whether it was a local training, or remote
-organization | The organization doing the training
-tools  | The software tools covered in the training
-teams | The teams the mapper is a member of
-gender | The self-defined gender (optional) of the mapper
-hours | The hours of training
-age | The age (optional) of the mapper
+oid | The ID for the organization doing the training
+topics | The topics covered in the training
+hours | The hours of training (optional)
+timestamp | When was this training done ?
 
 ## validation data table
 
 Keyword | Description
 --------|------------
-osm_id | The OSM ID of this feature
-user_id | The user ID editing this feature
-change_id | The Changeset ID of this feature
-objtype | The type of opbjecct, node, way, or relation
-angle | The angle of the first corner (current DEBUG only!)
-status[] | An array of flagged issues is the feature
-timestamp | The time of this validation
-location | The centroid of this feature
+name | The name of this training session
+local | A flag for ground mapping or remote mapping
+oid | The ID of the organization doing the training
+tools | The tools this class did training on
+hours | How many hours was the training
+timestamp | The time of this training session
+
+
+## Organization data table
+
+The organization table requires two defined type fields, which are
+created first:
+
+Unit type of the organization:
+
+- country
+- region
+- microgrant
+- organization
+- osm
+- boundary
+- campaign
+- hot
+
+Segment type of the organization:
+
+- new_existing
+- youth_mappers
+- ngo
+- government
+
+
+Keyword | Description
+--------|------------
+name text,
+oid int,
+unit units,
+trainee segments
