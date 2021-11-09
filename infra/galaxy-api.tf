@@ -93,7 +93,16 @@ resource "aws_lb_listener" "osm-stats-secure" {
 }
 
 data "aws_acm_certificate" "wildcard" {
-  domain   = "*.hotosm.org"
-  statuses = ["ISSUED"]
+  domain      = "hotosm.org"
+  statuses    = ["ISSUED"]
+  most_recent = true
+}
+
+/** TODO: Change to include all instances
+**/
+resource "aws_lb_target_group_attachment" "underpass-instance" {
+  target_group_arn = aws_lb_target_group.osm-stats.arn
+  target_id        = aws_instance.file-processor[0].id
+  port             = 80
 }
 
