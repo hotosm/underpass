@@ -100,7 +100,7 @@ resource "aws_security_group" "database" {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [aws_security_group.api.id]
+    security_groups = [aws_security_group.api.id, aws_security_group.app.id]
   }
 
   egress {
@@ -126,6 +126,18 @@ resource "aws_security_group" "app" {
     description      = "All TLS connections"
     from_port        = 443
     to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  /** TODO:
+  To protect this instance public IP needs to be removed
+  **/
+  ingress {
+    description      = "Allow access to cloudfront"
+    from_port        = 80
+    to_port          = 80
     protocol         = "tcp"
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
@@ -157,7 +169,18 @@ resource "aws_security_group" "api" {
     protocol         = "tcp"
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
-    #    security_groups  = [aws_security_group.app.id]
+  }
+
+  /** TODO:
+  To protect this instance public IP needs to be removed
+**/
+  ingress {
+    description      = "Allow access to cloudfront"
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   egress {

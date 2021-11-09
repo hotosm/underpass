@@ -38,21 +38,19 @@ using namespace boost::gregorian;
 
 namespace tmdb {
 
-TMUser::TMUser(pqxx::result::const_iterator &row) {
+TMUser::TMUser(pqxx::result::const_iterator &row)
+{
     id = row.at("id").as(TaskingManagerIdType(0));
     username = row.at("username").as(std::string());
     name = row.at("name").as(std::string());
-    access = static_cast<Role>(row.at("role").as(int(0)));
+    access = static_cast<Access>(row.at("access").as(int(0)));
     gender = static_cast<Gender>(row.at("gender").as(int(0)));
-    mapping_level =
-        static_cast<MappingLevel>(row.at("mapping_level").as(int(0)));
+    mapping_level = static_cast<MappingLevel>(row.at("mapping_level").as(int(0)));
     tasks_mapped = row.at("tasks_mapped").as(int(0));
     tasks_validated = row.at("tasks_validated").as(int(0));
     tasks_invalidated = row.at("tasks_invalidated").as(int(0));
-    date_registered =
-        time_from_string(row.at("date_registered").as(std::string()));
-    last_validation_date =
-        time_from_string(row.at("last_validation_date").as(std::string()));
+    date_registered = time_from_string(row.at("date_registered").as(std::string()));
+    last_validation_date = time_from_string(row.at("last_validation_date").as(std::string()));
     auto arr = row.at("projects_mapped").as_array();
     std::pair<pqxx::array_parser::juncture, std::string> elem;
 
@@ -65,7 +63,8 @@ TMUser::TMUser(pqxx::result::const_iterator &row) {
 }
 
 bool
-TMUser::operator==(const TMUser &other) const {
+TMUser::operator==(const TMUser &other) const
+{
     return id == other.id && username == other.username && name == other.name &&
            gender == other.gender && mapping_level == other.mapping_level &&
            tasks_mapped == other.tasks_mapped &&

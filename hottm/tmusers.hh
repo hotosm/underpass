@@ -50,8 +50,7 @@ struct TMUser {
     /**
      * \brief The Gender enum maps the TM database numeric gender.
      */
-    enum class Gender : int
-    {
+    enum class Gender : int {
         UNSET = 0,
         MALE = 1,
         FEMALE = 2,
@@ -60,10 +59,9 @@ struct TMUser {
     };
 
     /**
-     * \brief The Role enum maps the TM database numeric role.
+     * \brief The Access enum maps the TM database numeric Access.
      */
-    enum class Role : int
-    {
+    enum class Access : int {
         UNSET = 0,
         READ_ONLY = 1,
         MAPPER = 2,
@@ -73,8 +71,7 @@ struct TMUser {
     /**
      * \brief The MappingLevel enum maps the TM database numeric level.
      */
-    enum class MappingLevel : int
-    {
+    enum class MappingLevel : int {
         UNSET = 0,
         BEGINNER = 1,
         INTERMEDIATE = 2,
@@ -91,7 +88,7 @@ struct TMUser {
     std::string name;
     std::string username;
     Gender gender;
-    Role access;
+    Access access;
     MappingLevel mapping_level;
     int tasks_mapped;
     int tasks_validated;

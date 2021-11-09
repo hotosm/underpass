@@ -178,7 +178,7 @@ TaskingManager::getUsers(TaskingManagerIdType userId)
                         u.tasks_validated,
                         u.tasks_invalidated,
                         u.gender,
-                        u.role,
+                        u.access,
                         u.mapping_level,
                         u.projects_mapped
                       FROM users u
