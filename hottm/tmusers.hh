@@ -91,7 +91,7 @@ struct TMUser {
     std::string name;
     std::string username;
     Gender gender;
-    Role role;
+    Role access;
     MappingLevel mapping_level;
     int tasks_mapped;
     int tasks_validated;

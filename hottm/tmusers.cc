@@ -42,7 +42,7 @@ TMUser::TMUser(pqxx::result::const_iterator &row) {
     id = row.at("id").as(TaskingManagerIdType(0));
     username = row.at("username").as(std::string());
     name = row.at("name").as(std::string());
-    role = static_cast<Role>(row.at("role").as(int(0)));
+    access = static_cast<Role>(row.at("role").as(int(0)));
     gender = static_cast<Gender>(row.at("gender").as(int(0)));
     mapping_level =
         static_cast<MappingLevel>(row.at("mapping_level").as(int(0)));

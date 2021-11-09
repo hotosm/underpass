@@ -539,7 +539,7 @@ QueryGalaxy::syncUsers(const std::vector<TMUser> &users, bool purge)
         }
         const int mapping_level{static_cast<int>(user.mapping_level)};
         const int gender{static_cast<int>(user.gender)};
-        const int role{static_cast<int>(user.role)};
+        const int role{static_cast<int>(user.access)};
         std::string projects_mapped{"{"};
 
         for (const auto &elem: std::as_const(user.projects_mapped)) {

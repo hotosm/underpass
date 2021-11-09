@@ -92,7 +92,7 @@ class TestOSMStats : public QueryGalaxy
             worker.exec0(data_sql);
         }
 
-        // Prepare OSMStats test database
+        // Prepare Galaxy test database
         const std::string test_galaxy_db_name{"galaxy_usersync_test"};
 
         {
@@ -200,7 +200,7 @@ main(int argc, char *argv[])
     expectedAlice.id = 21792;
     expectedAlice.username = "alice";
     expectedAlice.name = "Alice";
-    expectedAlice.role = TMUser::Role::MAPPER;
+    expectedAlice.access = TMUser::Role::MAPPER;
     expectedAlice.mapping_level = TMUser::MappingLevel::BEGINNER;
     expectedAlice.tasks_mapped = 9;
     expectedAlice.tasks_validated = 0;
@@ -215,7 +215,7 @@ main(int argc, char *argv[])
     expectedBob.id = 95488;
     expectedBob.username = "bob";
     expectedBob.name = "";
-    expectedBob.role = TMUser::Role::UNSET;
+    expectedBob.access = TMUser::Role::UNSET;
     expectedBob.mapping_level = TMUser::MappingLevel::ADVANCED;
     expectedBob.tasks_mapped = 20;
     expectedBob.tasks_validated = 329;
