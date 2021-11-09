@@ -6,11 +6,11 @@
 --   4 tasks
 
 INSERT INTO public.users
-(id, username, "role", mapping_level, tasks_mapped, tasks_validated, tasks_invalidated, projects_mapped, email_address, facebook_id, is_email_verified, linkedin_id, twitter_id, date_registered, last_validation_date, tasks_notifications, is_expert, irc_id, city, country, "name", skype_id, slack_id, default_editor, mentions_notifications, comments_notifications, projects_notifications, picture_url, gender, self_description_gender, teams_notifications)
+(id, username, access, mapping_level, tasks_mapped, tasks_validated, tasks_invalidated, projects_mapped, email_address, facebook_id, is_email_verified, linkedin_id, twitter_id, date_registered, last_validation_date, tasks_notifications, is_expert, irc_id, city, country, "name", skype_id, slack_id, default_editor, mentions_notifications, comments_notifications, projects_notifications, picture_url, gender, self_description_gender, teams_notifications)
 VALUES(95488, 'bob', 0, 3, 20, 329, 60, '{135,272}', NULL, NULL, false, NULL, NULL, '2013-01-04 02:01:04.405', '2020-11-04 02:20:28.209', true, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'ID', true, false, true, NULL, NULL, NULL, true);
 
 INSERT INTO public.users
-(id, username, "role", mapping_level, tasks_mapped, tasks_validated, tasks_invalidated, projects_mapped, email_address, facebook_id, is_email_verified, linkedin_id, twitter_id, date_registered, last_validation_date, tasks_notifications, is_expert, irc_id, city, country, "name", skype_id, slack_id, default_editor, mentions_notifications, comments_notifications, projects_notifications, picture_url, gender, self_description_gender, teams_notifications)
+(id, username, access, mapping_level, tasks_mapped, tasks_validated, tasks_invalidated, projects_mapped, email_address, facebook_id, is_email_verified, linkedin_id, twitter_id, date_registered, last_validation_date, tasks_notifications, is_expert, irc_id, city, country, "name", skype_id, slack_id, default_editor, mentions_notifications, comments_notifications, projects_notifications, picture_url, gender, self_description_gender, teams_notifications)
 VALUES(21792, 'alice', 2, 1, 9, 0, 0, '{135}', 'alice@gmx.de', NULL, false, NULL, NULL, '2020-09-21 09:44:40.180', '2021-03-12 06:51:12.813', true, false, NULL, NULL, NULL, 'Alice', NULL, NULL, 'ID', true, false, true, NULL, 2, NULL, true);
 
 

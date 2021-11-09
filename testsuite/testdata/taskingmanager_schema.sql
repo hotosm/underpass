@@ -880,7 +880,7 @@ CREATE TABLE public.user_licenses (
 CREATE TABLE public.users (
     id bigint NOT NULL,
     username character varying,
-    role integer NOT NULL,
+    access integer NOT NULL,
     mapping_level integer NOT NULL,
     tasks_mapped integer NOT NULL,
     tasks_validated integer NOT NULL,
