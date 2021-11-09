@@ -12,6 +12,10 @@ resource "aws_ecs_cluster" "galaxy" {
   }
 }
 
+data "aws_iam_role" "ecs_execution_role" {
+  name = "ecsTaskExecutionRole"
+}
+
 resource "aws_ecs_task_definition" "galaxy-api" {
   family = "galaxy-api"
   container_definitions = jsonencode([
@@ -32,6 +36,7 @@ resource "aws_ecs_task_definition" "galaxy-api" {
       ]
     }
   ])
+  execution_role_arn = data.aws_iam_role.ecs_execution_role.arn
 }
 
 resource "aws_ecs_service" "galaxy-api" {
