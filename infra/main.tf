@@ -131,6 +131,18 @@ resource "aws_security_group" "app" {
     ipv6_cidr_blocks = ["::/0"]
   }
 
+  /** TODO:
+  To protect this instance public IP needs to be removed
+  **/
+  ingress {
+    description      = "Allow access to cloudfront"
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
   egress {
     from_port        = 0
     to_port          = 0
