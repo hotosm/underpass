@@ -43,37 +43,6 @@ AC_SUBST(DLPREOPEN)
 AC_PATH_PROG(GIT, git)
 AC_SUBST(GIT)
 
-build_single=no
-build_multi=yes
-AC_ARG_ENABLE(threads,
-  AS_HELP_STRING([--enable-threads], [Enable support for multi-threading (default=single)]),
-  [if test -n ${enableval}; then
-    enableval=`echo ${enableval} | tr '\054' ' ' `
-  fi
-  while test -n "${enableval}" ; do
-    val=`echo ${enableval} | cut -d ' ' -f 1`
-    case "${val}" in
-        single|s)
-            build_single=yes
-        ;;
-      multi|m)
-        build_multi=yes
-        ;;
-     *) AC_MSG_ERROR([invalid option ${enableval} given (accept: single, multi)])
-         ;;
-      esac
-    enableval=`echo ${enableval} | cut -d ' ' -f 2-6`
-    if test "x$val" = "x$enableval"; then
-      break;
-    fi
-  done]
-])
-if test x"${build_single}" = x"yes"; then
-  AC_DEFINE(USE_SINGLE, [1], [Don't use multiple threads])
-else
-  AC_DEFINE(USE_MULTI, [1], [Use multiple threads])
-fi
-
 build_single_loader=yes
 build_multi_loader=no
 AC_ARG_ENABLE(threads,
@@ -159,6 +128,20 @@ AC_ARG_ENABLE(jemalloc,
 AM_CONDITIONAL([JEMALLOC], [ test x"${jemalloc}" = x"yes" ])
 if test x"${jemalloc}" = x"yes"; then
    AC_MSG_NOTICE([Using Jemalloc instead of system malloc])
+fi
+
+memory__debug=no
+AC_ARG_ENABLE(memory-debug,
+  AS_HELP_STRING([--enable-memory-debug], [Enable support for Memory debugging (default=no)]),
+  [case "${enableval}" in
+     yes) memory_debug=yes ;;
+     no)  memory_debug=no ;;
+     *)   AC_MSG_ERROR([bad value ${enableval} for enable-memory-debug option]) ;;
+   esac]
+)
+if test x"${memory_debug}" = x"yes"; then
+   AC_MSG_NOTICE([Enabling Memory memory debugging for leaks])
+   AC_DEFINE(MEMORY_DEBUG, [1], [Enable memory debugging])
 fi
 
 conflation=no
