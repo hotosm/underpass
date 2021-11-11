@@ -85,7 +85,8 @@ typedef enum {
     incomplete,
     badvalue,
     correct,
-    badgeom
+    badgeom,
+    orphan
 } valerror_t;
 
 class ValidateStatus {
@@ -127,6 +128,7 @@ class ValidateStatus {
         results[badvalue] = "Bad tag value";
         results[correct] = "Correct tag value";
         results[badgeom] = "Bad geometry";
+        results[orphan] = "Orphan";
         for (const auto &stat: std::as_const(status)) {
             std::cerr << "\tResult: " << results[stat] << std::endl;
         }
