@@ -77,6 +77,7 @@ using tcp = net::ip::tcp;         // from <boost/asio/ip/tcp.hpp>
 #include "galaxy/galaxy.hh"
 #include "galaxy/replication.hh"
 #include "validate/validate.hh"
+#include <jemalloc/jemalloc.h>
 
 std::mutex stream_mutex;
 
@@ -92,7 +93,6 @@ namespace threads {
 void
 startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &poly, const replicatorconfig::ReplicatorConfig &config, thread_pool &pool)
 {
-
     // This function is for changesets only!
     assert(inr.frequency == frequency_t::changeset);
 
@@ -137,11 +137,31 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
     auto servers{config.getPlanetServers(frequency_t::changeset)};
 
     // Processes the changesets asynchronously
-    auto processChangesetFunction = [&error_flag, &poly, ostats, &max_pseudo_sequence, &max_pseudo_sequence_mutex](replication::RemoteURL remote, std::vector<replicatorconfig::PlanetServer> servers) {
+    auto processChangesetFunction = [&error_flag, &poly, ostats, &max_pseudo_sequence,
+				     &max_pseudo_sequence_mutex](replication::RemoteURL remote,
+				     std::vector<replicatorconfig::PlanetServer> servers) {
         int retry{0};
         const int max_retries{4};
+#ifdef MEMORY_DEBUG
+    uint64_t epoch = 1;
+    size_t sz, active, resident;
+#endif	// JEMALLOC memory debugging
+
         while (!error_flag) {
-            const auto changefile{threadChangeSet(remote, poly, ostats)};
+	    if (epoch++ > 10) {
+		exit(0);
+	    }	    
+#ifdef MEMORY_DEBUG
+	    // sz = sizeof(epoch);
+	    // mallctl("epoch", &epoch, &sz, &epoch, sz);
+	    // std::cerr << "Epoch: " << epoch << std::endl;
+	    sz = sizeof(size_t);
+	    if (mallctl("stats.active", &active, &sz, NULL, 0) == 0
+		&& mallctl("stats.resident", &resident, &sz, NULL, 0) == 0) {
+		std::cerr << "Active: " << active << ", Resident: " << resident << std::endl;
+	    }
+#endif	// JEMALLOC memory debugging
+	    const auto changefile{threadChangeSet(remote, poly, ostats)};
             for (const auto &change: std::as_const(changefile->changes)) {
                 ostats->applyChange(*change.get());
             }
@@ -299,8 +319,24 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
     }
     auto validator = creator();
 
+#ifdef MEMORY_DEBUG
+    uint64_t epoch = 1;
+    size_t sz, active, resident;
+#endif	// JEMALLOC memory debugging
+
     // Process OSM changes
     while (mainloop) {
+	if (epoch++ > 10) {
+	    exit(0);
+	}	    
+#ifdef MEMORY_DEBUG
+	sz = sizeof(size_t);
+	if (mallctl("stats.active", &active, &sz, NULL, 0) == 0
+	    && mallctl("stats.resident", &resident, &sz, NULL, 0) == 0) {
+	    std::cerr << "Active2: " << active << ", Resident2: " << resident << std::endl;
+	}
+	// malloc_stats_print(NULL, NULL, NULL);
+#endif	// JEMALLOC memory debugging	    
         std::string file = remote.url + ".osc.gz";
         ptime now = boost::posix_time::microsec_clock::local_time();
         auto osmchange = threadOsmChange(remote, poly, ostats, osm2pgsql, validator);
@@ -516,14 +552,14 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
     }
 #endif
 
-    for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
-        osmchange::OsmChange *change = it->get();
+    for (auto cit = std::begin(osmchanges->changes); cit != std::end(osmchanges->changes); ++cit) {
+        osmchange::OsmChange *change = cit->get();
         // change->dump();
-        for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
-            osmobjects::OsmNode *node = it->get();
+        for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
+            osmobjects::OsmNode *node = nit->get();
         }
-        for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
-            osmobjects::OsmWay *way = it->get();
+        for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
+            osmobjects::OsmWay *way = wit->get();
         }
     }
     osmchanges->areaFilter(poly);
