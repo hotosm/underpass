@@ -30,6 +30,7 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "pq.hh"
 #include <boost/date_time.hpp>
+#include <boost/geometry.hpp>
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
@@ -217,6 +218,15 @@ class Osm2Pgsql : public pq::Pq {
     /// Default schema name for osm2pgsql ("public"), for simplicity, we are using
     /// the same schema for data and "middle" tables.
     std::string schema = OSM2PGSQL_DEFAULT_SCHEMA_NAME;
+
+    bool duplicate(const osmobjects::OsmWay &way, const std::string) {
+	auto wkt = boost::geometry::to_wkt(way.polygon);
+	pqxx::nontransaction worker(*sdb);
+	std::string query = "SELECT * FROM plant_osm_polygon WHERE ST_WITHIN(way, ST_GeomFrom WKB(";
+	query += wkt + ")";
+	worker.exec(query);
+        worker.commit();
+   };
 };
 
 } // namespace osm2pgsql
