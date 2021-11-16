@@ -456,6 +456,7 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
         // FIXME: it would be nice to avoid this copy
         std::copy(buf, buf + size, data->begin());
         close(fd);
+        free(buf);
     } else {
         log_debug(_("Downloading osmChange: %1%"), remote.url);
         replication::Planet planet(remote);
