@@ -12,6 +12,13 @@ in Emacs. Spaces will be used instead of TABS, since different systems
 or users may have TAB set differently. Indents are 4 spaces, instead
 of 8. 
 
+## Documentation
+
+All code will use [Doxygen](http://www.doxygen.nl/) style
+comments. Classes and methods should each have a comment so a short
+description will be displayed in the output files Doxygen
+generates. Each file should also have a brief description.
+
 ## Line Length
 
 For decades lines were limited to 80 charcters or less, which was
