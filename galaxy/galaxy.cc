@@ -509,7 +509,7 @@ QueryGalaxy::syncUsers(const std::vector<TMUser> &users, bool purge)
                             projects_mapped,
                             mapping_level,
                             gender,
-                            role
+                            access
                           )
                           VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12 )
                         )sql"};
@@ -525,7 +525,7 @@ QueryGalaxy::syncUsers(const std::vector<TMUser> &users, bool purge)
                   projects_mapped = $9,
                   mapping_level = $10,
                   gender = $11,
-                  "role" = $12
+                  access = $12
               WHERE id = $1
             )sql"};
 
