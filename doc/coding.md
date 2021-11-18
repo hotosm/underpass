@@ -29,9 +29,11 @@ readable.
 ## Brace Location
 
 The opening brace for most code is on the same line as the line of
-code. Putting braces on a line by itself adds to much whitespace.
+code. Putting an opening brace on a line by itself adds too much
+unnecessary whitespace. A closing brace is usually on a line by
+itself.
 
-Some example:
+Some examples:
 
 	namespace replication {
 	class StateFile;
@@ -41,6 +43,13 @@ Some example:
       public:
 		  void foo(void);
 	};
+
+In C++ a conditional with a single line following the test is legal,
+but braces should be used to make it clearer.
+
+    if (i == 20) {
+	   // do something
+	}
 
 ## Naming Convention
 
