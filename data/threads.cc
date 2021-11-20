@@ -143,25 +143,30 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
         int retry{0};
         const int max_retries{4};
 #ifdef MEMORY_DEBUG
-    uint64_t epoch = 1;
-    size_t sz, active, resident;
+    size_t sz, active1, active2;
 #endif	// JEMALLOC memory debugging
 
         while (!error_flag) {
-	    if (epoch++ > 10) {
-		exit(0);
-	    }	    
 #ifdef MEMORY_DEBUG
-	    // sz = sizeof(epoch);
-	    // mallctl("epoch", &epoch, &sz, &epoch, sz);
-	    // std::cerr << "Epoch: " << epoch << std::endl;
 	    sz = sizeof(size_t);
-	    if (mallctl("stats.active", &active, &sz, NULL, 0) == 0
-		&& mallctl("stats.resident", &resident, &sz, NULL, 0) == 0) {
-		std::cerr << "Active: " << active << ", Resident: " << resident << std::endl;
+	    if (mallctl("stats.active", &active1, &sz, NULL, 0) == 0) {
+		std::cerr << "startMonitorChangesets: " << active1 << std::endl;
+		// thread.allocated,  thread.deallocated
+		// thread.prof.name("startMonitorChangesets")
 	    }
 #endif	// JEMALLOC memory debugging
 	    const auto changefile{threadChangeSet(remote, poly, ostats)};
+#ifdef MEMORY_DEBUG
+	    sz = sizeof(size_t);
+	    if (mallctl("stats.active", &active2, &sz, NULL, 0) == 0) {
+		std::cerr << "\tstartMonitorChangesets: " << active2 << std::endl;
+		// thread.allocated,  thread.deallocated
+		// thread.prof.name("startMonitorChangesets")
+	    }
+	    if (active1 != active2) {
+		std::cerr << "\tstartMonitorChangesets is leaking: " << active2-active1 << std::endl;
+	    }
+#endif	// JEMALLOC memory debugging
             for (const auto &change: std::as_const(changefile->changes)) {
                 ostats->applyChange(*change.get());
             }
@@ -320,26 +325,31 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
     auto validator = creator();
 
 #ifdef MEMORY_DEBUG
-    uint64_t epoch = 1;
-    size_t sz, active, resident;
+    size_t sz, active1, active2;
 #endif	// JEMALLOC memory debugging
-
     // Process OSM changes
     while (mainloop) {
-	if (epoch++ > 10) {
-	    exit(0);
-	}	    
+        std::string file = remote.url + ".osc.gz";
+        ptime now = boost::posix_time::microsec_clock::local_time();
 #ifdef MEMORY_DEBUG
 	sz = sizeof(size_t);
-	if (mallctl("stats.active", &active, &sz, NULL, 0) == 0
-	    && mallctl("stats.resident", &resident, &sz, NULL, 0) == 0) {
-	    std::cerr << "Active2: " << active << ", Resident2: " << resident << std::endl;
+	if (mallctl("thread.allocated", &active1, &sz, NULL, 0) == 0) {
+	    std::cerr << "startMonitorChanges: " << active1 << std::endl;
 	}
 	// malloc_stats_print(NULL, NULL, NULL);
 #endif	// JEMALLOC memory debugging	    
-        std::string file = remote.url + ".osc.gz";
-        ptime now = boost::posix_time::microsec_clock::local_time();
         auto osmchange = threadOsmChange(remote, poly, ostats, osm2pgsql, validator);
+#ifdef MEMORY_DEBUG
+	sz = sizeof(size_t);
+	if (mallctl("thread.deallocated", &active2, &sz, NULL, 0) == 0) {
+	    std::cerr << "\tstartMonitorChanges: " << active2 << std::endl;
+	}
+	if (active1 != active2) {
+	    std::cerr << "\tstartMonitorChanges is leaking: " << active1 << " : " << active2 << std::endl;
+	}
+	// malloc_stats_print(NULL, NULL, NULL);
+#endif	// JEMALLOC memory debugging
+
         // FIXME: There is probably a better way to determine when to delay,
         // or when to just keep processing files when catching up.
         boost::posix_time::time_duration delta;
@@ -492,6 +502,7 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
         // FIXME: it would be nice to avoid this copy
         std::copy(buf, buf + size, data->begin());
         close(fd);
+	free(buf);
     } else {
         log_debug(_("Downloading osmChange: %1%"), remote.url);
         replication::Planet planet(remote);
