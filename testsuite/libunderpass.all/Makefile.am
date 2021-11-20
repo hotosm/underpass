@@ -20,6 +20,7 @@
 AUTOMAKE_OPTIONS = dejagnu
 
 check_PROGRAMS = \
+	conflate-test \
 	tm-test \
 	usersync-test \
 	under-test \
@@ -51,6 +52,11 @@ AM_CXXFLAGS = \
         -DSRCDIR=\"$(srcdir)\" \
 	-DBOOST_LOCALE_HIDE_AUTO_PTR \
 	-Wno-deprecated-declarations
+
+conflate_test_SOURCES = conflate-test.cc
+conflate_test_LDFLAGS = -L../..
+conflate_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
+conflate_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 yaml_test_SOURCES = yaml-test.cc
 yaml_test_LDFLAGS = -L../..
