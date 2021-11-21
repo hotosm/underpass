@@ -30,7 +30,13 @@
 namespace conflate {
 
 class Conflate {
-    bool duplicate(const osmobjects::OsmWay &way, const std::string);
+public:
+    Conflate(void);
+    Conflate(const std::string &dburl);
+    bool newDuplicate(const osmobjects::OsmWay &way, const std::string);
+    bool existingDuplicate(const std::string);
+
+    pq::Pq conf_db;
 };
     
 } // namespace conflate
@@ -41,7 +47,4 @@ class Conflate {
 // mode: C++
 // indent-tabs-mode: t
 // End:
-
-
-
 

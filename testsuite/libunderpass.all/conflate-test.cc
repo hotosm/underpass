@@ -43,7 +43,7 @@ TestState runtest;
 class Test : public Conflate
 {
 public:
-    //! Clear the test DB and fill it with with initial test data
+    /// Clear the test DB and fill it with with initial test data
     bool init(void) {
         logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
         dbglogfile.setVerbosity();
@@ -51,17 +51,14 @@ public:
         // Create the database
         std::string datadir = DATADIR;
         pq::Pq postgres("postgres");
-        if (!postgres.isOpen()) {
-            exit(0);
-        }
+
+        // Create schema
+        std::string file;
         postgres.query("DROP DATABASE IF EXISTS conflate_test;");
         postgres.query("CREATE DATABASE conflate_test;");
         conf_db.connect("conflate_test");
         conf_db.query("CREATE EXTENSION postgis");
         conf_db.query("CREATE EXTENSION hstore");
-
-        // Create schema
-        std::string file;
 #if 0
         file = datadir + "/testsuite/testdata/osm2pgsql_test_schema.sql.gz";
         std::ifstream sql(file, std::ios_base::in | std::ios_base::binary);
@@ -87,7 +84,7 @@ public:
         std::ifstream data(file, std::ios_base::in | std::ios_base::binary);
         std::string ssss((std::istreambuf_iterator<char>(data)), std::istreambuf_iterator<char>());
         conf_db.query(ssss + ";");
-            
+
         return true;
     };   
     
@@ -110,19 +107,20 @@ main(int argc, char *argv[])
     dbglogfile.setLogFilename("conflate-test.log");
     dbglogfile.setVerbosity(3);
     
-    Test test;
-    test.init();
+    conflate::Conflate conf;
 
-    pq::Pq conf_db("conflate_test");
-    conf_db.dump();
-    auto result = conf_db.query("SELECT COUNT(osm_id) FROM planet_osm_polygon;");
-    if (result[0][0].as(int(0)) > 10) {
-        runtest.pass("Conflate::init()");
+    if (conf.existingDuplicate("foo") == true) {
+        runtest.pass("Conflate::existingDuplicate()");
     } else {     
-        runtest.pass("Conflate::init()");
+        runtest.fail("Conflate::existingDuplicate()");
     }
 
-    // test.duplicate();
+    osmobjects::OsmWay way;
+    if (conf.newDuplicate(way, "foo") == true) {
+        runtest.pass("Conflate::newDuplicate()");
+    } else {     
+        runtest.fail("Conflate::newDuplicate()");
+    }
 }
 
 // local Variables:

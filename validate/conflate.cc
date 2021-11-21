@@ -22,15 +22,33 @@
 #include "unconfig.h"
 #endif
 
+#include "data/pq.hh"
 #include "validate/conflate.hh"
 #include "data/osmobjects.hh"
 
 namespace conflate {
 
-bool
-Conflate::duplicate(const osmobjects::OsmWay &way, const std::string)
+Conflate::Conflate(void)
 {
+    std::string dburl = "dbname=osm2pgsql";
+    conf_db.connect(dburl);
+}
 
+Conflate::Conflate(const std::string &dburl)
+{
+    conf_db.connect(dburl);
+}
+
+bool
+Conflate::newDuplicate(const osmobjects::OsmWay &way, const std::string)
+{
+    return false;
+}
+
+bool
+Conflate::existingDuplicate(const std::string)
+{
+    return false;
 }
 
 } // namespace conflate
