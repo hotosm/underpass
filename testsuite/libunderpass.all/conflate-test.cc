@@ -56,7 +56,7 @@ public:
         }
         postgres.query("DROP DATABASE IF EXISTS conflate_test;");
         postgres.query("CREATE DATABASE conflate_test;");
-        pq::Pq conf_db("conflate_test");
+        conf_db.connect("conflate_test");
         conf_db.query("CREATE EXTENSION postgis");
         conf_db.query("CREATE EXTENSION hstore");
 
@@ -90,7 +90,15 @@ public:
             
         return true;
     };   
+    
+    pqxx::result query(const std::string &query) {
+        if (conf_db.isOpen()) {
+            std::cerr << query << std::endl;
+            conf_db.query(query);
+        }
+    };
 
+    pq::Pq conf_db;
     std::string source_tree_root;
 };
 
@@ -104,7 +112,16 @@ main(int argc, char *argv[])
     
     Test test;
     test.init();
-    
+
+    pq::Pq conf_db("conflate_test");
+    conf_db.dump();
+    auto result = conf_db.query("SELECT COUNT(osm_id) FROM planet_osm_polygon;");
+    if (result[0][0].as(int(0)) > 10) {
+        runtest.pass("Conflate::init()");
+    } else {     
+        runtest.pass("Conflate::init()");
+    }
+
     // test.duplicate();
 }
 
