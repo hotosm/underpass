@@ -135,14 +135,16 @@ main(int argc, char *argv[])
         runtest.fail("Conflate::existingDuplicate()");
     }
 
-#if 0
     osmobjects::OsmWay way;
-    if (conf.newDuplicate(way, "foo")) {
+    boost::geometry::read_wkt("POLYGON((25.7802443 -24.6676735,25.7802581 -24.6677421,25.7803698 -24.6677236,25.7803538 -24.667644,25.7802976 -24.6676533,25.7803043 -24.6676636,25.7802443 -24.6676735))", way.polygon);
+    
+    ids = conf.newDuplicate(way, bldin);
+    if (ids->size() > 0) {
         runtest.pass("Conflate::newDuplicate()");
     } else {     
-        runtest.xfail("Conflate::newDuplicate()");
+        runtest.fail("Conflate::newDuplicate()");
     }
-#endif
+
 }
 
 // local Variables:
