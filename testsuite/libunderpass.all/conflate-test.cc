@@ -136,6 +136,7 @@ main(int argc, char *argv[])
     }
 
     osmobjects::OsmWay way;
+    way.id = 12345;
     boost::geometry::read_wkt("POLYGON((25.7802443 -24.6676735,25.7802581 -24.6677421,25.7803698 -24.6677236,25.7803538 -24.667644,25.7802976 -24.6676533,25.7803043 -24.6676636,25.7802443 -24.6676735))", way.polygon);
     
     ids = conf.newDuplicate(way, bldin);
