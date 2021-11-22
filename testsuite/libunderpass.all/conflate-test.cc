@@ -144,7 +144,13 @@ main(int argc, char *argv[])
     } else {     
         runtest.fail("Conflate::newDuplicate()");
     }
-
+    
+    ids = conf.newDuplicate(way, bldout);
+    if (ids->size() == 0) {
+        runtest.pass("Conflate::newDuplicate()");
+    } else {     
+        runtest.fail("Conflate::newDuplicate()");
+    }
 }
 
 // local Variables:

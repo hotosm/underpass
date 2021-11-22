@@ -69,7 +69,6 @@ Conflate::newDuplicate(const osmobjects::OsmWay &way, const polygon_t &poly)
     fmt % boost::geometry::wkt(way.polygon);
     fmt % way.id;
     fmt % boost::geometry::wkt(way.polygon);
-    std::cerr << fmt.str() << std::endl;
     
     result = conf_db.query(fmt.str());
     float tolerance = 0.001;   // tolerance for floating point comparisons
