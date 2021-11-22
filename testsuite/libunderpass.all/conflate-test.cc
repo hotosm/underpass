@@ -106,21 +106,43 @@ main(int argc, char *argv[])
     dbglogfile.setWriteDisk(true);
     dbglogfile.setLogFilename("conflate-test.log");
     dbglogfile.setVerbosity(3);
-    
-    conflate::Conflate conf;
 
-    if (conf.existingDuplicate("foo") == true) {
+    Test test;
+    test.init();
+    
+    conflate::Conflate conf("conflate_test");
+
+    std::string inview = "POLYGON((25.7799125 -24.6674081,25.7804301 -24.6673313,25.7807593 -24.6676784,25.7799895 -24.6678369,25.7799125 -24.6674081))";
+    polygon_t bldin;
+    boost::geometry::read_wkt(inview, bldin);
+    std::string outview = "POLYGON((25.779663 -24.6681283,25.7800424 -24.6680503,25.7801583 -24.6685156,25.779779 -24.6685937,25.779663 -24.6681283))";
+    polygon_t bldout;
+    boost::geometry::read_wkt(outview, bldout);
+
+    //There should be buildings in the specified area
+    auto ids = conf.existingDuplicate(bldin);
+    if (ids->size() > 0) {
         runtest.pass("Conflate::existingDuplicate()");
     } else {     
         runtest.fail("Conflate::existingDuplicate()");
     }
 
+    // There should be no buildings in the specified area
+    ids = conf.existingDuplicate(bldout);
+    if (ids->size() == 0) {
+        runtest.pass("Conflate::existingDuplicate()");
+    } else {     
+        runtest.fail("Conflate::existingDuplicate()");
+    }
+
+#if 0
     osmobjects::OsmWay way;
-    if (conf.newDuplicate(way, "foo") == true) {
+    if (conf.newDuplicate(way, "foo")) {
         runtest.pass("Conflate::newDuplicate()");
     } else {     
-        runtest.fail("Conflate::newDuplicate()");
+        runtest.xfail("Conflate::newDuplicate()");
     }
+#endif
 }
 
 // local Variables:
