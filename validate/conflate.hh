@@ -26,6 +26,7 @@
 #endif
 
 #include "data/osmobjects.hh"
+#include "validate/validate.hh"
 
 namespace conflate {
 
@@ -34,7 +35,7 @@ public:
     Conflate(void);
     Conflate(const std::string &dburl);
     bool newDuplicate(const osmobjects::OsmWay &way, const std::string);
-    bool existingDuplicate(const std::string);
+    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> existingDuplicate(const polygon_t &poly);
 
     pq::Pq conf_db;
 };

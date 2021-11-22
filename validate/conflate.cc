@@ -22,15 +22,22 @@
 #include "unconfig.h"
 #endif
 
+#include <boost/geometry.hpp>
+#include <boost/foreach.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+#include <vector>
+#include <deque>
+#include <cmath>
 #include "data/pq.hh"
 #include "validate/conflate.hh"
+#include "validate/validate.hh"
 #include "data/osmobjects.hh"
 
 namespace conflate {
 
 Conflate::Conflate(void)
 {
-    std::string dburl = "dbname=osm2pgsql";
+    std::string dburl = "osm2pgsql";
     conf_db.connect(dburl);
 }
 
@@ -42,13 +49,67 @@ Conflate::Conflate(const std::string &dburl)
 bool
 Conflate::newDuplicate(const osmobjects::OsmWay &way, const std::string)
 {
+    if (conf_db.isOpen()) {
+        return true;
+    }
     return false;
 }
 
-bool
-Conflate::existingDuplicate(const std::string)
+std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
+Conflate::existingDuplicate(const polygon_t &poly)
 {
-    return false;
+    auto ids = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
+    if (!conf_db.isOpen()) {
+        return ids;
+    }
+
+    // FIXME: make postgres view using the poly boundary
+    std::ostringstream bbox;
+    bbox << boost::geometry::wkt(poly);
+    // std::cerr << bbox.str() << std::endl;
+    std::string view = "CREATE VIEW boundary AS SELECT * FROM planet_osm_polygon WHERE ST_Within(way, ST_GeomFromEWKT(\'";
+    view += "SRID=4326;" + bbox.str() + "\'));";
+    // std::cerr << view << std::endl;
+    pqxx::result result = conf_db.query(view);
+    std::string query = "SELECT ST_Area(ST_INTERSECTION(g1.way, g2.way)),g1.osm_id,ST_Area(g1.way),g2.osm_id,ST_Area(g2.way) FROM boundary AS g1, planet_osm_polygon AS g2 WHERE ST_OVERLAPS(g1.way, g2.way);";
+
+    result = conf_db.query(query);
+    float tolerance = 0.001;   // tolerance for floating point comparisons
+    float threshold = 0.000000008160;
+    for (auto it = std::begin(result); it != std::end(result); ++it) {
+        bool area = false;
+        bool overlap = false;
+        osmobjects::OsmWay way1;
+        way1.id = it[1].as(long(0));
+        osmobjects::OsmWay way2;
+        way2.id = it[1].as(long(0));
+        auto status1 = std::make_shared<ValidateStatus>(way1);
+        auto status2 = std::make_shared<ValidateStatus>(way2);
+
+        float intersect = it[0].as(float(0));
+        // exact same size, so more likely to be a duplicate
+        float diff = it[2].as(float(0)) - intersect;
+        // std::cerr << "Diff: " << std::fixed << std::setprecision(12) << diff << " : " << intersect << " : " << std::endl;
+        if (diff > threshold) {
+            std::cerr << "Overlapping not duplicate: " << it[1].as(long(0)) << ", " << it[3].as(long(0)) << std::endl;
+            overlap = true;
+            status1->status.insert(overlaping);
+            status2->status.insert(overlaping);
+        }
+        if (std::fabs(it[2].as(float(0)) - it[4].as(float(0))) < tolerance) {
+            // std::cerr << "same area!" << std::endl;
+            area = true;
+        }
+        ++it;                   // skip the duplicate entries
+        if (area && !overlap) {
+            std::cerr << "Duplicates: " << it[1].as(int(0))  << ", " << it[3].as(long(0)) << std::endl;
+            status1->status.insert(duplicate);
+            status2->status.insert(duplicate);
+        }
+        ids->push_back(status1);
+        ids->push_back(status2);
+    }
+    return ids;
 }
 
 } // namespace conflate
