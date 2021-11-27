@@ -24,11 +24,13 @@ import os
 import epdb
 import logging
 import enum
+import re
 import pandas as pd
 from sqlalchemy import create_engine, text
 from sqlalchemy import Table, Column, MetaData, Integer, String, ARRAY, Boolean, DateTime
 from sqlalchemy import Enum, BigInteger
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import inspect
 
 
 #
@@ -54,10 +56,13 @@ class DesignationEnum(enum.Enum):
      civil = 'civil'
      gis = 'gis'
      director = 'director'
+     student = 'student'
+     trainer = 'trainer'
+     researcher = 'researcher'
 
 class Training(object):
     def __init__(self, db=None, host=None):
-        """Parse training data"""
+        """Initialize training database"""
         self.data = dict()
         conn = "postgresql+psycopg2://"
         if host is not None:
@@ -75,12 +80,16 @@ class Training(object):
             usermeta,
             Column('id', BigInteger),
             Column('name', String),
+            Column('username', String),
             Column('gender', Enum(GenderEnum)),
             Column('agerange', Enum(AgeEnum)),
             Column('topics', ARRAY(String)),
             Column('country', String),
-            Column('designation', Enum(DesignationEnum)),
+            # Column('designation', Enum(DesignationEnum)),
+            Column('designation', String),
             Column('organization', Integer),
+            Column('trainings', Integer),
+            Column('marginalized', String),
             Column('youthmapper', Boolean),
             )
         trainmeta = MetaData()
@@ -95,15 +104,129 @@ class Training(object):
             Column('hours', Integer),
             Column('timestamp', DateTime),
             )
+        # with self.engine.connect() as conn:
+        #     sql = insert(self.users).values(name='foobar', id=123456)
+        #     sql = sql.on_conflict_do_update(
+        #         index_elements=['id'],
+        #         set_=dict(id=123456, name='barfoo', gender='nonbinary')
+        #     )
+        #     print(sql)
+        #     result = conn.execute(sql)
+        # #     print(result.all())
+
+    def userColumns(self, user=dict()):
+        """Convert the strings from the spreadsheet header into the database column"""
+        newuser = dict()
+        i = 0
+        for col in user:
+            if col == 'id':
+                newuser['id'] = user[col]
+                continue
+            reg = re.compile("^Name .*")
+            if reg.match(col):
+                newuser['name'] = user[col]
+                continue
+            reg = re.compile("^OSM .*")
+            if reg.match(col):
+                newuser['username'] = user[col]
+                continue
+            reg = re.compile("^Designation .*")
+            if type(user[col]) == float:
+                newuser['designation'] = ""
+            else:
+                newuser['designation'] = user[col]
+            # if reg.match(col):
+            #     reg = re.compile("^Geomatics .*")
+            #     if re.match(user[col]):
+            #         newuser['designation'] = "gis"
+            #         continue
+            #     reg = re.compile("^Civil .*")
+            #     if re.match(user[col]):
+            #         newuser['designation'] = "civil"
+            #         continue
+            #     reg = re.compile(".* Director")
+            #     if re.match(user[col]):
+            #         newuser['designation'] = "director"
+            #         continue
+            #     reg = re.compile("^Research .*")
+            #     if re.match(user[col]):
+            #         newuser['designation'] = "director"
+            #         continue
+            reg = re.compile("^Country .*")
+            if reg.match(col):
+                # FIXME: this needs the geoboundaries table
+                newuser['country'] = 0
+                # newuser['country'] = user[col]
+                continue
+            reg = re.compile("^Are you a Youth .*")
+            if reg.match(col):
+                if user[col] == "Yes":
+                    newuser['youthmapper'] = True
+                elif user[col] == "No":
+                    newuser['youthmapper'] = False
+                continue
+
+            reg = re.compile("^Is this .*")
+            if reg.match(col):
+                if user[col] == "Yes":
+                    newuser['trainings'] = 1
+                elif user[col] == "No":
+                    newuser['trainings'] = 0
+                continue
+            # reg = re.compile("^Are you a member .*")
+            reg = re.compile("If YES, .*")
+            if reg.match(col):
+                if type(user[col]) != float:
+                    newuser['marginalized'] = user[col]
+                else:
+                    newuser['marginalized'] = ""
+                continue
+            reg = re.compile("^Gender")
+            if reg.match(col):
+                newuser['gender'] = user[col].lower()
+                continue
+            reg = re.compile("^Age .*")
+            if reg.match(col):
+                if col == "10-14":
+                    newuser['agerange'] = 'child'
+                elif col == "15-24":
+                    newuser['agerange'] = 'teen'
+                elif col == "25-40":
+                    newuser['agerange'] = 'adult'
+                elif col == "40+":
+                    newuser['agerange'] = 'mature'
+                continue
+            #newuser[col] = user[col]
+            # FIXME: tthis needs a populated organization table
+            reg = re.compile("^Organ.*")
+            if reg.match(col):
+                newuser['organization'] = 0
+                continue
+            i = i + 1
+
+        return newuser
+
+    def updateUser(self, user=dict()):
+        """Update the user table in the galaxy database"""
+        values = training.userColumns(data)
         with self.engine.connect() as conn:
-            sql = insert(self.users).values(name='foobar', id=123456)
+            sql = insert(self.users).values(values)
+            sql = sql.on_conflict_do_update(
+                index_elements=['id'],
+                set_=dict(values)
+            )
+            print(sql)
+            result = conn.execute(sql)
+
+    def updateOrganization(self, org=dict()):
+        with self.engine.connect() as conn:
+            sql = insert(self.training).values(name='foobar', id=123456)
             sql = sql.on_conflict_do_update(
                 index_elements=['id'],
                 set_=dict(id=123456, name='barfoo', gender='nonbinary')
             )
             print(sql)
             result = conn.execute(sql)
-        #     print(result.all())
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='import training spreadsheet into Galaxy database')
@@ -155,7 +278,8 @@ if __name__ == '__main__':
                         head2[i] = "id"
                     data[head2[i]] = row[i]
                     i = i + 1
-                print(data)
+                #print(data)
+                training.updateUser(data)
             else:
                 head2 = df.iloc[index + 1]
                 df.columns = head2
