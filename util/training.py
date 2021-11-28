@@ -27,7 +27,7 @@ import enum
 import re
 import pandas as pd
 from sqlalchemy import create_engine, text
-from sqlalchemy import Table, Column, MetaData, Integer, String, ARRAY, Boolean, DateTime
+from sqlalchemy import Table, Column, MetaData, Integer, String, ARRAY, Boolean, Date
 from sqlalchemy import Enum, BigInteger, Sequence
 from sqlalchemy.dialects.postgresql import insert
 
@@ -73,6 +73,15 @@ class DesignationEnum(enum.Enum):
      student = 'student'
      trainer = 'trainer'
      researcher = 'researcher'
+
+class TypeEnum(enum.Enum):
+    virtual = 'virtual'
+    inperson = 'inperson'
+
+class TopicEnum(enum.Enum):
+    remote = 'remote'
+    field = 'field'
+    other = 'other'
 
 
 class Training(object):
@@ -120,13 +129,15 @@ class Training(object):
         self.training = Table(
             "training",
             trainmeta,
+            Column('tid', Integer, Sequence('tid_seq')),
             Column('name', String),
             Column('topics', ARRAY(String)),
             Column('location', String),
-            Column('type', Boolean),
             Column('organization', Integer),
+            Column('eventtype', Enum(TypeEnum)),
+            Column('topictype', Enum(TopicEnum)),
             Column('hours', Integer),
-            Column('timestamp', DateTime),
+            Column('date', Date),
             )
 
     def getCountryID(self, name=None):
@@ -146,8 +157,50 @@ class Training(object):
                     sql = "SELECT MAX(oid) FROM organizations;"
                     result = conn.execute(text(sql))
                     ans = result.fetchone()[0]
-                print(ans)
                 return None
+
+    def trainingColumns(self, train=dict()):
+        """Convert the strings from the spreadsheet header into the database column"""
+        newtrain = dict()
+        print(train)
+        for col in train:
+            print(col)
+            if type(col) == float:
+                newtrain['topics'] = train[col]
+                continue
+            reg = re.compile("^Name .*")
+            if reg.match(col):
+                newtrain['name'] = train[col]
+                continue
+            reg = re.compile("^Date .*")
+            if reg.match(col):
+                newtrain['date'] = train[col]
+                continue
+            reg = re.compile("^.* location")
+            if reg.match(col):
+                newtrain['location'] = train[col]
+                continue
+            reg = re.compile("^.* type")
+            if reg.match(col):
+                if train[col].lower() == "face-to-face":
+                    newtrain['eventtype'] = "inperson"
+                    continue
+                if train[col].lower() == "remote":
+                    newtrain['eventtype'] = "virtual"
+                    continue
+                continue
+            reg = re.compile("^Topic")
+            if reg.match(col):
+                if train[col].lower() == "remote mapping":
+                    newtrain['topictype'] = "remote"
+                    continue
+                if train[col].lower() == "field mapping":
+                    newtrain['topictype'] = "field"
+                    continue
+                if train[col].lower() == "other":
+                    newtrain['topictype'] = "other"
+                    continue
+        return newtrain
 
     def userColumns(self, user=dict()):
         """Convert the strings from the spreadsheet header into the database column"""
@@ -247,10 +300,23 @@ class Training(object):
 
         return newuser
 
+    def updateTraining(self, training=dict()):
+        """Update the training table in the galaxy database"""
+        if len(training) == 0:
+            return None
+        values = self.trainingColumns(data)
+        with self.engine.connect() as conn:
+            sql = insert(self.training).values(values)
+            sql = sql.on_conflict_do_update(
+                index_elements=['tid'],
+                set_=dict(values)
+            )
+            print(sql)
+            result = conn.execute(sql)
+
     def updateUser(self, user=dict()):
         """Update the user table in the galaxy database"""
-        values = training.userColumns(data)
-        print(values)
+        values = self.userColumns(data)
         with self.engine.connect() as conn:
             sql = insert(self.users).values(values)
             sql = sql.on_conflict_do_update(
@@ -275,7 +341,6 @@ class Training(object):
                 index_elements=['name'],
                 set_=dict(values)
             )
-            print(sql)
             result = conn.execute(sql)
 
 if __name__ == '__main__':
@@ -314,8 +379,18 @@ if __name__ == '__main__':
     df.dropna(how="any")
     head1 = df.iloc[0]
     # print(head1)
+    data = dict()
     for index, row in df.iterrows():
-        data = dict()
+        if type(row['Events log']) == float:
+            if type(row[1]) == float:
+                print(data)
+                training.updateTraining(data)
+                #data = dict()
+                continue
+            key = row[1]
+            value = row[2]
+            data[key] = value
+        continue
         if type(row[0]) == str:
             if row[0].isdigit():
                 i = 0
