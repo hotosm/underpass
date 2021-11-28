@@ -156,8 +156,7 @@ ChangeSetFile::readChanges(const std::string &file)
                            //    if (file[0] == 0x1f) {
         change.open(file, std::ifstream::in | std::ifstream::binary);
         try {
-            boost::iostreams::filtering_streambuf<boost::iostreams::input>
-                inbuf;
+            boost::iostreams::filtering_streambuf<boost::iostreams::input>inbuf;
             inbuf.push(boost::iostreams::gzip_decompressor());
             inbuf.push(ifile);
             std::istream instream(&inbuf);
@@ -478,8 +477,7 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
                     std::vector<std::string> result;
                     boost::split(result, attr_pair.value,
                                  boost::is_any_of(" "));
-                    for (auto it = std::begin(result); it != std::end(result);
-                         ++it) {
+                    for (auto it = std::begin(result); it != std::end(result); ++it) {
                         int i = 0;
                         while (++i < it->size()) {
                             // if (std::isalpha(it->at(i))) {
