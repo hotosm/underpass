@@ -193,7 +193,8 @@ Pq::query(const std::string &query)
             return result;
         }
     }
-    pqxx::work worker(*sdb);
+    // pqxx::workker(*sdb);
+    pqxx::nontransaction worker(*sdb);
     result = worker.exec(query);
     worker.commit();
     return result;
