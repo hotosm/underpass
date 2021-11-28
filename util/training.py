@@ -28,14 +28,29 @@ import re
 import pandas as pd
 from sqlalchemy import create_engine, text
 from sqlalchemy import Table, Column, MetaData, Integer, String, ARRAY, Boolean, DateTime
-from sqlalchemy import Enum, BigInteger
+from sqlalchemy import Enum, BigInteger, Sequence
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import inspect
 
 
 #
 # These enums match what the database schema also supports
 #
+class UnitEnum(enum.Enum):
+    country = 'country'
+    region = 'region'
+    microgrant = 'microgrant'
+    organization = 'organization'
+    osm = 'osm'
+    boundary = 'boundary'
+    campaign = 'campaign'
+    hot = 'hot'
+
+class SegmentEnum(enum.Enum):
+    new_existing = 'new_existing'
+    youth = 'youuth_mappers'
+    ngo = 'ngo'
+    government = 'government'
+
 class GenderEnum(enum.Enum):
     male = 'male'
     female = 'female'
@@ -48,7 +63,6 @@ class AgeEnum(enum.Enum):
     teen = '15-24'
     adult = '25-40'
     mature = '41+'
-
     
 class DesignationEnum(enum.Enum):
      volunteer = 'volunteer'
@@ -59,6 +73,7 @@ class DesignationEnum(enum.Enum):
      student = 'student'
      trainer = 'trainer'
      researcher = 'researcher'
+
 
 class Training(object):
     def __init__(self, db=None, host=None):
@@ -74,6 +89,15 @@ class Training(object):
         else:
             conn += db
         self.engine = create_engine(conn)
+        orgmeta = MetaData()
+        self.orgs = Table(
+            "organizations",
+            orgmeta,
+            Column('oid', Integer, Sequence('oid_seq')),
+            Column('name', String),
+            Column('unit', Enum(UnitEnum)),
+            Column('trainee', Enum(SegmentEnum)),
+            )
         usermeta = MetaData()
         self.users = Table(
             "users",
@@ -104,15 +128,26 @@ class Training(object):
             Column('hours', Integer),
             Column('timestamp', DateTime),
             )
-        # with self.engine.connect() as conn:
-        #     sql = insert(self.users).values(name='foobar', id=123456)
-        #     sql = sql.on_conflict_do_update(
-        #         index_elements=['id'],
-        #         set_=dict(id=123456, name='barfoo', gender='nonbinary')
-        #     )
-        #     print(sql)
-        #     result = conn.execute(sql)
-        # #     print(result.all())
+
+    def getCountryID(self, name=None):
+        with self.engine.connect() as conn:
+            if name and type(name) == str:
+                sql = "SELECT cid FROM geoboundaries WHERE name=\'" + name + "\';"
+                result = conn.execute(text(sql))
+                return result.fetchone()[0]
+
+    def getOrgID(self, name=None):
+        with self.engine.connect() as conn:
+            if name and type(name) == str:
+                sql = "SELECT oid FROM organizations WHERE name=\'" + name + "\';"
+                result = conn.execute(text(sql))
+                ans = result.fetchone()
+                if ans is None:
+                    sql = "SELECT MAX(oid) FROM organizations;"
+                    result = conn.execute(text(sql))
+                    ans = result.fetchone()[0]
+                print(ans)
+                return None
 
     def userColumns(self, user=dict()):
         """Convert the strings from the spreadsheet header into the database column"""
@@ -135,6 +170,7 @@ class Training(object):
                 newuser['designation'] = ""
             else:
                 newuser['designation'] = user[col]
+            # FIXME: waiting for input about defined values...
             # if reg.match(col):
             #     reg = re.compile("^Geomatics .*")
             #     if re.match(user[col]):
@@ -154,8 +190,11 @@ class Training(object):
             #         continue
             reg = re.compile("^Country .*")
             if reg.match(col):
-                # FIXME: this needs the geoboundaries table
-                newuser['country'] = 0
+                cid = training.getCountryID(user[col])
+                if cid is None:
+                    newuser['country'] = 0
+                else:
+                    newuser['country'] = cid
                 # newuser['country'] = user[col]
                 continue
             reg = re.compile("^Are you a Youth .*")
@@ -197,10 +236,12 @@ class Training(object):
                     newuser['agerange'] = 'mature'
                 continue
             #newuser[col] = user[col]
-            # FIXME: tthis needs a populated organization table
+            # FIXME: there may be multiple organizations, delimited by a comma
             reg = re.compile("^Organ.*")
             if reg.match(col):
-                newuser['organization'] = 0
+                oid = training.getOrgID(col)
+                training.updateOrganization(user[col], oid)
+                newuser['organization'] = oid
                 continue
             i = i + 1
 
@@ -209,21 +250,30 @@ class Training(object):
     def updateUser(self, user=dict()):
         """Update the user table in the galaxy database"""
         values = training.userColumns(data)
+        print(values)
         with self.engine.connect() as conn:
             sql = insert(self.users).values(values)
             sql = sql.on_conflict_do_update(
                 index_elements=['id'],
                 set_=dict(values)
             )
-            print(sql)
+            # print(sql)
             result = conn.execute(sql)
 
-    def updateOrganization(self, org=dict()):
+    def updateOrganization(self, org=None, oid=None):
         with self.engine.connect() as conn:
-            sql = insert(self.training).values(name='foobar', id=123456)
+            values = dict()
+            # values['oid'] = oid
+            if type(org) == str:
+                if org == "-":
+                    return
+                values['name'] = org.strip()
+            else:
+                return
+            sql = insert(self.orgs).values(values)
             sql = sql.on_conflict_do_update(
-                index_elements=['id'],
-                set_=dict(id=123456, name='barfoo', gender='nonbinary')
+                index_elements=['name'],
+                set_=dict(values)
             )
             print(sql)
             result = conn.execute(sql)
@@ -257,16 +307,13 @@ if __name__ == '__main__':
         df_sheet_all = pd.read_excel(args.infile, sheet_name=None)
         for name,foo in df_sheet_all.items():
             #print(name)
-            sheet = pd.read_excel(args.infile, sheet_name='20210423')
+            sheet = pd.read_excel(args.infile)
     else:
         df = pd.read_csv(args.infile)
         
     df.dropna(how="any")
     head1 = df.iloc[0]
-    print(head1)
-    for col in df.columns:
-        print(col)
-        
+    # print(head1)
     for index, row in df.iterrows():
         data = dict()
         if type(row[0]) == str:
