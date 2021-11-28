@@ -46,6 +46,12 @@ Conflate::Conflate(const std::string &dburl)
     conf_db.connect(dburl);
 }
 
+bool
+Conflate::connect(const std::string &dburl)
+{
+    return conf_db.connect(dburl);
+}
+
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 Conflate::newDuplicate(const osmobjects::OsmWay &way, const polygon_t &poly)
 {

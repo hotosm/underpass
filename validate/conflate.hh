@@ -34,6 +34,8 @@ class Conflate {
 public:
     Conflate(void);
     Conflate(const std::string &dburl);
+    bool connect(const std::string &dburl);
+
     std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> newDuplicate(const osmobjects::OsmWay &way, const polygon_t &poly);
     std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> existingDuplicate(const polygon_t &poly);
 
