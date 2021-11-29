@@ -102,7 +102,8 @@ class Training(object):
         self.orgs = Table(
             "organizations",
             orgmeta,
-            Column('oid', Integer, Sequence('oid_seq')),
+            # Column('oid', Integer, Sequence('oid_seq')),
+            Column('oid', Integer),
             Column('name', String),
             Column('unit', Enum(UnitEnum)),
             Column('trainee', Enum(SegmentEnum)),
@@ -129,7 +130,8 @@ class Training(object):
         self.training = Table(
             "training",
             trainmeta,
-            Column('tid', Integer, Sequence('tid_seq')),
+            # Column('tid', Integer, Sequence('tid_seq')),
+            Column('tid', Integer),
             Column('name', String),
             Column('topics', ARRAY(String)),
             Column('location', String),
@@ -147,24 +149,51 @@ class Training(object):
                 result = conn.execute(text(sql))
                 return result.fetchone()[0]
 
-    def getOrgID(self, name=None):
+    def getUserID(self, name=None):
         with self.engine.connect() as conn:
             if name and type(name) == str:
-                sql = "SELECT oid FROM organizations WHERE name=\'" + name + "\';"
+                sql = "SELECT id FROM users WHERE name=\'" + name + "\';"
+                result = conn.execute(text(sql))
+                return result.fetchone()[0]
+
+    def getOrgID(self, name=None):
+        with self.engine.connect() as conn:
+            if type(name) == float:
+                return None
+            sql = "SELECT oid FROM organizations WHERE name=\'" + name + "\';"
+            result = conn.execute(text(sql))
+            ans = result.fetchone()
+            if ans is None:
+                sql = "SELECT COUNT(oid)+1 FROM organizations;"
                 result = conn.execute(text(sql))
                 ans = result.fetchone()
-                if ans is None:
-                    sql = "SELECT MAX(oid) FROM organizations;"
-                    result = conn.execute(text(sql))
-                    ans = result.fetchone()[0]
-                return None
+                if ans[0] is None:
+                    return 0
+            return ans[0]
+
+    def getTrainingID(self, data=None):
+        with self.engine.connect() as conn:
+            sql = "SELECT tid FROM training WHERE name=\'" + data['name'] + "\' AND date=\'" + data['date'] + "\';"
+            result = conn.execute(text(sql))
+            ans = result.fetchone()
+            if ans is None:
+                sql = "SELECT MAX(tid)+1 FROM training;"
+                result = conn.execute(text(sql))
+                ans = result.fetchone()
+                if ans[0]is None:
+                    return 0
+            return ans[0]
+
+    def orgColumns(self, org=dict()):
+        for col in train:
+            print(col)
 
     def trainingColumns(self, train=dict()):
         """Convert the strings from the spreadsheet header into the database column"""
         newtrain = dict()
-        print(train)
+        # print(train)
         for col in train:
-            print(col)
+            # print(col)
             if type(col) == float:
                 newtrain['topics'] = train[col]
                 continue
@@ -292,9 +321,12 @@ class Training(object):
             # FIXME: there may be multiple organizations, delimited by a comma
             reg = re.compile("^Organ.*")
             if reg.match(col):
-                oid = training.getOrgID(col)
-                training.updateOrganization(user[col], oid)
-                newuser['organization'] = oid
+                oid = self.getOrgID(user[col])
+                neworg = dict()
+                if oid is not None:
+                    neworg['oid'] = oid
+                    neworg['name'] = user[col].strip()
+                    self.updateOrganization(neworg)
                 continue
             i = i + 1
 
@@ -304,42 +336,35 @@ class Training(object):
         """Update the training table in the galaxy database"""
         if len(training) == 0:
             return None
-        values = self.trainingColumns(data)
+        values = self.trainingColumns(training)
+        values['tid'] = self.getTrainingID(values)
         with self.engine.connect() as conn:
             sql = insert(self.training).values(values)
             sql = sql.on_conflict_do_update(
                 index_elements=['tid'],
                 set_=dict(values)
             )
-            print(sql)
             result = conn.execute(sql)
 
     def updateUser(self, user=dict()):
         """Update the user table in the galaxy database"""
-        values = self.userColumns(data)
+        values = self.userColumns(user)
         with self.engine.connect() as conn:
             sql = insert(self.users).values(values)
             sql = sql.on_conflict_do_update(
                 index_elements=['id'],
                 set_=dict(values)
             )
-            # print(sql)
             result = conn.execute(sql)
 
-    def updateOrganization(self, org=None, oid=None):
+    def updateOrganization(self, data=dict()):
+        if data['name'] == "-":
+            return None
         with self.engine.connect() as conn:
-            values = dict()
-            # values['oid'] = oid
-            if type(org) == str:
-                if org == "-":
-                    return
-                values['name'] = org.strip()
-            else:
-                return
-            sql = insert(self.orgs).values(values)
+            sql = insert(self.orgs).values(data)
             sql = sql.on_conflict_do_update(
                 index_elements=['name'],
-                set_=dict(values)
+                set_=dict(data)
             )
             result = conn.execute(sql)
 
@@ -371,8 +396,7 @@ if __name__ == '__main__':
         df = pd.read_excel(args.infile)
         df_sheet_all = pd.read_excel(args.infile, sheet_name=None)
         for name,foo in df_sheet_all.items():
-            #print(name)
-            sheet = pd.read_excel(args.infile)
+            sheet = pd.read_excel(args.infile, sheet_name=name)
     else:
         df = pd.read_csv(args.infile)
         
@@ -381,16 +405,16 @@ if __name__ == '__main__':
     # print(head1)
     data = dict()
     for index, row in df.iterrows():
+        if len(row) <= 1:
+            break
         if type(row['Events log']) == float:
             if type(row[1]) == float:
-                print(data)
                 training.updateTraining(data)
-                #data = dict()
                 continue
             key = row[1]
             value = row[2]
             data[key] = value
-        continue
+            continue
         if type(row[0]) == str:
             if row[0].isdigit():
                 i = 0
@@ -400,7 +424,6 @@ if __name__ == '__main__':
                         head2[i] = "id"
                     data[head2[i]] = row[i]
                     i = i + 1
-                #print(data)
                 training.updateUser(data)
             else:
                 head2 = df.iloc[index + 1]
