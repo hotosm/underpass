@@ -211,7 +211,7 @@ OsmChangeFile::readXML(std::istream &xml)
                 change.ways.push_back(object);
             } else if (child.first == "relation") {
                 auto object = std::make_shared<OsmRelation>();
-                g change.relations.push_back(object);
+                change.relations.push_back(object);
             }
 
             // Process the attributes, which do exist in every element
@@ -665,10 +665,10 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                         ostats->added[tag] += length;
                         ostats->added[*hit]++;
                     } else if (way->action == osmobjects::modify) {
-			if (length > 0) {
-			    ostats->modified[tag] += length;
-			}
-			ostats->modified[*hit]++;
+                        if (length > 0) {
+                            ostats->modified[tag] += length;
+                        }
+                        ostats->modified[*hit]++;
                     }
                 } else if (*hit == "building" || *hit == "amenity") {
                     polygon_t poly;
@@ -684,6 +684,11 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                         log_debug(
                             _("Changeset with way %1% is in a priority area"),
                             way->change_id);
+                            if (way->action == osmobjects::create) {
+                                ostats->added[*hit]++;
+                            } else if (way->action == osmobjects::modify) {
+                                ostats->modified[*hit]++;
+                            }
                     }
                 }
             }
