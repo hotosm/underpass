@@ -80,6 +80,9 @@ CREATE TABLE public.ground_data (
     location public.geometry
 );
 
+CREATE TYPE public.gendertype AS ENUM ('male', 'female', 'nonbinary', 'other', 'private');
+CREATE TYPE public.agetype AS ENUM ('child', 'teen', 'adult', 'mature');
+CREATE TYPE public.destype AS ENUM ('volunteer', 'intern', 'civil', 'gis', 'director');
 CREATE TABLE public.users (
     id bigint NOT NULL,
     username varchar,
@@ -92,8 +95,14 @@ CREATE TABLE public.users (
     tasks_invalidated integer,
     projects_mapped integer[],
     mapping_level integer,
-    gender int4,
-    age real,
+    gender gendertype,
+    agerange agetype,
+    organization int,
+    trainings int,
+    marginalized varchar,
+    country int,
+    youthmapper bool,
+    designation varchar,
     access int4,
     home public.geometry(Point,4326)
 );
@@ -104,13 +113,18 @@ ALTER TABLE ONLY public.users
 --
 -- possible table for training data
 --
+CREATE TYPE public.eventtype AS ENUM ('virtual', 'inperson');
+CREATE TYPE public.eventtopic AS ENUM ('remote', 'field', 'other');
 CREATE TABLE public.training (
-    name text,
-    local boolean,
-    organization oid,
-    topics text[],
-    hours integer,
-    timestamp timestamp with time zone
+       tid integer PRIMARY KEY,
+       name text,
+       location varchar,
+       organization oid,
+       eventtype public.eventtype,
+       topictype public.eventtopic,
+       topics text[],
+       hours integer,
+       date date
 );
 CREATE TYPE public.units AS ENUM (
        'country',
@@ -128,10 +142,12 @@ CREATE TYPE public.segments AS ENUM (
        'ngo',
        'government'
 );
-CREATE TABLE public.organization (
-       name text,
+CREATE TABLE public.organizations (
+       name text PRIMARY KEY,
        oid int,
        unit public.units,
        trainee public.segments
 );
 
+CREATE SEQUENCE oid_seq INCREMENT 1 START 1;
+CREATE SEQUENCE tid_seq INCREMENT 1 START 1;
