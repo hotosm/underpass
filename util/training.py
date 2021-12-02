@@ -148,7 +148,10 @@ class Training(object):
             if name and type(name) == str:
                 sql = "SELECT cid FROM geoboundaries WHERE name=\'" + name + "\';"
                 result = conn.execute(text(sql))
-                return result.fetchone()[0]
+                ans = result.fetchone()
+                if ans is None:
+                    return 0
+            return ans[0]
 
     def getUserID(self, name=None):
         with self.engine.connect() as conn:
@@ -356,6 +359,7 @@ class Training(object):
             return None
         values = self.trainingColumns(training)
         values['tid'] = self.getTrainingID(values)
+        # print(values)
         with self.engine.connect() as conn:
             sql = insert(self.training).values(values)
             sql = sql.on_conflict_do_update(
@@ -367,8 +371,9 @@ class Training(object):
     def updateUser(self, user=dict()):
         """Update the user table in the galaxy database"""
         values = self.userColumns(user)
+        if values['gender'] == "nan":
+            return
         values['id'] = self.getUserID(values['name'])
-        print(values)
         with self.engine.connect() as conn:
             sql = insert(self.users).values(values)
             sql = sql.on_conflict_do_update(
@@ -407,11 +412,10 @@ class Training(object):
                 value = row[2]
                 data[key] = value
                 continue
-            #if type(row[0]) == str:
             if str(row[0]).isdigit():
                 i = 0
                 while i < head2.size:
-                    print("FIXME: %r, %r" % (head2[i], row[i]))
+                    # print("FIXME: %r, %r" % (head2[i], row[i]))
                     if type(head2[i]) == float:
                         head2[i] = "id"
                     data[head2[i]] = str(row[i])
