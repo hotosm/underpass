@@ -30,6 +30,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy import Table, Column, MetaData, Integer, String, ARRAY, Boolean, Date
 from sqlalchemy import Enum, BigInteger, Sequence
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import SQLAlchemyError
 
 
 #
@@ -139,7 +140,7 @@ class Training(object):
             Column('eventtype', Enum(TypeEnum)),
             Column('topictype', Enum(TopicEnum)),
             Column('hours', Integer),
-            Column('date', Date),
+            Column('date', String),
             )
 
     def getCountryID(self, name=None):
@@ -154,7 +155,14 @@ class Training(object):
             if name and type(name) == str:
                 sql = "SELECT id FROM users WHERE name=\'" + name + "\';"
                 result = conn.execute(text(sql))
-                return result.fetchone()[0]
+                ans = result.fetchone()
+                if ans is None:
+                    sql = "SELECT COUNT(id)+1 FROM users;"
+                    result = conn.execute(text(sql))
+                    ans = result.fetchone()
+                if ans[0] is None:
+                    return 0
+            return ans[0]
 
     def getOrgID(self, name=None):
         with self.engine.connect() as conn:
@@ -173,8 +181,14 @@ class Training(object):
 
     def getTrainingID(self, data=None):
         with self.engine.connect() as conn:
-            sql = "SELECT tid FROM training WHERE name=\'" + data['name'] + "\' AND date=\'" + data['date'] + "\';"
-            result = conn.execute(text(sql))
+            if 'date' not in data:
+                return 0
+            sql = "SELECT tid FROM training WHERE name=\'" + data['name'] + "\' AND date=\'" + str(data['date']) + "\';"
+            try:
+                result = conn.execute(text(sql))
+            except SQLAlchemyError as e:
+                print("ERROR: %r" % e)
+                return 0
             ans = result.fetchone()
             if ans is None:
                 sql = "SELECT MAX(tid)+1 FROM training;"
@@ -191,9 +205,12 @@ class Training(object):
     def trainingColumns(self, train=dict()):
         """Convert the strings from the spreadsheet header into the database column"""
         newtrain = dict()
-        # print(train)
         for col in train:
-            # print(col)
+            if type(col) != str:
+                #print("TYPE: %r" % type(col))
+                pass
+            if type(col) == int:
+                continue
             if type(col) == float:
                 newtrain['topics'] = train[col]
                 continue
@@ -304,7 +321,8 @@ class Training(object):
                 continue
             reg = re.compile("^Gender")
             if reg.match(col):
-                newuser['gender'] = user[col].lower()
+                if type(user[col]) != float:
+                    newuser['gender'] = user[col].lower()
                 continue
             reg = re.compile("^Age .*")
             if reg.match(col):
@@ -349,6 +367,8 @@ class Training(object):
     def updateUser(self, user=dict()):
         """Update the user table in the galaxy database"""
         values = self.userColumns(user)
+        values['id'] = self.getUserID(values['name'])
+        print(values)
         with self.engine.connect() as conn:
             sql = insert(self.users).values(values)
             sql = sql.on_conflict_do_update(
@@ -367,6 +387,39 @@ class Training(object):
                 set_=dict(data)
             )
             result = conn.execute(sql)
+
+    def parseFile(self, df=None):
+        df.dropna(how="all")
+        head1 = df.iloc[0]
+        data = dict()
+        for index, row in df.iterrows():
+            if len(row) <= 1:
+                break
+            if 'Events log' not in row:
+                continue
+            if str(row['Events log']) == 'nan':
+                # print(row)
+                if str(row[1]) == 'nan':
+                    self.updateTraining(data)
+                    data.clear()
+                    continue
+                key = row[1]
+                value = row[2]
+                data[key] = value
+                continue
+            #if type(row[0]) == str:
+            if str(row[0]).isdigit():
+                i = 0
+                while i < head2.size:
+                    print("FIXME: %r, %r" % (head2[i], row[i]))
+                    if type(head2[i]) == float:
+                        head2[i] = "id"
+                    data[head2[i]] = str(row[i])
+                    i = i + 1
+                self.updateUser(data)
+            else:
+                head2 = df.iloc[index + 1]
+                df.columns = head2
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='import training spreadsheet into Galaxy database')
@@ -397,34 +450,7 @@ if __name__ == '__main__':
         df_sheet_all = pd.read_excel(args.infile, sheet_name=None)
         for name,foo in df_sheet_all.items():
             sheet = pd.read_excel(args.infile, sheet_name=name)
+            training.parseFile(sheet)
     else:
         df = pd.read_csv(args.infile)
-        
-    df.dropna(how="any")
-    head1 = df.iloc[0]
-    # print(head1)
-    data = dict()
-    for index, row in df.iterrows():
-        if len(row) <= 1:
-            break
-        if type(row['Events log']) == float:
-            if type(row[1]) == float:
-                training.updateTraining(data)
-                continue
-            key = row[1]
-            value = row[2]
-            data[key] = value
-            continue
-        if type(row[0]) == str:
-            if row[0].isdigit():
-                i = 0
-                while i < head2.size:
-                    # print("FIXME: %r" % row[i])
-                    if type(head2[i]) == float:
-                        head2[i] = "id"
-                    data[head2[i]] = row[i]
-                    i = i + 1
-                training.updateUser(data)
-            else:
-                head2 = df.iloc[index + 1]
-                df.columns = head2
+        training.parseFile(df)
