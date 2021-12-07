@@ -224,6 +224,14 @@ class Training(object):
             reg = re.compile("^Event number")
             if reg.match(col):
                 continue
+            reg = re.compile("^First .*")
+            if reg.match(col):
+                newtrain['name'] = train[col]
+                continue
+            reg = re.compile("^Last .*")
+            if reg.match(col):
+                newtrain['name'] += " " + train[col]
+                continue
             reg = re.compile("^Name .*")
             if reg.match(col):
                 newtrain['name'] = train[col]
@@ -268,6 +276,14 @@ class Training(object):
                 continue
             if col == 'id':
                 newuser['id'] = user[col]
+                continue
+            reg = re.compile("^First .*")
+            if reg.match(col):
+                newuser['name'] = user[col]
+                continue
+            reg = re.compile("^Last .*")
+            if reg.match(col):
+                newuser['name'] += " " + user[col]
                 continue
             reg = re.compile("^Name .*")
             if reg.match(col):
