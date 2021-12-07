@@ -57,6 +57,7 @@ class GenderEnum(enum.Enum):
     female = 'female'
     nonbinary =  'nonbinary'
     other = 'other'
+    others = 'others'
     private = 'private'
 
 class AgeEnum(enum.Enum):
@@ -86,19 +87,16 @@ class TopicEnum(enum.Enum):
 
 
 class Training(object):
-    def __init__(self, db=None, host=None):
+    def __init__(self, dburl=None):
         """Initialize training database"""
         self.data = dict()
-        conn = "postgresql+psycopg2://"
-        if host is not None:
-            conn += host + "/"
-        else:
-            conn += "localhost/"
-        if db is None:
-            conn += "galaxy"
-        else:
-            conn += db
-        self.engine = create_engine(conn)
+        conn = "postgresql+psycopg2://" + dburl
+        try:
+            # self.engine = create_engine(conn, echo=True)
+            self.engine = create_engine(conn)
+            logging.info("Connected to: %r" % conn)
+        except InternalError:
+            logging.error("Couldn't connect to " + conn)
         orgmeta = MetaData()
         self.orgs = Table(
             "organizations",
@@ -184,9 +182,14 @@ class Training(object):
 
     def getTrainingID(self, data=None):
         with self.engine.connect() as conn:
-            if 'date' not in data:
+            if 'date' not in data or type(data['name']) == float:
                 return 0
-            sql = "SELECT tid FROM training WHERE name=\'" + data['name'] + "\' AND date=\'" + str(data['date']) + "\';"
+            try:
+                sql = "SELECT tid FROM training WHERE name=\'" + data['name'] + "\' AND date=\'" + str(data['date']) + "\';"
+            except e:
+                print("ERROR: %r" % e)
+                return 0
+
             try:
                 result = conn.execute(text(sql))
             except SQLAlchemyError as e:
@@ -209,13 +212,17 @@ class Training(object):
         """Convert the strings from the spreadsheet header into the database column"""
         newtrain = dict()
         for col in train:
-            if type(col) != str:
-                #print("TYPE: %r" % type(col))
-                pass
+            if type(col) == float:
+                continue
+            if type(train[col]) == float:
+                continue
             if type(col) == int:
                 continue
             if type(col) == float:
                 newtrain['topics'] = train[col]
+                continue
+            reg = re.compile("^Event number")
+            if reg.match(col):
                 continue
             reg = re.compile("^Name .*")
             if reg.match(col):
@@ -249,6 +256,7 @@ class Training(object):
                 if train[col].lower() == "other":
                     newtrain['topictype'] = "other"
                     continue
+        logging.debug(newtrain)
         return newtrain
 
     def userColumns(self, user=dict()):
@@ -256,6 +264,8 @@ class Training(object):
         newuser = dict()
         i = 0
         for col in user:
+            if str(col) == 'nan':
+                continue
             if col == 'id':
                 newuser['id'] = user[col]
                 continue
@@ -324,8 +334,14 @@ class Training(object):
                 continue
             reg = re.compile("^Gender")
             if reg.match(col):
-                if type(user[col]) != float:
-                    newuser['gender'] = user[col].lower()
+                reg = re.compile("^Prefer .*")
+                if reg.match(user[col]):
+                    user[col] = "private"
+                elif user[col].lower() == "non-binary":
+                    user[col] = "nonbinary"
+                elif user[col].lower() == "others":
+                    user[col] = "other"
+                newuser['gender'] = user[col].lower()
                 continue
             reg = re.compile("^Age .*")
             if reg.match(col):
@@ -397,7 +413,9 @@ class Training(object):
         df.dropna(how="all")
         head1 = df.iloc[0]
         data = dict()
+        head2 = df.iloc[6]
         for index, row in df.iterrows():
+            logging.debug(row)
             if len(row) <= 1:
                 break
             if 'Events log' not in row:
@@ -412,10 +430,9 @@ class Training(object):
                 value = row[2]
                 data[key] = value
                 continue
-            if str(row[0]).isdigit():
+            if type(row[0]) == int or type(row[0]) == float:
                 i = 0
                 while i < head2.size:
-                    # print("FIXME: %r, %r" % (head2[i], row[i]))
                     if type(head2[i]) == float:
                         head2[i] = "id"
                     data[head2[i]] = str(row[i])
@@ -424,24 +441,25 @@ class Training(object):
             else:
                 head2 = df.iloc[index + 1]
                 df.columns = head2
+                logging.debug("Header fields:\n%r" % head2)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='import training spreadsheet into Galaxy database')
     parser.add_argument("--infile","-i", help='The input spreadsheet')
     parser.add_argument("--dburl","-d", help='The output database URL')
-    parser.add_argument("--verbose","-v", default='yes', help='Enable verbosity')
+    parser.add_argument("--verbose","-v", default='no', help='Enable verbosity')
     args = parser.parse_args()
 
-    training = Training()
+    training = Training(args.dburl)
 
     # if verbose, dump to the terminal as well as the logfile.
-    if args.verbose == "yes":
-        if os.path.exists('training.log'):
-            os.remove('training.log')
-        logging.basicConfig(filename='training.log', level=logging.DEBUG)
-        root = logging.getLogger()
-        root.setLevel(logging.DEBUG)
+    if os.path.exists('training.log'):
+        os.remove('training.log')
+    logging.basicConfig(filename='training.log', level=logging.DEBUG)
+    root = logging.getLogger()
+    #root.setLevel(logging.DEBUG)
 
+    if args.verbose != "no":
         ch = logging.StreamHandler(sys.stdout)
         ch.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -453,8 +471,12 @@ if __name__ == '__main__':
         df = pd.read_excel(args.infile)
         df_sheet_all = pd.read_excel(args.infile, sheet_name=None)
         for name,foo in df_sheet_all.items():
+            if name == "Summary" or name == "Instructions":
+                continue
+            logging.info("Processing sheet \'%s\'" % name)
             sheet = pd.read_excel(args.infile, sheet_name=name)
             training.parseFile(sheet)
     else:
         df = pd.read_csv(args.infile)
+        logging.info("Processing file \'%s\'" % args.infile)
         training.parseFile(df)
