@@ -95,8 +95,8 @@ CREATE TABLE public.users (
     tasks_invalidated integer,
     projects_mapped integer[],
     mapping_level integer,
-    gender gendertype,
-    agerange agetype,
+    gender public.gendertype,
+    agerange public.agetype,
     organization int,
     trainings int,
     marginalized varchar,
@@ -148,6 +148,3 @@ CREATE TABLE public.organizations (
        unit public.units,
        trainee public.segments
 );
-
-CREATE SEQUENCE oid_seq INCREMENT 1 START 1;
-CREATE SEQUENCE tid_seq INCREMENT 1 START 1;
