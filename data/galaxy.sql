@@ -97,10 +97,10 @@ CREATE TABLE public.users (
     mapping_level integer,
     gender public.gendertype,
     agerange public.agetype,
-    organization int,
-    trainings int,
+    orgid integer,
+    trainings integer,
     marginalized varchar,
-    country int,
+    country integer,
     youthmapper bool,
     designation varchar,
     access int4,
@@ -119,7 +119,6 @@ CREATE TABLE public.training (
        tid integer PRIMARY KEY,
        name text,
        location varchar,
-       organization oid,
        eventtype public.eventtype,
        topictype public.eventtopic,
        topics text[],
@@ -144,7 +143,7 @@ CREATE TYPE public.segments AS ENUM (
 );
 CREATE TABLE public.organizations (
        name text PRIMARY KEY,
-       oid int,
+       orgid integer,
        unit public.units,
        trainee public.segments
 );
