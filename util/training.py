@@ -25,6 +25,7 @@ import epdb
 import logging
 import enum
 import re
+import string
 import pandas as pd
 from sqlalchemy import create_engine, text
 from sqlalchemy import Table, Column, MetaData, Integer, String, ARRAY, Boolean, Date
@@ -101,8 +102,8 @@ class Training(object):
         self.orgs = Table(
             "organizations",
             orgmeta,
-            # Column('oid', Integer, Sequence('oid_seq')),
-            Column('oid', Integer),
+            # Column('orgid', Integer, Sequence('oid_seq')),
+            Column('orgid', Integer),
             Column('name', String),
             Column('unit', Enum(UnitEnum)),
             Column('trainee', Enum(SegmentEnum)),
@@ -120,7 +121,7 @@ class Training(object):
             Column('country', String),
             # Column('designation', Enum(DesignationEnum)),
             Column('designation', String),
-            Column('organization', Integer),
+            Column('orgid', Integer),
             Column('trainings', Integer),
             Column('marginalized', String),
             Column('youthmapper', Boolean),
@@ -134,7 +135,7 @@ class Training(object):
             Column('name', String),
             Column('topics', ARRAY(String)),
             Column('location', String),
-            Column('organization', Integer),
+            Column('orgid', Integer),
             Column('eventtype', Enum(TypeEnum)),
             Column('topictype', Enum(TopicEnum)),
             Column('hours', Integer),
@@ -167,13 +168,13 @@ class Training(object):
 
     def getOrgID(self, name=None):
         with self.engine.connect() as conn:
-            if type(name) == float:
+            if str(name) == 'nan':
                 return None
-            sql = "SELECT oid FROM organizations WHERE name=\'" + name + "\';"
+            sql = "SELECT orgid FROM organizations WHERE name=\'" + string.capwords(name) + "\';"
             result = conn.execute(text(sql))
             ans = result.fetchone()
             if ans is None:
-                sql = "SELECT COUNT(oid)+1 FROM organizations;"
+                sql = "SELECT COUNT(orgid)+1 FROM organizations;"
                 result = conn.execute(text(sql))
                 ans = result.fetchone()
                 if ans[0] is None:
@@ -185,7 +186,7 @@ class Training(object):
             if 'date' not in data or type(data['name']) == float:
                 return 0
             try:
-                sql = "SELECT tid FROM training WHERE name=\'" + data['name'] + "\' AND date=\'" + str(data['date']) + "\';"
+                sql = "SELECT tid FROM training WHERE name=\'" + string.capwords(data['name']) + "\' AND date=\'" + str(data['date']) + "\';"
             except e:
                 print("ERROR: %r" % e)
                 return 0
@@ -234,7 +235,7 @@ class Training(object):
                 continue
             reg = re.compile("^Name .*")
             if reg.match(col):
-                newtrain['name'] = train[col]
+                newtrain['name'] = string.capwords(train[col])
                 continue
             reg = re.compile("^Date .*")
             if reg.match(col):
@@ -242,7 +243,7 @@ class Training(object):
                 continue
             reg = re.compile("^.* location")
             if reg.match(col):
-                newtrain['location'] = train[col]
+                newtrain['location'] = string.capwords(train[col])
                 continue
             reg = re.compile("^.* type")
             if reg.match(col):
@@ -264,7 +265,6 @@ class Training(object):
                 if train[col].lower() == "other":
                     newtrain['topictype'] = "other"
                     continue
-        logging.debug(newtrain)
         return newtrain
 
     def userColumns(self, user=dict()):
@@ -374,15 +374,16 @@ class Training(object):
             # FIXME: there may be multiple organizations, delimited by a comma
             reg = re.compile("^Organ.*")
             if reg.match(col):
-                oid = self.getOrgID(user[col])
                 neworg = dict()
-                if oid is not None:
-                    neworg['oid'] = oid
-                    neworg['name'] = user[col].strip()
+                orgid = self.getOrgID(user[col])
+                if orgid is not None:
+                    neworg['orgid'] = orgid
+                    newuser['orgid'] = orgid
+                    # neworg['organization'] = string.capwords(user[col].strip())
+                    neworg['name'] = string.capwords(user[col].strip())
                     self.updateOrganization(neworg)
                 continue
             i = i + 1
-
         return newuser
 
     def updateTraining(self, training=dict()):
@@ -391,7 +392,6 @@ class Training(object):
             return None
         values = self.trainingColumns(training)
         values['tid'] = self.getTrainingID(values)
-        # print(values)
         with self.engine.connect() as conn:
             sql = insert(self.training).values(values)
             sql = sql.on_conflict_do_update(
@@ -406,6 +406,7 @@ class Training(object):
         if values['gender'] == "nan":
             return
         values['id'] = self.getUserID(values['name'])
+        # values['orgid'] = self.getOrgID(values['organization'])
         with self.engine.connect() as conn:
             sql = insert(self.users).values(values)
             sql = sql.on_conflict_do_update(
@@ -417,6 +418,8 @@ class Training(object):
     def updateOrganization(self, data=dict()):
         if data['name'] == "-":
             return None
+        orgid = self.getOrgID(data['name'])
+        # if orgid is not None:
         with self.engine.connect() as conn:
             sql = insert(self.orgs).values(data)
             sql = sql.on_conflict_do_update(
