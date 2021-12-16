@@ -459,10 +459,10 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
                     char *token =
                         std::strtok((char *)attr_pair.value.c_str(), "#;");
                     while (token != NULL) {
-                        token = std::strtok(NULL, "#;");
                         if (token) {
                             changes.back()->addHashtags(token);
                         }
+                        token = std::strtok(NULL, "#;");
                     }
                 } else {
                     changes.back()->addHashtags(attr_pair.value);
