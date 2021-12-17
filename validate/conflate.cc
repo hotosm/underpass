@@ -79,8 +79,6 @@ Conflate::connect(const std::string &dburl)
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 Conflate::newDuplicate(const osmobjects::OsmWay &way)
 {
-    std::cerr << "Conflate::newDuplicate()" << std::endl;
-    
     auto ids = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     if (!conf_db.isOpen()) {
         return ids;
@@ -101,13 +99,9 @@ Conflate::newDuplicate(const osmobjects::OsmWay &way)
     log_debug("QueryN: %1%, %2%", way.id, fmt.str());
     pqxx::result result = conf_db.query(fmt.str());
     float tolerance = 0.001;   // tolerance for floating point comparisons
-    float threshold = 10;
+    float threshold = 10.0;
     for (auto it = std::begin(result); it != std::end(result); ++it) {
 	float intersection =  it[0].as(float(0));
-	std::cerr << "IT0: intersection: "  << std::fixed << std::setprecision(4) << intersection << std::endl;	
-	std::cerr << "IT1: way area: " << it[1].as(float(0)) << std::endl;	
-	std::cerr << "IT2: db id: " << it[2] << std::endl;	
-	std::cerr << "IT3 :db area: " << it[3].as(float(0)) << std::endl;	
         bool area = false;
         bool overlap = false;
         osmobjects::OsmWay way2;
@@ -116,26 +110,23 @@ Conflate::newDuplicate(const osmobjects::OsmWay &way)
 
         float intersect = (it[1].as(float(0))/it[3].as(float(0)));
         float diff = abs(it[1].as(float(0)) - it[3].as(float(0)));
-	std::cerr << "DiffN: " << std::fixed << std::setprecision(4)
-		  << intersect << " : " << diff
-		  << " : " << intersection
-		  << " : " << way.id << std::endl;
-        if (diff < threshold) {
-	    std::cerr << "similar area!" << std::endl;
+	// std::cerr << "DiffN: " << std::fixed << std::setprecision(4)
+	// 	  << intersect << " : " << diff
+	// 	  << " : " << intersection
+	// 	  << " : " << way.id << std::endl;
+        if (intersect < 2.0) {
+	    // std::cerr << "similar area!" << std::endl;
             area = true;
         }
-        if (intersection < 40 && area) {
-            std::cerr << "Duplicate: " << way.id << ", " << it[2].as(long(0)) << std::endl;
+        if (intersection > 30.0 && area) {
+            // std::cerr << "Duplicate: " << way.id << ", " << it[2].as(long(0)) << std::endl;
 	    status1->status.insert(duplicate);
-        } else if (diff < threshold) {
+        } else {
             overlap = true;
-            std::cerr << "Overlapping not duplicate: " << way.id << ", " << it[2].as(long(0)) << std::endl;
+            // std::cerr << "Overlapping not duplicate: " << way.id << ", " << it[2].as(long(0)) << std::endl;
 	    status1->status.insert(overlaping);
-	}	
-	if (way.id != status1->osm_id) {
-	    status1->status.insert(duplicate);
-	    ids->push_back(status1);
 	}
+	ids->push_back(status1);
     }
     return ids;
 }
@@ -143,8 +134,6 @@ Conflate::newDuplicate(const osmobjects::OsmWay &way)
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 Conflate::existingDuplicate(void)
 {
-    std::cerr << "Conflate::existingDuplicate()" << std::endl;
-	
     auto ids = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     if (!conf_db.isOpen()) {
         return ids;
@@ -160,9 +149,9 @@ Conflate::existingDuplicate(void)
     pqxx::result result = conf_db.query(query);
     log_debug("QueryE: %1%", query);
     float tolerance = 0.001;   // tolerance for floating point comparisons
-    float threshold = 0.0000000005;
+    float threshold = 10.0;
     for (auto it = std::begin(result); it != std::end(result); ++it) {
-	std::cerr << "IIT0: " << it[0] << std::endl;	
+	float intersection =  it[0].as(float(0));
         bool area = false;
         bool overlap = false;
         osmobjects::OsmWay way1;
@@ -175,28 +164,28 @@ Conflate::existingDuplicate(void)
 	status1->osm_id = it[3].as(long(0));
 
         float intersect = it[0].as(float(0))/it[2].as(float(0));
-        // similar size, so more likely to be a duplicate
         float diff = abs(it[2].as(float(0)) - it[4].as(float(0)));
-        std::cerr << "DiffE: " << std::fixed << std::setprecision(12) << intersect << " : " << diff << " : " << std::endl;
-        if (diff > threshold) {
-            std::cerr << "Overlapping not duplicate: " << it[1].as(long(0)) << ", " << it[3].as(long(0)) << std::endl;
-            overlap = true;
-            status1->status.insert(overlaping);
-            status2->status.insert(overlaping);
-        } else {
-            std::cerr << "Probable dulicate: " << it[1].as(long(0)) << ", " << it[3].as(long(0)) << std::endl;
-	}
-	
-        if (std::fabs(it[2].as(float(0)) - it[4].as(float(0))) < tolerance) {
-            // std::cerr << "same area!" << std::endl;
+//        std::cerr << "DiffE: " << std::fixed << std::setprecision(12) << intersect << " : " << diff << " : " << std::endl;
+        // similar size, so more likely to be a duplicate
+        if (intersect < 2.0) {
+	    // std::cerr << "similar area!" << std::endl;
             area = true;
         }
-        ++it;                   // skip the duplicate entries
-        if (area && !overlap) {
-            std::cerr << "Duplicates: " << it[1].as(int(0))  << ", " << it[3].as(long(0)) << std::endl;
-            status1->status.insert(duplicate);
-            status2->status.insert(duplicate);
+        if (intersect < 2.0) {
+	    // std::cerr << "similar area!" << std::endl;
+            area = true;
         }
+        if (intersection > 30.0 && area) {
+	    // std::cerr << "Duplicate: " << way1.id << ", " << way2.id << std::endl;
+	    status1->status.insert(duplicate);
+	    status2->status.insert(duplicate);
+        } else {
+            overlap = true;
+            // std::cerr << "Overlapping not duplicate: " << way1.id << ", " << way2.id << std::endl;
+	    status1->status.insert(overlaping);
+	    status2->status.insert(overlaping);
+	}
+        ++it;                   // skip the duplicate entries
         ids->push_back(status1);
         ids->push_back(status2);
     }

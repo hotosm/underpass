@@ -146,10 +146,10 @@ void test_in_new(conflate::Conflate &conf)
     way.id = 34567;
     way.polygon = stand;
     auto ids = conf.newDuplicate(way);
-    for (auto it = std::begin(*ids); it != std::end(*ids); ++it) {
-	(*it)->dump();
-    }
-    if (ids->size() == 1) {
+    // for (auto it = std::begin(*ids); it != std::end(*ids); ++it) {
+    // 	(*it)->dump();
+    // }
+    if (ids->size() == 3 && ids->at(0)->hasStatus(overlaping)) {
         runtest.pass("Conflate::newDuplicate(overlap)");
     } else {     
         runtest.fail("Conflate::newDuplicate(overlap)");
@@ -165,10 +165,10 @@ void test_in_new(conflate::Conflate &conf)
     way.id = 456789;
     way.polygon = same;
     ids = conf.newDuplicate(way);
-    for (auto it = std::begin(*ids); it != std::end(*ids); ++it) {
-	(*it)->dump();
-    }
-    if (ids->size() >= 1) {
+    // for (auto it = std::begin(*ids); it != std::end(*ids); ++it) {
+    // 	(*it)->dump();
+    // }
+    if (ids->size() >= 1 && ids->at(0)->hasStatus(duplicate)) {
         runtest.pass("Conflate::newDuplicate(2 dups)");
     } else {     
         runtest.fail("Conflate::newDuplicate(2 dups)");
@@ -183,10 +183,10 @@ void test_in_new(conflate::Conflate &conf)
     way.id = 23456;
     way.polygon = stand;
     ids = conf.newDuplicate(way);
-    for (auto it = std::begin(*ids); it != std::end(*ids); ++it) {
-	(*it)->dump();
-    }
-    if (ids->size() == 1) {
+    // for (auto it = std::begin(*ids); it != std::end(*ids); ++it) {
+    // 	(*it)->dump();
+    // }
+    if (ids->size() == 1 && ids->at(0)->hasStatus(duplicate)) {
         runtest.pass("Conflate::newDuplicate(1 dup)");
     } else {     
         runtest.fail("Conflate::newDuplicate(1 dup)");
@@ -210,7 +210,7 @@ void test_in_existing(conflate::Conflate &conf)
 
     //There should be buildings in the specified area
     auto ids = conf.existingDuplicate();
-    if (ids->size() > 0) {
+    if (ids->size() > 0  && ids->at(0)->hasStatus(duplicate)){
         runtest.pass("Conflate::existingDuplicate()");
     } else {     
         runtest.fail("Conflate::existingDuplicate()");
