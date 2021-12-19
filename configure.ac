@@ -241,17 +241,17 @@ LIBS+=" -lboost_regex"
 dnl LIBS += "${BOOST_DATE_TIME} ${BOOST_SYSTEM} ${BOOST_FILESYSTEM} ${BOOST_LOG_LIB}"
 AC_LANG_POP(C++)
 
-echo "FOOO"
 AC_ARG_ENABLE([python],
   AS_HELP_STRING([--enable-python],[Enable Python binding]), [], [enable_python=yes])
 
 if test x"${enable_python}" = x"yes"; then
-  LIBS+=" $(python3-config --libs)  -lpython3"
+  LIBS+=" $(python3-config --libs)"
+  LIBS+=" $(pkg-config --libs python3-embed)"
   CPPFLAGS+=" $(python3-config --cflags)"
-  dnl AX_BOOST_PYTHON
+  AX_BOOST_PYTHON
   AC_DEFINE(USE_PYTHON, [1], [Enable Python binding])
 fi
-AM_CONDITIONAL(ENABLE_PYTHON, [ test x"${enable_plugin}" != x ])
+AM_CONDITIONAL(ENABLE_PYTHON, [ test x"${enable_python}" != x ])
 
 AC_PATH_PROG(DOXYGEN, doxygen)
 AM_CONDITIONAL(ENABLE_DOXYGEN, [ test x"$DOXYGEN" != x ])
