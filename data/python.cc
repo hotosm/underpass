@@ -24,6 +24,7 @@
 
 #include <boost/python.hpp>
 #include "validate/hotosm.hh"
+#include "validate/validate.hh"
 #include "data/osmobjects.hh"
 
 #include "log.hh"
@@ -54,7 +55,12 @@ BOOST_PYTHON_MODULE(underpass)
     class_<Hotosm>("Validate")
         .def("checkTag", &Hotosm::checkTag)
         .def("checkWay", &Hotosm::checkWay)
-        .def("checkPOI", &Hotosm::checkPOI);
+        .def("checkPOI", &Hotosm::checkPOI)
+        .def("overlaps", &Hotosm::overlaps)
+        .def("dump", &Hotosm::dump);
 
+    class_<ValidateStatus>("ValidateStatus")
+        .def("hasStatus", &ValidateStatus::hasStatus)
+        .def("dump", &ValidateStatus::dump);
 }
 #endif
