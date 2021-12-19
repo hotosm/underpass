@@ -44,7 +44,8 @@ BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
 	$(BOOST_REGEX_LIB) \
 	$(BOOST_SERIALIZATION_LIB) \
 	$(BOOST_LOCALE_LIB) \
-	$(BOOST_TIMER_LIB)
+	$(BOOST_TIMER_LIB) \
+	$(BOOST_PYTHON_LIB)
 
 SQL_FILES = \
 	data/underpass.sql \
@@ -131,44 +132,10 @@ EXTRA_DIST = \
 
 DEJATOOL = libunderpass
 
-# if ENABLE_SWIG
-# SWIGdir = swig
-
-# SWIG_LANGS = -python -javascript
-# SWIG_FLAGS = -Wall -outcurrentdir -c++ -cppext cc -module hotosm
-# EXTRA_DIST = swig/hotosm.py swig/hotosm.java
-
-# SWIG_INTERFACE = $(libhotosm_la_SOURCES:.cc=.i)
-# SWIG_OBJECTS = $(libhotosm_la_SOURCES:.cc=.o)
-# SWIG_PYTHON = $(libhotosm_la_SOURCES:.cc=.py)
-# SWIG_JAVA = # $(libhotosm_la_SOURCES:.cc=.java)
-# SWIG_JAVASCRIPT = $(libhotosm_la_SOURCES:.cc=.js)
-# SWIG_WRAPPERS = $(libhotosm_la_SOURCES:.cc=_wrap.cc)
-# hotswig_SOURCES := $(foreach dir,swig,$(wildcard $(dir)/*wrap_*.cc))
-# hotswig_DEPS = swig
-
-# swig: libhotosm.la $(SWIG_PYTHON) $(SWIG_JAVASCRIPT) # $(SWIG_JAVA)
-
-# AM_JAVACFLAGS=-sourcepath swig/
-# JAVAROOT = swig
-
-# SUFFIXES = .py .cc .java .js .hh
-# # Generate the wrapper for swig, then build the module
-# .cc.py:
-# 	$(SWIG) $(SWIG_FLAGS) -python -o swig/$*_wrap_py.cc $(top_srcdir)/$*.i
-# 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -I.. -I/usr/include/python3.8 -fPIC -shared swig/hotosm_wrap_py.cc -lpqxx -L.libs .libs/hotosm.o -o swig/_hotosm.so
-
-# .cc.java:
-# 	$(SWIG) $(SWIG_FLAGS) -java -package hotosm -o swig/$*_wrap_java.cc $(top_srcdir)/$*.i
-# 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -I.. -I/usr/include/python3.8 -fPIC -shared swig/hotosm_wrap_py.cc -lpqxx -L.libs .libs/hotosm.o -o swig/_hotosm.so
-
-# .cc.js:
-# 	$(SWIG) $(SWIG_FLAGS) -javascript -node -o swig/$*_wrap_js.cc $(top_srcdir)/$*.i
-# 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -I.. -I/usr/include/python3.8 -fPIC -shared swig/hotosm_wrap_js.cc -lpqxx -L.libs .libs/hotosm.o -o swig/_hotosmjs.so
-
-# CLEANFILES += swig/* swig/*/*.class doc/html doc/latex
-
-# endif
+if ENABLE_PYTHON
+python:
+	echo "FIXME: Nothing yet!"
+endif
 
 if ENABLE_DOXYGEN
 apidoc:
