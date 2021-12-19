@@ -99,6 +99,7 @@ replicator_LDADD = libunderpass.la $(BOOST_LIBS)
 if JEMALLOC
 AM_CXXFLAGS = \
 	-rdynamic \
+	-fPIC \
 	-Wno-deprecated-declarations \
 	-fno-builtin-malloc \
 	-fno-builtin-calloc \
@@ -107,6 +108,7 @@ AM_CXXFLAGS = \
 else
 AM_CXXFLAGS = \
 	-rdynamic \
+	-fPIC \
 	-Wno-deprecated-declarations
 endif
 
