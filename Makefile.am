@@ -135,8 +135,8 @@ DEJATOOL = libunderpass
 if ENABLE_PYTHON
 pkglib_LTLIBRARIES = underpass.la
 underpass_la_SOURCES = data/python.cc $(libunderpass_la_SOURCES)
-underpass_la_LDFADD = $(BOOST_LIBS) libunderpass.la -lboost_python310
-underpass_la_LDFLAGS = -module -avoid-version -no-undefined -rpath /usr/lib64/ $(BOOST_LIBS)
+underpass_la_LDFADD = $(BOOST_LIBS) libunderpass.la validate/libhotosm.la -lboost_python310
+underpass_la_LDFLAGS = -module -avoid-version -no-undefined -rpath /usr/lib64/ validate/libhotosm.la $(BOOST_LIBS)
 PY_OBJECTS = $(libunderpass_la_OBJECTS:.lo=.o)
 endif
 
