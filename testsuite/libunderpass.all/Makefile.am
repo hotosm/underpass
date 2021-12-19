@@ -46,6 +46,7 @@ BOOST_LIBS = \
 	$(BOOST_TIMER_LIB)
 
 AM_CXXFLAGS = \
+	-fPIC \
         -DPKGLIBDIR=\"$(pkglibdir)\" \
         -DTOPSRCDIR=\"$(top_srcdir)\" \
         -DSRCDIR=\"$(srcdir)\" \
