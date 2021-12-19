@@ -179,6 +179,7 @@ CPPFLAGS+=" $(pkg-config --cflags libpqxx)"
 CPPFLAGS+=" $(pkg-config --cflags gumbo)"
 CPPFLAGS+=" $(pkg-config --cflags gdal)"
 CPPFLAGS+=" $(pkg-config --cflags ompi)"
+CPPFLAGS+=" $(pkg-config --cflags python)"
 
 dnl This is a C++ project only
 AC_LANG_PUSH(C++)
@@ -198,6 +199,7 @@ LIBS+=" $(pkg-config --libs gumbo)"
 LIBS+=" $(pkg-config --libs zlib)"
 LIBS+=" $(pkg-config --libs gdal)"
 LIBS+=" $(pkg-config --libs ompi)"
+LIBS+=" $(pkg-config --libs python)"
 if test x"${build_libxml}" = x"yes"; then
 dnl Debian Buster and Ubuntu Focal ship 2.6, Fedora ships 3,.0
 dnl The version in Focal is broken, so either build libxml++-3.0
@@ -239,27 +241,23 @@ LIBS+=" -lboost_regex"
 dnl LIBS += "${BOOST_DATE_TIME} ${BOOST_SYSTEM} ${BOOST_FILESYSTEM} ${BOOST_LOG_LIB}"
 AC_LANG_POP(C++)
 
-dnl Swig is used to generate API bindings for other languages
-dnl AC_PATH_PROG(SWIG, swig)
-dnl AM_PATH_PYTHON
-dnl AM_CONDITIONAL(ENABLE_SWIG, [ test x"$SWIG" != x ])
-dnl if test x"$SWIG" != x; then
-dnl   mkdir -p swig
-dnl   AM_PATH_PYTHON
+echo "FOOO"
+AC_ARG_ENABLE([python],
+  AS_HELP_STRING([--enable-python],[Enable Python binding]), [], [enable_python=yes])
 
-dnl   AX_JNI_INCLUDE_DIR
-
-dnl   LIBS+=$(pkg-config --libs python)
-dnl   CPPFLAGS+=$(pkg-config --cflags python)
-dnl   CPPFLAGS+=$(echo ${JNI_INCLUDE_DIRS} | sed -e 's/^/-I/' -e 's/ / -I/')
-dnl fi
+if test x"${enable_python}" = x"yes"; then
+  LIBS+=" $(python3-config --libs)  -lpython3"
+  CPPFLAGS+=" $(python3-config --cflags)"
+  dnl AX_BOOST_PYTHON
+  AC_DEFINE(USE_PYTHON, [1], [Enable Python binding])
+fi
+AM_CONDITIONAL(ENABLE_PYTHON, [ test x"${enable_plugin}" != x ])
 
 AC_PATH_PROG(DOXYGEN, doxygen)
 AM_CONDITIONAL(ENABLE_DOXYGEN, [ test x"$DOXYGEN" != x ])
 if test x"$DOXYGEN" != x; then
   CPPFLAGS+=" $(pkg-config --cflags webkit2gtk-4.0)"
   CPPFLAGS+=" $(pkg-config --cflags glibmm-2.4)"
-
   LIBS+=" $(pkg-config --libs webkit2gtk-4.0)"
   LIBS+=" $(pkg-config --libs glibmm-2.4)"
 fi
