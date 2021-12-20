@@ -39,8 +39,10 @@ public:
     bool connect(const std::string &dburl);
     bool createView(const multipolygon_t &poly);
 
-    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> newDuplicate(const osmobjects::OsmWay &way);
-    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> existingDuplicate(void);
+    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> newDuplicatePolygon(const osmobjects::OsmWay &way);
+    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> existingDuplicatePolygon(void);
+    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> newDuplicateLineString(const osmobjects::OsmWay &way);
+    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> existingDuplicateLineString(void);
 
     pq::Pq conf_db;
     multipolygon_t view;

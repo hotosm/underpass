@@ -52,8 +52,8 @@ Conflate::createView(const multipolygon_t &poly)
     view = poly;
     std::ostringstream bbox;
     bbox << boost::geometry::wkt(poly);
-    std::string view = "DROP VIEW IF EXISTS boundary;CREATE VIEW boundary AS SELECT osm_id,area,building,highway,amenity,way FROM planet_osm_polygon WHERE ST_Within(way, ST_GeomFromEWKT(\'";
-    view += "SRID=3857;" + bbox.str() + "\'));";
+    std::string view = "DROP VIEW IF EXISTS boundary;CREATE VIEW boundary AS SELECT osm_id,area,building,highway,amenity,ST_Transform(way, 4326) AS way FROM planet_osm_polygon WHERE ST_Within(ST_Transform(way, 4326), ST_MakeValid(ST_GeomFromEWKT(\'";
+    view += "SRID=4326;" + bbox.str() + "\')));";
     pqxx::result result = conf_db.query(view);
 
     // FIXME: check the result
@@ -63,6 +63,7 @@ Conflate::createView(const multipolygon_t &poly)
 Conflate::Conflate(const std::string &dburl, const multipolygon_t &poly)
 {
     conf_db.connect(dburl);
+    createView(poly);
 }
 
 Conflate::Conflate(const std::string &dburl)
@@ -77,26 +78,28 @@ Conflate::connect(const std::string &dburl)
 }
 
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
-Conflate::newDuplicate(const osmobjects::OsmWay &way)
+Conflate::newDuplicatePolygon(const osmobjects::OsmWay &way)
 {
     auto ids = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     if (!conf_db.isOpen()) {
+	log_error(_("Database is not connected!"));
         return ids;
     }
 
-    if (boost::geometry::num_points(view)) {
-	log_error(_("Boundary polygon is empty!"));
-	// return ids;
+    // Raw OSM data is in SRID 3857, but boost::geometry (and gdal) use 4326 instead. Unfortunately that
+    // gives us coordinates in degress of the globe, which isn't useful to do area calculations with. So
+    // it gets converted to SRID 2167, which forces it to be in meters.
+    boost::format fmt("SELECT ST_Area(ST_Transform(ST_INTERSECTION(ST_GeomFromEWKT(\'SRID=4326;%s\'),way), 2167)), ST_Area(ST_Transform(ST_GeomFromEWKT(\'SRID=4326;%s\'), 2167)),osm_id,ST_Area(ST_Transform(way, 2167)) FROM boundary WHERE ST_OVERLAPS(ST_GeomFromEWKT(\'SRID=4326;%s\'),way) AND building IS NOT NULL;");
+
+    if (boost::geometry::num_points(way.polygon) == 0) {
+	log_error(_("Way polygon is empty!"));
+        return ids;
     }
-
-    // boost::format fmt("SELECT ST_Area(ST_INTERSECTION(ST_Transform(ST_GeomFromEWKT(\'SRID=4326;%s\'), 2163),ST_Transform(way, 2163))),ST_Area(ST_Transform(ST_GeomFromEWKT(\'SRID=4326;%s\'), 2163)),osm_id,ST_Area(ST_Transform(way, 2163)) FROM boundary WHERE ST_OVERLAPS(ST_Transform(ST_GeomFromEWKT(\'SRID=4326;%s\'), 2163), ST_Transform(way, 2163)) AND building IS NOT NULL;");
-    boost::format fmt("SELECT ST_Area(ST_INTERSECTION(ST_GeomFromEWKT(\'SRID=3857;%s\'),way)),ST_Area(ST_GeomFromEWKT(\'SRID=3857;%s\')),osm_id,ST_Area(ST_Transform(way, 2163)) FROM boundary WHERE ST_OVERLAPS(ST_GeomFromEWKT(\'SRID=3857;%s\'),way) AND building IS NOT NULL;");
-
     fmt % boost::geometry::wkt(way.polygon);
     fmt % boost::geometry::wkt(way.polygon);
     fmt % boost::geometry::wkt(way.polygon);
     
-    log_debug("QueryN: %1%, %2%", way.id, fmt.str());
+    // log_debug("QueryN: %1%, %2%", way.id, fmt.str());
     pqxx::result result = conf_db.query(fmt.str());
     float tolerance = 0.001;   // tolerance for floating point comparisons
     float threshold = 10.0;
@@ -111,7 +114,8 @@ Conflate::newDuplicate(const osmobjects::OsmWay &way)
         float intersect = (it[1].as(float(0))/it[3].as(float(0)));
         float diff = abs(it[1].as(float(0)) - it[3].as(float(0)));
 	// std::cerr << "DiffN: " << std::fixed << std::setprecision(4)
-	// 	  << intersect << " : " << diff
+	// 	  << intersect
+	// 	  << " : " << diff
 	// 	  << " : " << intersection
 	// 	  << " : " << way.id << std::endl;
         if (intersect < 2.0) {
@@ -132,22 +136,18 @@ Conflate::newDuplicate(const osmobjects::OsmWay &way)
 }
 
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
-Conflate::existingDuplicate(void)
+Conflate::existingDuplicatePolygon(void)
 {
     auto ids = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     if (!conf_db.isOpen()) {
+	log_error(_("Database is not connected!"));
         return ids;
     }
 
-    if (boost::geometry::num_points(view)) {
-	log_error(_("Boundary polygon is empty!"));
-	// return ids;
-    }
-
-    std::string query = "SELECT ST_Area(ST_INTERSECTION(g1.way, g2.way)),g1.osm_id,ST_Area(g1.way),g2.osm_id,ST_Area(g2.way) FROM boundary AS g1, boundary AS g2 WHERE ST_OVERLAPS(g1.way, g2.way);";
+    std::string query = "SELECT ST_Area(ST_Transform(ST_INTERSECTION(g1.way, g2.way), 2167)),g1.osm_id,ST_Area(ST_Transform(g1.way, 2167)),g2.osm_id,ST_Area(ST_Transform(g2.way, 2167)) FROM boundary AS g1, boundary AS g2 WHERE ST_OVERLAPS(g1.way, g2.way);";
 
     pqxx::result result = conf_db.query(query);
-    log_debug("QueryE: %1%", query);
+    // log_debug("QueryE: %1%", query);
     float tolerance = 0.001;   // tolerance for floating point comparisons
     float threshold = 10.0;
     for (auto it = std::begin(result); it != std::end(result); ++it) {
@@ -189,6 +189,20 @@ Conflate::existingDuplicate(void)
         ids->push_back(status1);
         ids->push_back(status2);
     }
+    return ids;
+}
+
+std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
+Conflate::newDuplicateLineString(const osmobjects::OsmWay &way)
+{
+    auto ids = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
+    return ids;
+}
+
+std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
+Conflate::existingDuplicateLineString(void)
+{
+    auto ids = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     return ids;
 }
 
