@@ -85,7 +85,10 @@ typedef enum {
     incomplete,
     badvalue,
     correct,
-    badgeom
+    badgeom,
+    orphan,
+    overlaping,
+    duplicate
 } valerror_t;
 
 class ValidateStatus {
@@ -127,6 +130,9 @@ class ValidateStatus {
         results[badvalue] = "Bad tag value";
         results[correct] = "Correct tag value";
         results[badgeom] = "Bad geometry";
+        results[orphan] = "Orphan";
+        results[overlaping] = "Overlap";
+        results[duplicate] = "Duplicate";
         for (const auto &stat: std::as_const(status)) {
             std::cerr << "\tResult: " << results[stat] << std::endl;
         }
@@ -177,29 +183,25 @@ class BOOST_SYMBOL_VISIBLE Validate {
 
     /// Check a POI for tags. A node that is part of a way shouldn't have any
     /// tags, this is to check actual POIs, like a school.
-    virtual std::shared_ptr<ValidateStatus>
-    checkPOI(const osmobjects::OsmNode &node, const std::string &type) = 0;
+    virtual std::shared_ptr<ValidateStatus> checkPOI(const osmobjects::OsmNode &node, const std::string &type) = 0;
 
     /// This checks a way. A way should always have some tags. Often a polygon
     /// is a building
-    virtual std::shared_ptr<ValidateStatus>
-    checkWay(const osmobjects::OsmWay &way, const std::string &type) = 0;
-    std::shared_ptr<ValidateStatus>
-    checkTags(std::map<std::string, std::string> tags) {
-        bool result;
+    virtual std::shared_ptr<ValidateStatus> checkWay(const osmobjects::OsmWay &way, const std::string &type) = 0;
+    std::shared_ptr<ValidateStatus> checkTags(std::map<std::string, std::string> tags) {
+	auto status = std::make_shared<ValidateStatus>();
         for (auto it = std::begin(tags); it != std::end(tags); ++it) {
             // FIXME: temporarily disabled
             // result = checkTag(it->first, it->second);
         }
-        // return result;
+	return status;
     };
     void dump(void) {
         for (auto it = std::begin(yamls); it != std::end(yamls); ++it) {
             it->second.dump();
         }
     }
-    virtual std::shared_ptr<ValidateStatus>
-    checkTag(const std::string &key, const std::string &value) = 0;
+    virtual std::shared_ptr<ValidateStatus> checkTag(const std::string &key, const std::string &value) = 0;
     yaml::Yaml &operator[](const std::string &key) { return yamls[key]; };
 
     bool overlaps(std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, const osmobjects::OsmWay &way) {

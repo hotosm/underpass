@@ -40,7 +40,7 @@ ALTER TABLE ONLY public.changesets
     ADD CONSTRAINT changesets_pkey PRIMARY KEY (id);
 
 CREATE TYPE public.objtype AS ENUM ('node', 'way', 'relation');
-CREATE TYPE public.status AS ENUM ('notags', 'complete', 'incomplete', 'badvalue', 'correct', 'badgeom');
+CREATE TYPE public.status AS ENUM ('notags', 'complete', 'incomplete', 'badvalue', 'correct', 'badgeom', 'orphan', 'overlaping', 'duplicate');
 
 CREATE TABLE public.validation (
     osm_id bigint,

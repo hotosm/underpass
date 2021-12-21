@@ -77,6 +77,7 @@ using tcp = net::ip::tcp;         // from <boost/asio/ip/tcp.hpp>
 #include "galaxy/galaxy.hh"
 #include "galaxy/replication.hh"
 #include "validate/validate.hh"
+#include <jemalloc/jemalloc.h>
 
 std::mutex stream_mutex;
 
@@ -92,7 +93,6 @@ namespace threads {
 void
 startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &poly, const replicatorconfig::ReplicatorConfig &config, thread_pool &pool)
 {
-
     // This function is for changesets only!
     assert(inr.frequency == frequency_t::changeset);
 
@@ -137,11 +137,36 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
     auto servers{config.getPlanetServers(frequency_t::changeset)};
 
     // Processes the changesets asynchronously
-    auto processChangesetFunction = [&error_flag, &poly, ostats, &max_pseudo_sequence, &max_pseudo_sequence_mutex](replication::RemoteURL remote, std::vector<replicatorconfig::PlanetServer> servers) {
+    auto processChangesetFunction = [&error_flag, &poly, ostats, &max_pseudo_sequence,
+				     &max_pseudo_sequence_mutex](replication::RemoteURL remote,
+				     std::vector<replicatorconfig::PlanetServer> servers) {
         int retry{0};
         const int max_retries{4};
+#ifdef MEMORY_DEBUG
+    size_t sz, active1, active2;
+#endif	// JEMALLOC memory debugging
+
         while (!error_flag) {
-            const auto changefile{threadChangeSet(remote, poly, ostats)};
+#ifdef MEMORY_DEBUG
+	    sz = sizeof(size_t);
+	    if (mallctl("stats.active", &active1, &sz, NULL, 0) == 0) {
+		std::cerr << "startMonitorChangesets: " << active1 << std::endl;
+		// thread.allocated,  thread.deallocated
+		// thread.prof.name("startMonitorChangesets")
+	    }
+#endif	// JEMALLOC memory debugging
+	    const auto changefile{threadChangeSet(remote, poly, ostats)};
+#ifdef MEMORY_DEBUG
+	    sz = sizeof(size_t);
+	    if (mallctl("stats.active", &active2, &sz, NULL, 0) == 0) {
+		std::cerr << "\tstartMonitorChangesets: " << active2 << std::endl;
+		// thread.allocated,  thread.deallocated
+		// thread.prof.name("startMonitorChangesets")
+	    }
+	    if (active1 != active2) {
+		std::cerr << "\tstartMonitorChangesets is leaking: " << active2-active1 << std::endl;
+	    }
+#endif	// JEMALLOC memory debugging
             for (const auto &change: std::as_const(changefile->changes)) {
                 ostats->applyChange(*change.get());
             }
@@ -263,7 +288,6 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
 void
 startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &poly, const replicatorconfig::ReplicatorConfig &config)
 {
-
     if (inr.frequency == frequency_t::changeset) {
         log_error(_("Could not start monitoring thread for OSM changes: URL %1% does not appear to be a valid URL for changes!"), inr.url);
         return;
@@ -299,11 +323,32 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
     }
     auto validator = creator();
 
+#ifdef MEMORY_DEBUG
+    size_t sz, active1, active2;
+#endif	// JEMALLOC memory debugging
     // Process OSM changes
     while (mainloop) {
         std::string file = remote.url + ".osc.gz";
         ptime now = boost::posix_time::microsec_clock::local_time();
+#ifdef MEMORY_DEBUG
+	sz = sizeof(size_t);
+	if (mallctl("thread.allocated", &active1, &sz, NULL, 0) == 0) {
+	    std::cerr << "startMonitorChanges: " << active1 << std::endl;
+	}
+	// malloc_stats_print(NULL, NULL, NULL);
+#endif	// JEMALLOC memory debugging	    
         auto osmchange = threadOsmChange(remote, poly, ostats, osm2pgsql, validator);
+#ifdef MEMORY_DEBUG
+	sz = sizeof(size_t);
+	if (mallctl("thread.deallocated", &active2, &sz, NULL, 0) == 0) {
+	    std::cerr << "\tstartMonitorChanges: " << active2 << std::endl;
+	}
+	if (active1 != active2) {
+	    std::cerr << "\tstartMonitorChanges is leaking: " << active1 << " : " << active2 << std::endl;
+	}
+	// malloc_stats_print(NULL, NULL, NULL);
+#endif	// JEMALLOC memory debugging
+
         // FIXME: There is probably a better way to determine when to delay,
         // or when to just keep processing files when catching up.
         boost::posix_time::time_duration delta;
@@ -517,20 +562,20 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
     }
 #endif
 
-    for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
-        osmchange::OsmChange *change = it->get();
+    for (auto cit = std::begin(osmchanges->changes); cit != std::end(osmchanges->changes); ++cit) {
+        osmchange::OsmChange *change = cit->get();
         // change->dump();
-        for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
-            osmobjects::OsmNode *node = it->get();
+        for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
+            osmobjects::OsmNode *node = nit->get();
         }
-        for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
-            osmobjects::OsmWay *way = it->get();
+        for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
+            osmobjects::OsmWay *way = wit->get();
         }
     }
     osmchanges->areaFilter(poly);
 
     if (o2pgsql.isOpen()) {
-        o2pgsql.updateDatabase(osmchanges);
+        // o2pgsql.updateDatabase(osmchanges);
     }
 
     // These stats are for the entire file

@@ -20,6 +20,7 @@
 AUTOMAKE_OPTIONS = dejagnu
 
 check_PROGRAMS = \
+	conflate-test \
 	tm-test \
 	usersync-test \
 	under-test \
@@ -28,7 +29,8 @@ check_PROGRAMS = \
 	val-test \
 	osm2pgsql-test \
 	yaml-test \
-	replication-test
+	replication-test \
+	geo-test
 
 AM_CPPFLAGS = -I$(top_srcdir) -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)/hottm
 AM_LDFLAGS = -L../..
@@ -53,6 +55,11 @@ AM_CXXFLAGS = \
         -DSRCDIR=\"$(srcdir)\" \
 	-DBOOST_LOCALE_HIDE_AUTO_PTR \
 	-Wno-deprecated-declarations
+
+conflate_test_SOURCES = conflate-test.cc
+conflate_test_LDFLAGS = -L../..
+conflate_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
+conflate_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 yaml_test_SOURCES = yaml-test.cc
 yaml_test_LDFLAGS = -L../..

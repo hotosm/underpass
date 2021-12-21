@@ -119,6 +119,7 @@ OsmWay::dump(void) const
         std::cerr << "\t" << tmp << std::endl;
     }
     std::cerr << boost::geometry::wkt(linestring) << std::endl;
+    std::cerr << boost::geometry::wkt(polygon) << std::endl;
 };
 
 void

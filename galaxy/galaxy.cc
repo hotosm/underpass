@@ -384,6 +384,9 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
         {incomplete, "incomplete"},
         {badvalue, "badvalue"},
         {correct, "correct"},
+        {orphan, "orphan"},
+        {overlaping, "overlaping"},
+        {duplicate, "duplicate"},
         {badgeom, "badgeom"}};
     std::string query =
         "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, timestamp, location) VALUES(";
