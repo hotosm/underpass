@@ -128,8 +128,6 @@ class Replicator : public replication::Replication {
         return state->path;
     };
 #endif
-    // galaxy::RawCountry & findCountry() {
-    //     geou.inCountry();
 
     enum pathMatches matchUrl(const std::string &url)
     {
@@ -289,6 +287,7 @@ main(int argc, char *argv[])
         try {
             // Set minimum required because we are starting separate threads for monitoring anyway
             replicator_config.concurrency = std::max(3, std::stoi(concurrency));
+            log_debug(_("Hardware threads: %1%"), std::thread::hardware_concurrency());
             if (replicator_config.concurrency > std::thread::hardware_concurrency()) {
                 log_error("ERROR: concurrency cannot exceed the number of threads supported by hardware (%1%)!", std::thread::hardware_concurrency());
             }
@@ -325,15 +324,8 @@ main(int argc, char *argv[])
     }
 
     geoutil::GeoUtil geou;
-    std::string priority_area_file_path = SRCDIR;
-    priority_area_file_path += "/data/" + boundary;
-    if (!boost::filesystem::exists(priority_area_file_path)) {
-        priority_area_file_path = PKGLIBDIR;
-        priority_area_file_path += "/" + boundary;
-    }
-
-    if (!geou.readFile(priority_area_file_path)) {
-        log_debug("Could not find 'priority.geojson' area file!");
+    if (!geou.readFile(boundary)) {
+        log_debug(_("Could not find '%1%' area file!"), boundary);
     }
 
     // Tasking Manager users sync setup
