@@ -72,7 +72,10 @@ public:
     /// planet to reduce data size. Since this uses GDAL, any
     /// multi-polygon file of any supported format can be used.
     bool readFile(const std::string &filespec);
-    
+
+    /// Read an EWKT string as the boundary, instead of a file.
+    bool readPoly(const std::string &poly);
+
     /// See if this changeset is in a priority area. We ignore changsets in
     /// areas like North America to reduce the amount of data needed
     /// for calulations. This boundary can always be modified.
@@ -89,6 +92,11 @@ public:
         return boost::geometry::within(pt, boundary);
     };
 
+    void dump(void) {
+	std::cerr << "Area: " << std::abs(boost::geometry::area(boundary)) << std::endl;
+	std::cerr << "Points: " <<boost::geometry::num_points(boundary) << std::endl;
+	std::cerr << "Polygons: " <<boost::geometry::num_geometries(boundary) << std::endl;
+    };
 // private:
     multipolygon_t boundary;
 };
