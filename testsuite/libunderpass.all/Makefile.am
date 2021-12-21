@@ -29,7 +29,8 @@ check_PROGRAMS = \
 	val-test \
 	osm2pgsql-test \
 	yaml-test \
-	replication-test
+	replication-test \
+	geo-test
 
 AM_CPPFLAGS = -I$(top_srcdir) -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)/hottm
 AM_LDFLAGS = -L../..
