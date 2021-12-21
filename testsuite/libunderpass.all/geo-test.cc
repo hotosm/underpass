@@ -23,10 +23,6 @@
 #include <pqxx/pqxx>
 #include <libxml++/libxml++.h>
 
-#include "hottm.hh"
-#include "galaxy/galaxy.hh"
-#include "galaxy/changeset.hh"
-
 #include <boost/date_time.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/date_time/gregorian/gregorian.hpp"
@@ -48,20 +44,31 @@ class TestGU : public GeoUtil
 int
 main(int argc, char* argv[])
 {
+    logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
+    dbglogfile.setWriteDisk(false);
+    dbglogfile.setLogFilename("geo-test.log");
+    dbglogfile.setVerbosity(3);
+    
     TestGU tgu;
-    std::string basedir = DATADIR;
+    if (tgu.readFile("priority.geojson")) {
+        runtest.pass("Read file with no path");
+    } else {
+        runtest.fail("Read file with no path");
+    }   
 
-    // Read a single polygon
-    // tgu.readFile(basedir + "/include.osm", false);
-    // Read a multipolygon
-    // tgu.readFile(basedir + "/data/geoboundaries.osm", true);
+    if (!tgu.readFile("../../data/priority.geojson")) {
+        runtest.pass("Read file with bad relative path");
+    } else {
+        runtest.fail("Read file with bad relative path");
+    }   
 
-    // Changesets have a bounding box, so we want to find the
-    // country the changes were made in.
-    double min_lat = -2.8042325;
-    double min_lon = 29.5842812;
-    double max_lat = -2.7699398;
-    double max_lon = 29.6012844;
-
+    if (tgu.readFile("/usr/local/lib/underpass/priority.geojson")) {
+        runtest.pass("Read file with absolute path");
+    } else {
+        runtest.fail("Read file with absolute path");
+    }   
+    
+    /// Read an EWKT string as the boundary, instead of a file.
+    // tgu.readPoly();
 };
 

@@ -57,24 +57,38 @@ namespace geoutil {
 bool
 GeoUtil::readFile(const std::string &filespec)
 {
-    GDALDataset *poDS;
-    std::string infile = filespec;
-    if (filespec.empty()) {
-        infile = "/include.osm";
+    std::filesystem::path boundary_file = filespec;
+    if (filespec.front() == '.' || filespec.front() == '/') {
+	if (!std::filesystem::exists(boundary_file)) {
+	    log_error(_("Geo boundary file %1% doesn't exist!"), boundary_file);
+	}
+    } else {
+	if (!std::filesystem::exists(boundary_file)) {
+	    boundary_file = SRCDIR;
+	    boundary_file += "/data/" + filespec;
+	    if (!std::filesystem::exists(boundary_file)) {
+		boundary_file = PKGLIBDIR;
+		boundary_file += "/" + filespec;		
+	    }
+	}
     }
-
-    log_debug("Opening geo data file: %1%", infile);
-    poDS = (GDALDataset *)GDALOpenEx(infile.c_str(), GDAL_OF_VECTOR, NULL, NULL,
-                                     NULL);
+    if (!std::filesystem::exists(boundary_file)) {
+	log_error(_("Boundary file %1% doesn't exist!"), boundary_file);
+	return false;
+    }
+    
+    log_debug(_("Opening geo data file: %1%"), boundary_file);
+    std::string foo = boundary_file.string();
+    GDALDataset *poDS = (GDALDataset *)GDALOpenEx(foo.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
     if (poDS == 0) {
-        log_error("couldn't open %1%", infile);
+        log_error(_("couldn't open %1%"), boundary_file);
         return false;
     }
 
     OGRLayer *layer;
-    layer = poDS->GetLayerByName("priority");
+    layer = poDS->GetLayerByName(boundary_file.stem().c_str());
     if (layer == 0) {
-        log_error("Couldn't get layer \"priority\"");
+        log_error(_("Couldn't get layer \"%1%\""),boundary_file.stem());
         return false;
     }
 
@@ -90,6 +104,13 @@ GeoUtil::readFile(const std::string &filespec)
     }
 
     return true;
+}
+
+/// Read an EWKT string as the boundary, instead of a file.
+bool
+GeoUtil::readPoly(const std::string &wkt)
+{
+    boost::geometry::read_wkt(wkt, boundary);
 }
 
 } // namespace geoutil
