@@ -634,8 +634,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                          lit != std::end(way->refs); ++lit) {
                         globe.push_back(sphere_t(nodecache[*lit].get<0>(),
                                                  nodecache[*lit].get<1>()));
-                        boost::geometry::append(way->linestring,
-                                                nodecache[*lit]);
+                        boost::geometry::append(way->linestring, nodecache[*lit]);
                     }
 #if 0
                     // Get the middle point of the linestring on the sphere
@@ -671,12 +670,11 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 			ostats->modified[*hit]++;
                     }
                 } else if (*hit == "building" || *hit == "amenity") {
-                    polygon_t poly;
                     for (auto lit = std::begin(way->refs); lit != std::end(way->refs); ++lit) {
-                        boost::geometry::append(poly, nodecache[*lit]);
+                        boost::geometry::append(way->polygon, nodecache[*lit]);
                     }
                     // Get the middle point of the linestring on the sphere
-                    boost::geometry::centroid(poly, way->center);
+                    boost::geometry::centroid(way->polygon, way->center);
                     if (!boost::geometry::within(way->center, poly)) {
                         // log_debug(_("Changeset with way %1% is not in a priority area"), way->change_id);
                         continue;
