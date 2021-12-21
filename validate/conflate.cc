@@ -32,6 +32,8 @@
 #include "validate/conflate.hh"
 #include "validate/validate.hh"
 #include "data/osmobjects.hh"
+#include "log.hh"
+using namespace logger;
 
 namespace conflate {
 
@@ -80,6 +82,9 @@ Conflate::connect(const std::string &dburl)
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 Conflate::newDuplicatePolygon(const osmobjects::OsmWay &way)
 {
+#if TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("Conflate::newDuplicatePolygon: took %w seconds\n");
+#endif
     auto ids = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     if (!conf_db.isOpen()) {
 	log_error(_("Database is not connected!"));
@@ -123,11 +128,11 @@ Conflate::newDuplicatePolygon(const osmobjects::OsmWay &way)
             area = true;
         }
         if (intersection > 30.0 && area) {
-            // std::cerr << "Duplicate: " << way.id << ", " << it[2].as(long(0)) << std::endl;
+            log_debug(_("Duplicates: %1%, %2%, intersection: %3%, diff: %4%"), way.id, way2.id, intersection,diff);
 	    status1->status.insert(duplicate);
         } else {
             overlap = true;
-            // std::cerr << "Overlapping not duplicate: " << way.id << ", " << it[2].as(long(0)) << std::endl;
+            log_debug(_("Overlapping: %1%, %2%"), way.id, way2.id);
 	    status1->status.insert(overlaping);
 	}
 	ids->push_back(status1);
@@ -138,6 +143,9 @@ Conflate::newDuplicatePolygon(const osmobjects::OsmWay &way)
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 Conflate::existingDuplicatePolygon(void)
 {
+#if TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("Conflate::existingDuplicatePolygon: took %w seconds\n");
+#endif
     auto ids = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     if (!conf_db.isOpen()) {
 	log_error(_("Database is not connected!"));
@@ -171,17 +179,13 @@ Conflate::existingDuplicatePolygon(void)
 	    // std::cerr << "similar area!" << std::endl;
             area = true;
         }
-        if (intersect < 2.0) {
-	    // std::cerr << "similar area!" << std::endl;
-            area = true;
-        }
         if (intersection > 30.0 && area) {
-	    // std::cerr << "Duplicate: " << way1.id << ", " << way2.id << std::endl;
+            log_debug(_("Duplicates: %1%, %2%, intersection: %3%, diff: %4%"), way1.id, way2.id, intersection,diff);
 	    status1->status.insert(duplicate);
 	    status2->status.insert(duplicate);
         } else {
             overlap = true;
-            // std::cerr << "Overlapping not duplicate: " << way1.id << ", " << way2.id << std::endl;
+            log_debug(_("Overlapping: %1%, %2%"), way1.id, way2.id);
 	    status1->status.insert(overlaping);
 	    status2->status.insert(overlaping);
 	}
