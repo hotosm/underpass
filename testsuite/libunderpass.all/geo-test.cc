@@ -45,7 +45,7 @@ int
 main(int argc, char* argv[])
 {
     logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
-    dbglogfile.setWriteDisk(false);
+    dbglogfile.setWriteDisk(true
     dbglogfile.setLogFilename("geo-test.log");
     dbglogfile.setVerbosity(3);
     
