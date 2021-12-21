@@ -17,15 +17,8 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: osmstats; Type: DATABASE; Schema: -; Owner: rob
+-- Name: galaxy; Type: DATABASE; Schema: -; Owner: rob
 --
-
-CREATE DATABASE osmstats WITH TEMPLATE = template0 ENCODING = 'UTF8' LC_COLLATE = 'en_US.UTF-8' LC_CTYPE = 'en_US.UTF-8';
-
-
-ALTER DATABASE osmstats OWNER TO rob;
-
-\connect osmstats
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
