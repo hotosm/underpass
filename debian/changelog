@@ -2,6 +2,8 @@ underpass (20211222) unstable; urgency=low
 
     * Many changes made to add support for data validation.
 
+ -- Rob Savoye <rob.savoye@hotosm.org>  Mon,  22 Dec 2021 15:01:01 -0600
+
 underpass (20211001) unstable; urgency=low
 
     * Updated after approving a large patch adding some support for updating a raw OSM database.
@@ -10,15 +12,13 @@ underpass (20211001) unstable; urgency=low
 
 underpass (20211013) unstable; urgency=low
 
-    * Updated after approving a large patch adding some support for
-	updating a raw OSM database.
+    * Updated after approving a large patch adding some support for updating a raw OSM database.
 
  -- Rob Savoye <rob.savoye@hotosm.org>  Mon,  30 Sep 2021 12:57:01 -0600
 
 underpass (20210928) unstable; urgency=low
 
-   * Updated after fixing bug where the YAML files got left out of the
-     package.
+   * Updated after fixing bug where the YAML files got left out of the package.
 
  -- Rob Savoye <rob.savoye@hotosm.org>  Mon,  28 Sep 2021 16:23:01 -0600
 
