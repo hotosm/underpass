@@ -60,7 +60,7 @@ class Pq {
     void dump(void);
 
     //protected:
-    std::unique_ptr<pqxx::connection> sdb;
+    std::shared_ptr<pqxx::connection> sdb;
     pqxx::result result;
     std::string host;
     std::string user;
@@ -71,3 +71,8 @@ class Pq {
 } // namespace pq
 
 #endif // EOF __PQ_HH__
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:
