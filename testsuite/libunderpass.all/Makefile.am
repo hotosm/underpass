@@ -22,7 +22,6 @@ AUTOMAKE_OPTIONS = dejagnu
 check_PROGRAMS = \
 	conflate-test \
 	tm-test \
-	usersync-test \
 	under-test \
 	pq-test \
 	change-test \
