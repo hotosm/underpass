@@ -25,6 +25,7 @@
 #include "unconfig.h"
 #endif
 
+#include "data/pq.hh"
 #include "data/osmobjects.hh"
 #include "validate/validate.hh"
 

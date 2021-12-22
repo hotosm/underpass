@@ -29,6 +29,7 @@
 #include "validate/validate.hh"
 #include "data/osmobjects.hh"
 #include "validate/conflate.hh"
+#include "data/pq.hh"
 
 #include "log.hh"
 using namespace logger;

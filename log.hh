@@ -39,7 +39,7 @@
 #define DEFAULT_LOGFILE "underpass.log"
 
 // Support compilation with (or without) native language support
-#define ENABLE NLS 0
+// #define ENABLE NLS 0
 #include "gettext.h"
 #define  _(String) gettext (String)
 #define N_(String) gettext_noop (String)
