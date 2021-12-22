@@ -22,10 +22,13 @@
 #include "unconfig.h"
 #endif
 
+#define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
+
 #include <boost/python.hpp>
 #include "validate/hotosm.hh"
 #include "validate/validate.hh"
 #include "data/osmobjects.hh"
+#include "validate/conflate.hh"
 
 #include "log.hh"
 using namespace logger;
@@ -35,6 +38,7 @@ BOOST_PYTHON_MODULE(underpass)
 {
     using namespace boost::python;
     using namespace osmobjects;
+    using namespace conflate;
     class_<OsmNode>("OsmNode")
         .def("setLatitude", &OsmNode::setLatitude)
         .def("setLongitude", &OsmNode::setLongitude)
@@ -62,5 +66,18 @@ BOOST_PYTHON_MODULE(underpass)
     class_<ValidateStatus>("ValidateStatus")
         .def("hasStatus", &ValidateStatus::hasStatus)
         .def("dump", &ValidateStatus::dump);
+
+#if 1
+    class_<Conflate>("Conflate")
+        .def("newDuplicatePolygon", &Conflate::newDuplicatePolygon)
+        .def("existingDuplicatePolygon", &Conflate::existingDuplicatePolygon)
+        .def("newDuplicateLineString", &Conflate::newDuplicateLineString)
+        .def("existingDuplicateLineString", &Conflate::existingDuplicateLineString);
+#endif
 }
 #endif
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:
