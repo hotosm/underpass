@@ -121,26 +121,46 @@ AM_CPPFLAGS = \
 # clutter to the output. This should only be enabled when doing performance tuning.
 #	-DTIMING_DEBUG
 
-pkgdata_DATA = $(SQL_FILES) data/priority.geojson data/setupdb.sh
+PYTHON_UTILS = \
+	util/stats2galaxy.py \
+	util/training.py
+
+pkgdata_DATA = $(SQL_FILES) data/priority.geojson data/setupdb.sh $(PYTHON_UTILS)
 
 EXTRA_DIST = \
 	$(SQL_FILES) \
 	$(YAML_FILES) \
+	$(PYTHON_UTILS) \
 	testsuite \
 	data/priority.geojson \
 	po \
 	doc \
 	debian \
+	util \
 	redhat
 
 DEJATOOL = libunderpass
 
 if ENABLE_PYTHON
-pkglib_LTLIBRARIES = underpass.la
+EXT := $(shell python3-config --extension-suffix)
+DIR := $(shell python3-config --configdir)
+noinst_LTLIBRARIES = underpass.la
 underpass_la_SOURCES = data/python.cc $(libunderpass_la_SOURCES)
 underpass_la_LDFADD = $(BOOST_LIBS) libunderpass.la validate/libhotosm.la -lboost_python310
 underpass_la_LDFLAGS = -module -avoid-version -no-undefined -rpath /usr/lib64/ validate/libhotosm.la $(BOOST_LIBS)
 PY_OBJECTS = $(libunderpass_la_OBJECTS:.lo=.o)
+# /usr/lib/python3.9/lib-dynload/underpass.cpython-39-x86_64-linux-gnu.so
+install-python: underpass.la
+	@if test x"$(prefix)" = x"/usr/lib" -a "$(shell whoami)" != "root"; then \
+	   echo "Need to be root!"; \
+	else \
+	   moddir=$(shell dirname $(DIR))/lib-dynload; \
+	   if test ! -e $${moddir}; then \
+	     $(MDIR_P) $${moddir}; \
+	   fi; \
+	   cp .libs/underpass.so $${moddir}/underpass$(EXT); \
+	fi
+
 endif
 
 if ENABLE_DOXYGEN
