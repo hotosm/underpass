@@ -224,6 +224,8 @@ LIBS+=" -lboost_regex"
 dnl LIBS += "${BOOST_DATE_TIME} ${BOOST_SYSTEM} ${BOOST_FILESYSTEM} ${BOOST_LOG_LIB}"
 AC_LANG_POP(C++)
 
+AM_PATH_PYTHON([3])
+
 AC_ARG_ENABLE([python],
   AS_HELP_STRING([--enable-python],[Enable Python binding]), [], [enable_python=yes])
 
