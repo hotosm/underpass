@@ -70,6 +70,7 @@ BOOST_PYTHON_MODULE(underpass)
 
 #if 1
     class_<Conflate>("Conflate")
+        .def("connect", &Conflate::connect)
         .def("newDuplicatePolygon", &Conflate::newDuplicatePolygon)
         .def("existingDuplicatePolygon", &Conflate::existingDuplicatePolygon)
         .def("newDuplicateLineString", &Conflate::newDuplicateLineString)
