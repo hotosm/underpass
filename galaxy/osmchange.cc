@@ -131,7 +131,7 @@ OsmChangeFile::readChanges(const std::string &file)
 bool
 OsmChangeFile::readXML(std::istream &xml)
 {
-#if TIMING_DEBUG_X
+#ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("OsmChangeFile::readXML: took %w seconds\n");
 #endif
     // On non-english numeric locales using decimal separator different than '.'
@@ -446,7 +446,7 @@ OsmChangeFile::dump(void)
 void
 OsmChangeFile::areaFilter(const multipolygon_t &poly)
 {
-#if TIMING_DEBUG_X
+#ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("OsmChangeFile::areaFilter: took %w seconds\n");
 #endif
     std::map<long, bool> priority;
@@ -521,7 +521,7 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
 std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>>
 OsmChangeFile::collectStats(const multipolygon_t &poly)
 {
-#if TIMING_DEBUG_X
+#ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("OsmChangeFile::collectStats: took %w seconds\n");
 #endif
     // FIXME: stuff to extract for MERL
@@ -673,14 +673,12 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                         // log_debug(_("Changeset with way %1% is not in a priority area"), way->change_id);
                         continue;
                     } else {
-                        log_debug(
-                            _("Changeset with way %1% is in a priority area"),
-                            way->change_id);
-                            if (way->action == osmobjects::create) {
-                                ostats->added[*hit]++;
-                            } else if (way->action == osmobjects::modify) {
-                                ostats->modified[*hit]++;
-                            }
+                        //log_debug(_("Changeset with way %1% is in a priority area"),way->change_id);
+			if (way->action == osmobjects::create) {
+			    ostats->added[*hit]++;
+			} else if (way->action == osmobjects::modify) {
+			    ostats->modified[*hit]++;
+			}
                     }
                 }
             }
@@ -848,7 +846,7 @@ ChangeStats::dump(void)
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin)
 {
-#if TIMING_DEBUG_X
+#ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("OsmChangeFile::validateNodes: took %w seconds\n");
 #endif
     auto totals =
@@ -894,7 +892,7 @@ OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Validat
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin)
 {
-#if TIMING_DEBUG_X
+#ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("OsmChangeFile::validateWays: took %w seconds\n");
 #endif
     auto totals = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
@@ -917,8 +915,7 @@ OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate
                     continue;
                 }
                 auto status = plugin->checkWay(*way, *wit);
-                if (status->hasStatus(correct) &&
-                    status->hasStatus(incomplete)) {
+                if (status->hasStatus(correct) && status->hasStatus(incomplete)) {
                     //std::cerr << *wit << " Way " << way->id << " is correct but incomplete!" << std::endl;
                 } else if (status->hasStatus(complete)) {
                     //std::cerr << *wit << " Way " << way->id << " is complete" << std::endl;
@@ -926,12 +923,14 @@ OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate
                     //std::cerr << *wit << " Way " << way->id << " is not complete" << std::endl;
                     // way->dump();
                 }
+		if (way->containsKey("building")) {
+		    if (plugin->overlaps(change->ways, *way)) {
+			status->status.insert(overlaping);
+		    }
+		}
                 if (status->status.size() > 0) {
                     totals->push_back(status);
                 }
-            }
-	    if (way->containsKey("building")) {
-		plugin->overlaps(change->ways, *way);
 	    }
         }
     }
