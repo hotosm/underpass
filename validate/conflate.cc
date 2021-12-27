@@ -82,7 +82,7 @@ Conflate::connect(const std::string &dburl)
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 Conflate::newDuplicatePolygon(const osmobjects::OsmWay &way)
 {
-#if TIMING_DEBUG
+#ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("Conflate::newDuplicatePolygon: took %w seconds\n");
 #endif
     auto ids = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
@@ -143,7 +143,7 @@ Conflate::newDuplicatePolygon(const osmobjects::OsmWay &way)
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 Conflate::existingDuplicatePolygon(void)
 {
-#if TIMING_DEBUG
+#ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("Conflate::existingDuplicatePolygon: took %w seconds\n");
 #endif
     auto ids = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
