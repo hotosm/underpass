@@ -538,8 +538,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
         // nodecache.clear();
         OsmChange *change = it->get();
         // change->dump();
-        for (auto it = std::begin(change->nodes); it != std::end(change->nodes);
-             ++it) {
+        for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
             OsmNode *node = it->get();
             auto wkt = boost::geometry::wkt(node->point);
             // If there are no tags, assume it's part of a way
@@ -582,8 +581,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                 }
             }
         }
-        for (auto it = std::begin(change->ways); it != std::end(change->ways);
-             ++it) {
+        for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
             OsmWay *way = it->get();
             // If there are no tags, assume it's part of a relation
             if (way->tags.size() == 0 && way->action != osmobjects::remove) {
@@ -609,8 +607,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 #endif
             // Some older ways in a way wound up with this one tag, which nobody noticed,
             // so ignore it.
-            if (way->tags.size() == 1 &&
-                way->tags.find("created_at") != way->tags.end()) {
+            if (way->tags.size() == 1 && way->tags.find("created_at") != way->tags.end()) {
                 continue;
             }
             ostats = (*mstats)[way->change_id];
@@ -630,8 +627,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                 if (*hit == "highway" || *hit == "waterway") {
                     // Get the geometry behind each reference
                     boost::geometry::model::linestring<sphere_t> globe;
-                    for (auto lit = std::begin(way->refs);
-                         lit != std::end(way->refs); ++lit) {
+                    for (auto lit = std::begin(way->refs); lit != std::end(way->refs); ++lit) {
                         globe.push_back(sphere_t(nodecache[*lit].get<0>(),
                                                  nodecache[*lit].get<1>()));
                         boost::geometry::append(way->linestring, nodecache[*lit]);
@@ -642,12 +638,10 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                     boost::geometry::centroid(way->linestring, pt);
                     way->center = pt;
                     if (!boost::geometry::within(pt, poly)) {
-                        log_debug(
-                            _("Changeset with way %1% is not in a priority area"), way->id);
+                        log_debug(_("Changeset with way %1% is not in a priority area"), way->id);
                         continue;
                     } else {
-                        log_debug(
-                            _("Changeset with way %1% is in a priority area"), way->id);
+                        log_debug(_("Changeset with way %1% is in a priority area"), way->id);
 		    }
 #endif
                     std::string tag;
@@ -702,29 +696,47 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 
     // FIXME: Parse this a YAML file instead of hardcoded!
     // These are values for the place tag
-    std::vector<std::string> places = {"village", "hamlet", "neigborhood",
-                                       "city", "town"};
+    std::vector<std::string> places = {
+	"village",
+	"hamlet",
+	"neigborhood",
+	"city",
+	"town"};
     // These are values for the amenities tag
     std::vector<std::string> amenities = {
-        "hospital",       "school",          "clinic",        "kindergarten",
-        "drinking_water", "health_facility", "health_center", "healthcare"};
-    std::vector<std::string> buildings = {"hospital",
-                                          "hut",
-                                          "school",
-                                          "healthcare"
-                                          "clinic",
-                                          "kindergarten",
-                                          "health center",
-                                          "health centre",
-                                          "latrine",
-                                          "latrines",
-                                          "toilet",
-                                          "toilets"};
+        "hospital",
+	"school",
+	"clinic",
+        "kindergarten",
+        "drinking_water",
+	"health_facility",
+	"health_center",
+	"healthcare"};
+    std::vector<std::string> buildings = {
+	"hospital",
+	"hut",
+	"school",
+	"healthcare"
+	"clinic",
+	"kindergarten",
+	"health center",
+	"health centre",
+	"latrine",
+	"latrines",
+	"toilet",
+	"toilets"};
 
     // These are values for the highway tag
     std::vector<std::string> highways = {
-        "highway",     "tertiary", "secondary", "unclassified", "track",
-        "residential", "path",     "bridge",    "waterway"};
+        "highway",
+	"tertiary",
+	"secondary",
+	"unclassified",
+	"track",
+        "residential",
+	"path",
+	"bridge",
+	"waterway"};
 
     std::vector<std::string> schools = {"primary", "secondary", "kindergarten"};
     // Some older nodes in a way wound up with this one tag, which nobody noticed,
@@ -743,8 +755,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
             if (match != amenities.end()) {
                 if (!cache[it->second]) {
                     // log_debug(_("\tmatched amenity value: %1%"), it->second);
-                    hits->push_back(
-                        boost::algorithm::to_lower_copy(it->second));
+                    hits->push_back(boost::algorithm::to_lower_copy(it->second));
                     cache[it->second] = true;
                     // An amenity is a building, but the building tag may not be set
                     hits->push_back("building");
@@ -757,8 +768,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
             if (match != places.end()) {
                 if (!cache[it->second]) {
                     // log_debug(_("\tmatched place value: %1%"), it->second);
-                    hits->push_back(
-                        boost::algorithm::to_lower_copy(it->second));
+                    hits->push_back(boost::algorithm::to_lower_copy(it->second));
                     hits->push_back("place");
                     cache[it->second] = true;
                 }
@@ -772,8 +782,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
                 if (match != buildings.end()) {
                     if (!cache[it->second]) {
                         // log_debug(_("\tmatched building value: %1%"), it->second);
-                        hits->push_back(
-                            boost::algorithm::to_lower_copy(it->second));
+                        hits->push_back(boost::algorithm::to_lower_copy(it->second));
                         cache[it->second] = true;
                     }
                 }
@@ -784,8 +793,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
                 if (!cache[it->second]) {
                     // log_debug(_("\tmatched school value: %1%"), it->second);
                     // Add the type of school
-                    hits->push_back(
-                        boost::algorithm::to_lower_copy(it->second));
+                    hits->push_back(boost::algorithm::to_lower_copy(it->second));
                     // Add a generic school accumulator
                     hits->push_back("school");
                     cache[it->second] = true;
@@ -838,8 +846,7 @@ ChangeStats::dump(void)
 };
 
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
-OsmChangeFile::validateNodes(const multipolygon_t &poly,
-                             std::shared_ptr<Validate> &plugin)
+OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin)
 {
 #if TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("OsmChangeFile::validateNodes: took %w seconds\n");
@@ -863,14 +870,12 @@ OsmChangeFile::validateNodes(const multipolygon_t &poly,
             }
             std::vector<std::string> node_tests = {"building", "place" "amenity" "place"};
             // "wastepoint";
-            for (auto tit = std::begin(node_tests); tit != std::end(node_tests);
-                 ++tit) {
+            for (auto tit = std::begin(node_tests); tit != std::end(node_tests); ++tit) {
                 if (!node->containsKey(*tit)) {
                     continue;
                 }
                 auto status = plugin->checkPOI(*node, *tit);
-                if (status->hasStatus(correct) &&
-                    status->hasStatus(incomplete)) {
+                if (status->hasStatus(correct) && status->hasStatus(incomplete)) {
                     // std::cerr << *tit << " Node " << node->id << " is correct but incomplete!" << std::endl;
                     continue;
                 } else if (status->hasStatus(complete)) {
@@ -887,8 +892,7 @@ OsmChangeFile::validateNodes(const multipolygon_t &poly,
 }
 
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
-OsmChangeFile::validateWays(const multipolygon_t &poly,
-                            std::shared_ptr<Validate> &plugin)
+OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin)
 {
 #if TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("OsmChangeFile::validateWays: took %w seconds\n");
