@@ -588,6 +588,19 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
         ostats.applyChange(*it->second);
     }
 
+    // Delete and existing entries in the validation table to remove features that have been fixed
+    for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
+        OsmChange *change = it->get();
+        for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
+	    osmobjects::OsmWay *way = wit->get();
+	    ostats.updateValidation(way->id);
+	}
+        for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
+            osmobjects::OsmNode *node = nit->get();
+	    ostats.updateValidation(node->id);
+	}
+    }
+
     auto nodeval = osmchanges->validateNodes(poly, plugin);
     // std::cerr << "SIZE " << nodeval->size() << std::endl;
     for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {

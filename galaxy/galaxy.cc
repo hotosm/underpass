@@ -76,6 +76,9 @@ QueryGalaxy::lookupHashtag(const std::string &hashtag)
 bool
 QueryGalaxy::applyChange(const osmchange::ChangeStats &change) const
 {
+#if TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("applyChange(statistics): took %w seconds\n");
+#endif
     // std::cout << "Applying OsmChange data" << std::endl;
 
 #if 0
@@ -182,6 +185,9 @@ QueryGalaxy::applyChange(const osmchange::ChangeStats &change) const
 bool
 QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 {
+#if TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("applyChange(changeset): took %w seconds\n");
+#endif
     // log_debug(_("Applying ChangeSet data"));
     // change.dump();
 
@@ -365,8 +371,26 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 }
 
 bool
+QueryGalaxy::updateValidation(long id)
+{
+#if TIMING_DEBUG_X
+    boost::timer::auto_cpu_timer timer("updateValidation: took %w seconds\n");
+#endif
+    std::string query = "DELETE FROM validation WHERE osm_id=";
+    query += std::to_string(id);
+    pqxx::work worker(*sdb);
+    pqxx::result result = worker.exec(query);
+    worker.commit();
+
+    return true;
+}
+
+bool
 QueryGalaxy::applyChange(const ValidateStatus &validation) const
 {
+#if TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("applyChange(validation): took %w seconds\n");
+#endif
     log_debug(_("Applying Validation data"));
     validation.dump();
 

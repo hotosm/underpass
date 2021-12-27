@@ -163,6 +163,9 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
             status->status.insert(incomplete);
         }
     }
+    if (status->status.size() == 0) {
+	status->status.insert(correct);
+    }
     return status;
 }
 
@@ -289,6 +292,9 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             status->status.insert(incomplete);
         }
     }
+    if (status->status.size() == 0) {
+	// status->status.insert(correct);
+    }
     return status;
 }
 
@@ -321,6 +327,9 @@ Hotosm::checkTag(const std::string &key, const std::string &value)
         status->status.insert(badvalue);
     }
 
+    if (status->status.size() == 0) {
+	// status->status.insert(correct);
+    }
     return status;
 }
 

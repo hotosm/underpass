@@ -189,6 +189,7 @@ class QueryGalaxy : public pq::Pq {
     bool applyChange(const changeset::ChangeSet &change) const;
     bool applyChange(const osmchange::ChangeStats &change) const;
     bool applyChange(const ValidateStatus &validation) const;
+    bool updateValidation(long id);
 
     int lookupHashtag(const std::string &hashtag);
     bool hasHashtag(long changeid);
