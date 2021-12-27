@@ -109,7 +109,7 @@ class ValidateStatus {
         timestamp = way.timestamp;
     }
     //valerror_t operator[](int index){ return status[index]; };
-    bool hasStatus(const valerror_t &val) {
+    bool hasStatus(const valerror_t &val) const {
         auto match = std::find(status.begin(), status.end(), val);
         if (match != status.end()) {
             return true;
@@ -208,7 +208,7 @@ class BOOST_SYMBOL_VISIBLE Validate {
 	// This test only applies to buildings, as highways often overlap.
 	yaml::Yaml tests = yamls["building"];
 	if (tests.getConfig("overlaps") == "yes") {
-#if TIMING_DEBUG
+#ifdef TIMING_DEBUG
 	    boost::timer::auto_cpu_timer timer("validate::overlaps: took %w seconds\n");
 #endif
 	    for (auto nit = std::begin(allways); nit != std::end(allways); ++nit) {
