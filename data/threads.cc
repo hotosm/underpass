@@ -93,6 +93,9 @@ namespace threads {
 void
 startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &poly, const replicatorconfig::ReplicatorConfig &config, thread_pool &pool)
 {
+#ifdef TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("startMonitorChangesets: took %w seconds\n");
+#endif
     // This function is for changesets only!
     assert(inr.frequency == frequency_t::changeset);
 
@@ -288,6 +291,9 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
 void
 startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &poly, const replicatorconfig::ReplicatorConfig &config)
 {
+#ifdef TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("startMonitorChanges: took %w seconds\n");
+#endif
     if (inr.frequency == frequency_t::changeset) {
         log_error(_("Could not start monitoring thread for OSM changes: URL %1% does not appear to be a valid URL for changes!"), inr.url);
         return;
@@ -480,7 +486,7 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
     // galaxy::QueryGalaxy ostats;
     std::vector<std::string> result;
     auto osmchanges = std::make_shared<osmchange::OsmChangeFile>();
-#if TIMING_DEBUG
+#ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("threadOsmChange: took %w seconds\n");
 #endif
 
@@ -588,7 +594,7 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
         ostats.applyChange(*it->second);
     }
 
-    // Delete and existing entries in the validation table to remove features that have been fixed
+    // Delete existing entries in the validation table to remove features that have been fixed
     for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
         OsmChange *change = it->get();
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
@@ -619,7 +625,7 @@ threadOsmChange(const replication::RemoteURL &remote, const multipolygon_t &poly
 std::unique_ptr<changeset::ChangeSetFile>
 threadChangeSet(const replication::RemoteURL &remote, const multipolygon_t &poly, std::shared_ptr<galaxy::QueryGalaxy> ostats)
 {
-#if TIMING_DEBUG
+#ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("threadChangeSet: took %w seconds\n");
 #endif
     auto changeset = std::make_unique<changeset::ChangeSetFile>();

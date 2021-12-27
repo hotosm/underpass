@@ -276,7 +276,7 @@ Osm2Pgsql::getLastUpdate()
 bool
 Osm2Pgsql::updateDatabase(const std::string &osm_changes)
 {
-#if TIMING_DEBUG
+#ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("Osm2Pgsql::updateDatabase: took %w seconds\n");
 #endif
     // -l for 4326
@@ -315,7 +315,7 @@ Osm2Pgsql::updateDatabase(const std::string &osm_changes)
 bool
 Osm2Pgsql::updateDatabase(const std::shared_ptr<OsmChangeFile> &osm_changes) const
 {
-#if TIMING_DEBUG
+#ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("Osm2Pgsql::updateDatabase: took %w seconds\n");
 #endif
     // Preconditions

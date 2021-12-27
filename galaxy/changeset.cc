@@ -184,7 +184,7 @@ ChangeSetFile::readChanges(const std::string &file)
 void
 ChangeSetFile::areaFilter(const multipolygon_t &poly)
 {
-#if TIMING_DEBUG_X
+#ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("ChangeSetFile::areaFilter: took %w seconds\n");
 #endif
     // log_debug(_("Pre filtering changeset size is %1%"), changes.size());
