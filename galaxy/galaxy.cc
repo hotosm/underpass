@@ -76,7 +76,7 @@ QueryGalaxy::lookupHashtag(const std::string &hashtag)
 bool
 QueryGalaxy::applyChange(const osmchange::ChangeStats &change) const
 {
-#if TIMING_DEBUG
+#ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("applyChange(statistics): took %w seconds\n");
 #endif
     // std::cout << "Applying OsmChange data" << std::endl;
@@ -185,7 +185,7 @@ QueryGalaxy::applyChange(const osmchange::ChangeStats &change) const
 bool
 QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 {
-#if TIMING_DEBUG
+#ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("applyChange(changeset): took %w seconds\n");
 #endif
     // log_debug(_("Applying ChangeSet data"));
@@ -373,7 +373,7 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 bool
 QueryGalaxy::updateValidation(long id)
 {
-#if TIMING_DEBUG_X
+#ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("updateValidation: took %w seconds\n");
 #endif
     std::string query = "DELETE FROM validation WHERE osm_id=";
@@ -388,7 +388,7 @@ QueryGalaxy::updateValidation(long id)
 bool
 QueryGalaxy::applyChange(const ValidateStatus &validation) const
 {
-#if TIMING_DEBUG
+#ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("applyChange(validation): took %w seconds\n");
 #endif
     log_debug(_("Applying Validation data"));
@@ -418,7 +418,11 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
         "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)");
     fmt % validation.osm_id;
     fmt % validation.change_id;
-    fmt % validation.angle;
+    if (isnan(validation.angle)) {
+	fmt % 0.0;
+    } else {
+	fmt % validation.angle;
+    }
     fmt % validation.user_id;
     fmt % objtypes[validation.objtype];
     std::string tmp;
