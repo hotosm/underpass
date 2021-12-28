@@ -204,7 +204,7 @@ class BOOST_SYMBOL_VISIBLE Validate {
     virtual std::shared_ptr<ValidateStatus> checkTag(const std::string &key, const std::string &value) = 0;
     yaml::Yaml &operator[](const std::string &key) { return yamls[key]; };
 
-    bool overlaps(std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, const osmobjects::OsmWay &way) {
+    bool overlaps(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, osmobjects::OsmWay &way) {
 	// This test only applies to buildings, as highways often overlap.
 	yaml::Yaml tests = yamls["building"];
 	if (tests.getConfig("overlaps") == "yes") {
@@ -212,11 +212,12 @@ class BOOST_SYMBOL_VISIBLE Validate {
 	    boost::timer::auto_cpu_timer timer("validate::overlaps: took %w seconds\n");
 #endif
 	    for (auto nit = std::begin(allways); nit != std::end(allways); ++nit) {
-		// nit->dump();
 		osmobjects::OsmWay *oldway = nit->get();
 		if (boost::geometry::overlaps(oldway->polygon, way.polygon)) {
-		    log_error(_("Building %1% overlaps with %2%"), way.id, oldway->id);
-		    return true;
+		    if (way.getTagValue("layer") == oldway->getTagValue("layer") && way.id != oldway->id) {
+			log_error(_("Building %1% overlaps with %2%"), way.id, oldway->id);
+			return true;
+		    }
 		}
 	    }
 	}
