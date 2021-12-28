@@ -82,6 +82,7 @@ class OsmObject {
     bool priority = false; ///< Whether it's in the priority area
     /// Dump internal data to the terminal, only for debugging
     void dump(void) const;
+    std::string getTagValue(const std::string &key) { return tags[key] ; };
     bool containsKey(const std::string &key) { return tags.count(key); };
     bool containsValue(const std::string &key, const std::string &value)
     {
