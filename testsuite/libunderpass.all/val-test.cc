@@ -268,4 +268,34 @@ test_geom(std::shared_ptr<Validate> &plugin)
     plugin->cornerAngle(way->linestring);
     ocf.changes.pop_front();
 #endif
+
+    // Create fake buildings
+    auto way1 = std::make_shared<osmobjects::OsmWay>(1101898);
+    std::string p1 = "POLYGON((29.3858834 -1.9609767,29.3858954 -1.9610071,29.3859234 -1.9609961,29.3859114 -1.9609657,29.3858834 -1.9609767))";
+    boost::geometry::read_wkt(p1, way1->polygon);
+    way1->addTag("layer", "1");
+    way1->addTag("building", "yes");
+
+    std::string p2 = "POLYGON((29.3858553 -1.9609767,29.3858673 -1.9610071,29.3858953 -1.9609961,29.3858833 -1.9609657,29.3858553 -1.9609767))";
+    auto way2 = std::make_shared<osmobjects::OsmWay>(1101898);
+    boost::geometry::read_wkt(p2, way2->polygon);
+    way2->addTag("layer", "2");
+    way2->addTag("building", "yes");
+
+    std::string p3 = "POLYGON((29.385826 -1.9609716,29.385838 -1.961002,29.385866 -1.960991,29.385854 -1.9609606,29.385826 -1.9609716))";
+    auto way3 = std::make_shared<osmobjects::OsmWay>(1101899);
+    boost::geometry::read_wkt(p3, way3->polygon);
+    way3->addTag("layer", "3");
+    way3->addTag("building", "yes");
+
+    std::list<std::shared_ptr<osmobjects::OsmWay>> ways;
+    ways.push_back(way1);
+    ways.push_back(way2);
+    ways.push_back(way3);
+
+    if (plugin->overlaps(ways, *way1)) {
+        runtest.fail("Validate::overlaps()");
+    } else {
+        runtest.pass("Validate::overlaps()");
+    }
 }
