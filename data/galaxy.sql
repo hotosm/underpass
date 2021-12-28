@@ -68,6 +68,9 @@ CREATE TABLE public.geoboundaries (
     boundary public.geometry(MultiPolygon,4326)
 );
 
+ALTER TABLE ONLY public.geoboundaries
+    ADD CONSTRAINT geoboundaries_pkey PRIMARY KEY (cid);
+
 --
 -- Name: ground_data; Type: TABLE; Schema: public;
 --
