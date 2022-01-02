@@ -5,13 +5,11 @@ CREATE TYPE interval AS ENUM('minute', 'hour', 'day', 'changeset');
 
 CREATE TABLE public.states (
     timestamp timestamp without time zone DEFAULT now() NOT NULL,
-    created_at timestamp without time zone,
-    closed_at timestamp without time zone,
     path text NOT NULL,
-    sequence integer NOT NULL,
-    frequency text NOT NULL
+    sequence bigint NOT NULL,
+    frequency interval NOT NULL
 );
-ALTER TABLE states ADD PRIMARY KEY (path, timestamp);
+ALTER TABLE states ADD PRIMARY KEY (path, frequency);
 
 CREATE TABLE public.way_nodes (
     way_id bigint NOT NULL,
