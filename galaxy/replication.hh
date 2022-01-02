@@ -148,7 +148,37 @@ class StateFile {
     ///
     bool isValid() const;
 
-    // protected so testcases can access private data
+    ///
+    /// \brief freq_to_string returns a string representation of the given \a frequency.
+    /// The string representation can be used as part of the path for replication URL
+    /// (day, hour, minute, changesets).
+    /// \param frequency the frequency enum value.
+    /// \return a string representation of the frequency.
+    ///
+    static std::string freq_to_string(frequency_t frequency) {
+	std::map<replication::frequency_t, std::string> frequency_tags = {
+	    {replication::minutely, "minute"},
+	    {replication::hourly, "hour"},
+	    {replication::daily, "day"},
+	    {replication::changeset, "changesets"}};
+        return frequency_tags[frequency];
+    };
+    ///
+    /// \brief freq_from_string returns a frequency from its string representation \a frequency_str.
+    /// \param frequency_str the string representation (day, hour, minute, changesets).
+    /// \return the enum value for \a frequency_str.
+    /// \throws std::invalid_argument if the \a frequency_str is not a valid frequency.
+    ///
+    static frequency_t freq_from_string(const std::string &frequency_str) {
+	std::map<const std::string, replication::frequency_t> frequency_values = {
+	    {"minute", replication::minutely},
+	    {"hour", replication::hourly},
+	    {"day", replication::daily},
+	    {"changesets", replication::changeset}};
+        return frequency_values[frequency_str];
+    };
+
+    // FIXME: protected so testcases can access private data, this should be fixed
     //protected:
     std::string path; ///< URL to this file
     ptime timestamp = not_a_date_time; ///< The timestamp of the associated changeset file
@@ -228,8 +258,7 @@ class Planet {
     /// \return
     ///
     std::shared_ptr<StateFile>
-    fetchData(frequency_t freq, const std::string &path,
-              const std::string &underpass_dburl = "");
+    fetchData(frequency_t freq, const std::string &path, const std::string &underpass_dburl);
 
     static std::string sequenceToPath(long sequence);
 
@@ -240,8 +269,7 @@ class Planet {
     /// \param underpass_dburl optional url for underpass DB where data are cached, an empty value means no cache will be used.
     /// \return the last (possily invalid) state.
     ///
-    std::shared_ptr<StateFile>
-    fetchDataLast(frequency_t freq, const std::string &underpass_dburl = "");
+    std::shared_ptr<StateFile> fetchDataLast(frequency_t freq, const std::string &underpass_dburl);
 
     ///
     /// \brief fetchLastFirst reads the replication/<frequency>/state.txt file and retieve the first ???.state.txt state.
@@ -253,9 +281,7 @@ class Planet {
     /// \param force_scan optional flag to force an index scan (mainly for testing purposes).
     /// \return the first (possily invalid) state.
     ///
-    std::shared_ptr<StateFile>
-    fetchDataFirst(frequency_t freq, const std::string &underpass_dburl = "",
-                   bool force_scan = false);
+    std::shared_ptr<StateFile> fetchDataFirst(frequency_t freq, const std::string &underpass_dburl, bool force_scan = false);
 
     ///
     /// \brief fetchData retrieves data from the cache or from the server.
@@ -265,12 +291,10 @@ class Planet {
     /// \return a (possibly invalid) StateFile record.
     ///
     std::shared_ptr<StateFile>
-    fetchData(frequency_t freq, ptime timestamp,
-              const std::string &underpass_dburl = "");
+    fetchData(frequency_t freq, ptime timestamp, const std::string &underpass_dburl);
 
     std::shared_ptr<StateFile>
-    fetchData(frequency_t freq, long sequence,
-              const std::string &underpass_dburl = "");
+    fetchData(frequency_t freq, long sequence, const std::string &underpass_dburl);
 
     ///
     /// \brief fetchDataGreaterThan finds and returns the first (possibly invalid) state with a sequence greater than \a sequence.
@@ -280,8 +304,7 @@ class Planet {
     /// \return the first (possibly invalid) state with a sequence greater than \a sequence.
     ///
     std::shared_ptr<StateFile>
-    fetchDataGreaterThan(frequency_t freq, long sequence,
-                         const std::string &underpass_dburl = "");
+    fetchDataGreaterThan(frequency_t freq, long sequence, const std::string &underpass_dburl);
 
     ///
     /// \brief fetchDataGreaterThan finds and returns a (possibly invalid) state with a timestamp greater than \a sequence.
@@ -294,8 +317,7 @@ class Planet {
     /// \return the first (possibly invalid) state with a sequence greater than \a sequence.
     ///
     std::shared_ptr<StateFile>
-    fetchDataGreaterThan(frequency_t freq, ptime timestamp,
-                         const std::string &underpass_dburl = "");
+    fetchDataGreaterThan(frequency_t freq, ptime timestamp, const std::string &underpass_dburl);
 
     ///
     /// \brief fetchDataLessThan finds and returns a (possibly invalid) state with a sequence less than \a sequence.
@@ -305,24 +327,20 @@ class Planet {
     /// \return the first (possibly invalid) state with a sequence less than \a sequence.
     ///
     std::shared_ptr<StateFile>
-    fetchDataLessThan(frequency_t freq, long sequence,
-                      const std::string &underpass_dburl = "");
+    fetchDataLessThan(frequency_t freq, long sequence, const std::string &underpass_dburl);
 
     std::shared_ptr<StateFile>
-    fetchDataLessThan(frequency_t freq, ptime timestamp,
-                      const std::string &underpass_dburl = "");
+    fetchDataLessThan(frequency_t freq, ptime timestamp, const std::string &underpass_dburl);
 
     /// Dump internal data to the terminal, used only for debugging
     void dump(void);
 
     /// Scan remote directory from planet
-    std::shared_ptr<std::vector<std::string>>
-    scanDirectory(const std::string &dir);
+    std::shared_ptr<std::vector<std::string>> scanDirectory(const std::string &dir);
 
     /// Extract the links in an HTML document. This is used
     /// to find the directories on planet for replication files
-    std::shared_ptr<std::vector<std::string>> &
-    getLinks(GumboNode *node, std::shared_ptr<std::vector<std::string>> &links);
+    std::shared_ptr<std::vector<std::string>> &getLinks(GumboNode *node, std::shared_ptr<std::vector<std::string>> &links);
 
     // private:
     RemoteURL remote;
@@ -336,7 +354,6 @@ class Planet {
     std::map<ptime, std::string> hour;
     std::map<ptime, std::string> day;
     std::map<frequency_t, std::map<ptime, std::string>> states;
-    std::map<frequency_t, std::string> frequency_tags;
     // These are for the boost::asio data stream
     boost::asio::io_context ioc;
     ssl::context ctx{ssl::context::sslv23_client};

@@ -171,7 +171,7 @@ main(int argc, char *argv[])
     // Changeset tests
     //
     const auto initial_changeset_data =
-        test_planet.fetchData(replication::changeset, 0);
+        test_planet.fetchData(replication::changeset, 0, std::string());
     VERIFY(initial_changeset_data->isValid() &&
                initial_changeset_data->sequence == 0 &&
                initial_changeset_data->frequency == replication::changeset &&
@@ -198,7 +198,7 @@ main(int argc, char *argv[])
            "Underpass::fetchDataLast(replication::changeset, \"\", force_scan) "
            "- uncached)")
 
-    data = test_planet.fetchDataFirst(replication::changeset);
+        data = test_planet.fetchDataFirst(replication::changeset, std::string());
     VERIFY(*data.get() == *initial_changeset_data.get(),
            "Underpass::fetchDataLast(replication::changeset, \"\") - uncached)")
 
@@ -214,7 +214,7 @@ main(int argc, char *argv[])
 
     // Fetch last
     // 4704925 was the last sequence when I wrote this test
-    data = test_planet.fetchDataLast(replication::changeset);
+    data = test_planet.fetchDataLast(replication::changeset, std::string());
     VERIFY(data->isValid() && data->sequence > 4621312,
            "Underpass::fetchDataLast(replication::changeset) - uncached)")
 
@@ -229,7 +229,7 @@ main(int argc, char *argv[])
            "replication_conn) - cached")
 
     // Path is offset by one!
-    data = test_planet.fetchData(replication::changeset, 3939092);
+        data = test_planet.fetchData(replication::changeset, 3939092, std::string());
     VERIFY(data->isValid() && data->sequence == 3939092 &&
                data->path == "/003/939/093",
            "Underpass::fetchData(replication::changeset, 3939092)")
@@ -249,7 +249,7 @@ main(int argc, char *argv[])
     VERIFY(links->size() > 0, "Underpass::scanDirectory()")
 
     // Try first state
-    const auto initial_data = test_planet.fetchData(minutely, 1);
+    const auto initial_data = test_planet.fetchData(minutely, 1, std::string());
     VERIFY(initial_data->isValid() && initial_data->sequence == 1 &&
                initial_data->frequency == minutely &&
                initial_data->path.compare("/000/000/001") == 0 &&
@@ -278,7 +278,7 @@ main(int argc, char *argv[])
     VERIFY(*data.get() == *initial_data.get(),
            "Underpass::fetchDataLast(minutely, \"\", force_scan) - uncached)")
 
-    data = test_planet.fetchDataFirst(minutely);
+    data = test_planet.fetchDataFirst(minutely, std::string());
     VERIFY(*data.get() == *initial_data.get(),
            "Underpass::fetchDataLast(minutely, \"\") - uncached)")
 
@@ -292,7 +292,7 @@ main(int argc, char *argv[])
 
     // Fetch last
     // 4704925 was the last sequence when I wrote this test
-    data = test_planet.fetchDataLast(minutely);
+    data = test_planet.fetchDataLast(minutely, std::string());
     VERIFY(data->isValid() && data->sequence > 4704925,
            "Underpass::fetchDataLast(minutely) - uncached)")
 
@@ -308,7 +308,7 @@ main(int argc, char *argv[])
     // Fetch from timestamp tests
     //
 
-    data = test_planet.fetchDataGreaterThan(minutely, initial_timestamp);
+    data = test_planet.fetchDataGreaterThan(minutely, initial_timestamp, std::string());
     VERIFY(data->isValid() && data->sequence > 4704925,
            "Underpass::fetchDataGreaterThan(minutely, initial_timestamp)")
 
@@ -326,26 +326,26 @@ main(int argc, char *argv[])
     VERIFY(data->isValid() && data->sequence > 4704925,
            "Underpass::fetchDataGreaterThan(minutely, initial_timestamp)")
 
-    data = test_planet.fetchDataGreaterThan(minutely, 1);
+    data = test_planet.fetchDataGreaterThan(minutely, 1, std::string());
     VERIFY(data->isValid() && data->sequence == 2,
            "Underpass::fetchDataGreaterThan(minutely, 1)")
 
     // Out of range
     data = test_planet.fetchDataGreaterThan(
-        minutely, time_from_string("2500-12-01 00:00:00"));
+        minutely, time_from_string("2500-12-01 00:00:00"), std::string());
     VERIFY(!data->isValid(),
            "Underpass::fetchDataGreaterThan(minutely, 2500-12-01 00:00:00)")
 
     // Lesser tests at this point we have sequences 1 and 3 in the cache
     // Out of range
-    data = test_planet.fetchDataLessThan(minutely, 1);
+    data = test_planet.fetchDataLessThan(minutely, 1, std::string());
     VERIFY(!data->isValid(), "Underpass::fetchDataLessThan(minutely, 1)")
-    data = test_planet.fetchDataLessThan(minutely, initial_timestamp);
+        data = test_planet.fetchDataLessThan(minutely, initial_timestamp, std::string());
     VERIFY(!data->isValid(),
            "Underpass::fetchDataLessThan(minutely, initial_timestamp)")
 
     // Get state for initial (uncached)
-    data = test_planet.fetchData(minutely, initial_timestamp);
+        data = test_planet.fetchData(minutely, initial_timestamp, std::string());
     VERIFY(data->isValid() && data->sequence == 1 &&
                to_iso_extended_string(data->timestamp)
                        .compare("2012-09-12T08:15:45") == 0,
@@ -372,15 +372,13 @@ main(int argc, char *argv[])
       Next ts for 4025014 is: 2020-05-17T15:48:02Z
     */
 
-    data = test_planet.fetchData(minutely,
-                                 time_from_string("2020-05-17 15:47:02"));
+    data = test_planet.fetchData(minutely,time_from_string("2020-05-17 15:47:02"), std::string());
     VERIFY(data->isValid() && data->sequence == 4025013 &&
                to_iso_extended_string(data->timestamp)
                        .compare("2020-05-17T15:47:02") == 0,
            "Underpass::fetchData(minutely, 2020-05-17 15:47:02) - uncached")
 
-    data = test_planet.fetchData(minutely,
-                                 time_from_string("2020-05-17 15:47:02"));
+    data = test_planet.fetchData(minutely,time_from_string("2020-05-17 15:47:02"), std::string());
     VERIFY(data->isValid() && data->sequence == 4025013 &&
                to_iso_extended_string(data->timestamp)
                        .compare("2020-05-17T15:47:02") == 0,
@@ -395,8 +393,7 @@ main(int argc, char *argv[])
         "Underpass::fetchData(minutely, 2020-05-17 15:47:02, replication_conn)")
 
     // Advance one second: should return next sequence
-    data = test_planet.fetchData(minutely,
-                                 time_from_string("2020-05-17 15:47:03"));
+    data = test_planet.fetchData(minutely,time_from_string("2020-05-17 15:47:03"), std::string());
     VERIFY(data->isValid() && data->sequence == 4025014 &&
                to_iso_extended_string(data->timestamp)
                        .compare("2020-05-17T15:48:02") == 0,
@@ -419,13 +416,11 @@ main(int argc, char *argv[])
            "replication_conn) - cached")
 
     // Random checks in the middle
-    data = test_planet.fetchData(minutely,
-                                 time_from_string("2016-05-17 15:47:03"));
+    data = test_planet.fetchData(minutely,time_from_string("2016-05-17 15:47:03"), std::string());
     VERIFY(data->isValid() && data->sequence == 1924905,
            "Underpass::fetchData(minutely, 2016-05-17 15:47:03)");
 
-    data = test_planet.fetchData(minutely,
-                                 time_from_string("2021-09-07 15:47:03"));
+    data = test_planet.fetchData(minutely, time_from_string("2021-09-07 15:47:03"), std::string());
     VERIFY(data->isValid() && data->sequence == 4704890,
            "Underpass::fetchData(minutely, 2021-09-07 15:47:03)");
 

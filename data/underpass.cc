@@ -50,12 +50,6 @@ using namespace logger;
 
 namespace underpass {
 
-std::map<replication::frequency_t, std::string> Underpass::frequency_tags = {
-    {replication::minutely, "minute"},
-    {replication::hourly, "hour"},
-    {replication::daily, "day"},
-    {replication::changeset, "changesets"}};
-
 Underpass::Underpass(const std::string &dburl) { connect(dburl); };
 
 Underpass::~Underpass()
@@ -89,7 +83,7 @@ Underpass::getState(replication::frequency_t freq, const std::string &path)
     }
     //db_mutex.lock();
     const std::string where = "path='" + cleaned_path + "' AND frequency='" +
-                              freq_to_string(freq) + "'";
+                              replication::StateFile::freq_to_string(freq) + "'";
     return stateFromQuery(where);
 }
 
@@ -109,7 +103,7 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
     const std::string where{boost::str(
         format("timestamp BETWEEN '%1%' AND '%2%' AND frequency = '%3%'") %
         to_iso_extended_string(tstamp) % to_iso_extended_string(other) %
-        freq_to_string(freq))};
+        replication::StateFile::freq_to_string(freq))};
     const std::string order_by{"timestamp ASC"};
     return stateFromQuery(where, order_by);
 }
@@ -117,14 +111,14 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
 std::shared_ptr<replication::StateFile>
 Underpass::getState(replication::frequency_t freq, long sequence)
 {
-    return stateFromQuery("frequency = '" + freq_to_string(freq) + "' AND " +
+    return stateFromQuery("frequency = '" + replication::StateFile::freq_to_string(freq) + "' AND " +
                           "sequence=" + std::to_string(sequence));
 }
 
 std::shared_ptr<replication::StateFile>
 Underpass::getStateGreaterThan(replication::frequency_t freq, long sequence)
 {
-    return stateFromQuery("frequency='" + freq_to_string(freq) + "' AND " +
+    return stateFromQuery("frequency='" + replication::StateFile::freq_to_string(freq) + "' AND " +
                               "sequence > " + std::to_string(sequence),
                           "sequence ASC");
 }
@@ -136,7 +130,7 @@ Underpass::getStateGreaterThan(replication::frequency_t freq, ptime &timestamp)
         log_error(_("ERROR: bad timestamp!"));
         return std::make_shared<replication::StateFile>();
     }
-    return stateFromQuery("frequency='" + freq_to_string(freq) + "' AND " +
+    return stateFromQuery("frequency='" + replication::StateFile::freq_to_string(freq) + "' AND " +
                               " timestamp > '" +
                               to_iso_extended_string(timestamp) + "'",
                           "timestamp ASC");
@@ -145,7 +139,7 @@ Underpass::getStateGreaterThan(replication::frequency_t freq, ptime &timestamp)
 std::shared_ptr<replication::StateFile>
 Underpass::getStateLessThan(replication::frequency_t freq, long sequence)
 {
-    return stateFromQuery("frequency='" + freq_to_string(freq) + "' AND " +
+    return stateFromQuery("frequency='" + replication::StateFile::freq_to_string(freq) + "' AND " +
                               "sequence > " + std::to_string(sequence),
                           "sequence DESC");
 }
@@ -157,7 +151,7 @@ Underpass::getStateLessThan(replication::frequency_t freq, ptime &timestamp)
         log_error(_("Bad timestamp!"));
         return std::make_shared<replication::StateFile>();
     }
-    return stateFromQuery("frequency='" + freq_to_string(freq) + "' AND " +
+    return stateFromQuery("frequency='" + replication::StateFile::freq_to_string(freq) + "' AND " +
                               "timestamp < '" +
                               to_iso_extended_string(timestamp) + '\'',
                           "timestamp DESC");
@@ -223,7 +217,7 @@ Underpass::writeState(replication::StateFile &state)
 std::shared_ptr<replication::StateFile>
 Underpass::getLastState(replication::frequency_t freq)
 {
-    return stateFromQuery("frequency='" + freq_to_string(freq) + "'",
+    return stateFromQuery("frequency='" + replication::StateFile::freq_to_string(freq) + "'",
                           "timestamp DESC");
 }
 
@@ -232,7 +226,7 @@ Underpass::getLastState(replication::frequency_t freq)
 std::shared_ptr<replication::StateFile>
 Underpass::getFirstState(replication::frequency_t freq)
 {
-    return stateFromQuery("frequency='" + freq_to_string(freq) + "'",
+    return stateFromQuery("frequency='" + replication::StateFile::freq_to_string(freq) + "'",
                           "timestamp ASC");
 }
 
@@ -261,7 +255,7 @@ Underpass::stateFromQuery(const std::string &where, const std::string &order_by)
     try {
         pqxx::result result = worker.exec(query);
         if (result.size() > 0) {
-            state->frequency = freq_from_string(pqxx::to_string(result[0][0]));
+            state->frequency = replication::StateFile::freq_from_string(pqxx::to_string(result[0][0]));
             state->timestamp = time_from_string(pqxx::to_string(result[0][1]));
             state->sequence = result[0][2].as(int(0));
             state->path = pqxx::to_string(result[0][3]);

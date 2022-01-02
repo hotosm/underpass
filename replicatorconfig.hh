@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -116,7 +116,7 @@ struct ReplicatorConfig {
         }
         if (getenv("REPLICATOR_FREQUENCY")) {
             try {
-                frequency = Underpass::freq_from_string(getenv("REPLICATOR_FREQUENCY"));
+                frequency = StateFile::freq_from_string(getenv("REPLICATOR_FREQUENCY"));
             } catch (const std::invalid_argument &) {
                 // Ignore
             }
@@ -198,7 +198,7 @@ REPLICATOR_FREQUENCY=%4%
 REPLICATOR_TASKINGMANAGER_USERS_UPDATE_FREQUENCY=%5%
       )raw") % galaxy_db_url %
                    underpass_db_url % taskingmanager_db_url % osm2pgsql_db_url %
-                   Underpass::freq_to_string(frequency) % taskingmanager_users_update_frequency);
+                   StateFile::freq_to_string(frequency) % taskingmanager_users_update_frequency);
     };
 };
 

@@ -134,35 +134,7 @@ class Underpass : public pq::Pq {
         return url;
     };
 
-    ///
-    /// \brief freq_to_string returns a string representation of the given \a frequency.
-    /// The string representation can be used as part of the path for replication URL
-    /// (day, hour, minute, changesets).
-    /// \param frequency the frequency enum value.
-    /// \return a string representation of the frequency.
-    ///
-    static std::string freq_to_string(replication::frequency_t frequency)
-    {
-        return frequency_tags[frequency];
-    };
-
-    ///
-    /// \brief freq_from_string returns a frequency from its string representation \a frequency_str.
-    /// \param frequency_str the string representation (day, hour, minute, changesets).
-    /// \return the enum value for \a frequency_str.
-    /// \throws std::invalid_argument if the \a frequency_str is not a valid frequency.
-    ///
-    static replication::frequency_t
-    freq_from_string(const std::string &frequency_str)
-    {
-        for (const auto &[key, value]: frequency_tags)
-            if (value == frequency_str)
-                return key;
-        throw std::invalid_argument("Invalid frequency: " + frequency_str);
-    };
-
     // protected:
-    static std::map<replication::frequency_t, std::string> frequency_tags;
     std::string db_url;
 
   private:

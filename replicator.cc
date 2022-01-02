@@ -441,7 +441,7 @@ main(int argc, char *argv[])
 
     if (vm.count("monitor")) {
 
-        const std::string fullurl{replicator_config.getPlanetServerReplicationUrl() + "/" + Underpass::freq_to_string(replicator_config.frequency) + "/000/000/000"};
+        const std::string fullurl{replicator_config.getPlanetServerReplicationUrl() + "/" + StateFile::freq_to_string(replicator_config.frequency) + "/000/000/000"};
         replication::RemoteURL remote(fullurl);
 
         replication::Planet planet(remote);
@@ -458,7 +458,7 @@ main(int argc, char *argv[])
             // Try to determine the changesets path from the timestamp
             std::string url_path{starting_url_path.empty() ? "/001/001/001" : starting_url_path};
             const std::string fullurl{replicator_config.getPlanetServerReplicationUrl() + "/" +
-                                      Underpass::freq_to_string(frequency_t::changeset) + url_path};
+                                      StateFile::freq_to_string(frequency_t::changeset) + url_path};
             replication::RemoteURL remote(fullurl);
             try {
                 replication::Planet planet(remote);
@@ -495,7 +495,7 @@ main(int argc, char *argv[])
         if (!changes_state->isValid()) {
             const auto first_state{planet.fetchDataFirst(replicator_config.frequency, replicator_config.underpass_db_url)};
             if (first_state->isValid() && (replicator_config.end_time == not_a_date_time || first_state->timestamp <= replicator_config.end_time) && first_state->timestamp >= replicator_config.start_time) {
-                log_info("Using first state for OSM changes %1%", Underpass::freq_to_string(replicator_config.frequency));
+                log_info("Using first state for OSM changes %1%", StateFile::freq_to_string(replicator_config.frequency));
                 changes_state = first_state;
             }
         }
@@ -505,7 +505,7 @@ main(int argc, char *argv[])
             exit(-1);
         }
 
-        const std::string changes_url{replicator_config.getPlanetServerReplicationUrl() + "/" + Underpass::freq_to_string(replicator_config.frequency) + changes_state->path};
+        const std::string changes_url{replicator_config.getPlanetServerReplicationUrl() + "/" + StateFile::freq_to_string(replicator_config.frequency) + changes_state->path};
         remote.parse(changes_url);
 
         pool.push_task(threads::startMonitorChanges, std::ref(remote), std::ref(geou.boundary), std::ref(replicator_config));
