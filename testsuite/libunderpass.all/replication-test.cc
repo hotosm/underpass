@@ -80,7 +80,6 @@ class TestPlanet : public Planet {
     //! Clear the test DB and fill it with with initial test data
     bool init_test_case()
     {
-
         const std::string dbconn{getenv("UNDERPASS_TEST_DB_CONN")
                                      ? getenv("UNDERPASS_TEST_DB_CONN")
                                      : ""};
@@ -89,7 +88,6 @@ class TestPlanet : public Planet {
                                : ".";
 
         const std::string test_replication_db_name{"replication_planet_test"};
-
         {
             pqxx::connection conn{dbconn};
             pqxx::nontransaction worker{conn};
@@ -176,8 +174,7 @@ main(int argc, char *argv[])
         test_planet.fetchData(replication::changeset, 0);
     VERIFY(initial_changeset_data->isValid() &&
                initial_changeset_data->sequence == 0 &&
-               initial_changeset_data->frequency ==
-                   Underpass::freq_to_string(replication::changeset) &&
+               initial_changeset_data->frequency == replication::changeset &&
                initial_changeset_data->path.compare("/000/000/000") == 0 &&
                to_iso_extended_string(initial_changeset_data->timestamp)
                        .compare("2012-10-28T19:35:49") == 0 &&
@@ -254,7 +251,7 @@ main(int argc, char *argv[])
     // Try first state
     const auto initial_data = test_planet.fetchData(minutely, 1);
     VERIFY(initial_data->isValid() && initial_data->sequence == 1 &&
-               initial_data->frequency == Underpass::freq_to_string(minutely) &&
+               initial_data->frequency == minutely &&
                initial_data->path.compare("/000/000/001") == 0 &&
                to_iso_extended_string(initial_data->timestamp)
                        .compare("2012-09-12T08:15:45") == 0 &&
