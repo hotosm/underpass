@@ -175,13 +175,7 @@ Underpass::writeState(replication::StateFile &state)
     std::string query;
     pqxx::work worker(*sdb);
 
-    if (state.created_at != boost::posix_time::not_a_date_time) {
-        query = "INSERT INTO states(timestamp, sequence, path, frequency, "
-                "created_at, closed_at) VALUES(";
-    } else {
-        query =
-            "INSERT INTO states(timestamp, sequence, path, frequency) VALUES(";
-    }
+    query = "INSERT INTO states(timestamp, sequence, path, frequency) VALUES(";
     query += "\'" + to_iso_extended_string(state.timestamp) + "\',";
     query += std::to_string(state.sequence);
     std::vector<std::string> nodes;
@@ -200,22 +194,18 @@ Underpass::writeState(replication::StateFile &state)
     if (frequency.empty()) {
 
         if (state.path.find("changesets") != std::string::npos) {
-            frequency = Underpass::freq_to_string(replication::changeset);
+            frequency = replication::changeset;
         } else if (state.path.find("minute") != std::string::npos) {
-            frequency = Underpass::freq_to_string(replication::minutely);
+            frequency = replication::minutely;
         } else if (state.path.find("hour") != std::string::npos) {
-            frequency = Underpass::freq_to_string(replication::hourly);
+            frequency = replication::hourly;
         } else if (state.path.find("day") != std::string::npos) {
-            frequency = Underpass::freq_to_string(replication::daily);
+            frequency = replication::daily;
         }
     }
 
     query += ", " + worker.quote(frequency);
 
-    if (state.created_at != boost::posix_time::not_a_date_time) {
-        query += ", \'" + to_simple_string(state.created_at) + "\'";
-        query += ", \'" + to_simple_string(state.closed_at) + "\'";
-    }
     query += ") ON CONFLICT DO NOTHING;";
     log_debug(query);
     //db_mutex.lock();
@@ -271,18 +261,11 @@ Underpass::stateFromQuery(const std::string &where, const std::string &order_by)
     try {
         pqxx::result result = worker.exec(query);
         if (result.size() > 0) {
-            state->frequency = pqxx::to_string(result[0][0]);
+            state->frequency = freq_from_string(pqxx::to_string(result[0][0]));
             state->timestamp = time_from_string(pqxx::to_string(result[0][1]));
             state->sequence = result[0][2].as(int(0));
             state->path = pqxx::to_string(result[0][3]);
             auto datetime_str{pqxx::to_string(result[0][4])};
-            if (!datetime_str.empty()) {
-                state->created_at = time_from_string(datetime_str);
-            }
-            datetime_str = pqxx::to_string(result[0][5]);
-            if (!datetime_str.empty()) {
-                state->closed_at = time_from_string(datetime_str);
-            }
         } else {
             log_debug(_("Returning invalid state: no rows from query - %1%"),
                       query);

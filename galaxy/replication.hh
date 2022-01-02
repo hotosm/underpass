@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -86,10 +86,7 @@ namespace replication {
 // https://planet.openstreetmap.org/replication/changesets/
 //    dir/dir/???.osm.gz
 
-typedef enum { minutely,
-               hourly,
-               daily,
-               changeset } frequency_t;
+typedef enum { minutely, hourly, daily, changeset } frequency_t;
 
 /// \class StateFile
 /// \brief Data structure for state.txt files
@@ -105,8 +102,6 @@ class StateFile {
     StateFile(void)
     {
         timestamp = not_a_date_time;
-        created_at = not_a_date_time;
-        closed_at = not_a_date_time;
         sequence = -1; // Turns out 0 is a valid sequence for changeset :/
     };
 
@@ -118,8 +113,7 @@ class StateFile {
     inline bool operator==(const StateFile &other) const
     {
         return timestamp == other.timestamp && sequence == other.sequence &&
-               path == other.path && frequency == other.frequency &&
-               created_at == other.created_at && closed_at == other.closed_at;
+               path == other.path && frequency == other.frequency;
     };
 
     inline bool operator!=(const StateFile &other) { return !(*this == other); }
@@ -157,16 +151,10 @@ class StateFile {
     // protected so testcases can access private data
     //protected:
     std::string path; ///< URL to this file
-    ptime timestamp =
-        not_a_date_time; ///< The timestamp of the associated changeset file
-    long sequence =
-        -1; ///< The sequence number of the associated changeset/osmchange file
+    ptime timestamp = not_a_date_time; ///< The timestamp of the associated changeset file
+    long sequence = -1; ///< The sequence number of the associated changeset/osmchange file
     // FIXME: frequency is stored as a string, an ENUM would be a better choice, DB schema should be changed accordingly,.
-    std::string frequency; ///< The time interval of this change file
-    /// These two values are updated after the changset is parsed
-    ptime created_at =
-        not_a_date_time;               ///< The first timestamp in the changefile
-    ptime closed_at = not_a_date_time; ///< The last timestamp in the changefile
+    frequency_t frequency; ///< The time interval of this change file
 };
 
 /// \class RemoteURL
@@ -210,18 +198,6 @@ class Planet {
             throw std::runtime_error("Error connecting to server " + url.domain);
         }
     };
-    // Planet(const std::string &planet, const std::string &dir) {
-    //     pserver = planet;
-    //     datadir = dir;
-    //     frequency = replication::minutely;
-    //     connectServer();
-    // };
-    // Planet(const std::string &planet, const std::string &dir, frequency_t freq) {
-    //     pserver = planet;
-    //     datadir = dir;
-    //     frequency = freq;
-    //     connectServer();
-    // };
     ~Planet(void);
 
     bool connectServer(void) { return connectServer(remote.domain); }
