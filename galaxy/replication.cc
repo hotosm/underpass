@@ -121,10 +121,14 @@ StateFile::StateFile(const std::string &file, bool memory)
 
     // It's a disk file, so read it in.
     if (!memory) {
+	if (!boost::filesystem::exists(file)) {
+            log_error(_("%1%  doesn't exist!"), file);
+	    return;
+	}
         try {
             state.open(file, std::ifstream::in);
         } catch (std::exception &e) {
-            log_debug(_("ERROR opening %1% %2%"), file, e.what());
+            log_error(_(" opening %1% %2%"), file, e.what());
             // return false;
         }
         // For a disk file, none of the state files appears to be larger than
@@ -258,11 +262,40 @@ Planet::getLinks(GumboNode *node, std::shared_ptr<std::vector<std::string>> &lin
     return links;
 }
 
+std::istringstream
+Planet::processData(const std::string &dest, std::vector<unsigned char> &data)
+{
+#ifdef USE_CACHE
+    std::filesystem::path path(dest);
+    if (!boost::filesystem::exists(dest)) {
+	//boost::filesystem::create_directories(path.root_directory());
+    }
+    std::ofstream myfile;
+    myfile.open(dest, std::ios::binary);
+    myfile.write(reinterpret_cast<char *>(data.data()), data.size());
+    myfile.close();
+#endif
+    std::istringstream xml;
+    try {
+	{			// Scope to deallocate buffers
+	    boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
+	    inbuf.push(boost::iostreams::gzip_decompressor());
+	    boost::iostreams::array_source arrs{reinterpret_cast<char const *>(data.data()), data.size()};
+	    inbuf.push(arrs);
+	    std::istream instream(&inbuf);
+	    xml.str(std::string{std::istreambuf_iterator<char>(instream), {}});
+	}
+    } catch (std::exception &e) {
+	log_error(_("%1% is corrupted!"), remote.url);
+	std::cerr << e.what() << std::endl;
+    }
+    return xml;
+}
+
 // Download a file from planet
 std::shared_ptr<std::vector<unsigned char>>
 Planet::downloadFile(const std::string &url)
 {
-
     auto data = std::make_shared<std::vector<unsigned char>>();
 
     // The io_context is required for all I/O
@@ -520,8 +553,7 @@ Planet::fetchData(frequency_t freq, const std::string &path, const std::string &
     Underpass underpass;
     if (use_cache) {
         if (!underpass.connect(underpass_dburl)) {
-            log_error(_("Could not connect to underpass DB, caching disabled! "
-                        "- DB URL: %1%"),
+            log_error(_("Could not connect to underpass DB, caching disabled! - DB URL: %1%"),
                       underpass_dburl);
             use_cache = false;
         } else {
@@ -745,8 +777,7 @@ Planet::fetchDataLessThan(frequency_t freq, ptime timestamp, const std::string &
     Underpass underpass;
     if (use_cache) {
         if (!underpass.connect(underpass_dburl)) {
-            log_error(_("Could not connect to underpass DB, caching disabled! "
-                        "- DB URL: %1%"),
+            log_error(_("Could not connect to underpass DB, caching disabled! - DB URL: %1%"),
                       underpass_dburl);
         } else {
             state = underpass.getStateLessThan(freq, timestamp);
@@ -1182,7 +1213,7 @@ RemoteURL::dump(void)
     freqs[replication::minutely] = "minute";
     freqs[replication::hourly] = "hour";
     freqs[replication::daily] = "day";
-    freqs[replication::changeset] = "changesets";
+    freqs[replication::changeset] = "changeset";
     std::cerr << "\tFrequency: " << (int)frequency << std::endl;
     std::cerr << "\tMajor: " << major << std::endl;
     std::cerr << "\tMinor: " << minor << std::endl;
@@ -1190,6 +1221,14 @@ RemoteURL::dump(void)
     std::cerr << "\tFilespec: " << filespec << std::endl;
     std::cerr << "\tDestdir: " << destdir << std::endl;
 }
+
+Planet::Planet(const RemoteURL &url)
+{
+    if (!connectServer(url.domain)) {
+	throw std::runtime_error("Error connecting to server " + url.domain);
+    }
+}
+
 
 } // namespace replication
 

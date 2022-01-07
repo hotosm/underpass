@@ -105,6 +105,14 @@ class StateFile {
         sequence = -1; // Turns out 0 is a valid sequence for changeset :/
     };
 
+    StateFile(const std::string &pathin, long seqin, ptime timein, const frequency_t freq)
+    {
+	timestamp = timein;
+	sequence = seqin;
+	path = pathin;
+	frequency = freq;
+    };
+
     /// Initialize with a state file from disk or memory
     StateFile(const std::string &file, bool memory);
     StateFile(const std::vector<unsigned char> &data)
@@ -183,7 +191,6 @@ class StateFile {
     std::string path; ///< URL to this file
     ptime timestamp = not_a_date_time; ///< The timestamp of the associated changeset file
     long sequence = -1; ///< The sequence number of the associated changeset/osmchange file
-    // FIXME: frequency is stored as a string, an ENUM would be a better choice, DB schema should be changed accordingly,.
     frequency_t frequency; ///< The time interval of this change file
 };
 
@@ -221,13 +228,7 @@ class Planet {
   public:
     Planet(void);
     // Planet(const std::string &planet) { pserver = planet; };
-    Planet(const RemoteURL &url)
-    {
-        remote = url;
-        if (!connectServer(url.domain)) {
-            throw std::runtime_error("Error connecting to server " + url.domain);
-        }
-    };
+    Planet(const RemoteURL &url);
     ~Planet(void);
 
     bool connectServer(void) { return connectServer(remote.domain); }
@@ -242,13 +243,14 @@ class Planet {
         return false;
     }
 
+    std::istringstream processData(const std::string &dest, std::vector<unsigned char> &data);
+
     ///
     /// \brief downloadFile downloads a file from planet
     /// \param file the full URL or the path part of the URL (such as: "/replication/changesets/000/001/633.osm.gz"), the host part is taken from remote.domain.
     /// \return file data (possibly empty in case of errors)
     ///
-    std::shared_ptr<std::vector<unsigned char>>
-    downloadFile(const std::string &file);
+    std::shared_ptr<std::vector<unsigned char>>downloadFile(const std::string &file);
 
     ///
     /// \brief fetchData
@@ -257,10 +259,20 @@ class Planet {
     /// \param underpass_dburl
     /// \return
     ///
-    std::shared_ptr<StateFile>
-    fetchData(frequency_t freq, const std::string &path, const std::string &underpass_dburl);
+    std::shared_ptr<StateFile>fetchData(frequency_t freq, const std::string &path, const std::string &underpass_dburl);
 
     static std::string sequenceToPath(long sequence);
+
+    ///
+    /// \brief fetchData retrieves data from the cache or from the server.
+    /// \param freq frequency.
+    /// \param timestamp timestamp.
+    /// \param underpass_dburl optional url for underpass DB where data are cached, an empty value means no cache will be used.
+    /// \return a (possibly invalid) StateFile record.
+    ///
+    std::shared_ptr<StateFile>fetchData(frequency_t freq, ptime timestamp, const std::string &underpass_dburl);
+
+    std::shared_ptr<StateFile>fetchData(frequency_t freq, long sequence, const std::string &underpass_dburl);
 
     ///
     /// \brief fetchLastData reads the replication/<frequency>/state.txt file and retieve the last ???.state.txt state.
@@ -282,19 +294,6 @@ class Planet {
     /// \return the first (possily invalid) state.
     ///
     std::shared_ptr<StateFile> fetchDataFirst(frequency_t freq, const std::string &underpass_dburl, bool force_scan = false);
-
-    ///
-    /// \brief fetchData retrieves data from the cache or from the server.
-    /// \param freq frequency.
-    /// \param timestamp timestamp.
-    /// \param underpass_dburl optional url for underpass DB where data are cached, an empty value means no cache will be used.
-    /// \return a (possibly invalid) StateFile record.
-    ///
-    std::shared_ptr<StateFile>
-    fetchData(frequency_t freq, ptime timestamp, const std::string &underpass_dburl);
-
-    std::shared_ptr<StateFile>
-    fetchData(frequency_t freq, long sequence, const std::string &underpass_dburl);
 
     ///
     /// \brief fetchDataGreaterThan finds and returns the first (possibly invalid) state with a sequence greater than \a sequence.
