@@ -506,13 +506,6 @@ main(int argc, char *argv[])
         }
     }
 
-    // Check connection to underpass DB
-    Underpass under;
-    if (!under.connect(config.underpass_db_url)) {
-        log_error("ERROR: could not connect to underpass DB, check 'upserver' "
-                  "parameter!");
-    }
-
     if (vm.count("monitor")) {
         // At this point we must have a path, if the path was not passed we need to build one from
         const std::string fullurl{config.getPlanetServerReplicationUrl() + "/" + StateFile::freq_to_string(config.frequency) + "/000/000/000"};
@@ -530,7 +523,7 @@ main(int argc, char *argv[])
         pool.push_task(threads::startMonitorChanges, std::ref(*osmchange), std::ref(geou.boundary), std::ref(config));
 
         // Changesets thread
-        pool.push_task(threads::startMonitorChangesets, std::ref(*changeset), std::ref(geou.boundary), std::ref(config), std::ref(pool));
+        pool.push_task(threads::startMonitorChangesets, std::ref(*changeset), std::ref(geou.boundary), std::ref(config));
 
         log_info(_("Waiting..."));
 
