@@ -362,11 +362,9 @@ ChangeSetFile::readXML(std::istream &xml)
             }
             // Process the attributes, which do exist in every element
             change.id = value.second.get("<xmlattr>.id", 0);
-            change.created_at =
-                value.second.get("<xmlattr>.created_at",
+            change.created_at = value.second.get("<xmlattr>.created_at",
                                  boost::posix_time::second_clock::local_time());
-            change.closed_at =
-                value.second.get("<xmlattr>.closed_at",
+            change.closed_at = value.second.get("<xmlattr>.closed_at",
                                  boost::posix_time::second_clock::local_time());
             change.open = value.second.get("<xmlattr>.open", false);
             change.user = value.second.get("<xmlattr>.user", "");
@@ -376,8 +374,7 @@ ChangeSetFile::readXML(std::istream &xml)
             change.max_lat = value.second.get("<xmlattr>.max_lat", 0.0);
             change.max_lon = value.second.get("<xmlattr>.max_lon", 0.0);
             change.num_changes = value.second.get("<xmlattr>.num_changes", 0);
-            change.comments_count =
-                value.second.get("<xmlattr>.comments_count", 0);
+            change.comments_count = value.second.get("<xmlattr>.comments_count", 0);
             changes.push_back(change);
         }
     }
@@ -396,7 +393,7 @@ void
 ChangeSetFile::on_start_element(const Glib::ustring &name,
                                 const AttributeList &attributes)
 {
-    // log_debug(_("Element \'" << name << "\' starting" << std::endl;
+    // log_debug(_("Element %1%"), name);
     if (name == "changeset") {
         auto change = std::make_shared<changeset::ChangeSet>(attributes);
         changes.push_back(change);
@@ -423,7 +420,7 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
         double max_lon = 0.0;
 
         for (const auto &attr_pair: attributes) {
-            // std::wcout << "\tPAIR: " << attr_pair.name << " = " <<
+            // std::wcout << "\tPAIR: " << attr_pair.name << " = " << std::endl;
             // attr_pair.value << std::endl;
             if (attr_pair.name == "k" && attr_pair.value == "max_lat") {
                 max_lat = std::stod(attr_pair.value);
@@ -442,9 +439,14 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
                 hashit = true;
             } else if (attr_pair.name == "k" && attr_pair.value == "comment") {
                 comhit = true;
-            } else if (attr_pair.name == "k" &&
-                       attr_pair.value == "created_by") {
+            } else if (attr_pair.name == "k" && attr_pair.value == "created_by") {
                 cbyhit = true;
+            }
+
+            if (changes.size() == 0) {
+                std::cerr << "No changes!" << std::endl;
+                auto change = std::make_shared<ChangeSet>();
+                changes.push_back(change);
             }
 
             if (hashit && attr_pair.name == "v") {
@@ -455,8 +457,7 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
                     if (attr_pair.value.length() < 3) {
                         continue;
                     }
-                    char *token =
-                        std::strtok((char *)attr_pair.value.c_str(), "#;");
+                    char *token = std::strtok((char *)attr_pair.value.c_str(), "#;");
                     while (token != NULL) {
                         if (token) {
                             changes.back()->addHashtags(token);
