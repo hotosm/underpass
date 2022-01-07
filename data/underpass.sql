@@ -1,13 +1,13 @@
 CREATE EXTENSION IF NOT EXISTS hstore WITH SCHEMA public;
 CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
 
-CREATE TYPE interval AS ENUM('minute', 'hour', 'day', 'changeset');
+CREATE TYPE frequency AS ENUM('minute', 'hour', 'day', 'changesets');
 
 CREATE TABLE public.states (
     timestamp timestamp without time zone DEFAULT now() NOT NULL,
     path text NOT NULL,
     sequence bigint NOT NULL,
-    frequency interval NOT NULL
+    frequency frequency NOT NULL
 );
 ALTER TABLE states ADD PRIMARY KEY (path, frequency);
 
