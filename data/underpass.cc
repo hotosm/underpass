@@ -111,8 +111,7 @@ Underpass::getState(replication::frequency_t freq, ptime &tstamp)
 std::shared_ptr<replication::StateFile>
 Underpass::getState(replication::frequency_t freq, long sequence)
 {
-    return stateFromQuery("frequency = '" + replication::StateFile::freq_to_string(freq) + "' AND " +
-                          "sequence=" + std::to_string(sequence));
+    return stateFromQuery("frequency='" + replication::StateFile::freq_to_string(freq) + "' AND " + "sequence=" + std::to_string(sequence));
 }
 
 std::shared_ptr<replication::StateFile>
@@ -217,7 +216,7 @@ Underpass::writeState(replication::StateFile &state)
 std::shared_ptr<replication::StateFile>
 Underpass::getLastState(replication::frequency_t freq)
 {
-    return stateFromQuery("frequency='" + replication::StateFile::freq_to_string(freq) + "'",
+    return stateFromQuery("frequenc=y'" + replication::StateFile::freq_to_string(freq) + "'",
                           "timestamp DESC");
 }
 
@@ -239,9 +238,7 @@ Underpass::stateFromQuery(const std::string &where, const std::string &order_by)
     auto state = std::make_shared<replication::StateFile>();
 
     pqxx::work worker(*sdb);
-    std::string query =
-        "SELECT frequency,timestamp,sequence,path,created_at,closed_at FROM "
-        "states";
+    std::string query = "SELECT frequency,timestamp,sequence,path FROM states";
     if (!where.empty()) {
         query += " WHERE " + where;
     }
@@ -259,14 +256,13 @@ Underpass::stateFromQuery(const std::string &where, const std::string &order_by)
             state->timestamp = time_from_string(pqxx::to_string(result[0][1]));
             state->sequence = result[0][2].as(int(0));
             state->path = pqxx::to_string(result[0][3]);
-            auto datetime_str{pqxx::to_string(result[0][4])};
-        } else {
-            log_debug(_("Returning invalid state: no rows from query - %1%"),
-                      query);
+        // } else {
+        //     log_debug(_("Returning invalid state: no rows from query - %1%"),
+        //               query);
         }
         worker.commit();
     } catch (std::exception const &e) {
-        log_error(_("Error quering states table: %1%"), e.what());
+        log_error(_("Error querying states table: %1%"), e.what());
     }
     return state;
 }
