@@ -84,8 +84,7 @@ libunderpass_la_SOURCES = \
 	data/yaml.hh data/yaml.cc \
 	data/pq.hh data/pq.cc \
 	data/setupdb.sh \
-	validate/conflate.cc validate/conflate.hh \
-	external/thread_pool.hpp
+	validate/conflate.cc validate/conflate.hh
 
 if JEMALLOC
 libunderpass_la_LDFLAGS = -avoid-version -ljemalloc
