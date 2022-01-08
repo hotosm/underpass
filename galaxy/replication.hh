@@ -203,19 +203,20 @@ class RemoteURL {
     RemoteURL(const std::string &rurl) { parse(rurl); }
     /// Parse a URL into it's elements
     void parse(const std::string &rurl);
+    void updateDomain(const std::string &domain);
     void updatePath(int major, int minor, int index);
+    std::string getURL(void) { return "https//" + domain + "/" + filespec; };
+    
     std::string domain;
     std::string datadir;
     std::string subpath;
     frequency_t frequency;
     std::string base;
-    std::string url;
     int major;
     int minor;
     int index;
     std::string filespec;
     std::string destdir;
-    void replacePlanet(const std::string &new_domain, const std::string &new_datadir);
     void dump(void);
     void Increment(void);
     RemoteURL &operator=(const RemoteURL &inr);

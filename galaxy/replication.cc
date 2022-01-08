@@ -286,7 +286,7 @@ Planet::processData(const std::string &dest, std::vector<unsigned char> &data)
 	    xml.str(std::string{std::istreambuf_iterator<char>(instream), {}});
 	}
     } catch (std::exception &e) {
-	log_error(_("%1% is corrupted!"), remote.url);
+	log_error(_("%1% is corrupted!"), remote.getURL());
 	std::cerr << e.what() << std::endl;
     }
     return xml;
@@ -565,17 +565,22 @@ RemoteURL::parse(const std::string &rurl)
         }
         if (frequency == replication::changeset) {
             filespec = rurl.substr(rurl.find(datadir)) + ".osm.gz";
-            url = rurl + ".osm.gz";
+            //url = rurl + ".osm.gz";
         } else {
             filespec = rurl.substr(rurl.find(datadir)) + ".osc.gz";
-            url = rurl + ".osc.gz";
+            //url = rurl + ".osc.gz";
         }
         destdir = datadir + "/" + parts[4] + "/" + parts[5] + "/" + parts[6];
     } else {
         log_error(_("Error parsing URL %1%: not in the expected form "
-                    "(https://<server>/replication/<frequency>/000/000/001)"),
-                  rurl);
+                    "(https://<server>/replication/<frequency>/000/000/001)"), rurl);
     }
+}
+
+void
+RemoteURL::updateDomain(const std::string &planet)
+{
+    domain = planet;
 }
 
 void
@@ -594,22 +599,9 @@ RemoteURL::updatePath(int _major, int _minor, int _index)
     indexfmt % (index);
 
     std::string newpath = majorfmt.str() + "/" + minorfmt.str() + "/" + indexfmt.str();
-    // log_debug(_("NEWPATH: " << newpath);
-    boost::algorithm::replace_all(url, subpath, newpath);
     boost::algorithm::replace_all(destdir, subpath, newpath);
     boost::algorithm::replace_all(filespec, subpath, newpath);
-    boost::algorithm::replace_all(url, subpath, newpath);
     subpath = newpath;
-}
-
-void
-RemoteURL::replacePlanet(const std::string &new_domain, const std::string &new_datadir)
-{
-    const std::string old_url{"https://" + domain + "/" + datadir};
-    const std::string new_url{"https://" + new_domain + "/" + new_datadir};
-    boost::algorithm::replace_all(url, old_url, new_url);
-    domain = new_domain;
-    datadir = new_datadir;
 }
 
 void
@@ -636,11 +628,8 @@ RemoteURL::Increment(void)
     indexfmt % (index);
 
     newpath = majorfmt.str() + "/" + minorfmt.str() + "/" + indexfmt.str();
-    // log_debug(_("NEWPATH: " << newpath);
-    boost::algorithm::replace_all(url, subpath, newpath);
     boost::algorithm::replace_all(destdir, subpath, newpath);
     boost::algorithm::replace_all(filespec, subpath, newpath);
-    boost::algorithm::replace_all(url, subpath, newpath);
     subpath = newpath;
 }
 
@@ -654,7 +643,6 @@ RemoteURL::operator=(const RemoteURL &inr)
     major = inr.major;
     minor = inr.minor;
     index = inr.index;
-    url = inr.url;
     filespec = inr.filespec;
     destdir = inr.destdir;
 
@@ -676,7 +664,6 @@ RemoteURL::RemoteURL(const RemoteURL &inr)
     major = inr.major;
     minor = inr.minor;
     index = inr.index;
-    url = inr.url;
     filespec = inr.filespec;
     destdir = inr.destdir;
 }
@@ -684,11 +671,10 @@ RemoteURL::RemoteURL(const RemoteURL &inr)
 void
 RemoteURL::dump(void)
 {
-    std::cerr << "URL: " << url << std::endl;
     std::cerr << "\tDomain: " << domain << std::endl;
     std::cerr << "\tDatadir: " << datadir << std::endl;
     std::cerr << "\tSubpath: " << subpath << std::endl;
-    std::cerr << "\tURL: " << url << std::endl;
+    std::cerr << "\tURL: " << getURL() << std::endl;
     std::map<frequency_t, std::string> freqs;
     freqs[replication::minutely] = "minute";
     freqs[replication::hourly] = "hour";
