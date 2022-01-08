@@ -35,8 +35,6 @@
 #include <ogr_geometry.h>
 #include <thread>
 
-#include "external/thread_pool.hpp"
-
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/date_time.hpp>
 using namespace boost::posix_time;
@@ -94,8 +92,9 @@ startStateThreads(const std::string &base, const std::string &file);
 /// It does a bulk download to catch up the database, then checks for the
 /// minutely change files and processes them.
 extern void
-startMonitorChangesets(const replication::RemoteURL &remote, const multipolygon_t &poly,
-                       const replicatorconfig::ReplicatorConfig &config, thread_pool &pool);
+startMonitorChangesets(const replication::RemoteURL &remote,
+		       const multipolygon_t &poly,
+                       const replicatorconfig::ReplicatorConfig &config);
 
 /// This monitors the planet server for new OSM changes files.
 /// It does a bulk download to catch up the database, then checks for the
