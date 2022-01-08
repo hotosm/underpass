@@ -38,9 +38,6 @@
 #include <vector>
 #include <thread>
 
-// Global thread pool
-#include "external/thread_pool.hpp"
-
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/date_time.hpp>
 using namespace boost::posix_time;
@@ -176,7 +173,7 @@ class Replicator : public replication::Planet {
             time_duration delta3 = default_states[i].timestamp - default_states[i-1].timestamp;
             int minor = ((delta2.hours()*60) + delta2.minutes() / (delta3.hours()*60) + delta3.minutes());
             if (minor > 0) {
-                // std::cerr << (delta1.hours()*60) + delta1.minutes() << "," << (delta2.hours()*60) + delta2.minutes()  << "," << (delta3.hours()*60) + delta3.minutes() << std::endl;
+                std::cerr << (delta1.hours()*60) + delta1.minutes() << "," << (delta2.hours()*60) + delta2.minutes()  << "," << (delta3.hours()*60) + delta3.minutes() << std::endl;
                 long major = default_states[i-1].getMajor();
                 boost::format majorfmt("%03d");
                 boost::format minorfmt("%03d");
@@ -191,16 +188,28 @@ class Replicator : public replication::Planet {
                 cached += "/" + path + suffix;
                 ptime timestamp;
                 if (config.frequency != replication::changeset) {
-                    // fullurl = "https://planet.maps.mail.ru/" + cached;
-                    if (boost::filesystem::exists(cached)) {
-                        StateFile start(cached, false);
-                        timestamp = start.timestamp;
-                    } else {
+                    if (!boost::filesystem::exists(cached)) {
                         fullurl = "https://planet.maps.mail.ru/" + cached;
+                        auto data = downloadFile(fullurl);
+#ifdef USE_CACHE
+                        std::filesystem::path path(cached);
+                        if (!boost::filesystem::exists(path.parent_path().string())) {
+                            boost::filesystem::create_directories(path.parent_path().string());
+                        }
+                        std::ofstream myfile;
+                        myfile.open(cached, std::ios::binary);
+                        myfile.write(reinterpret_cast<char *>(data.get()->data()), data.get()->size());
+                        myfile.close();
+#endif
                     }
-                    // start.path = path;
+                    StateFile start(cached, false);
+                    // state.txt files aren't compressed
+                    //std::string str(std::begin(*data), std::end(*data));
+                    //StateFile start(str, false);
+                    // start.dump();
+                    timestamp = start.timestamp;
+                    std::cerr << to_simple_string(timestamp) << std::endl;
                 } else {
-                    // fullurl = "https://planet.maps.mail.ru/" + cached;
                     changeset::ChangeSetFile change;
                     if (boost::filesystem::exists(cached)) {
                         change.readChanges(cached);
@@ -213,6 +222,8 @@ class Replicator : public replication::Planet {
                     }
                     change.dump();
                     timestamp = change.changes.back()->created_at;
+                    std::cerr << to_simple_string(timestamp) << std::endl;
+                    std::cerr << to_simple_string(time) << std::endl;
                 }
                 time_duration delta4 = time - timestamp;
                 index = (delta4.hours()*60) + delta4.minutes();
@@ -373,9 +384,6 @@ main(int argc, char *argv[])
         config.concurrency = std::thread::hardware_concurrency();
     }
 
-    // Initialize the thread pool
-    thread_pool pool{config.concurrency};
-
     if (vm.count("tmusersfrequency")) {
         const auto freqValue{vm["tmusersfrequency"].as<std::string>()};
         char *p;
@@ -513,22 +521,22 @@ main(int argc, char *argv[])
         // replication::Planet planet(remote);
 
         auto osmchange = replicator.findRemotePath(config, config.start_time);
-        // osmchange->dump();
+        osmchange->dump();
 
         config.frequency = replication::changeset;
         auto changeset = replicator.findRemotePath(config, config.start_time);
-        // changeset->dump();
+        changeset->dump();
 
         std::string filespec{config.datadir + StateFile::freq_to_string(config.frequency) +  starting_url_path};
-        pool.push_task(threads::startMonitorChanges, std::ref(*osmchange), std::ref(geou.boundary), std::ref(config));
+        std::thread oscthr(threads::startMonitorChanges, std::ref(*osmchange), std::ref(geou.boundary), std::ref(config));
 
         // Changesets thread
-        pool.push_task(threads::startMonitorChangesets, std::ref(*changeset), std::ref(geou.boundary), std::ref(config));
+        std::thread osmthr(threads::startMonitorChangesets, std::ref(*changeset), std::ref(geou.boundary), std::ref(config));
 
         log_info(_("Waiting..."));
 
-        pool.wait_for_tasks();
-
+        oscthr.join();
+        osmthr.join();
         exit(0);
     }
 
