@@ -82,12 +82,6 @@ typedef std::shared_ptr<Validate>(plugin_t)();
 /// \namespace threads
 namespace threads {
 
-/// This handler downloads state.txt files from planet, newest first, and then
-/// goes backwards in time. This is used to populate database tables with only
-/// newer data.
-extern void
-startStateThreads(const std::string &base, const std::string &file);
-
 /// This monitors the planet server for new changesets files.
 /// It does a bulk download to catch up the database, then checks for the
 /// minutely change files and processes them.
@@ -102,10 +96,6 @@ startMonitorChangesets(const replication::RemoteURL &remote,
 extern void
 startMonitorChanges(const replication::RemoteURL &remote, const multipolygon_t &poly,
                     const replicatorconfig::ReplicatorConfig &config);
-
-/// Updates the states table in the Underpass database
-extern std::shared_ptr<replication::StateFile>
-threadStateFile(ssl::stream<tcp::socket> &stream, const std::string &file);
 
 /// Updates the raw_hashtags, raw_users, and raw_changesets_countries tables
 /// from a changeset file
