@@ -103,6 +103,10 @@ class Replicator : public replication::Planet {
     Replicator(void) {
         auto hashes = std::make_shared<std::map<std::string, int>>();
         // These initialize default for finding replication files
+        //ptime time0 = time_from_string("2012-09-12 09:26:06 ");
+        //StateFile state0("/000/000/000", 1000000, time0, replication::minutely);
+        //default_minutes.push_back(state0);
+
         ptime time1 = time_from_string("2014-08-12 06:02:02");
         StateFile state1("/001/000/000", 1000000, time1, replication::minutely);
         default_minutes.push_back(state1);
@@ -120,25 +124,25 @@ class Replicator : public replication::Planet {
         default_minutes.push_back(state4);
 
         // Changesets
-        ptime time5 = time_from_string("2020-06-28 23:26:01");
-        StateFile state5("/004/000/000", 3000000, time5, replication::changeset);
-        default_changesets.push_back(state5);
-
-        ptime time6 = time_from_string("2018-07-29 16:33:01");
-        StateFile state6("/003/000/000", 3000000, time6, replication::changeset);
-        default_changesets.push_back(state6);
-
-        ptime time7 = time_from_string("2016-08-01 20:43:01");
-        StateFile state7("/002/000/000", 3000000, time7, replication::changeset);
-        default_changesets.push_back(state7);
+        ptime time9 = time_from_string("2012-10-28 19:36:01");
+        StateFile state9("/000/000/000", 3000000, time9, replication::changeset);
+        default_changesets.push_back(state9);
 
         ptime time8 = time_from_string("2014-10-07 07:58:01");
         StateFile state8("/001/000/000", 3000000, time8, replication::changeset);
         default_changesets.push_back(state8);
 
-        ptime time9 = time_from_string("2012-10-28 19:36:01");
-        StateFile state9("/000/000/000", 3000000, time9, replication::changeset);
-        default_changesets.push_back(state9);
+        ptime time7 = time_from_string("2016-08-01 20:43:01");
+        StateFile state7("/002/000/000", 3000000, time7, replication::changeset);
+        default_changesets.push_back(state7);
+
+        ptime time6 = time_from_string("2018-07-29 16:33:01");
+        StateFile state6("/003/000/000", 3000000, time6, replication::changeset);
+        default_changesets.push_back(state6);
+
+        ptime time5 = time_from_string("2020-06-28 23:26:01");
+        StateFile state5("/004/000/000", 3000000, time5, replication::changeset);
+        default_changesets.push_back(state5);
     };
 
     /// Initialize the raw_user, raw_hashtags, and raw_changeset tables
@@ -164,86 +168,154 @@ class Replicator : public replication::Planet {
             suffix = ".osm.gz";
             default_states = default_changesets;
         }
-        int i = default_states.size() - 1;
-
+        bool rollover = false;
         connectServer("https://planet.maps.mail.ru");
+        auto remote = std::make_shared<RemoteURL>();
+        ptime now = boost::posix_time::microsec_clock::universal_time();
+
+        boost::format majorfmt("%03d");
+        boost::format minorfmt("%03d");
+        boost::format indexfmt("%03d");
+        int major=0, minor=0, index=0, span=0;
+        int currentdiff=0, lowerdiff=0, upperdiff=0, drift=0;
+        ptime timestamp;
+        int i = default_states.size() - 1;
         while (i >= 0) {
-            time_duration delta1 = default_states[i].timestamp - time;
-            time_duration delta2 = time - default_states[i-1].timestamp;
-            time_duration delta3 = default_states[i].timestamp - default_states[i-1].timestamp;
-            int minor = ((delta2.hours()*60) + delta2.minutes() / (delta3.hours()*60) + delta3.minutes());
-            if (minor > 0) {
-                std::cerr << (delta1.hours()*60) + delta1.minutes() << "," << (delta2.hours()*60) + delta2.minutes()  << "," << (delta3.hours()*60) + delta3.minutes() << std::endl;
-                long major = default_states[i-1].getMajor();
-                boost::format majorfmt("%03d");
-                boost::format minorfmt("%03d");
-                boost::format indexfmt("%03d");
-                majorfmt % (major);
-                minorfmt % ((minor/1000)-1);
-                // int index = ((delta2.hours()*60) + delta2.minutes()) - ((minor/1000)-1)*1000;
-                int index = 0;
-                indexfmt % (index);
-                std::string path = majorfmt.str() + "/" + minorfmt.str() + "/" + indexfmt.str();
-                std::string cached = config.datadir + StateFile::freq_to_string(config.frequency);
-                cached += "/" + path + suffix;
-                ptime timestamp;
-                if (config.frequency != replication::changeset) {
-                    if (!boost::filesystem::exists(cached)) {
-                        fullurl = "https://planet.maps.mail.ru/" + cached;
-                        auto data = downloadFile(fullurl);
-#ifdef USE_CACHE
-                        std::filesystem::path path(cached);
-                        if (!boost::filesystem::exists(path.parent_path().string())) {
-                            boost::filesystem::create_directories(path.parent_path().string());
-                        }
-                        std::ofstream myfile;
-                        myfile.open(cached, std::ios::binary);
-                        myfile.write(reinterpret_cast<char *>(data.get()->data()), data.get()->size());
-                        myfile.close();
-#endif
-                    }
-                    StateFile start(cached, false);
-                    // state.txt files aren't compressed
-                    //std::string str(std::begin(*data), std::end(*data));
-                    //StateFile start(str, false);
-                    // start.dump();
-                    timestamp = start.timestamp;
-                    std::cerr << to_simple_string(timestamp) << std::endl;
-                } else {
-                    changeset::ChangeSetFile change;
-                    if (boost::filesystem::exists(cached)) {
-                        change.readChanges(cached);
-                    } else {
-                        auto data = downloadFile("https://planet.maps.mail.ru/" + cached);
-                        auto xml = processData(cached, *data);
-                        std::istream& input(xml);
-                        change.readXML(input);
-                        // change.readChanges(cached);
-                    }
-                    change.dump();
-                    timestamp = change.changes.back()->created_at;
-                    std::cerr << to_simple_string(timestamp) << std::endl;
-                    std::cerr << to_simple_string(time) << std::endl;
-                }
-                time_duration delta4 = time - timestamp;
-                index = (delta4.hours()*60) + delta4.minutes();
-                boost::format newfmt("%03d");
-                if (index > 1000) {
-                    newfmt % ((minor + 1)/1000);
-                    index -= 1000;
-                } else {
-                    newfmt = minorfmt;
-                }
-                indexfmt % (index);
-                path = majorfmt.str() + "/" + newfmt.str() + "/" + indexfmt.str();
-                fullurl = "https://planet.maps.mail.ru/";
-                fullurl += config.datadir +  StateFile::freq_to_string(config.frequency) + "/" + path;
+            time_duration delta = default_states[i].timestamp - time;
+            if ((delta.hours()*60) + delta.minutes() < 0) {
+                delta = now - time;
+            }
+            currentdiff =  (delta.hours()*60) + delta.minutes();
+
+            delta = time - default_states[i].timestamp;
+            upperdiff =  (delta.hours()*60) + delta.minutes();
+
+            delta = time - default_states[i-1].timestamp;
+            lowerdiff =  (delta.hours()*60) + delta.minutes();
+
+            delta = default_states[i].timestamp - default_states[i-1].timestamp;
+            span =  ((delta.hours()*60) + delta.minutes());
+            drift = span/1000;
+            // int drift =  ((delta.hours()*60) + delta.minutes()) / 1000;
+            if (drift < 0) {
+                delta = default_states[i].timestamp - time;
+            }
+            std::cerr << "Times: " << i << ": " << currentdiff << ", " << lowerdiff  << ", " << upperdiff << ", " << drift << ", " << to_simple_string( default_states[i].timestamp) << std::endl;
+            // It's in this sub directory
+            if (currentdiff < span && upperdiff > 0) {
+                major = default_states[i].getMajor();
+                // go back a few directories
+                minor = (upperdiff/drift) * 0.96;
+                break;
+            } else if (upperdiff > 0) {
+                delta = default_states[i].timestamp - time;
+                major = default_states[i].getMajor() + 1;
+                minor = abs((drift*lowerdiff)/933)/1000;
+                //minor = (upperdiff/drift) * 0.96;
+                default_states[i].dump();
+                break;
+            } else if (upperdiff < 0) {
+                major = major = default_states[i-1].getMajor();
+                minor = (lowerdiff/drift) * 0.96;
+                break;
             }
             i--;
         }
 
-        // std::cerr  << "Fullurl: " << fullurl << "/ " << suffix << std::endl;
-        return std::make_shared<RemoteURL>(fullurl);
+        majorfmt % (major);
+        minorfmt % (minor);
+        // int index = ((delta2.hours()*60) + delta2.minutes()) - ((minor/1000)-1)*1000;
+        index = 0;
+        indexfmt % (index);
+        std::string path = majorfmt.str() + "/" + minorfmt.str() + "/" + indexfmt.str();
+        std::string cached = config.datadir + StateFile::freq_to_string(config.frequency);
+        cached += "/" + path + suffix;
+        fullurl = "https://planet.maps.mail.ru/" + cached;
+        remote->parse(fullurl);
+        if (config.frequency != replication::changeset) {
+            if (!boost::filesystem::exists(cached)) {
+                // remote->dump();
+                auto data = downloadFile(*remote);
+                // remote file doesn't exist, this is a 'Bad Request HTTP response
+                while (data->size() == 0) {
+                    if (minor > drift) {
+                        major++;
+                        minor -= drift;
+                    }
+                    remote->updatePath(major, minor, 0);
+                    remote->dump();
+                    data = downloadFile(*remote);
+                    if (data->size() == 0) {
+                        minor--;
+                    }
+                }
+#ifdef USE_CACHE
+                if (data->size() > 0) {
+                    std::filesystem::path path(cached);
+                    if (!boost::filesystem::exists(path.parent_path().string())) {
+                        boost::filesystem::create_directories(path.parent_path().string());
+                    }
+                    std::ofstream myfile;
+                    myfile.open(cached, std::ios::binary);
+                    myfile.write(reinterpret_cast<char *>(data.get()->data()), data.get()->size());
+                    myfile.close();
+                }
+#endif
+            }
+            StateFile start(remote->filespec, false);
+            start.dump();
+            if (start.timestamp == not_a_date_time) {
+                // break;
+            }
+            // state.txt files aren't compressed
+            timestamp = start.timestamp;
+        } else {
+            changeset::ChangeSetFile change;
+            remote->updatePath(major, minor, index);
+            remote->dump();
+            if (boost::filesystem::exists(remote->filespec)) {
+                change.readChanges(remote->filespec);
+            } else {
+                auto data = downloadFile(*remote);
+                auto xml = processData(remote->filespec, *data);
+                std::istream& input(xml);
+                change.readXML(input);
+            }
+            change.dump();
+            timestamp = change.changes.back()->created_at;
+        }
+
+        remote->dump();
+        time_duration delta4 = time - timestamp;
+        index = abs((delta4.hours()*60) + delta4.minutes());
+        if (index > drift) {
+            int diff = index/1000;
+            minor += diff;
+            index -= (index/1000)*1000;
+        }
+        std::cerr << "Timestamp: " << to_simple_string(timestamp) << std::endl;
+        std::cerr << "Time: " << to_simple_string(time) << std::endl;
+        std::cerr << "Major: " << major << std::endl;
+        minor -= 1;
+        std::cerr << "Minor: " << minor << std::endl;
+        std::cerr << "Index: " << index << std::endl;
+        if (minor > 1000) {
+            minor -= 1000;
+        }
+
+        boost::format newfmt("%03d");
+        if (index > 1000) {
+            newfmt % ((minor)/1000);
+            index -= 1000;
+        } else {
+            newfmt = minorfmt;
+        }
+        indexfmt % (index);
+        path = majorfmt.str() + "/" + newfmt.str() + "/" + indexfmt.str();
+        std::cerr << "Path: " << path << std::endl;
+        remote->updatePath(major, minor, index);
+
+        return remote;
     };
 
     // These are used for the import command
@@ -280,8 +352,6 @@ main(int argc, char *argv[])
             ("server,s", opts::value<std::string>(), "Database server for replicator output (defaults to localhost/galaxy) "
                                                      "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
             ("tmserver", opts::value<std::string>(), "Tasking Manager database server for input  (defaults to localhost/taskingmanager), "
-                                                     "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
-            ("upserver", opts::value<std::string>(), "Underpass database server for internal use (defaults to localhost/underpass), "
                                                      "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
             ("osm2pgsqlserver", opts::value<std::string>(), "Osm2pgsql database server (defaults to an empty string), "
                                                      "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
@@ -342,11 +412,6 @@ main(int argc, char *argv[])
     // Osm2pgsql options
     if (vm.count("osm2pgsqlserver")) {
         config.osm2pgsql_db_url = vm["osm2pgsqlserver"].as<std::string>();
-    }
-
-    // Underpass DB for internal use
-    if (vm.count("upserver")) {
-        config.underpass_db_url = vm["upserver"].as<std::string>();
     }
 
     // Planet server
@@ -475,7 +540,7 @@ main(int argc, char *argv[])
         try {
             auto timestamps = vm["timestamp"].as<std::vector<std::string>>();
             if (timestamps[0] == "now") {
-                config.start_time = boost::posix_time::second_clock::local_time();
+                config.start_time = boost::posix_time::second_clock::universal_time();
             } else {
                 config.start_time = from_iso_extended_string(timestamps[0]);
                 if (timestamps.size() > 1) {
@@ -531,7 +596,8 @@ main(int argc, char *argv[])
         std::thread oscthr(threads::startMonitorChanges, std::ref(*osmchange), std::ref(geou.boundary), std::ref(config));
 
         // Changesets thread
-        std::thread osmthr(threads::startMonitorChangesets, std::ref(*changeset), std::ref(geou.boundary), std::ref(config));
+        std::thread osmthr(threads::startMonitorChangesets, std::ref(*changeset),
+                           std::ref(geou.boundary), std::ref(config));
 
         log_info(_("Waiting..."));
 
