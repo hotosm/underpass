@@ -130,7 +130,7 @@ QueryGalaxy::applyChange(const osmchange::ChangeStats &change) const
 
     // Some of the data field in the changset come from a different file,
     // which may not be downloaded yet.
-    ptime now = boost::posix_time::microsec_clock::local_time();
+    ptime now = boost::posix_time::microsec_clock::universal_time();
     std::string aquery;
 
     if (ahstore.size() > 0) {
@@ -173,7 +173,7 @@ QueryGalaxy::applyChange(const osmchange::ChangeStats &change) const
     // log_debug(_("QUERY stats: %1%"), aquery);
     // Serialize changes writing
     {
-        std::scoped_lock write_lock{changes_write_mutex};
+        //std::scoped_lock write_lock{changes_write_mutex};
         pqxx::work worker(*sdb);
         pqxx::result result = worker.exec(aquery);
         worker.commit();
@@ -195,33 +195,16 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
     std::string query = "INSERT INTO users VALUES(";
     query += std::to_string(change.uid) + ",\'" + sdb->esc(change.user);
     query += "\') ON CONFLICT DO NOTHING;";
-    // log_debug(_("QUERY: %1%"), query);
+    log_debug(_("QUERY: %1%"), query);
 
     // Serialize changes writing
     {
-        std::scoped_lock write_lock{changes_write_mutex};
+        // std::scoped_lock write_lock{changes_write_mutex};
         pqxx::work worker(*sdb);
         pqxx::result result = worker.exec(query);
         worker.commit();
     }
 
-    // If there are no hashtags in this changset, then it isn't part
-    // of an organized map campaign, so we don't need to store those
-    // statistics except for editor usage.
-#if 0
-    underpass::Underpass under;
-    under.connect();
-
-    if ( change.hashtags.size() == 0 ) {
-        log_debug( _( "No hashtags in change id: %1%" ), change.id );
-        under.updateCreator( change.uid, change.id, change.editor );
-        worker.commit();
-        // return true;
-    } else {
-        log_debug( _( "Found hashtags for change id: %1%" ), change.id );
-    }
-
-#endif
     // Add changeset data
     // road_km_added | road_km_modified | waterway_km_added |
     // waterway_km_modified | roads_added | roads_modified | waterways_added |
@@ -234,7 +217,7 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
     // + 10.0 FROM raw_changesets WHERE road_km_added>0 AND user_id=649260 LIMIT
     // 1) WHERE user_id=649260;
 
-    query = "INSERT INTO changesets (id, editor, user_id, created_at";
+    query = "INSERT INTO changesets (id, editor, user_id, created_at, closed_at, updated_at";
 
     if (change.hashtags.size() > 0) {
         query += ", hashtags ";
@@ -248,7 +231,13 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
     query += std::to_string(change.id) + ",\'" + change.editor + "\',\'";
 
     query += std::to_string(change.uid) + "\',\'";
-    query += to_simple_string(change.created_at) + "\'";
+    query += to_simple_string(change.created_at) + "\', \'";
+    if (change.closed_at != not_a_date_time) {
+	query += to_simple_string(change.closed_at) + "\', \'";
+    } else {
+	query += to_simple_string(change.created_at) + "\', \'";
+    }
+    query += to_simple_string(boost::posix_time::second_clock::universal_time()) + "\'";
 
     // if (!change.open) {
     //     query += ",\'" + to_simple_string(change.closed_at) + "\'";
@@ -361,7 +350,7 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 
     // Serialize changes writing
     {
-        std::scoped_lock write_lock{changes_write_mutex};
+        // std::scoped_lock write_lock{changes_write_mutex};
         pqxx::work worker(*sdb);
         pqxx::result result = worker.exec(query);
         worker.commit();
@@ -444,7 +433,7 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
 
     // Serialize changes writing
     {
-        std::scoped_lock write_lock{changes_write_mutex};
+        //std::scoped_lock write_lock{changes_write_mutex};
         pqxx::work worker(*sdb);
         pqxx::result result = worker.exec(query);
         worker.commit();
