@@ -92,7 +92,7 @@ std::shared_ptr<ValidateStatus>
 Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
 {
     auto status = std::make_shared<ValidateStatus>(node);
-    status->timestamp = boost::posix_time::microsec_clock::local_time();
+    status->timestamp = boost::posix_time::microsec_clock::universal_time();
     status->user_id = node.uid;
 
     if (yamls.size() == 0) {
@@ -180,7 +180,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     std::setlocale(LC_NUMERIC, "C");
 
     auto status = std::make_shared<ValidateStatus>(way);
-    status->timestamp = boost::posix_time::microsec_clock::local_time();
+    status->timestamp = boost::posix_time::microsec_clock::universal_time();
     status->user_id = way.uid;
 
     if (yamls.size() == 0) {
