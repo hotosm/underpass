@@ -363,9 +363,9 @@ ChangeSetFile::readXML(std::istream &xml)
             // Process the attributes, which do exist in every element
             change.id = value.second.get("<xmlattr>.id", 0);
             change.created_at = value.second.get("<xmlattr>.created_at",
-                                 boost::posix_time::second_clock::local_time());
+                                 boost::posix_time::second_clock::universal_time());
             change.closed_at = value.second.get("<xmlattr>.closed_at",
-                                 boost::posix_time::second_clock::local_time());
+                                 boost::posix_time::second_clock::universal_time());
             change.open = value.second.get("<xmlattr>.open", false);
             change.user = value.second.get("<xmlattr>.user", "");
             change.uid = value.second.get("<xmlattr>.uid", 0);
