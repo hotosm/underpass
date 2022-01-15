@@ -219,7 +219,7 @@ OsmChangeFile::readXML(std::istream &xml)
             change.version = value.second.get("<xmlattr>.version", 0);
             change.timestamp =
                 value.second.get("<xmlattr>.timestamp",
-                                 boost::posix_time::second_clock::local_time());
+                                 boost::posix_time::second_clock::universal_time());
             change.user = value.second.get("<xmlattr>.user", "");
             change.uid = value.second.get("<xmlattr>.uid", 0);
             //changes.push_back(change);
