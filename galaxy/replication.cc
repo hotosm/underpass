@@ -49,8 +49,9 @@
 #include <osmium/io/any_output.hpp>
 #include <osmium/visitor.hpp>
 
-#include "boost/date_time/local_time/local_time.hpp"
-#include "boost/date_time/posix_time/posix_time.hpp"
+#include <boost/date_time/local_time/local_time.hpp>
+#include <boost/date_time/time_clock.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time.hpp>
 #include <boost/format.hpp>
 using namespace boost::posix_time;
@@ -265,16 +266,6 @@ Planet::getLinks(GumboNode *node, std::shared_ptr<std::vector<std::string>> &lin
 std::istringstream
 Planet::processData(const std::string &dest, std::vector<unsigned char> &data)
 {
-#ifdef USE_CACHE
-    std::filesystem::path path(dest);
-    if (!boost::filesystem::exists(dest)) {
-	//boost::filesystem::create_directories(path.root_directory());
-    }
-    std::ofstream myfile;
-    myfile.open(dest, std::ios::binary);
-    myfile.write(reinterpret_cast<char *>(data.data()), data.size());
-    myfile.close();
-#endif
     std::istringstream xml;
     try {
 	{			// Scope to deallocate buffers
@@ -286,7 +277,7 @@ Planet::processData(const std::string &dest, std::vector<unsigned char> &data)
 	    xml.str(std::string{std::istreambuf_iterator<char>(instream), {}});
 	}
     } catch (std::exception &e) {
-	log_error(_("%1% is corrupted!"), remote.getURL());
+	log_error(_("%1% is corrupted!"), dest);
 	std::cerr << e.what() << std::endl;
     }
     return xml;
@@ -296,7 +287,36 @@ Planet::processData(const std::string &dest, std::vector<unsigned char> &data)
 std::shared_ptr<std::vector<unsigned char>>
 Planet::downloadFile(const std::string &url)
 {
+    RemoteURL remote(url);
     auto data = std::make_shared<std::vector<unsigned char>>();
+
+    if (std::filesystem::exists(remote.filespec)) {
+        log_debug(_("Reading cached file: %1%"), remote.filespec);
+        // Since we want to read in the entire file so it can be
+        // decompressed, blow off C++ streaming and just load the
+        // entire thing.
+	int size = 0;
+	try {
+	    if (std::filesystem::exists(remote.filespec)) {
+		size = boost::filesystem::file_size(remote.filespec);
+	    }
+	} catch (const std::exception &ex) {
+	    log_error(_("File %1% doesn't exist but should!: %2%"), remote.filespec, ex.what());
+	    return data;
+	}
+
+        data->reserve(size);
+        data->resize(size);
+        int fd = open(remote.filespec.c_str(), O_RDONLY);
+        char *buf = new char[size];
+        //memset(buf, 0, size);
+        read(fd, buf, size);
+        // FIXME: it would be nice to avoid this copy
+        std::copy(buf, buf + size, data->begin());
+	delete buf;
+        close(fd);
+	return data;
+    }
 
     // The io_context is required for all I/O
     boost::asio::io_context ioc;
@@ -313,12 +333,11 @@ Planet::downloadFile(const std::string &url)
 
     // Look up the domain name
     auto const results = resolver.resolve(remote.domain, std::to_string(port));
-
     try {
         // Make the connection on the IP address we get from a lookup
         boost::asio::connect(stream.next_layer(), results.begin(), results.end());
         // Perform the SSL handshake
-        stream.handshake(ssl::stream_base::client);
+    stream.handshake(ssl::stream_base::client);
     } catch (boost::system::system_error ex) {
         log_error(_("stream write failed: %1%"), ex.what());
         return data;
@@ -356,6 +375,7 @@ Planet::downloadFile(const std::string &url)
 
         if (parser.get().result() == boost::beast::http::status::not_found) {
             log_error(_("Remote file not found: %1%"), url);
+	    return data;
         } else {
             // Check the magic number of the file
             const auto is_gzipped{parser.get().body()[0] == 0x1f};
@@ -390,10 +410,22 @@ Planet::downloadFile(const std::string &url)
         ec = {};
     }
 
-    if (ec) {
-        // Note: not sure about this, it looks harmless
-        // log_debug(_("stream shutdown failed: %1%"), ec.message());
+#ifdef USE_CACHE		// FIXME: should write to disk here
+    if (data->size() > 0) {
+	std::filesystem::path path(url);
+	if (!boost::filesystem::exists(remote.destdir)) {
+	    boost::filesystem::create_directories(remote.destdir);
+	}
+	std::ofstream myfile;
+	myfile.open(remote.filespec, std::ofstream::out | std::ios::binary);
+	myfile.write(reinterpret_cast<char *>(data.get()->data()), data.get()->size());
+	myfile.flush();
+	myfile.close();
+	log_debug(_("Wrote downloaded file %1% to disk"), remote.filespec);
+    } else {
+	log_error(_("%1% does not exist!"), remote.filespec);
     }
+#endif
 
     return data;
 }
@@ -418,6 +450,7 @@ void
 Planet::dump(void)
 {
     log_debug(_("Dumping Planet data"));
+#if 0
     for (auto it = std::begin(changeset); it != std::end(changeset); ++it) {
         std::cerr << "Changeset at: " << it->first << it->second << std::endl;
     }
@@ -430,12 +463,12 @@ Planet::dump(void)
     for (auto it = std::begin(day); it != std::end(day); ++it) {
         std::cerr << "Daily at: " << it->first << ": " << it->second << std::endl;
     }
+#endif
 }
 
 bool
 Planet::connectServer(const std::string &planet)
 {
-
     // Gracefully close the socket
     boost::system::error_code ec;
     ioc.reset();
@@ -449,13 +482,13 @@ Planet::connectServer(const std::string &planet)
         tmp = planet;
     }
 
-    if (!tmp.empty()) {
-        remote.domain = tmp;
-    }
+    ssl::context ctx{ssl::context::sslv23_client};
+    boost::asio::io_context ioc;
 
     try {
-        auto const results = resolver.resolve(tmp, std::to_string(port));
-        boost::asio::connect(stream.next_layer(), results.begin(), results.end(), ec);
+	tcp::resolver resolver{ioc};
+        auto const dns = resolver.resolve(tmp, std::to_string(port));
+        boost::asio::connect(stream.next_layer(), dns.begin(), dns.end(), ec);
         if (ec) {
             log_error(_("stream connect failed %1%"), ec.message());
             return false;
@@ -470,6 +503,8 @@ Planet::connectServer(const std::string &planet)
         return false;
     }
 
+    // Verify the remote server's certificate
+    ctx.set_verify_mode(ssl::verify_none);
     return true;
 }
 
@@ -477,6 +512,8 @@ Planet::connectServer(const std::string &planet)
 std::shared_ptr<std::vector<std::string>>
 Planet::scanDirectory(const std::string &dir)
 {
+
+    RemoteURL remote(dir);
     log_debug(_("Scanning remote Directory: %1%"), dir);
 
     // The io_context is required for all I/O
@@ -551,29 +588,34 @@ RemoteURL::parse(const std::string &rurl)
 
     std::vector<std::string> parts;
     boost::split(parts, rurl, boost::is_any_of("/"));
-    if (parts.size() == 8) {
-        domain = parts[2];
-        datadir = parts[3];
-        subpath = parts[5] + "/" + parts[6] + "/" + parts[7];
-        try {
-            frequency = StateFile::freq_from_string(parts[4]);
-            major = std::stoi(parts[5]);
-            minor = std::stoi(parts[6]);
-            index = std::stoi(parts[7]);
-        } catch (const std::exception &ex) {
-            log_error(_("Error parsing URL: %1%"), ex.what());
-        }
-        if (frequency == replication::changeset) {
-            filespec = rurl.substr(rurl.find(datadir)) + ".osm.gz";
-            //url = rurl + ".osm.gz";
-        } else {
-            filespec = rurl.substr(rurl.find(datadir)) + ".osc.gz";
-            //url = rurl + ".osc.gz";
-        }
-        destdir = datadir + "/" + parts[4] + "/" + parts[5] + "/" + parts[6];
+    if (parts[0] != "https:") {
+	datadir = parts[0];
+	frequency = StateFile::freq_from_string(parts[1]);
+	filespec = rurl.substr(rurl.find(parts[1]));
+	major = std::stoi(parts[2]);
+	minor = std::stoi(parts[3]);
+	index = std::stoi(parts[4]);
+	subpath = parts[2] + "/" + parts[3] + "/" + parts[4];
+	destdir = datadir + "/" + parts[1] + "/" + parts[2] + "/" + parts[3];
     } else {
-        log_error(_("Error parsing URL %1%: not in the expected form "
-                    "(https://<server>/replication/<frequency>/000/000/001)"), rurl);
+	if (parts.size() == 8) {
+	    domain = parts[2];
+	    datadir = parts[3];
+	    subpath = parts[5] + "/" + parts[6] + "/" + parts[7];
+	    try {
+		frequency = StateFile::freq_from_string(parts[4]);
+		major = std::stoi(parts[5]);
+		minor = std::stoi(parts[6]);
+		index = std::stoi(parts[7]);
+	    } catch (const std::exception &ex) {
+		log_error(_("Error parsing URL: %1%"), ex.what());
+	    }
+	    filespec = rurl.substr(rurl.find(datadir));
+	    destdir = datadir + "/" + parts[4] + "/" + parts[5] + "/" + parts[6];
+	} else {
+	    log_error(_("Error parsing URL %1%: not in the expected form "
+			"(https://<server>/replication/<frequency>/000/000/001)"), rurl);
+	}
     }
 }
 
@@ -600,7 +642,9 @@ RemoteURL::updatePath(int _major, int _minor, int _index)
 
     std::string newpath = majorfmt.str() + "/" + minorfmt.str() + "/" + indexfmt.str();
     boost::algorithm::replace_all(destdir, subpath, newpath);
-    boost::algorithm::replace_all(filespec, subpath, newpath);
+    // boost::algorithm::replace_first(filespec, subpath, newpath);
+    std::size_t pos = filespec.find(subpath);
+    filespec.replace(pos, 11, newpath);
     subpath = newpath;
 }
 
@@ -621,6 +665,35 @@ RemoteURL::Increment(void)
         index = 0;
     } else {
         index++;
+    }
+
+    majorfmt % (major);
+    minorfmt % (minor);
+    indexfmt % (index);
+
+    newpath = majorfmt.str() + "/" + minorfmt.str() + "/" + indexfmt.str();
+    boost::algorithm::replace_all(destdir, subpath, newpath);
+    boost::algorithm::replace_all(filespec, subpath, newpath);
+    subpath = newpath;
+}
+
+void
+RemoteURL::Decrement(void)
+{
+    boost::format majorfmt("%03d");
+    boost::format minorfmt("%03d");
+    boost::format indexfmt("%03d");
+    std::string newpath;
+    if (minor == 0) {
+        major--;
+        minor = 0;
+        index = 0;
+    }
+    if (index == 0) {
+        minor--;
+        index = 0;
+    } else {
+        index--;
     }
 
     majorfmt % (major);

@@ -205,7 +205,7 @@ class RemoteURL {
     void parse(const std::string &rurl);
     void updateDomain(const std::string &domain);
     void updatePath(int major, int minor, int index);
-    std::string getURL(void) { return "https//" + domain + "/" + filespec; };
+    const std::string getURL(void) { return "https://" + domain + "/" + filespec; };
     
     std::string domain;
     std::string datadir;
@@ -219,6 +219,7 @@ class RemoteURL {
     std::string destdir;
     void dump(void);
     void Increment(void);
+    void Decrement(void);
     RemoteURL &operator=(const RemoteURL &inr);
     long sequence() const;
 };
@@ -232,7 +233,7 @@ class Planet {
     Planet(const RemoteURL &url);
     ~Planet(void);
 
-    bool connectServer(void) { return connectServer(remote.domain); }
+    bool connectServer(const RemoteURL & remote) { return connectServer(remote.domain); }
     bool connectServer(const std::string &server);
     bool disconnectServer(void)
     {
@@ -252,6 +253,11 @@ class Planet {
     /// \return file data (possibly empty in case of errors)
     ///
     std::shared_ptr<std::vector<unsigned char>>downloadFile(const std::string &file);
+    std::shared_ptr<std::vector<unsigned char>>downloadFile(const RemoteURL &remote) {
+	std::string str = "https://" + remote.domain + "/" + remote.filespec;
+	return downloadFile(str);
+    };
+
     /// Dump internal data to the terminal, used only for debugging
     void dump(void);
 
@@ -263,7 +269,7 @@ class Planet {
     std::shared_ptr<std::vector<std::string>> &getLinks(GumboNode *node, std::shared_ptr<std::vector<std::string>> &links);
 
     // private:
-    RemoteURL remote;
+    // RemoteURL remote;
     //    std::string pserver;        ///< The replication file server
     //    std::string datadir;        ///< Default top level path to the data files
     //    replication::frequency_t frequency;
@@ -276,10 +282,9 @@ class Planet {
     std::map<frequency_t, std::map<ptime, std::string>> states;
     // These are for the boost::asio data stream
     boost::asio::io_context ioc;
+    // boost::asio::ip::basic_resolver_results<boost::asio::ip::tcp> dns;
     ssl::context ctx{ssl::context::sslv23_client};
-    tcp::resolver resolver{ioc};
     boost::asio::ssl::stream<tcp::socket> stream{ioc, ctx};
-    //    std::string baseurl;        ///< URL for the planet server
 };
 
 // These are the columns in the pgsnapshot.replication_changes table
@@ -294,7 +299,7 @@ class Replication {
   public:
     Replication(void)
     {
-        last_run = boost::posix_time::second_clock::local_time();
+        last_run = boost::posix_time::second_clock::universal_time();
         sequence = 0;
         port = 443;
         version = 11; ///! HTTP version
