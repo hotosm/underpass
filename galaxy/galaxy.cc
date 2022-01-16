@@ -56,6 +56,8 @@ std::once_flag prepare_user_statement_flag;
 /// \namespace galaxy
 namespace galaxy {
 
+static std::mutex pqxx_mutex;
+
 QueryGalaxy::QueryGalaxy(void) {}
 
 QueryGalaxy::QueryGalaxy(const std::string &dburl) { connect(dburl); };
@@ -170,10 +172,10 @@ QueryGalaxy::applyChange(const osmchange::ChangeStats &change) const
     aquery += " updated_at = \'" + to_simple_string(now) + "\'";
     aquery += " WHERE changesets.id=" + std::to_string(change.change_id);
 
-    // log_debug(_("QUERY stats: %1%"), aquery);
+    // _debug(_("QUERY stats: %1%"), aquery);
     // Serialize changes writing
     {
-        //std::scoped_lock write_lock{changes_write_mutex};
+        std::scoped_lock write_lock{pqxx_mutex};
         pqxx::work worker(*sdb);
         pqxx::result result = worker.exec(aquery);
         worker.commit();
@@ -195,11 +197,11 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
     std::string query = "INSERT INTO users VALUES(";
     query += std::to_string(change.uid) + ",\'" + sdb->esc(change.user);
     query += "\') ON CONFLICT DO NOTHING;";
-    log_debug(_("QUERY: %1%"), query);
+    // log_debug(_("QUERY: %1%"), query);
 
     // Serialize changes writing
     {
-        // std::scoped_lock write_lock{changes_write_mutex};
+	std::scoped_lock write_lock{pqxx_mutex};
         pqxx::work worker(*sdb);
         pqxx::result result = worker.exec(query);
         worker.commit();
@@ -350,7 +352,7 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 
     // Serialize changes writing
     {
-        // std::scoped_lock write_lock{changes_write_mutex};
+	std::scoped_lock write_lock{pqxx_mutex};
         pqxx::work worker(*sdb);
         pqxx::result result = worker.exec(query);
         worker.commit();
@@ -367,6 +369,7 @@ QueryGalaxy::updateValidation(long id)
 #endif
     std::string query = "DELETE FROM validation WHERE osm_id=";
     query += std::to_string(id);
+    std::scoped_lock write_lock{pqxx_mutex};
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     worker.commit();
@@ -431,13 +434,11 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     query += " SET status = ARRAY[" + tmp + " ]::status[]";
     // log_debug(_("QUERY: %1%"), query);
 
-    // Serialize changes writing
-    {
-        //std::scoped_lock write_lock{changes_write_mutex};
-        pqxx::work worker(*sdb);
-        pqxx::result result = worker.exec(query);
-        worker.commit();
-    }
+    std::scoped_lock write_lock{pqxx_mutex};
+    pqxx::work worker(*sdb);
+    pqxx::result result = worker.exec(query);
+    worker.commit();
+
     return true;
 }
 
