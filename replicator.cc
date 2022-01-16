@@ -249,18 +249,6 @@ class Replicator : public replication::Planet {
                         minor--;
                     }
                 }
-#ifdef USE_CACHE
-                if (data->size() > 0) {
-                    std::filesystem::path path(cached);
-                    if (!boost::filesystem::exists(path.parent_path().string())) {
-                        boost::filesystem::create_directories(path.parent_path().string());
-                    }
-                    std::ofstream myfile;
-                    myfile.open(cached, std::ios::binary);
-                    myfile.write(reinterpret_cast<char *>(data.get()->data()), data.get()->size());
-                    myfile.close();
-                }
-#endif
             }
             StateFile start(remote->filespec, false);
             start.dump();
@@ -293,12 +281,12 @@ class Replicator : public replication::Planet {
             minor += diff;
             index -= (index/1000)*1000;
         }
-        std::cerr << "Timestamp: " << to_simple_string(timestamp) << std::endl;
-        std::cerr << "Time: " << to_simple_string(time) << std::endl;
-        std::cerr << "Major: " << major << std::endl;
+        // std::cerr << "Timestamp: " << to_simple_string(timestamp) << std::endl;
+        // std::cerr << "Time: " << to_simple_string(time) << std::endl;
+        // std::cerr << "Major: " << major << std::endl;
         minor -= 1;
-        std::cerr << "Minor: " << minor << std::endl;
-        std::cerr << "Index: " << index << std::endl;
+        // std::cerr << "Minor: " << minor << std::endl;
+        // std::cerr << "Index: " << index << std::endl;
         if (minor > 1000) {
             minor -= 1000;
         }
@@ -311,9 +299,14 @@ class Replicator : public replication::Planet {
             newfmt = minorfmt;
         }
         indexfmt % (index);
-        path = majorfmt.str() + "/" + newfmt.str() + "/" + indexfmt.str();
-        std::cerr << "Path: " << path << std::endl;
+        // path = majorfmt.str() + "/" + newfmt.str() + "/" + indexfmt.str();
+        // std::cerr << "Path: " << path << std::endl;
         remote->updatePath(major, minor, index);
+
+        if (suffix == ".state.txt") {
+            std::size_t pos = remote->filespec.find(suffix);
+            remote->filespec = remote->filespec.replace(pos, suffix.size(), ".osc.gz");
+        }
 
         return remote;
     };
@@ -588,17 +581,15 @@ main(int argc, char *argv[])
         auto osmchange = replicator.findRemotePath(config, config.start_time);
         osmchange->dump();
 
+        std::thread oscthr(threads::startMonitorChanges, std::ref(*osmchange),
+                           std::ref(geou.boundary), std::ref(config));
         config.frequency = replication::changeset;
         auto changeset = replicator.findRemotePath(config, config.start_time);
         changeset->dump();
 
-        std::string filespec{config.datadir + StateFile::freq_to_string(config.frequency) +  starting_url_path};
-        std::thread oscthr(threads::startMonitorChanges, std::ref(*osmchange), std::ref(geou.boundary), std::ref(config));
-
         // Changesets thread
         std::thread osmthr(threads::startMonitorChangesets, std::ref(*changeset),
                            std::ref(geou.boundary), std::ref(config));
-
         log_info(_("Waiting..."));
 
         oscthr.join();
