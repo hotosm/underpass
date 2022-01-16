@@ -48,6 +48,7 @@ using namespace boost::gregorian;
 #include <boost/beast/http.hpp>
 #include <boost/beast/http/parser.hpp>
 #include <boost/beast/version.hpp>
+#include <boost/thread/future.hpp>
 
 namespace beast = boost::beast;
 namespace net = boost::asio;
@@ -101,8 +102,10 @@ startMonitorChanges(const replication::RemoteURL &remote, const multipolygon_t &
 /// from a changeset file
 extern std::shared_ptr<osmchange::OsmChangeFile>
 threadOsmChange(const replication::RemoteURL &remote,
-                const multipolygon_t &poly, galaxy::QueryGalaxy &ostats,
-                osm2pgsql::Osm2Pgsql &o2pgsql,
+		std::shared_ptr<replication::Planet> &planet,
+                const multipolygon_t &poly,
+		std::shared_ptr<galaxy::QueryGalaxy> &galaxy,
+                std::shared_ptr<osm2pgsql::Osm2Pgsql> &rawosm,
                 std::shared_ptr<Validate> &plugin);
 
 /// This updates several fields in the raw_changesets table, which are part of
@@ -110,7 +113,9 @@ threadOsmChange(const replication::RemoteURL &remote,
 //extern bool threadChangeSet(const std::string &file);
 extern std::unique_ptr<changeset::ChangeSetFile>
 threadChangeSet(const replication::RemoteURL &remote,
-                const multipolygon_t &poly, std::shared_ptr<galaxy::QueryGalaxy> ostats);
+		std::shared_ptr<replication::Planet> &planet,
+                const multipolygon_t &poly,
+		std::shared_ptr<galaxy::QueryGalaxy> galaxy);
 
 // extern bool threadChangeSet(const std::string &file, std::promise<bool> && result);
 
@@ -139,8 +144,7 @@ threadOSM(const std::string &database, ptime &timestamp);
           single shot, > 0 -> interval)
  */
 extern void
-threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive,
-                  const replicatorconfig::ReplicatorConfig &config);
+threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive, const replicatorconfig::ReplicatorConfig &config);
 
 } // namespace threads
 
