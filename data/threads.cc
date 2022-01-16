@@ -99,7 +99,7 @@ void
 startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &poly,
 		       const replicatorconfig::ReplicatorConfig &config)
 {
-#ifdef TIMING_DEBUG_X
+#ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("startMonitorChangesets: took %w seconds\n");
 #endif
     // This function is for changesets only!
@@ -133,16 +133,17 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
     bool mainloop = true;
     while (mainloop) {
 	boost::asio::thread_pool pool(cores);
-	while (i <= cores) {
+	i = 0;
+	while (i++ <= cores) {
 	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
 	    std::rotate(planets.begin(), planets.begin()+1, planets.end());
 
-	    // remote.updateDomain(servers.front());
 	    auto task = boost::bind(threadChangeSet, std::ref(remote),
 				std::ref(planets.front()),
 				std::ref(poly),
 				std::ref(galaxies.front()));
 	    boost::asio::post(pool, std::ref(task));
+	    remote.Increment();
 	}
 	ptime timestamp;
 	ptime now = boost::posix_time::microsec_clock::universal_time();
@@ -156,7 +157,9 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
 		// cores = 1;
 	    }
 	}
-	remote.Increment();
+	pool.join();
+	std::cout << "Restarting with: " << remote.filespec << std::endl;
+	// remote.Increment();
     }
 }
 
@@ -218,7 +221,8 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
     bool mainloop = true;
     while (mainloop) {
 	boost::asio::thread_pool pool(cores);
-//	while (i <= cores) {
+	i = 0;
+	while (i <= cores) {
 	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
 	    std::rotate(planets.begin(), planets.begin()+1, planets.end());
 	    std::rotate(rawosm.begin(), rawosm.begin()+1, rawosm.end());
@@ -231,7 +235,8 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
 				std::ref(rawosm.front()),
 				std::ref(validator));
 	    boost::asio::post(pool, std::ref(task));
-//	}
+	    remote.Increment();
+	}
 	ptime timestamp;
 	ptime now = boost::posix_time::microsec_clock::universal_time();
 	if (lastosc != not_a_date_time) {
@@ -244,7 +249,8 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
 		// cores = 1;
 	    }
 	}
-	remote.Increment();
+	pool.join();
+//	remote.Increment();
     }
     // pool.join();
 
@@ -407,16 +413,16 @@ threadChangeSet(const replication::RemoteURL &remote,
 
    // std::scoped_lock write_lock{time_mutex};
    for (auto cit = std::begin(changeset->changes); cit != std::end(changeset->changes); ++cit) {
-	cit->get()->dump();
-	changeset::ChangeSet *change = cit->get();
-	galaxy->applyChange(*cit->get());
-	if (change->closed_at != not_a_date_time) {
-	    threads::lastosm = change->closed_at;
-	} else if (change->created_at != not_a_date_time) {
-	    threads::lastosm = change->closed_at;
-	}
-    }
-    return changeset;
+       //cit->get()->dump();
+       changeset::ChangeSet *change = cit->get();
+       galaxy->applyChange(*cit->get());
+       if (change->closed_at != not_a_date_time) {
+	   threads::lastosm = change->closed_at;
+       } else if (change->created_at != not_a_date_time) {
+	   threads::lastosm = change->closed_at;
+       }
+   }
+   return changeset;
 }
 
 // This updates the calculated fields in the raw_changesets table, based on
