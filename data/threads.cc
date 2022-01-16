@@ -119,7 +119,7 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
     std::vector<std::shared_ptr<replication::Planet>> planets;
     int cores = std::thread::hardware_concurrency();
     int i = 0;
-    while (i <= cores) {
+    while (i <= cores/4) {
         auto xxx = std::make_shared<galaxy::QueryGalaxy>(config.galaxy_db_url);
         galaxies.push_back(xxx);
 	std::rotate(servers.begin(), servers.begin()+1, servers.end());
@@ -131,18 +131,17 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
 
     replication::RemoteURL remote = inr;
     bool mainloop = true;
+    auto task = boost::bind(threadChangeSet, std::ref(remote),
+			    std::ref(planets.front()),
+			    std::ref(poly),
+			    std::ref(galaxies.front()));
     while (mainloop) {
 	boost::asio::thread_pool pool(cores);
 	i = 0;
-	while (i++ <= cores) {
+	while (i++ <= cores*2) {
+	    boost::asio::post(pool, std::ref(task));
 	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
 	    std::rotate(planets.begin(), planets.begin()+1, planets.end());
-
-	    auto task = boost::bind(threadChangeSet, std::ref(remote),
-				std::ref(planets.front()),
-				std::ref(poly),
-				std::ref(galaxies.front()));
-	    boost::asio::post(pool, std::ref(task));
 	    remote.Increment();
 	}
 	ptime timestamp;
@@ -158,6 +157,7 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
 	    }
 	}
 	pool.join();
+	// std::this_thread::sleep_for(std::chrono::milliseconds{100});
 	std::cout << "Restarting with: " << remote.filespec << std::endl;
 	// remote.Increment();
     }
@@ -177,25 +177,6 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
     }
 
     replication::RemoteURL remote = inr;
-
-    // Support multiple database connections
-    std::vector<std::shared_ptr<galaxy::QueryGalaxy>> galaxies;
-    std::vector<std::string> servers{"openstreetmap.org", "planet.maps.mail.ru"};
-    std::vector<std::shared_ptr<replication::Planet>> planets;
-    std::vector<std::shared_ptr<osm2pgsql::Osm2Pgsql>> rawosm;
-    int cores = std::thread::hardware_concurrency();
-    int i = 0;
-    while (i <= cores) {
-        auto xxx = std::make_shared<galaxy::QueryGalaxy>(config.galaxy_db_url);
-        galaxies.push_back(xxx);
-	std::rotate(servers.begin(), servers.begin()+1, servers.end());
-        auto yyy = std::make_shared<replication::Planet>(inr);
-	yyy->connectServer(servers.front());
-        planets.push_back(yyy);
-        auto zzz = std::make_shared<osm2pgsql::Osm2Pgsql>(config.osm2pgsql_db_url);
-        rawosm.push_back(zzz);
-        i++;
-    }
 
     std::string plugins;
     if (boost::filesystem::exists("validate/.libs")) {
@@ -217,23 +198,40 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
 #ifdef MEMORY_DEBUG
     size_t sz, active1, active2;
 #endif	// JEMALLOC memory debugging
+    // Support multiple database connections
+    std::vector<std::shared_ptr<galaxy::QueryGalaxy>> galaxies;
+    std::vector<std::string> servers{"openstreetmap.org", "planet.maps.mail.ru"};
+    std::vector<std::shared_ptr<replication::Planet>> planets;
+    std::vector<std::shared_ptr<osm2pgsql::Osm2Pgsql>> rawosm;
+    int cores = std::thread::hardware_concurrency();
+    int i = 0;
+    while (i <= cores/4) {
+        auto xxx = std::make_shared<galaxy::QueryGalaxy>(config.galaxy_db_url);
+        galaxies.push_back(xxx);
+	std::rotate(servers.begin(), servers.begin()+1, servers.end());
+        auto yyy = std::make_shared<replication::Planet>(inr);
+	yyy->connectServer(servers.front());
+        planets.push_back(yyy);
+        auto zzz = std::make_shared<osm2pgsql::Osm2Pgsql>(config.osm2pgsql_db_url);
+        rawosm.push_back(zzz);
+        i++;
+    }
+
     // Process OSM changes
     bool mainloop = true;
+    auto task = boost::bind(threadOsmChange, std::ref(remote),
+			    std::ref(planets.front()),
+			    std::ref(poly),
+			    std::ref(galaxies.front()),
+			    std::ref(rawosm.front()),
+			    std::ref(validator));
     while (mainloop) {
 	boost::asio::thread_pool pool(cores);
 	i = 0;
-	while (i <= cores) {
+	while (i++ <= cores*2) {
 	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
 	    std::rotate(planets.begin(), planets.begin()+1, planets.end());
 	    std::rotate(rawosm.begin(), rawosm.begin()+1, rawosm.end());
-
-	// remote.updateDomain(servers.front());
-	    auto task = boost::bind(threadOsmChange, std::ref(remote),
-				std::ref(planets.front()),
-				std::ref(poly),
-				std::ref(galaxies.front()),
-				std::ref(rawosm.front()),
-				std::ref(validator));
 	    boost::asio::post(pool, std::ref(task));
 	    remote.Increment();
 	}
