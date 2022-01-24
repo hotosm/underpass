@@ -216,7 +216,18 @@ class Replicator : public replication::Planet {
                 break;
             } else if (upperdiff < 0) {
                 major = major = default_states[i-1].getMajor();
-                minor = (lowerdiff/drift) * 0.96;
+                if (currentdiff > span) {
+                    if ((currentdiff - span) > span) {
+                        major -= 2;
+                    } else {
+                        major -= 1;
+                    }
+                    int diff = abs(lowerdiff) - span;
+                    minor = span - diff;
+                    minor = (minor/drift) * 0.96;
+                } else {
+                    minor = (lowerdiff/drift) * 0.96;
+                }
                 break;
             }
             i--;
