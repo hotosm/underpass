@@ -211,20 +211,26 @@ class Replicator : public replication::Planet {
                 delta = default_states[i].timestamp - time;
                 major = default_states[i].getMajor() + 1;
                 minor = abs((drift*lowerdiff)/933)/1000;
-                //minor = (upperdiff/drift) * 0.96;
                 default_states[i].dump();
                 break;
             } else if (upperdiff < 0) {
                 major = major = default_states[i-1].getMajor();
                 if (currentdiff > span) {
-                    if ((currentdiff - span) > span) {
-                        major -= 2;
-                    } else {
-                        major -= 1;
+                    int j = 0;
+                    while (j >= 0) {
+                        if (((currentdiff - span*j) * j)>span*j) {
+                            major = j;
+                            break;
+                        }
+                        j++;
                     }
                     int diff = abs(lowerdiff) - span;
                     minor = span - diff;
                     minor = (minor/drift) * 0.96;
+                    if (minor < 0) {
+                        major--;
+                        minor = drift-abs(minor) * 1.06;
+                    }
                 } else {
                     minor = (lowerdiff/drift) * 0.96;
                 }
@@ -235,7 +241,6 @@ class Replicator : public replication::Planet {
 
         majorfmt % (major);
         minorfmt % (minor);
-        // int index = ((delta2.hours()*60) + delta2.minutes()) - ((minor/1000)-1)*1000;
         index = 0;
         indexfmt % (index);
         std::string path = majorfmt.str() + "/" + minorfmt.str() + "/" + indexfmt.str();
@@ -590,13 +595,12 @@ main(int argc, char *argv[])
         // replication::Planet planet(remote);
 
         auto osmchange = replicator.findRemotePath(config, config.start_time);
-        osmchange->dump();
-
+        // osmchange->dump();
         std::thread oscthr(threads::startMonitorChanges, std::ref(*osmchange),
                            std::ref(geou.boundary), std::ref(config));
         config.frequency = replication::changeset;
         auto changeset = replicator.findRemotePath(config, config.start_time);
-        changeset->dump();
+        // changeset->dump();
 
         // Changesets thread
         std::thread osmthr(threads::startMonitorChangesets, std::ref(*changeset),
