@@ -93,6 +93,8 @@ namespace threads {
 std::mutex time_mutex;
 static ptime lastosc;
 static ptime lastosm;
+static bool osmdone =  false;
+static bool oscdone =  false;
 
 // Starting with this URL, download the file, incrementing
 void
@@ -147,19 +149,26 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
 	ptime timestamp;
 	ptime now = boost::posix_time::microsec_clock::universal_time();
 	if (lastosm != not_a_date_time) {
-	    boost::posix_time::time_duration delta = now - timestamp;
-	    auto delay = std::chrono::minutes{1};
-	    std::cout << "TIMESTAMP1: " << to_simple_string(lastosm) << std::endl;
-	    std::cout << "DELTA: " << (delta.hours()*60) + delta.minutes() << std::endl;
-	    if ((delta.hours()*60) + delta.minutes() < 2) {
-		// std::this_thread::sleep_for(delay);
-		// cores = 1;
+	    // std::cout << "TIMESTAMP1: " << to_simple_string(lastosm) << std::endl;
+	    boost::posix_time::time_duration diff = now - lastosm;
+	    // std::cout << "DELTA: " << (diff.hours()*60) + diff.minutes() << std::endl;
+	    if ((diff.hours()*60) + diff.minutes() <= 50 || threads::osmdone) {
+		break;
 	    }
 	}
 	pool.join();
 	// std::this_thread::sleep_for(std::chrono::milliseconds{100});
-	std::cout << "Restarting with: " << remote.filespec << std::endl;
-	// remote.Increment();
+	// std::cout << "Restarting with: " << remote.filespec << std::endl;
+    }
+    // std::cout << "Caught up with: " << remote.filespec << std::endl;
+    auto delay = std::chrono::minutes{1};
+    while (mainloop) {
+	std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
+	std::rotate(planets.begin(), planets.begin()+1, planets.end());
+	// std::cout << "Caught up with: " << remote.filespec << std::endl;
+	threadChangeSet(std::ref(remote), std::ref(planets.front()), std::ref(poly), std::ref(galaxies.front()));
+	remote.Increment();
+	std::this_thread::sleep_for(delay);
     }
 }
 
@@ -238,19 +247,29 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
 	ptime timestamp;
 	ptime now = boost::posix_time::microsec_clock::universal_time();
 	if (lastosc != not_a_date_time) {
-	    boost::posix_time::time_duration delta = now - timestamp;
+	    boost::posix_time::time_duration delta = now - lastosc;
 	    auto delay = std::chrono::minutes{1};
-	    std::cout << "TIMESTAMP2: " << to_simple_string(lastosc) << std::endl;
-	    std::cout << "DELTA: " << (delta.hours()*60) + delta.minutes() << std::endl;
-	    if ((delta.hours()*60) + delta.minutes() < 2) {
-		// std::this_thread::sleep_for(delay);
-		// cores = 1;
+	    // std::cout << "TIMESTAMP2: " << to_simple_string(lastosc) << std::endl;
+	    if ((delta.hours()*60) + delta.minutes() <= 50 || threads::oscdone) {
+		break;
 	    }
 	}
 	pool.join();
-//	remote.Increment();
     }
-    // pool.join();
+    // std::cout << "Caught up with: " << remote.filespec << std::endl;
+    auto delay = std::chrono::minutes{1};
+    while (mainloop) {
+	std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
+	std::rotate(planets.begin(), planets.begin()+1, planets.end());
+	std::rotate(rawosm.begin(), rawosm.begin()+1, rawosm.end());
+	// std::cout << "Caught up with: " << remote.filespec << std::endl;
+	threadOsmChange(std::ref(remote), std::ref(planets.front()),
+			std::ref(poly), std::ref(galaxies.front()),
+			std::ref(rawosm.front()),
+			std::ref(validator));
+	remote.Increment();
+	std::this_thread::sleep_for(delay);
+    }
 
 #if 0
     time_duration delta;
@@ -293,6 +312,7 @@ threadOsmChange(const replication::RemoteURL &remote,
 	
     if (data->size() == 0) {
         log_error(_("osmChange file not found: %1% %2%"), remote.filespec, ".osc.gz");
+	oscdone = true;
         return osmchanges;
     } else {
         try {
@@ -337,6 +357,9 @@ threadOsmChange(const replication::RemoteURL &remote,
 #endif
     osmchanges->areaFilter(poly);
 
+    if (osmchanges->changes.back()->final_entry != not_a_date_time) {
+	threads::lastosc = osmchanges->changes.back()->final_entry;
+    }
     if (o2pgsql->isOpen()) {
         // o2pgsql.updateDatabase(osmchanges);
     }
@@ -401,6 +424,7 @@ threadChangeSet(const replication::RemoteURL &remote,
     if (data->size() == 0) {
         log_error(_("ChangeSet file not found: %1%"), remote.filespec);
         changeset->download_error = true;
+	threads::osmdone = true;
     } else {
 	auto xml = planet->processData(remote.filespec, *data);
 	std::istream& input(xml);
