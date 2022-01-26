@@ -214,19 +214,24 @@ class Replicator : public replication::Planet {
                 default_states[i].dump();
                 break;
             } else if (upperdiff < 0) {
-                major = major = default_states[i-1].getMajor();
+                major = default_states[i-1].getMajor();
                 if (currentdiff > span) {
-                    int j = 0;
-                    while (j >= 0) {
+                    int j = default_states.size();
+                    while (j <= 0) {
                         if (((currentdiff - span*j) * j)>span*j) {
                             major = j;
                             break;
                         }
-                        j++;
+                        j--;
                     }
                     int diff = abs(lowerdiff) - span;
-                    minor = span - diff;
-                    minor = (minor/drift) * 0.96;
+                    if (diff < 0) {
+                        major--;
+                        minor = (span - abs(lowerdiff))/drift;
+                    } else {
+                        minor = span - diff;
+                        minor = (minor/drift) * 0.96;
+                    }
                     if (minor < 0) {
                         major--;
                         minor = drift-abs(minor) * 1.06;
@@ -530,7 +535,9 @@ main(int argc, char *argv[])
     std::vector<std::string> rawfile;
     std::shared_ptr<std::vector<unsigned char>> data;
 
-    // This is the changesets path part (ex. 000/075/000), takes precedence over 'timestamp' option"
+    // This is the changesets path part (ex. 000/075/000), takes precedence over 'timestamp'
+    // option. This only applies to the osm change files, as it's timestamp is used to
+    // start the changesets.
     if (vm.count("url")) {
         starting_url_path = vm["url"].as<std::string>();
         // Make sure the path starts with a slash
