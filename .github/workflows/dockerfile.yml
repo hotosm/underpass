@@ -10,16 +10,6 @@ on:
 # sequentially or in parallel
 jobs:
 
-  login:
-    runs-on: ubuntu-20.04
-    steps:
-      -
-        name: Login to Quay.io
-        uses: docker/login-action@v1
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_ROBOT_TOKEN }}
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-20.04
@@ -29,6 +19,13 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your
     # job can access it
     - uses: actions/checkout@v2
+
+    - name: Login to Quay.io
+      uses: docker/login-action@v1
+      with:
+        registry: quay.io
+        username: ${{ secrets.QUAY_USERNAME }}
+        password: ${{ secrets.QUAY_ROBOT_TOKEN }}
 
     - name: Build and tag Dockerfile
       run: cd docker && docker build -t quay.io/hotosm/underpass-build-deps:focal -f underpass-build-deps.dockerfile .
