@@ -24,7 +24,7 @@ services:
   # Underpass build dependencies
   underpass-build-deps:
     # Pre-built for speed:
-    image: elpaso/underpass-build-deps:focal
+    image: quay.io/hotosm/underpass-build-deps:focal
     # Build recipe:
     #build:
     #  context: .

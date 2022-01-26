@@ -1,0 +1,29 @@
+# This workflow will run first so the others have a fresh file to work with
+
+name: Build Dockerfile
+
+on:
+  push:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run
+# sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-20.04
+    # Steps represent a sequence of tasks that will be executed
+    # as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your
+    # job can access it
+    - uses: actions/checkout@v2
+
+    - name: Build and tag Dockerfile
+      run: cd docker && docker build -t quay.io/hotosm/underpass-build-deps:focal -f underpass-build-deps.dockerfile .
+
+    - name: Push to Quay.io
+      run: docker push quay.io/hotosm/underpass-build-deps:focal
+
+

@@ -2,11 +2,15 @@
 
 name: Doxygen Action
 
-# Controls when the action will run. Triggers the workflow on push
-# for master branch only
+# Controls when the action will run. Triggers the workflow after
+# the base dockerfile has been pushed to the quay.io repository.
 on:
-  push:
-    branches: [ master ]
+  # push:
+  #   branches: [ master ]
+  workflow_run:
+    workflows: [Build Dockerfile]
+    types:
+      - completed
 
 # A workflow run is made up of one or more jobs that can run
 # sequentially or in parallel
