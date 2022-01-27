@@ -1,10 +1,10 @@
-# This workflow will run first so the others have a fresh file to work with
+# The docker image will be built only on a push to the feature branch
 
-name: Build Dockerfile
+name: Deps Dockerfile Build and Push
 
 on:
   push:
-    branches: [ master, update/docker-ci ]
+    branches: [ update/docker-ci ]
 
 # A workflow run is made up of one or more jobs that can run
 # sequentially or in parallel
@@ -27,9 +27,14 @@ jobs:
         username: ${{ secrets.QUAY_USERNAME }}
         password: ${{ secrets.QUAY_ROBOT_TOKEN }}
 
+    - name: Pull remote image
+      run: docker pull quay.io/hotosm/underpass-build-deps:focal
+
     - name: Build and tag Dockerfile
       run: cd docker && docker build -t quay.io/hotosm/underpass-build-deps:focal -f underpass-build-deps.dockerfile .
 
+    # If there are changes to the dockerfile, then a new image will
+    # be pushed. Otherwise nothing will happen.
     - name: Push to Quay.io
       run: docker push quay.io/hotosm/underpass-build-deps:focal
 
