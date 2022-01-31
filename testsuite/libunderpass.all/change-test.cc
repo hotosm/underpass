@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -34,6 +34,9 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/date_time.hpp>
 #include <boost/geometry.hpp>
+#include <boost/program_options.hpp>
+
+namespace opts = boost::program_options;
 
 using namespace logger;
 using namespace changeset;
@@ -82,6 +85,46 @@ class TestStateFile : public replication::StateFile {
 int
 main(int argc, char *argv[])
 {
+    opts::positional_options_description p;
+    opts::variables_map vm;
+    try {
+        opts::options_description desc("Allowed options");
+        // clang-format off
+        desc.add_options()
+            ("help,h", "display help")
+            ("osmchange,o", opts::value<std::string>(), "Import osmchange (*.osc) file")
+            ("changefile,c", opts::value<std::string>(), "Import change (*.osm) file");
+
+        opts::store(opts::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
+        opts::notify(vm);
+        if (vm.count("help")) {
+            std::cout << "Usage: options_description [options]" << std::endl;
+            std::cout << desc << std::endl;
+            exit(0);
+        }
+    } catch (std::exception &e) {
+        std::cout << e.what() << std::endl;
+        return 1;
+    }
+
+    if (vm.count("changefile")) {
+        std::string file = vm["changefile"].as<std::string>();
+        std::cout << "Importing change file " << file << std::endl;
+        auto changeset = std::make_shared<changeset::ChangeSetFile>();
+        changeset->readChanges(file);
+        changeset->dump();
+        exit(0);
+    }
+
+    if (vm.count("osmchange")) {
+        std::string file = vm["osmchange"].as<std::string>();
+        std::cout << "Importing osmchange file " << file << std::endl;
+        auto changes = std::make_shared<osmchange::OsmChangeFile>();
+        changes->readChanges(file);
+        changes->dump();
+        exit(0);
+    }
+
     logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
     dbglogfile.setWriteDisk(true);
     dbglogfile.setLogFilename("change-test.log");
