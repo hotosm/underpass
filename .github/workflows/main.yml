@@ -2,8 +2,7 @@
 
 name: Doxygen Action
 
-# Controls when the action will run. Triggers the workflow on push
-# for master branch only
+# Controls when the action will run. 
 on:
   push:
     branches: [ master ]
@@ -43,3 +42,9 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./html
         publish_branch: gh-pages
+
+  on-failure:
+    runs-on: ubuntu-20.04
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - run: echo 'The docker build workflow failed'
