@@ -52,6 +52,8 @@
 #include <boost/format.hpp>
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
+#include <boost/circular_buffer.hpp>
+
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 #include <boost/iostreams/filter/gzip.hpp>
@@ -90,6 +92,7 @@ using namespace tmdb;
 
 namespace threads {
 
+std::mutex remove_mutex;
 std::mutex time_mutex;
 static ptime lastosc;
 static ptime lastosm;
@@ -226,6 +229,7 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
         i++;
     }
 
+    boost::circular_buffer<long> removals(1000);
     // Process OSM changes
     bool mainloop = true;
     auto task = boost::bind(threadOsmChange, std::ref(remote),
@@ -233,7 +237,8 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
 			    std::ref(poly),
 			    std::ref(galaxies.front()),
 			    std::ref(rawosm.front()),
-			    std::ref(validator));
+			    std::ref(validator),
+			    std::ref(removals));
     while (mainloop) {
 	boost::asio::thread_pool pool(cores);
 	i = 0;
@@ -255,6 +260,12 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
 	    }
 	}
 	pool.join();
+	for (auto it = std::begin(removals); it != std::end(removals); ++it) {
+	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
+	    long osm_id = removals.front();
+	    removals.pop_front();
+	    galaxies.front()->updateValidation(osm_id);
+	}
     }
     // std::cout << "Caught up with: " << remote.filespec << std::endl;
     auto delay = std::chrono::minutes{1};
@@ -266,7 +277,8 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
 	threadOsmChange(std::ref(remote), std::ref(planets.front()),
 			std::ref(poly), std::ref(galaxies.front()),
 			std::ref(rawosm.front()),
-			std::ref(validator));
+			std::ref(validator),
+			std::ref(removals));
 	remote.Increment();
 	std::this_thread::sleep_for(delay);
     }
@@ -299,7 +311,8 @@ threadOsmChange(const replication::RemoteURL &remote,
 		const multipolygon_t &poly,
 		std::shared_ptr<galaxy::QueryGalaxy> &galaxy,
                 std::shared_ptr<osm2pgsql::Osm2Pgsql> &o2pgsql,
-		std::shared_ptr<Validate> &plugin)
+		std::shared_ptr<Validate> &plugin,
+		boost::circular_buffer<long> removals)
 {
     std::vector<std::string> result;
     auto osmchanges = std::make_shared<osmchange::OsmChangeFile>();
@@ -357,8 +370,10 @@ threadOsmChange(const replication::RemoteURL &remote,
 #endif
     osmchanges->areaFilter(poly);
 
-    if (osmchanges->changes.back()->final_entry != not_a_date_time) {
-	threads::lastosc = osmchanges->changes.back()->final_entry;
+    if (osmchanges->changes.size() > 0) {
+	if (osmchanges->changes.back()->final_entry != not_a_date_time) {
+	    threads::lastosc = osmchanges->changes.back()->final_entry;
+	}
     }
     if (o2pgsql->isOpen()) {
         // o2pgsql.updateDatabase(osmchanges);
@@ -373,20 +388,28 @@ threadOsmChange(const replication::RemoteURL &remote,
         // it->second->dump();
         galaxy->applyChange(*it->second);
     }
-
+#if 1
     // Delete existing entries in the validation table to remove features that have been fixed
     for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
         OsmChange *change = it->get();
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
 	    osmobjects::OsmWay *way = wit->get();
-	    galaxy->updateValidation(way->id);
+	    if (way->action == osmobjects::remove) {
+		const std::lock_guard<std::mutex> lock(remove_mutex);
+		removals.push_back(way->id);
+	    }
+	    // galaxy->updateValidation(way->id);
 	}
         for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
             osmobjects::OsmNode *node = nit->get();
-	    galaxy->updateValidation(node->id);
+	    if (node->action == osmobjects::remove) {
+		const std::lock_guard<std::mutex> lock(remove_mutex);
+		removals.push_back(node->id);
+	    }
+	    // galaxy->updateValidation(node->id);
 	}
     }
-
+#endif
     auto nodeval = osmchanges->validateNodes(poly, plugin);
     // std::cerr << "SIZE " << nodeval->size() << std::endl;
     for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {

@@ -49,6 +49,7 @@ using namespace boost::gregorian;
 #include <boost/beast/http/parser.hpp>
 #include <boost/beast/version.hpp>
 #include <boost/thread/future.hpp>
+#include <boost/circular_buffer.hpp>
 
 namespace beast = boost::beast;
 namespace net = boost::asio;
@@ -106,7 +107,8 @@ threadOsmChange(const replication::RemoteURL &remote,
                 const multipolygon_t &poly,
 		std::shared_ptr<galaxy::QueryGalaxy> &galaxy,
                 std::shared_ptr<osm2pgsql::Osm2Pgsql> &rawosm,
-                std::shared_ptr<Validate> &plugin);
+                std::shared_ptr<Validate> &plugin,
+		boost::circular_buffer<long> removals);
 
 /// This updates several fields in the raw_changesets table, which are part of
 /// the changeset file, and don't need to be calculated.
