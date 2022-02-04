@@ -168,7 +168,6 @@ class Replicator : public replication::Planet {
             suffix = ".osm.gz";
             default_states = default_changesets;
         }
-        bool rollover = false;
         connectServer("https://planet.maps.mail.ru");
         auto remote = std::make_shared<RemoteURL>();
         ptime now = boost::posix_time::microsec_clock::universal_time();
@@ -200,7 +199,7 @@ class Replicator : public replication::Planet {
             if (drift < 0) {
                 delta = default_states[i].timestamp - time;
             }
-            std::cerr << "Times: " << i << ": " << currentdiff << ", " << lowerdiff  << ", " << upperdiff << ", " << drift << ", " << to_simple_string( default_states[i].timestamp) << std::endl;
+            // std::cerr << "Times: " << i << ": " << currentdiff << ", " << lowerdiff  << ", " << upperdiff << ", " << drift << ", " << to_simple_string( default_states[i].timestamp) << std::endl;
             // It's in this sub directory
             if (currentdiff < span && upperdiff > 0) {
                 major = default_states[i].getMajor();
@@ -531,42 +530,12 @@ main(int argc, char *argv[])
         exit(0);
     }
 
-    // replicator.initializeData();
     std::vector<std::string> rawfile;
     std::shared_ptr<std::vector<unsigned char>> data;
-
-    // This is the changesets path part (ex. 000/075/000), takes precedence over 'timestamp'
-    // option. This only applies to the osm change files, as it's timestamp is used to
-    // start the changesets.
-    if (vm.count("url")) {
-        starting_url_path = vm["url"].as<std::string>();
-        // Make sure the path starts with a slash
-        if (!starting_url_path.empty() && starting_url_path[0] != '/') {
-            starting_url_path.insert(0, 1, '/');
-        }
-    }
 
     if (!starting_url_path.empty() && vm.count("timestamp")) {
         log_debug("ERROR: 'url' takes precedence over 'timestamp' arguments are mutually exclusive!");
         exit(-1);
-    }
-
-    // Specify a timestamp used by other options
-    if (vm.count("timestamp")) {
-        try {
-            auto timestamps = vm["timestamp"].as<std::vector<std::string>>();
-            if (timestamps[0] == "now") {
-                config.start_time = boost::posix_time::second_clock::universal_time();
-            } else {
-                config.start_time = from_iso_extended_string(timestamps[0]);
-                if (timestamps.size() > 1) {
-                    config.end_time = from_iso_extended_string(timestamps[1]);
-                }
-            }
-        } catch (const std::exception &ex) {
-            log_error("ERROR: could not parse timestamps!");
-            exit(-1);
-        }
     }
 
     // This is the default data directory on that server
@@ -596,12 +565,41 @@ main(int argc, char *argv[])
     }
 
     if (vm.count("monitor")) {
-        // At this point we must have a path, if the path was not passed we need to build one from
-        const std::string fullurl{config.getPlanetServerReplicationUrl() + "/" + StateFile::freq_to_string(config.frequency) + "/000/000/000"};
-        // replication::RemoteURL remote(fullurl);
-        // replication::Planet planet(remote);
+        auto osmchange = std::make_shared<RemoteURL>();
+    // Specify a timestamp used by other options
+        if (vm.count("timestamp")) {
+            try {
+                auto timestamps = vm["timestamp"].as<std::vector<std::string>>();
+                if (timestamps[0] == "now") {
+                    config.start_time = boost::posix_time::second_clock::universal_time();
+                } else {
+                    config.start_time = from_iso_extended_string(timestamps[0]);
+                    if (timestamps.size() > 1) {
+                        config.end_time = from_iso_extended_string(timestamps[1]);
+                    }
+                }
+                osmchange = replicator.findRemotePath(config, config.start_time);
+            } catch (const std::exception &ex) {
+                log_error("ERROR: could not parse timestamps!");
+                exit(-1);
+            }
+        } else if (vm.count("url")) {
+            replicator.connectServer("https://planet.maps.mail.ru");
+            // This is the changesets path part (ex. 000/075/000), takes precedence over 'timestamp'
+            // option. This only applies to the osm change files, as it's timestamp is used to
+            // start the changesets.
+            std::string fullurl = "https://planet.maps.mail.ru/replication/" + StateFile::freq_to_string(config.frequency);
+            std::vector<std::string> parts;
+            boost::split(parts, vm["url"].as<std::string>(), boost::is_any_of("/"));
+            // fullurl += "/" + vm["url"].as<std::string>() + "/" + parts[2] + ".state.txt";
+            fullurl += "/" + vm["url"].as<std::string>() + ".state.txt";
+            osmchange->parse(fullurl);
+            auto data = replicator.downloadFile(*osmchange);
+            StateFile start(osmchange->filespec, false);
+            //start.dump();
+            config.start_time = start.timestamp;
+        }
 
-        auto osmchange = replicator.findRemotePath(config, config.start_time);
         // osmchange->dump();
         std::thread oscthr(threads::startMonitorChanges, std::ref(*osmchange),
                            std::ref(geou.boundary), std::ref(config));
