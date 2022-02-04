@@ -598,6 +598,7 @@ main(int argc, char *argv[])
             StateFile start(osmchange->filespec, false);
             //start.dump();
             config.start_time = start.timestamp;
+            boost::algorithm::replace_all(osmchange->filespec, ".state.txt", ".osc.gz");
         }
 
         // osmchange->dump();
