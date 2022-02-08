@@ -14,7 +14,7 @@ variable "instance_types" {
   default = {
     api_server     = "t3.micro"
     file_processor = "r6g.xlarge"
-    database       = "db.t4g.micro"
+    database       = "db.t4g.large"
   }
 }
 
