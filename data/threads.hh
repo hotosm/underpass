@@ -88,7 +88,7 @@ namespace threads {
 /// It does a bulk download to catch up the database, then checks for the
 /// minutely change files and processes them.
 extern void
-startMonitorChangesets(const replication::RemoteURL &remote,
+startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
 		       const multipolygon_t &poly,
                        const replicatorconfig::ReplicatorConfig &config);
 
@@ -96,25 +96,26 @@ startMonitorChangesets(const replication::RemoteURL &remote,
 /// It does a bulk download to catch up the database, then checks for the
 /// minutely change files and processes them.
 extern void
-startMonitorChanges(const replication::RemoteURL &remote, const multipolygon_t &poly,
+startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
+		    const multipolygon_t &poly,
                     const replicatorconfig::ReplicatorConfig &config);
 
 /// Updates the raw_hashtags, raw_users, and raw_changesets_countries tables
 /// from a changeset file
 extern std::shared_ptr<osmchange::OsmChangeFile>
-threadOsmChange(const replication::RemoteURL &remote,
+threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
 		std::shared_ptr<replication::Planet> &planet,
                 const multipolygon_t &poly,
 		std::shared_ptr<galaxy::QueryGalaxy> &galaxy,
                 std::shared_ptr<osm2pgsql::Osm2Pgsql> &rawosm,
                 std::shared_ptr<Validate> &plugin,
-		boost::circular_buffer<long> removals);
+		std::shared_ptr<std::vector<long>> removals);
 
 /// This updates several fields in the raw_changesets table, which are part of
 /// the changeset file, and don't need to be calculated.
 //extern bool threadChangeSet(const std::string &file);
 extern std::unique_ptr<changeset::ChangeSetFile>
-threadChangeSet(const replication::RemoteURL &remote,
+threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
 		std::shared_ptr<replication::Planet> &planet,
                 const multipolygon_t &poly,
 		std::shared_ptr<galaxy::QueryGalaxy> galaxy);

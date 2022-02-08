@@ -39,6 +39,7 @@
 #include <boost/thread/pthread/shared_mutex.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
+#include <boost/thread/thread.hpp>
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/ssl/error.hpp>
 #include <boost/asio/ssl/stream.hpp>
@@ -99,9 +100,11 @@ static ptime lastosm;
 static bool osmdone =  false;
 static bool oscdone =  false;
 
+
 // Starting with this URL, download the file, incrementing
 void
-startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &poly,
+startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
+		       const multipolygon_t &poly,
 		       const replicatorconfig::ReplicatorConfig &config)
 {
 #ifdef TIMING_DEBUG
@@ -128,18 +131,18 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
         auto xxx = std::make_shared<galaxy::QueryGalaxy>(config.galaxy_db_url);
         galaxies.push_back(xxx);
 	std::rotate(servers.begin(), servers.begin()+1, servers.end());
-        auto yyy = std::make_shared<replication::Planet>(inr);
+	auto yyy = std::make_shared<replication::Planet>(*remote);
 	yyy->connectServer(servers.front());
         planets.push_back(yyy);
         i++;
     }
 
-    replication::RemoteURL remote = inr;
-    bool mainloop = true;
-    auto task = boost::bind(threadChangeSet, std::ref(remote),
+    auto task = boost::bind(threadChangeSet,
+			    std::ref(remote),
 			    std::ref(planets.front()),
 			    std::ref(poly),
 			    std::ref(galaxies.front()));
+    bool mainloop = true;
     while (mainloop) {
 	boost::asio::thread_pool pool(cores);
 	i = 0;
@@ -147,7 +150,7 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
 	    boost::asio::post(pool, std::ref(task));
 	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
 	    std::rotate(planets.begin(), planets.begin()+1, planets.end());
-	    remote.Increment();
+	    remote->Increment();
 	}
 	ptime timestamp;
 	ptime now = boost::posix_time::microsec_clock::universal_time();
@@ -156,10 +159,10 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
 	    boost::posix_time::time_duration diff = now - lastosm;
 	    // std::cout << "DELTA: " << (diff.hours()*60) + diff.minutes() << std::endl;
 	    if ((diff.hours()*60) + diff.minutes() <= 50 || threads::osmdone) {
-		break;
+		//break;
 	    }
 	}
-	pool.join();
+	// pool.join();
 	// std::this_thread::sleep_for(std::chrono::milliseconds{100});
 	// std::cout << "Restarting with: " << remote.filespec << std::endl;
     }
@@ -169,26 +172,28 @@ startMonitorChangesets(const replication::RemoteURL &inr, const multipolygon_t &
 	std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
 	std::rotate(planets.begin(), planets.begin()+1, planets.end());
 	// std::cout << "Caught up with: " << remote.filespec << std::endl;
-	threadChangeSet(std::ref(remote), std::ref(planets.front()), std::ref(poly), std::ref(galaxies.front()));
-	remote.Increment();
+	threadChangeSet(std::ref(remote),
+			std::ref(planets.front()),
+			std::ref(poly),
+			std::ref(galaxies.front()));
+	remote->Increment();
 	std::this_thread::sleep_for(delay);
     }
 }
 
 // Starting with this URL, download the file, incrementing
 void
-startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &poly,
+startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
+		    const multipolygon_t &poly,
 		    const replicatorconfig::ReplicatorConfig &config)
 {
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("startMonitorChanges: took %w seconds\n");
 #endif
-    if (inr.frequency == frequency_t::changeset) {
-        log_error(_("Could not start monitoring thread for OSM changes: URL %1% does not appear to be a valid URL for changes!"), inr.filespec);
+    if (remote->frequency == frequency_t::changeset) {
+        log_error(_("Could not start monitoring thread for OSM changes: URL %1% does not appear to be a valid URL for changes!"), remote->filespec);
         return;
     }
-
-    replication::RemoteURL remote = inr;
 
     std::string plugins;
     if (boost::filesystem::exists("validate/.libs")) {
@@ -221,7 +226,7 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
         auto xxx = std::make_shared<galaxy::QueryGalaxy>(config.galaxy_db_url);
         galaxies.push_back(xxx);
 	std::rotate(servers.begin(), servers.begin()+1, servers.end());
-        auto yyy = std::make_shared<replication::Planet>(inr);
+        auto yyy = std::make_shared<replication::Planet>(*remote);
 	yyy->connectServer(servers.front());
         planets.push_back(yyy);
         auto zzz = std::make_shared<osm2pgsql::Osm2Pgsql>(config.osm2pgsql_db_url);
@@ -229,10 +234,11 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
         i++;
     }
 
-    boost::circular_buffer<long> removals(1000);
     // Process OSM changes
     bool mainloop = true;
-    auto task = boost::bind(threadOsmChange, std::ref(remote),
+    auto removals = std::make_shared<std::vector<long>>();
+    auto task = boost::bind(threadOsmChange,
+			    std::ref(remote),
 			    std::ref(planets.front()),
 			    std::ref(poly),
 			    std::ref(galaxies.front()),
@@ -246,9 +252,11 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
 	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
 	    std::rotate(planets.begin(), planets.begin()+1, planets.end());
 	    std::rotate(rawosm.begin(), rawosm.begin()+1, rawosm.end());
-	    boost::asio::post(pool, std::ref(task));
-	    remote.Increment();
+	    boost::asio::post(pool, task);
+	    remote->Increment();
+	    // remote.dump();
 	}
+	pool.join();
 	ptime timestamp;
 	ptime now = boost::posix_time::microsec_clock::universal_time();
 	if (lastosc != not_a_date_time) {
@@ -259,13 +267,13 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
 		break;
 	    }
 	}
-	pool.join();
-	for (auto it = std::begin(removals); it != std::end(removals); ++it) {
+	std::cout << "Removals: " << removals->size() << std::endl;
+	for (auto it = std::begin(*removals); it != std::end(*removals); ++it) {
 	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
-	    long osm_id = removals.front();
-	    removals.pop_front();
+	    long osm_id = *it;
 	    galaxies.front()->updateValidation(osm_id);
 	}
+	removals->clear();
     }
     // std::cout << "Caught up with: " << remote.filespec << std::endl;
     auto delay = std::chrono::minutes{1};
@@ -279,59 +287,35 @@ startMonitorChanges(const replication::RemoteURL &inr, const multipolygon_t &pol
 			std::ref(rawosm.front()),
 			std::ref(validator),
 			std::ref(removals));
-	remote.Increment();
+	remote->Increment();
 	std::this_thread::sleep_for(delay);
     }
-
-#if 0
-    time_duration delta;
-    if (mainloop) {
-	if ((delta.hours() * 60) + delta.minutes() <= 1) {
-	    // log_debug("DELTA: %1%", (delta.hours()*60) + delta.minutes());
-	    if (remote.frequency == replication::minutely) {
-                    std::this_thread::sleep_for(std::chrono::minutes{1});
-	    } else if (remote.frequency == replication::hourly) {
-		std::this_thread::sleep_for(std::chrono::hours{1});
-	    } else if (remote.frequency == replication::daily) {
-		std::this_thread::sleep_for(std::chrono::hours{24});
-	    }
-	    // planet.reset(new replication::Planet);
-	} else {
-	    log_debug(_("Processed OsmChange: %1%"), remote.filespec);
-	}
-	// remote.Increment();
-    }
-#endif
 }
 
 // This thread get started for every osmChange file
 std::shared_ptr<osmchange::OsmChangeFile>
-threadOsmChange(const replication::RemoteURL &remote,
+threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
 		std::shared_ptr<replication::Planet> &planet,
 		const multipolygon_t &poly,
 		std::shared_ptr<galaxy::QueryGalaxy> &galaxy,
                 std::shared_ptr<osm2pgsql::Osm2Pgsql> &o2pgsql,
 		std::shared_ptr<Validate> &plugin,
-		boost::circular_buffer<long> removals)
+		std::shared_ptr<std::vector<long>> removals)
 {
     std::vector<std::string> result;
     auto osmchanges = std::make_shared<osmchange::OsmChangeFile>();
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("threadOsmChange: took %w seconds\n");
 #endif
-
-    log_debug(_("Processing osmChange: %1%"), remote.filespec);
-    auto data = planet->downloadFile(remote);
-	
+    // log_debug(_("Processing osmChange: %1%"), remote.filespec);
+    auto data = planet->downloadFile(*remote);
     if (data->size() == 0) {
-        log_error(_("osmChange file not found: %1% %2%"), remote.filespec, ".osc.gz");
+        log_error(_("osmChange file not found: %1% %2%"), remote->filespec, ".osc.gz");
 	oscdone = true;
         return osmchanges;
     } else {
         try {
-
             std::istringstream changes_xml;
-
             // Scope to deallocate buffers
             {
                 boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
@@ -346,12 +330,12 @@ threadOsmChange(const replication::RemoteURL &remote,
                 osmchanges->readXML(changes_xml);
 
             } catch (std::exception &e) {
-                log_error(_("Couldn't parse: %1%"), remote.filespec);
+                log_error(_("Couldn't parse: %1%"), remote->filespec);
                 std::cerr << e.what() << std::endl;
             }
 
         } catch (std::exception &e) {
-            log_error(_("%1% is corrupted!"), remote.filespec);
+            log_error(_("%1% is corrupted!"), remote->filespec);
             std::cerr << e.what() << std::endl;
         }
     }
@@ -396,7 +380,7 @@ threadOsmChange(const replication::RemoteURL &remote,
 	    osmobjects::OsmWay *way = wit->get();
 	    if (way->action == osmobjects::remove) {
 		const std::lock_guard<std::mutex> lock(remove_mutex);
-		removals.push_back(way->id);
+		removals->push_back(way->id);
 	    }
 	    // galaxy->updateValidation(way->id);
 	}
@@ -404,7 +388,7 @@ threadOsmChange(const replication::RemoteURL &remote,
             osmobjects::OsmNode *node = nit->get();
 	    if (node->action == osmobjects::remove) {
 		const std::lock_guard<std::mutex> lock(remove_mutex);
-		removals.push_back(node->id);
+		removals->push_back(node->id);
 	    }
 	    // galaxy->updateValidation(node->id);
 	}
@@ -426,7 +410,7 @@ threadOsmChange(const replication::RemoteURL &remote,
 
 // This parses the changeset file into changesets
 std::unique_ptr<changeset::ChangeSetFile>
-threadChangeSet(const replication::RemoteURL &remote,
+threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
 		std::shared_ptr<replication::Planet> &planet,
 		const multipolygon_t &poly,
 		std::shared_ptr<galaxy::QueryGalaxy> galaxy)
@@ -437,19 +421,20 @@ threadChangeSet(const replication::RemoteURL &remote,
     auto changeset = std::make_unique<changeset::ChangeSetFile>();
     auto data = std::make_shared<std::vector<unsigned char>>();
 
-    log_debug(_("Processing ChangeSet: %1%"), remote.filespec);
+    // remote->dump();
+    log_debug(_("Processing ChangeSet: %1%"), remote->filespec);
     try {
-	data = planet->downloadFile(remote);
+	data = planet->downloadFile(*remote);
     } catch (const std::exception &ex) {
-	log_debug(_("Download error for %1%: %2%"), remote.filespec, ex.what());
+	log_debug(_("Download error for %1%: %2%"), remote->filespec, ex.what());
     }
 
     if (data->size() == 0) {
-        log_error(_("ChangeSet file not found: %1%"), remote.filespec);
+        log_error(_("ChangeSet file not found: %1%"), remote->filespec);
         changeset->download_error = true;
 	threads::osmdone = true;
     } else {
-	auto xml = planet->processData(remote.filespec, *data);
+	auto xml = planet->processData(remote->filespec, *data);
 	std::istream& input(xml);
 	changeset->readXML(input);
     }
