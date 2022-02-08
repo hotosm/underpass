@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -421,7 +421,7 @@ Planet::downloadFile(const std::string &url)
 	myfile.write(reinterpret_cast<char *>(data.get()->data()), data.get()->size());
 	myfile.flush();
 	myfile.close();
-	log_debug(_("Wrote downloaded file %1% to disk"), remote.filespec);
+	log_debug(_("Wrote downloaded file %1% to disk from %2%"), remote.filespec, remote.domain);
     } else {
 	log_error(_("%1% does not exist!"), remote.filespec);
     }
@@ -632,19 +632,20 @@ RemoteURL::updatePath(int _major, int _minor, int _index)
     boost::format minorfmt("%03d");
     boost::format indexfmt("%03d");
 
-    major = _major;
-    minor = _minor;
-    index = _index;
+    // major = _major;
+    // minor = _minor;
+    // index = _index;
 
-    majorfmt % (major);
-    minorfmt % (minor);
-    indexfmt % (index);
+    majorfmt % (_major);
+    minorfmt % (_minor);
+    indexfmt % (_index);
+    std::string suffix = filespec.substr(filespec.size() - 7, 7);
 
+    std::vector<std::string> parts;
+    boost::split(parts, filespec, boost::is_any_of("/"));
     std::string newpath = majorfmt.str() + "/" + minorfmt.str() + "/" + indexfmt.str();
-    boost::algorithm::replace_all(destdir, subpath, newpath);
-    // boost::algorithm::replace_first(filespec, subpath, newpath);
-    std::size_t pos = filespec.find(subpath);
-    filespec.replace(pos, 11, newpath);
+    filespec = parts[0] + "/" + parts[1] + "/" + newpath + suffix;
+    destdir = parts[0] + "/" + parts[1] + "/" + majorfmt.str() + "/" + minorfmt.str();
     subpath = newpath;
 }
 
@@ -671,10 +672,7 @@ RemoteURL::Increment(void)
     minorfmt % (minor);
     indexfmt % (index);
 
-    newpath = majorfmt.str() + "/" + minorfmt.str() + "/" + indexfmt.str();
-    boost::algorithm::replace_all(destdir, subpath, newpath);
-    boost::algorithm::replace_all(filespec, subpath, newpath);
-    subpath = newpath;
+    updatePath(major, minor, index);
 }
 
 void
