@@ -384,7 +384,7 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     boost::timer::auto_cpu_timer timer("applyChange(validation): took %w seconds\n");
 #endif
     log_debug(_("Applying Validation data"));
-    validation.dump();
+    // validation.dump();
 
     if (validation.angle == 0 && validation.status.size() == 0) {
         return true;
