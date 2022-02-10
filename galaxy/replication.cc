@@ -639,7 +639,8 @@ RemoteURL::updatePath(int _major, int _minor, int _index)
     majorfmt % (_major);
     minorfmt % (_minor);
     indexfmt % (_index);
-    std::string suffix = filespec.substr(filespec.size() - 7, 7);
+    std::size_t pos = filespec.rfind(".", filespec.size()-5);
+    std::string suffix = filespec.substr(pos, filespec.size() - pos);
 
     std::vector<std::string> parts;
     boost::split(parts, filespec, boost::is_any_of("/"));
