@@ -137,20 +137,22 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
         i++;
     }
 
-    auto task = boost::bind(threadChangeSet,
-			    std::ref(remote),
-			    std::ref(planets.front()),
-			    std::ref(poly),
-			    std::ref(galaxies.front()));
     bool mainloop = true;
     while (mainloop) {
 	boost::asio::thread_pool pool(cores);
 	i = 0;
-	while (i++ <= cores*2) {
+	while (i++ <= 4) {
+	    auto task = boost::bind(threadChangeSet,
+				    std::ref(remote),
+				    std::ref(planets.front()),
+				    std::ref(poly),
+				    std::ref(galaxies.front()));
 	    boost::asio::post(pool, std::ref(task));
 	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
 	    std::rotate(planets.begin(), planets.begin()+1, planets.end());
 	    remote->Increment();
+	    auto delay = std::chrono::milliseconds{100};
+	    std::this_thread::sleep_for(delay);
 	}
 	ptime timestamp;
 	ptime now = boost::posix_time::microsec_clock::universal_time();
@@ -237,23 +239,25 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     // Process OSM changes
     bool mainloop = true;
     auto removals = std::make_shared<std::vector<long>>();
-    auto task = boost::bind(threadOsmChange,
-			    std::ref(remote),
-			    std::ref(planets.front()),
-			    std::ref(poly),
-			    std::ref(galaxies.front()),
-			    std::ref(rawosm.front()),
-			    std::ref(validator),
-			    std::ref(removals));
     while (mainloop) {
 	boost::asio::thread_pool pool(cores);
 	i = 0;
 	while (i++ <= cores*2) {
+	    auto task = boost::bind(threadOsmChange,
+				    std::ref(remote),
+				    std::ref(planets.front()),
+				    std::ref(poly),
+				    std::ref(galaxies.front()),
+				    std::ref(rawosm.front()),
+				    std::ref(validator),
+				    std::ref(removals));
 	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
 	    std::rotate(planets.begin(), planets.begin()+1, planets.end());
 	    std::rotate(rawosm.begin(), rawosm.begin()+1, rawosm.end());
 	    boost::asio::post(pool, task);
 	    remote->Increment();
+	    auto delay = std::chrono::seconds{1};
+	    std::this_thread::sleep_for(delay);
 	    // remote.dump();
 	}
 	pool.join();
@@ -308,7 +312,7 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
     boost::timer::auto_cpu_timer timer("threadOsmChange: took %w seconds\n");
 #endif
     // log_debug(_("Processing osmChange: %1%"), remote.filespec);
-    auto data = planet->downloadFile(*remote);
+    auto data = planet->downloadFile(*remote.get());
     if (data->size() == 0) {
         log_error(_("osmChange file not found: %1% %2%"), remote->filespec, ".osc.gz");
 	oscdone = true;
