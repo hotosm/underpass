@@ -413,8 +413,12 @@ Planet::downloadFile(const std::string &url)
 #ifdef USE_CACHE		// FIXME: should write to disk here
     if (data->size() > 0) {
 	std::filesystem::path path(url);
-	if (!boost::filesystem::exists(remote.destdir)) {
-	    boost::filesystem::create_directories(remote.destdir);
+	try {
+	    if (!boost::filesystem::exists(remote.destdir)) {
+		boost::filesystem::create_directories(remote.destdir);
+	    }
+	} catch (boost::system::system_error ex) {
+	    log_error(_("Destdir corrupted!: %1%, %2%"), remote.destdir, ex.what());
 	}
 	std::ofstream myfile;
 	myfile.open(remote.filespec, std::ofstream::out | std::ios::binary);
@@ -648,6 +652,7 @@ RemoteURL::updatePath(int _major, int _minor, int _index)
     filespec = parts[0] + "/" + parts[1] + "/" + newpath + suffix;
     destdir = parts[0] + "/" + parts[1] + "/" + majorfmt.str() + "/" + minorfmt.str();
     subpath = newpath;
+    dump();
 }
 
 void
