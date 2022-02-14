@@ -5,7 +5,7 @@
 # python rawdata-replication_asia update  -H 'host' -U user -P 5432 -d db
 
 """
-Update an osm2pgsql database with changes from a OSM replication server.
+Update an osm2pgsql rawdata custom database schema with changes from a OSM replication server.
 
 This tool initialises the updating process by looking at the import file
 or the newest object in the database. The state is then saved in a table
@@ -286,6 +286,7 @@ def init(conn, args):
 
     repl = ReplicationServer(base_url)
     if seq is None:
+        #Gets sequence id using timestamp we get from osm api using pyosmium tool 
         seq = repl.timestamp_to_sequence(date)
 
         if seq is None:
