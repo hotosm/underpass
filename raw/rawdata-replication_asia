@@ -27,6 +27,12 @@ from textwrap import dedent
 from pathlib import Path
 import urllib.request as urlrequest
 
+from configparser import ConfigParser
+
+config = ConfigParser()
+config.read("config.txt")
+
+
 missing_modules = []
 
 try:
@@ -72,8 +78,7 @@ def pretty_format_timedelta(seconds):
 def connect(args):
     """ Create a connection from the given command line arguments.
     """
-    return psycopg.connect(dbname=args.database, user=args.username,
-                           host=args.host, port=args.port , password='password')
+    return psycopg.connect(dict(config.items("local")))
 
 
 def compute_database_date(conn, prefix):
