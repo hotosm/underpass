@@ -16,7 +16,7 @@ CREATE INDEX CONCURRENTLY  IF NOT EXISTS   nodes_country_geom_idx ON public.node
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS   nodes_osm_id_idx ON public.nodes USING btree (osm_id);
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS   nodes_timestamp_idx ON public.nodes USING btree ("timestamp");
 
--- CLUSTER nodes USING nodes_country_geom_idx;
+
 
 CREATE TABLE IF NOT EXISTS  ways_line (
 	osm_id int8 NOT NULL,
@@ -33,7 +33,6 @@ CREATE INDEX CONCURRENTLY  IF NOT EXISTS  ways_line_country_geom_idx ON public.w
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS  ways_line_osm_id_idx ON public.ways_line USING btree (osm_id);
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS  ways_line_timestamp_idx ON public.ways_line USING btree ("timestamp");
 
--- CLUSTER ways_line USING ways_line_country_geom_idx;
 
 CREATE TABLE IF NOT EXISTS  ways_poly (
 	osm_id int8 NOT NULL,
@@ -50,7 +49,6 @@ CREATE INDEX CONCURRENTLY  IF NOT EXISTS  ways_poly_country_geom_idx ON public.w
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS  ways_poly_osm_id_idx ON public.ways_poly USING btree (osm_id);
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS  ways_poly_timestamp_idx ON public.ways_poly USING btree ("timestamp");
 
--- CLUSTER ways_poly USING ways_poly_country_geom_idx;
 
 
 CREATE TABLE IF NOT EXISTS  relations (
@@ -67,3 +65,9 @@ CREATE TABLE IF NOT EXISTS  relations (
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS  relations_geom_idx ON public.relations USING gist (geom);
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS  relations_osm_id_idx ON public.relations USING btree (osm_id);
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS  relations_tags_idx ON public.relations USING gin (tags);
+
+-- Clustering command 
+
+CLUSTER nodes USING nodes_country_geom_idx;
+CLUSTER ways_line USING ways_line_country_geom_idx;
+CLUSTER ways_poly USING ways_poly_country_geom_idx;
