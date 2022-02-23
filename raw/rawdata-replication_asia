@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
-# This file is cloned from osm2pgsql (https://osm2pgsql.org/) and modified according to our usage.
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# This file is part of osm2pgsql (https://osm2pgsql.org/).
+#
+# Copyright (C) 2006-2022 by the osm2pgsql developer community.
+# For a full list of authors see the git log.
 
 # python rawdata-replication_asia update  -H 'host' -U user -P 5432 -d db
 
@@ -14,6 +19,11 @@ it to the database.
 
 See the help of the 'init' and 'update' command for more information on
 how to use %(prog)s.
+
+QUICK Commands to start : 
+
+python rawdata-replication_asia init 
+python rawdata-replication_asia update -H localhost -U admin -P 5432 -d postgres
 """
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
@@ -78,7 +88,7 @@ def pretty_format_timedelta(seconds):
 def connect(args):
     """ Create a connection from the given command line arguments.
     """
-    return psycopg.connect(dict(config.items("local")))
+    return psycopg.connect(**dict(config.items("local")))
 
 
 def compute_database_date(conn, prefix):
