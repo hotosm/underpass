@@ -1,3 +1,20 @@
+-- Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+--
+-- This file is part of Underpass.
+--
+--     Underpass is free software: you can redistribute it and/or modify
+--     it under the terms of the GNU General Public License as published by
+--     the Free Software Foundation, either version 3 of the License, or
+--     (at your option) any later version.
+--
+--     Underpass is distributed in the hope that it will be useful,
+--     but WITHOUT ANY WARRANTY; without even the implied warranty of
+--     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--     GNU General Public License for more details.
+--
+--     You should have received a copy of the GNU General Public License
+--     along with Underpass.  If not, see <https:--www.gnu.org/licenses/>.
+
 -- This is lua script for osm2pgsql in order to create and process custom schema to store incoming osm data efficiently
 
 -- osm2pgsql --create -H localhost -U admin -P 5432 -d postgres -W --extra-attributes --output=flex --style ./raw.lua nepal-latest-internal.osm.pbf 
@@ -20,6 +37,7 @@ tables.nodes = osm2pgsql.define_table{
         { column = 'timestamp', sql_type = 'timestamp' },
         { column = 'tags', type = 'jsonb' },
         { column = 'geom', type = 'point', projection = srid },
+        { column = 'country', type = 'int', create_only = true },
     }
 
 }
@@ -35,7 +53,9 @@ tables.ways_line = osm2pgsql.define_table{
         { column = 'changeset', type = 'int' },
         { column = 'timestamp', sql_type = 'timestamp' },
         { column = 'tags', type = 'jsonb' },
-        { column = 'geom', type = 'geometry', projection = srid },
+        { column = 'geom', type = 'linestring', projection = srid },
+        { column = 'country', type = 'int', create_only = true },
+
     }
 
 }
@@ -52,7 +72,9 @@ tables.ways_poly = osm2pgsql.define_table{
         { column = 'timestamp', sql_type = 'timestamp' },
     -- This will store tags as jsonb type  
         { column = 'tags', type = 'jsonb' },
-        { column = 'geom', type = 'geometry', projection = srid },
+        { column = 'geom', type = 'polygon', projection = srid },
+        { column = 'country', type = 'int', create_only = true },
+
     }
 
 }
@@ -71,6 +93,8 @@ tables.rels = osm2pgsql.define_table{
         { column = 'timestamp', sql_type = 'timestamp' },
         { column = 'tags', type = 'jsonb' },
         { column = 'geom', type = 'geometry', projection = srid },
+        { column = 'country', type = 'int', create_only = true },
+
     }
 }
 
