@@ -20,7 +20,7 @@ resource "aws_ecs_cluster" "galaxy" {
 **/
 resource "aws_iam_role" "ecs_execution_role" {
   name_prefix = "galaxy-api-exec"
-  path = "/galaxy/"
+  path        = "/galaxy/"
 
   assume_role_policy = data.aws_iam_policy_document.ecs-assume-role.json
 
@@ -105,10 +105,17 @@ resource "aws_ecs_task_definition" "galaxy-api" {
 resource "aws_ecs_service" "galaxy-api" {
   name            = "galaxy-api"
   cluster         = aws_ecs_cluster.galaxy.id
+  launch_type     = "FARGATE"
   task_definition = aws_ecs_task_definition.galaxy-api.arn
   desired_count   = 3
-  //  iam_role        = aws_iam_role.foo.arn
-  //  depends_on      = [aws_iam_role_policy.foo]
+
+  propagate_tags = "SERVICE"
+
+  network_configuration {
+    subnets         = aws_subnet.public.*.id
+    security_groups = [aws_security_group.api.id]
+    // assign_public_ip = true
+  }
 
   ordered_placement_strategy {
     type  = "binpack"
