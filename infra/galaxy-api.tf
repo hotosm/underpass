@@ -7,21 +7,81 @@ resource "aws_ecs_cluster" "galaxy" {
     value = "enabled"
   }
   tags = {
-    Name = ""
-    Role = ""
+    Name    = "galaxy"
+    Role    = "galaxy"
+    Project = "galaxy"
   }
 }
 
-data "aws_iam_role" "ecs_execution_role" {
+/**
+ * CloudWatch Logging access
+ * Secrets Manager access
+ * Container Registry access
+**/
+resource "aws_iam_role" "ecs_execution_role" {
   name = "ecsTaskExecutionRole"
+  path = "/"
+
+  assume_role_policy = data.aws_iam_policy_document.ecs-assume-role.json
+
+  inline_policy {
+    name   = "galaxy-api-policy"
+    policy = data.aws_iam_policy_document.galaxy-api-execution-role.json
+  }
+
+}
+
+data "aws_iam_policy_document" "ecs-assume-role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+
+  }
+}
+
+data "aws_iam_policy_document" "galaxy-api-execution-role" {
+  statement {
+    sid = "1"
+
+    actions = [
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+    ]
+
+    resources = [
+      "*",
+    ]
+
+  }
+
+  statement {
+    sid = "2"
+
+    actions = [
+      "secretsmanager:GetSecretValue"
+    ]
+
+    resources = [
+      aws_secretsmanager_secret.underpass_database_credentials.arn,
+      "arn:aws:secretsmanager:*:*:secret:temporary_credentials",
+    ]
+
+  }
 }
 
 resource "aws_ecs_task_definition" "galaxy-api" {
-  family = "galaxy-api"
+  family       = "galaxy-api"
+  network_mode = "awsvpc"
+  memory       = 258
+
   container_definitions = jsonencode([
     {
       name      = "galaxy-api"
-      image     = "service-first"
+      image     = "quay.io/hotosm/galaxy-api:web-flow-a55d89f"
       cpu       = 10
       memory    = 512
       essential = true
@@ -32,11 +92,14 @@ resource "aws_ecs_task_definition" "galaxy-api" {
         }
       ]
       secrets = [
-        { name : "POSTGRES_CONNECT_PARAM_JSON", valueFrom : aws_secretsmanager_secret_version.underpass_database_credentials.arn }
+        { name : "POSTGRES_CONNECTION_PARAMS", valueFrom : aws_secretsmanager_secret_version.underpass_database_credentials.arn }
+      ]
+      environment = [
+
       ]
     }
   ])
-  execution_role_arn = data.aws_iam_role.ecs_execution_role.arn
+  execution_role_arn = aws_iam_role.ecs_execution_role.arn
 }
 
 resource "aws_ecs_service" "galaxy-api" {
@@ -83,7 +146,7 @@ resource "aws_lb_listener" "osm-stats-secure" {
   load_balancer_arn = aws_lb.osm-stats.arn
   port              = "443"
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-Ext-2018-06"
+  ssl_policy        = "ELBSecurityPolicy-FS-1-2-Res-2019-08"
   certificate_arn   = data.aws_acm_certificate.wildcard.arn
 
   default_action {
