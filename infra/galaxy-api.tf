@@ -19,8 +19,8 @@ resource "aws_ecs_cluster" "galaxy" {
  * Container Registry access
 **/
 resource "aws_iam_role" "ecs_execution_role" {
-  name = "ecs_execution_role"
-  path = "/"
+  name_prefix = "galaxy-api-exec"
+  path = "/galaxy/"
 
   assume_role_policy = data.aws_iam_policy_document.ecs-assume-role.json
 
