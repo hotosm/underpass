@@ -76,7 +76,7 @@ data "aws_iam_policy_document" "galaxy-api-execution-role" {
 resource "aws_ecs_task_definition" "galaxy-api" {
   family       = "galaxy-api"
   network_mode = "awsvpc"
-  memory       = 258
+  memory       = 512
 
   container_definitions = jsonencode([
     {
