@@ -31,6 +31,10 @@ resource "aws_iam_role" "ecs_execution_role" {
 
 }
 
+data "aws_kms_alias" "secretsmanager" {
+  name = "alias/aws/secretsmanager"
+}
+
 data "aws_iam_policy_document" "ecs-assume-role" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -70,6 +74,18 @@ data "aws_iam_policy_document" "galaxy-api-execution-role" {
       "arn:aws:secretsmanager:*:*:secret:temporary_credentials",
     ]
 
+  }
+
+  statement {
+    sid = "3"
+
+    actions = [
+      "kms:Decrypt"
+    ]
+
+    resources = [
+      data.aws_kms_alias.secretsmanager.arn
+    ]
   }
 }
 
