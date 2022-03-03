@@ -2,6 +2,7 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
+// attribute - main_route_table_id
 data "aws_vpc" "tasking-manager" {
   id = var.tasking-manager_vpc_id
 }
@@ -113,7 +114,7 @@ resource "aws_route" "private-to-peering-connection" {
   route_table_id            = aws_vpc.underpass.default_route_table_id
   destination_cidr_block    = data.aws_vpc.tasking-manager.cidr_block
   vpc_peering_connection_id = aws_vpc_peering_connection.galaxy-tasking-manager.id
-  depends_on                = [aws_vpc.underpass]
+  depends_on                = [aws_vpc.underpass, aws_vpc_peering_connection.galaxy-tasking-manager]
 }
 
 // EXPLICIT ASSOCIATIONS
@@ -127,6 +128,19 @@ resource "aws_route_table_association" "public" {
   count          = var.subnet_count
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
+}
+
+/********************************************
+** THIS BLOCK EDITS TASKING MANAGER VPC
+**               WHICH IS
+** OUTSIDE THE SCOPE OF GALAXY / UNDERPASS
+*********************************************/
+resource "aws_route" "tasking-manager-vpc-to-peering-connection" {
+  route_table_id            = data.aws_vpc.tasking-manager.main_route_table_id
+  destination_cidr_block    = aws_vpc.underpass.cidr_block
+  vpc_peering_connection_id = aws_vpc_peering_connection.galaxy-tasking-manager.id
+  depends_on                = [aws_vpc.underpass, aws_vpc_peering_connection.galaxy-tasking-manager]
+
 }
 
 resource "aws_security_group" "database" {
