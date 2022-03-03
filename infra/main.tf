@@ -54,14 +54,25 @@ resource "aws_internet_gateway" "internet" {
 
 resource "aws_eip" "nat" {
   vpc = true
+
+tags = {
+Name = "Galaxy NAT Gateway"
+}
 }
 
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public[1].id
+
+tags = {
+Name = "Galaxy"
+}
 }
 
 resource "aws_vpc_peering_connection" "galaxy-tasking-manager" {
+  tags = {
+    Name = "galaxy-taskingmanager"
+  }
   vpc_id      = aws_vpc.underpass.id
   peer_vpc_id = data.aws_vpc.tasking-manager.id
   auto_accept = true
@@ -81,7 +92,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "underpass-public"
+    Name = "galaxy-public"
   }
 }
 
@@ -99,7 +110,7 @@ resource "aws_route_table" "private" {
   }
 
   tags = {
-    Name = "underpass-private"
+    Name = "galaxy-private"
   }
 }
 
