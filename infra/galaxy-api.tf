@@ -74,9 +74,16 @@ data "aws_iam_policy_document" "galaxy-api-execution-role" {
 }
 
 resource "aws_ecs_task_definition" "galaxy-api" {
-  family       = "galaxy-api"
-  network_mode = "awsvpc"
-  memory       = 512
+  family                   = "galaxy-api"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture        = "X86_64" // or ARM64
+  }
 
   container_definitions = jsonencode([
     {
@@ -114,7 +121,7 @@ resource "aws_ecs_service" "galaxy-api" {
   network_configuration {
     subnets         = aws_subnet.public.*.id
     security_groups = [aws_security_group.api.id]
-    // assign_public_ip = true
+    // assign_public_ip = true // valid only for FARGATE
   }
 
   ordered_placement_strategy {
