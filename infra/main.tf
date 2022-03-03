@@ -8,7 +8,8 @@ data "aws_vpc" "tasking-manager" {
 }
 
 resource "aws_vpc" "underpass" {
-  cidr_block = var.vpc_cidr
+  cidr_block           = var.vpc_cidr
+  enable_dns_hostnames = true
 
   tags = {
     Name       = "underpass"
@@ -55,18 +56,18 @@ resource "aws_internet_gateway" "internet" {
 resource "aws_eip" "nat" {
   vpc = true
 
-tags = {
-Name = "Galaxy NAT Gateway"
-}
+  tags = {
+    Name = "Galaxy NAT Gateway"
+  }
 }
 
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public[1].id
 
-tags = {
-Name = "Galaxy"
-}
+  tags = {
+    Name = "Galaxy"
+  }
 }
 
 resource "aws_vpc_peering_connection" "galaxy-tasking-manager" {
@@ -76,6 +77,14 @@ resource "aws_vpc_peering_connection" "galaxy-tasking-manager" {
   vpc_id      = aws_vpc.underpass.id
   peer_vpc_id = data.aws_vpc.tasking-manager.id
   auto_accept = true
+
+  accepter {
+    allow_remote_vpc_dns_resolution = true
+  }
+
+  requester {
+    allow_remote_vpc_dns_resolution = true
+  }
 }
 
 resource "aws_route_table" "public" {
