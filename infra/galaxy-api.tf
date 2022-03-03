@@ -124,11 +124,6 @@ resource "aws_ecs_service" "galaxy-api" {
     // assign_public_ip = true // valid only for FARGATE
   }
 
-  ordered_placement_strategy {
-    type  = "binpack"
-    field = "cpu"
-  }
-
   lifecycle {
     ignore_changes = [desired_count]
   }
