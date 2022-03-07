@@ -71,6 +71,15 @@ variable "underpass_database_credentials" {
   }
 }
 
+variable "quay_robot_credentials" {
+  type = map(string)
+
+  default = {
+    username = "quay"
+    password = "DummyDefault123!"
+  }
+}
+
 variable "server_count" {
   type = map(number)
 
