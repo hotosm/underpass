@@ -222,7 +222,7 @@ resource "aws_security_group" "api" {
   vpc_id      = aws_vpc.underpass.id
 
   ingress {
-    description      = "Allow self to access"
+    description      = "Allow HTTPS from World"
     from_port        = 443
     to_port          = 443
     protocol         = "tcp"
@@ -234,7 +234,7 @@ resource "aws_security_group" "api" {
   To protect this instance public IP needs to be removed
 **/
   ingress {
-    description      = "Allow access to cloudfront"
+    description      = "Allow HTTP from World"
     from_port        = 80
     to_port          = 80
     protocol         = "tcp"
@@ -246,15 +246,6 @@ resource "aws_security_group" "api" {
     description      = "Allow access to API App"
     from_port        = 8000
     to_port          = 8000
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
-
-  ingress {
-    description      = "Allow access to API App"
-    from_port        = 8080
-    to_port          = 8080
     protocol         = "tcp"
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
@@ -280,7 +271,7 @@ resource "aws_security_group" "vpc-endpoint" {
   vpc_id      = aws_vpc.underpass.id
 
   ingress {
-    description      = "Allow access from interfaces in VPC"
+    description      = "Allow secure access from interfaces in VPC"
     from_port        = 443
     to_port          = 443
     protocol         = "tcp"

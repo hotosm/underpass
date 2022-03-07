@@ -111,7 +111,7 @@ data "aws_iam_policy_document" "galaxy-api-execution-role" {
 }
 
 resource "aws_ecs_task_definition" "galaxy-api" {
-  family                   = "galaxy-api"
+  family                   = "api"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = 256
@@ -137,16 +137,8 @@ resource "aws_ecs_task_definition" "galaxy-api" {
 
       portMappings = [
         {
-          containerPort = 80
-          hostPort      = 80
-        },
-        {
           containerPort = 8000
           hostPort      = 8000
-        },
-        {
-          containerPort = 8080
-          hostPort      = 8080
         },
       ]
 
@@ -189,6 +181,12 @@ resource "aws_ecs_service" "galaxy-api" {
     assign_public_ip = true // valid only for FARGATE
   }
 
+  load_balancer {
+    target_group_arn = aws_lb_target_group.galaxy-api.arn
+    container_name   = "galaxy-api"
+    container_port   = 8000
+  }
+
   lifecycle {
     ignore_changes = [desired_count]
   }
@@ -228,6 +226,41 @@ resource "aws_lb_listener" "osm-stats-secure" {
     target_group_arn = aws_lb_target_group.osm-stats.arn
   }
 }
+
+resource "aws_lb" "galaxy-api" {
+  name               = "galaxy-api"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.api.id]
+  subnets            = aws_subnet.public[*].id
+
+  enable_deletion_protection = false
+
+  tags = {
+    Environment = "production"
+  }
+}
+
+resource "aws_lb_target_group" "galaxy-api" {
+  name     = "galaxy-api"
+  port     = 8000
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.underpass.id
+}
+
+resource "aws_lb_listener" "galaxy-api-secure" {
+  load_balancer_arn = aws_lb.galaxy-api.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-FS-1-2-Res-2019-08"
+  certificate_arn   = data.aws_acm_certificate.wildcard.arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.galaxy-api.arn
+  }
+}
+
 
 data "aws_acm_certificate" "wildcard" {
   domain      = "hotosm.org"
