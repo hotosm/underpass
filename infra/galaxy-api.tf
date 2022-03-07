@@ -111,7 +111,7 @@ data "aws_iam_policy_document" "galaxy-api-execution-role" {
 }
 
 resource "aws_ecs_task_definition" "galaxy-api" {
-  family                   = "api"
+  family                   = "galaxy-api"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = 256
@@ -167,7 +167,7 @@ resource "aws_ecs_task_definition" "galaxy-api" {
 }
 
 resource "aws_ecs_service" "galaxy-api" {
-  name            = "galaxy-api"
+  name            = "api"
   cluster         = aws_ecs_cluster.galaxy.id
   launch_type     = "FARGATE"
   task_definition = aws_ecs_task_definition.galaxy-api.arn
@@ -212,6 +212,12 @@ resource "aws_lb_target_group" "osm-stats" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.underpass.id
+
+  health_check {
+    enabled = true
+    path    = "/docs"
+  }
+
 }
 
 resource "aws_lb_listener" "osm-stats-secure" {
