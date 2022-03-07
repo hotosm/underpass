@@ -214,7 +214,7 @@ resource "aws_lb_target_group" "osm-stats" {
   vpc_id   = aws_vpc.underpass.id
   health_check {
     enabled = true
-    path    = "/docs"
+    path    = "/"
   }
 }
 
