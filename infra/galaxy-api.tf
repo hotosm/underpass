@@ -1,3 +1,17 @@
+resource "aws_secretsmanager_secret" "quay_robot_credentials" {
+  name = "quay-robot-pull-credentials"
+
+  tags = {
+    name = "quay_robot_pull_credentials"
+    Role = "Container Image access credentials"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "quay_robot_credentials" {
+  secret_id     = aws_secretsmanager_secret.quay_robot_credentials.id
+  secret_string = jsonencode(var.quay_robot_credentials)
+}
+
 resource "aws_ecs_cluster" "galaxy" {
   name = "galaxy"
 
@@ -71,7 +85,7 @@ data "aws_iam_policy_document" "galaxy-api-execution-role" {
 
     resources = [
       aws_secretsmanager_secret.underpass_database_credentials.arn,
-      "arn:aws:secretsmanager:*:*:secret:temporary_credentials",
+      aws_secretsmanager_secret.quay_robot_credentials.arn,
     ]
 
   }
@@ -103,8 +117,11 @@ resource "aws_ecs_task_definition" "galaxy-api" {
 
   container_definitions = jsonencode([
     {
-      name      = "galaxy-api"
-      image     = "quay.io/hotosm/galaxy-api:web-flow-a55d89f"
+      name  = "galaxy-api"
+      image = "quay.io/hotosm/galaxy-api:web-flow-a55d89f"
+      repositoryCredentials = {
+        credentialsParameter = aws_secretsmanager_secret.quay_robot_credentials.arn,
+      }
       cpu       = 10
       memory    = 512
       essential = true
