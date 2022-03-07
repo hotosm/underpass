@@ -123,20 +123,6 @@ resource "aws_route_table" "private" {
   }
 }
 
-resource "aws_route" "private-to-world" {
-  route_table_id         = aws_vpc.underpass.default_route_table_id
-  destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.nat.id
-  depends_on             = [aws_vpc.underpass]
-}
-
-resource "aws_route" "private-to-peering-connection" {
-  route_table_id            = aws_vpc.underpass.default_route_table_id
-  destination_cidr_block    = data.aws_vpc.tasking-manager.cidr_block
-  vpc_peering_connection_id = aws_vpc_peering_connection.galaxy-tasking-manager.id
-  depends_on                = [aws_vpc.underpass, aws_vpc_peering_connection.galaxy-tasking-manager]
-}
-
 // EXPLICIT ASSOCIATIONS
 resource "aws_route_table_association" "private" {
   count          = var.subnet_count
