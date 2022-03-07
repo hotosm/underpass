@@ -135,7 +135,7 @@ resource "aws_ecs_service" "galaxy-api" {
   propagate_tags = "SERVICE"
 
   network_configuration {
-    subnets         = aws_subnet.public.*.id
+    subnets         = aws_subnet.public[*].id
     security_groups = [aws_security_group.api.id]
     // assign_public_ip = true // valid only for FARGATE
   }
@@ -151,7 +151,7 @@ resource "aws_lb" "osm-stats" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.api.id]
-  subnets            = aws_subnet.public.*.id
+  subnets            = aws_subnet.public[*].id
 
   enable_deletion_protection = false
 
