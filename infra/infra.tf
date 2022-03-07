@@ -289,6 +289,7 @@ resource "aws_db_instance" "underpass" {
   skip_final_snapshot                 = true
   final_snapshot_identifier           = var.database_final_snapshot_identifier
   iam_database_authentication_enabled = true
+  vpc_security_group_ids              = [aws_security_group.database.id]
 
   tags = {
     Name = "underpass"

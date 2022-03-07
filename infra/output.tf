@@ -9,3 +9,7 @@ output "db-secret-arn" {
 output "db-secret-version-arn" {
   value = aws_secretsmanager_secret_version.underpass_database_credentials.arn
 }
+
+output "db-security-group" {
+  value = aws_security_group.database.id
+}
