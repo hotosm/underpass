@@ -12,7 +12,7 @@ resource "aws_vpc" "underpass" {
   enable_dns_hostnames = true
 
   tags = {
-    Name       = "underpass"
+    Name       = "Galaxy"
     Maintainer = "Yogesh Girikumar"
     Terraform  = "true"
   }
@@ -270,3 +270,41 @@ resource "aws_security_group" "api" {
 
 }
 
+resource "aws_security_group" "vpc-endpoint" {
+  name        = "vpc-endpoint"
+  description = "Firewall for to VPC endpoints from containers and instances"
+  vpc_id      = aws_vpc.underpass.id
+
+  ingress {
+    description      = "Allow access from interfaces in VPC"
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = [aws_vpc.underpass.cidr_block]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  tags = {
+    Name = "underpass-vpc-endpoint"
+  }
+
+}
+
+resource "aws_vpc_endpoint" "secretsmanager" {
+  vpc_id            = aws_vpc.underpass.id
+  vpc_endpoint_type = "Interface"
+  service_name      = "com.amazonaws.us-east-1.secretsmanager" // TODO: use var.aws_region
+  auto_accept       = true
+
+  route_table_ids = [aws_route_table.private, aws_route_table.public]
+
+  security_group_ids = [aws_security_group.vpc-endpoint.id]
+}
