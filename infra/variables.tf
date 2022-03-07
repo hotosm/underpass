@@ -14,7 +14,7 @@ variable "instance_types" {
   default = {
     api_server     = "t3.micro"
     file_processor = "r6g.xlarge"
-    database       = "db.t4g.large"
+    database       = "db.t4g.micro"
   }
 }
 
@@ -101,4 +101,9 @@ variable "debfile_name" {
 variable "libpqxx_version" {
   type    = string
   default = "7.6.1"
+}
+
+variable "tasking-manager_vpc_id" {
+  type    = string
+  default = "vpc-ea28198f"
 }

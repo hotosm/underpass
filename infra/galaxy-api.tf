@@ -7,21 +7,104 @@ resource "aws_ecs_cluster" "galaxy" {
     value = "enabled"
   }
   tags = {
-    Name = ""
-    Role = ""
+    Name    = "galaxy"
+    Role    = "galaxy"
+    Project = "galaxy"
   }
 }
 
-data "aws_iam_role" "ecs_execution_role" {
-  name = "ecsTaskExecutionRole"
+/**
+ * CloudWatch Logging access
+ * Secrets Manager access
+ * Container Registry access
+**/
+resource "aws_iam_role" "ecs_execution_role" {
+  name_prefix = "galaxy-api-exec"
+  path        = "/galaxy/"
+
+  assume_role_policy = data.aws_iam_policy_document.ecs-assume-role.json
+
+  inline_policy {
+    name   = "galaxy-api-policy"
+    policy = data.aws_iam_policy_document.galaxy-api-execution-role.json
+  }
+
+}
+
+data "aws_kms_alias" "secretsmanager" {
+  name = "alias/aws/secretsmanager"
+}
+
+data "aws_iam_policy_document" "ecs-assume-role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+
+  }
+}
+
+data "aws_iam_policy_document" "galaxy-api-execution-role" {
+  statement {
+    sid = "1"
+
+    actions = [
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+    ]
+
+    resources = [
+      "*",
+    ]
+
+  }
+
+  statement {
+    sid = "2"
+
+    actions = [
+      "secretsmanager:GetSecretValue"
+    ]
+
+    resources = [
+      aws_secretsmanager_secret.underpass_database_credentials.arn,
+      "arn:aws:secretsmanager:*:*:secret:temporary_credentials",
+    ]
+
+  }
+
+  statement {
+    sid = "3"
+
+    actions = [
+      "kms:Decrypt"
+    ]
+
+    resources = [
+      data.aws_kms_alias.secretsmanager.arn
+    ]
+  }
 }
 
 resource "aws_ecs_task_definition" "galaxy-api" {
-  family = "galaxy-api"
+  family                   = "galaxy-api"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture        = "X86_64" // or ARM64
+  }
+
   container_definitions = jsonencode([
     {
       name      = "galaxy-api"
-      image     = "service-first"
+      image     = "quay.io/hotosm/galaxy-api:web-flow-a55d89f"
       cpu       = 10
       memory    = 512
       essential = true
@@ -32,24 +115,29 @@ resource "aws_ecs_task_definition" "galaxy-api" {
         }
       ]
       secrets = [
-        { name : "POSTGRES_CONNECT_PARAM_JSON", valueFrom : aws_secretsmanager_secret_version.underpass_database_credentials.arn }
+        { name : "POSTGRES_CONNECTION_PARAMS", valueFrom : aws_secretsmanager_secret_version.underpass_database_credentials.arn }
+      ]
+      environment = [
+
       ]
     }
   ])
-  execution_role_arn = data.aws_iam_role.ecs_execution_role.arn
+  execution_role_arn = aws_iam_role.ecs_execution_role.arn
 }
 
 resource "aws_ecs_service" "galaxy-api" {
   name            = "galaxy-api"
   cluster         = aws_ecs_cluster.galaxy.id
+  launch_type     = "FARGATE"
   task_definition = aws_ecs_task_definition.galaxy-api.arn
   desired_count   = 3
-  //  iam_role        = aws_iam_role.foo.arn
-  //  depends_on      = [aws_iam_role_policy.foo]
 
-  ordered_placement_strategy {
-    type  = "binpack"
-    field = "cpu"
+  propagate_tags = "SERVICE"
+
+  network_configuration {
+    subnets         = aws_subnet.public.*.id
+    security_groups = [aws_security_group.api.id]
+    // assign_public_ip = true // valid only for FARGATE
   }
 
   lifecycle {
@@ -83,7 +171,7 @@ resource "aws_lb_listener" "osm-stats-secure" {
   load_balancer_arn = aws_lb.osm-stats.arn
   port              = "443"
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-Ext-2018-06"
+  ssl_policy        = "ELBSecurityPolicy-FS-1-2-Res-2019-08"
   certificate_arn   = data.aws_acm_certificate.wildcard.arn
 
   default_action {
