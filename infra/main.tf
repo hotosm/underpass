@@ -304,7 +304,7 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   service_name      = "com.amazonaws.us-east-1.secretsmanager" // TODO: use var.aws_region
   auto_accept       = true
 
-  route_table_ids = [aws_route_table.private, aws_route_table.public]
+  route_table_ids = [aws_route_table.private.id, aws_route_table.public.id]
 
   security_group_ids = [aws_security_group.vpc-endpoint.id]
 }
