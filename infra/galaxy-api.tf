@@ -152,7 +152,7 @@ resource "aws_ecs_task_definition" "galaxy-api" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group : aws_cloudwatch_log_group.galaxy.name
+          awslogs-group : aws_cloudwatch_log_group.galaxy.name,
           awslogs-region : var.aws_region,
           awslogs-create-group : true,
           awslogs-stream-prefix : "api"
