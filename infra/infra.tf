@@ -264,6 +264,11 @@ resource "aws_secretsmanager_secret_version" "underpass_database_credentials" {
   ))
 }
 
+resource "aws_db_subnet_group" "galaxy" {
+  name       = "galaxy"
+  subnet_ids = aws_subnet.private[*].id
+}
+
 /** TODO
 * Monitoring:
 *   - Configure enhanced monitoring
@@ -277,19 +282,26 @@ resource "aws_secretsmanager_secret_version" "underpass_database_credentials" {
 *   - Backup and snapshot expiry
 */
 resource "aws_db_instance" "underpass" {
-  identifier                          = trim(join("-", ["underpass", lookup(var.deployment_environment, "production", "0")]), "-")
-  allocated_storage                   = lookup(var.disk_sizes, "db_min", 100)
-  max_allocated_storage               = lookup(var.disk_sizes, "db_max", 1000) # Storage auto-scaling
-  engine                              = "postgres"
-  engine_version                      = var.database_engine_version
-  instance_class                      = lookup(var.instance_types, "database", "db.t4g.micro")
-  name                                = var.database_name
-  username                            = var.database_username
-  password                            = random_password.underpass_database_password_string.result
-  skip_final_snapshot                 = true
-  final_snapshot_identifier           = var.database_final_snapshot_identifier
+  identifier = trim(join("-", ["underpass", lookup(var.deployment_environment, "production", "0")]), "-")
+
+  allocated_storage     = lookup(var.disk_sizes, "db_min", 100)
+  max_allocated_storage = lookup(var.disk_sizes, "db_max", 1000) # Storage auto-scaling
+
+  engine         = "postgres"
+  engine_version = var.database_engine_version
+  instance_class = lookup(var.instance_types, "database", "db.t4g.micro")
+
+  name     = var.database_name
+  username = var.database_username
+  password = random_password.underpass_database_password_string.result
+
+  skip_final_snapshot       = true
+  final_snapshot_identifier = var.database_final_snapshot_identifier
+
   iam_database_authentication_enabled = true
-  vpc_security_group_ids              = [aws_security_group.database.id]
+
+  vpc_security_group_ids = [aws_security_group.database.id]
+  db_subnet_group_name   = aws_db_subnet_group.galaxy.name
 
   tags = {
     Name = "underpass"
