@@ -298,3 +298,17 @@ resource "aws_vpc_endpoint" "secretsmanager" {
 
   security_group_ids = [aws_security_group.vpc-endpoint.id]
 }
+
+resource "aws_vpc_endpoint" "awslogs" {
+  vpc_id = aws_vpc.underpass.id
+
+  vpc_endpoint_type = "Interface"
+  service_name      = "com.amazonaws.us-east-1.logs" // TODO: use var.aws_region
+
+  private_dns_enabled = true
+  auto_accept         = true
+
+  subnet_ids = aws_subnet.public[*].id
+
+  security_group_ids = [aws_security_group.vpc-endpoint.id]
+}
