@@ -117,8 +117,11 @@ resource "aws_ecs_task_definition" "galaxy-api" {
 
   container_definitions = jsonencode([
     {
-      name      = "galaxy-api"
-      image     = "quay.io/hotosm/galaxy-api:web-flow-a55d89f"
+      name  = "galaxy-api"
+      image = "quay.io/hotosm/galaxy-api:web-flow-a55d89f"
+      repositoryCredentials = {
+        credentialsParameter = aws_secretsmanager_secret.quay_robot_credentials.arn,
+      }
       cpu       = 10
       memory    = 512
       essential = true
