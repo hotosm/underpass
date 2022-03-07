@@ -242,10 +242,11 @@ resource "aws_lb" "galaxy-api" {
 }
 
 resource "aws_lb_target_group" "galaxy-api" {
-  name     = "galaxy-api"
-  port     = 8000
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.underpass.id
+  name        = "galaxy-api"
+  port        = 8000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.underpass.id
+  target_type = "ip"
 }
 
 resource "aws_lb_listener" "galaxy-api-secure" {
@@ -260,7 +261,6 @@ resource "aws_lb_listener" "galaxy-api-secure" {
     target_group_arn = aws_lb_target_group.galaxy-api.arn
   }
 }
-
 
 data "aws_acm_certificate" "wildcard" {
   domain      = "hotosm.org"
