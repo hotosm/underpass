@@ -1,3 +1,8 @@
+resource "aws_cloudwatch_log_group" "galaxy" {
+  name              = "galaxy"
+  retention_in_days = 7
+}
+
 resource "aws_secretsmanager_secret" "quay_robot_credentials" {
   name = "quay-robot-pull-credentials"
 
@@ -66,12 +71,14 @@ data "aws_iam_policy_document" "galaxy-api-execution-role" {
     sid = "1"
 
     actions = [
+      "logs:CreateLogGroup",
       "logs:CreateLogStream",
       "logs:PutLogEvents",
     ]
 
-    resources = [
-      "*",
+    resources = [ // TODO: Improve?
+      "arn:aws:logs:*:670261699094:log-group:galaxy",
+      "arn:aws:logs:*:670261699094:log-group:galaxy:log-stream:*",
     ]
 
   }
@@ -119,21 +126,39 @@ resource "aws_ecs_task_definition" "galaxy-api" {
     {
       name  = "galaxy-api"
       image = "quay.io/hotosm/galaxy-api:web-flow-a55d89f"
+
       repositoryCredentials = {
         credentialsParameter = aws_secretsmanager_secret.quay_robot_credentials.arn,
       }
+
       cpu       = 10
       memory    = 512
       essential = true
+
       portMappings = [
         {
           containerPort = 8080
           hostPort      = 8080
         }
       ]
+
       secrets = [
-        { name : "POSTGRES_CONNECTION_PARAMS", valueFrom : aws_secretsmanager_secret_version.underpass_database_credentials.arn }
+        {
+          name : "POSTGRES_CONNECTION_PARAMS",
+          valueFrom : aws_secretsmanager_secret_version.underpass_database_credentials.arn
+        }
       ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group : aws_cloudwatch_log_group.name
+          awslogs-region : var.aws_region,
+          awslogs-create-group : true,
+          awslogs-stream-prefix : "api"
+        }
+      }
+
       environment = [
 
       ]
@@ -152,9 +177,9 @@ resource "aws_ecs_service" "galaxy-api" {
   propagate_tags = "SERVICE"
 
   network_configuration {
-    subnets         = aws_subnet.public[*].id
-    security_groups = [aws_security_group.api.id]
-    // assign_public_ip = true // valid only for FARGATE
+    subnets          = aws_subnet.public[*].id
+    security_groups  = [aws_security_group.api.id]
+    assign_public_ip = true // valid only for FARGATE
   }
 
   lifecycle {
