@@ -141,7 +141,7 @@ resource "aws_route" "private-to-peering-connection" {
 resource "aws_route_table_association" "private" {
   count          = var.subnet_count
   subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_vpc.underpass.default_route_table_id
+  route_table_id = aws_route_table.private.id
 }
 
 resource "aws_route_table_association" "public" {
@@ -304,7 +304,7 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   service_name      = "com.amazonaws.us-east-1.secretsmanager" // TODO: use var.aws_region
   auto_accept       = true
 
-  route_table_ids = [aws_route_table.private.id, aws_route_table.public.id]
+  subnet_ids = concat(aws_subnet.private[*].id, aws_subnet.public[*].id)
 
   security_group_ids = [aws_security_group.vpc-endpoint.id]
 }
