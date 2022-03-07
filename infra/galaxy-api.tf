@@ -144,8 +144,8 @@ resource "aws_ecs_task_definition" "galaxy-api" {
 
       secrets = [
         {
-          name : "POSTGRES_CONNECTION_PARAMS",
-          valueFrom : aws_secretsmanager_secret_version.underpass_database_credentials.arn
+          name      = "POSTGRES_CONNECTION_PARAMS",
+          valueFrom = aws_secretsmanager_secret_version.underpass_database_credentials.arn
         }
       ]
 
