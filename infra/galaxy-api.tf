@@ -128,7 +128,7 @@ resource "aws_ecs_task_definition" "galaxy-api" {
       image = "quay.io/hotosm/galaxy-api:web-flow-a55d89f"
 
       repositoryCredentials = {
-        credentialsParameter = aws_secretsmanager_secret.quay_robot_credentials.arn,
+        credentialsParameter = aws_secretsmanager_secret.quay_robot_credentials.arn
       }
 
       cpu       = 10
@@ -144,7 +144,7 @@ resource "aws_ecs_task_definition" "galaxy-api" {
 
       secrets = [
         {
-          name      = "POSTGRES_CONNECTION_PARAMS",
+          name      = "POSTGRES_CONNECTION_PARAMS"
           valueFrom = aws_secretsmanager_secret_version.underpass_database_credentials.arn
         }
       ]
@@ -154,7 +154,6 @@ resource "aws_ecs_task_definition" "galaxy-api" {
         options = {
           awslogs-group         = aws_cloudwatch_log_group.galaxy.name
           awslogs-region        = var.aws_region
-          awslogs-create-group  = true
           awslogs-stream-prefix = "api"
         }
       }
