@@ -137,9 +137,17 @@ resource "aws_ecs_task_definition" "galaxy-api" {
 
       portMappings = [
         {
+          containerPort = 80
+          hostPort      = 80
+        },
+        {
+          containerPort = 8000
+          hostPort      = 8000
+        },
+        {
           containerPort = 8080
           hostPort      = 8080
-        }
+        },
       ]
 
       secrets = [
