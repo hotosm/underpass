@@ -285,12 +285,15 @@ resource "aws_security_group" "vpc-endpoint" {
 }
 
 resource "aws_vpc_endpoint" "secretsmanager" {
-  vpc_id            = aws_vpc.underpass.id
+  vpc_id = aws_vpc.underpass.id
+
   vpc_endpoint_type = "Interface"
   service_name      = "com.amazonaws.us-east-1.secretsmanager" // TODO: use var.aws_region
-  auto_accept       = true
 
-//  subnet_ids = concat(aws_subnet.private[*].id, aws_subnet.public[*].id)
+  private_dns_enabled = true
+  auto_accept         = true
+
+  //  subnet_ids = concat(aws_subnet.private[*].id, aws_subnet.public[*].id)
   subnet_ids = aws_subnet.public[*].id
 
   security_group_ids = [aws_security_group.vpc-endpoint.id]
