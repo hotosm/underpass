@@ -232,7 +232,7 @@ resource "random_password" "galaxy_database_admin_password" {
 }
 
 resource "aws_secretsmanager_secret" "galaxy_database_credentials" {
-  name = "underpass-db"
+  name = "${var.deployment_environment}/galaxy/database"
 
   tags = {
     name = "Galaxy Database Admin Credentials"
