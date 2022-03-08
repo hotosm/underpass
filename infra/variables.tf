@@ -45,7 +45,7 @@ variable "ssh_key_pair_name" {
 
 variable "database_engine_version" {
   type    = string
-  default = "12.8"
+  default = "12.9"
 }
 
 variable "database_name" {
@@ -55,7 +55,7 @@ variable "database_name" {
 
 variable "database_username" {
   type    = string
-  default = "mineworker"
+  default = "galaxy"
 }
 
 variable "database_final_snapshot_identifier" {
