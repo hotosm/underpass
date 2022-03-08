@@ -282,6 +282,16 @@ resource "aws_db_subnet_group" "galaxy" {
 *   - Backup and snapshot expiry
 */
 resource "aws_db_instance" "galaxy" {
+  lifecycle {
+    ignore_changes = [
+      # Updated manually or by other processes
+      // max_allocated_storage,
+
+      # Manually updated often
+      // instance_class,
+    ]
+  }
+
   identifier = trim(join("-", ["galaxy", lookup(var.name_suffix, var.deployment_environment, "0")]), "-")
 
   allocated_storage     = lookup(var.disk_sizes, "db_min", 100)
@@ -307,6 +317,7 @@ resource "aws_db_instance" "galaxy" {
     Name = "galaxy-db"
     Role = "Database server"
   }
+
 }
 
 data "aws_route53_zone" "hotosm-org" {
