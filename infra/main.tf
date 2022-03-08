@@ -26,7 +26,7 @@ resource "aws_subnet" "public" {
   cidr_block = cidrsubnet(var.vpc_cidr, 8, "${count.index + 1}")
 
   tags = {
-    Name = "underpass-public${count.index + 1}"
+    Name = "galaxy-public${count.index + 1}"
   }
 
 }
@@ -39,7 +39,7 @@ resource "aws_subnet" "private" {
   cidr_block = cidrsubnet(var.vpc_cidr, 8, "${count.index + var.subnet_count + 1}")
 
   tags = {
-    Name = "underpass-private${count.index + 1}"
+    Name = "galaxy-private${count.index + 1}"
   }
 
 }
@@ -171,7 +171,7 @@ resource "aws_security_group" "database" {
   }
 
   tags = {
-    Name = "underpass-database"
+    Name = "galaxy-database"
   }
 
 }
@@ -211,7 +211,7 @@ resource "aws_security_group" "app" {
   }
 
   tags = {
-    Name = "underpass-app"
+    Name = "galaxy-app"
   }
 
 }
@@ -260,7 +260,7 @@ resource "aws_security_group" "api" {
   }
 
   tags = {
-    Name = "underpass-api"
+    Name = "galaxy-api"
   }
 
 }
@@ -288,7 +288,7 @@ resource "aws_security_group" "vpc-endpoint" {
   }
 
   tags = {
-    Name = "underpass-vpc-endpoint"
+    Name = "galaxy-vpc-endpoint"
   }
 
 }

@@ -231,17 +231,17 @@ resource "random_password" "galaxy_database_admin_password" {
   }
 }
 
-resource "aws_secretsmanager_secret" "underpass_database_credentials" {
+resource "aws_secretsmanager_secret" "galaxy_database_credentials" {
   name = "underpass-db"
 
   tags = {
-    name = "underpass"
+    name = "Galaxy Database Admin Credentials"
     Role = "Database access credentials"
   }
 }
 
-resource "aws_secretsmanager_secret_version" "underpass_database_credentials" {
-  secret_id = aws_secretsmanager_secret.underpass_database_credentials.id
+resource "aws_secretsmanager_secret_version" "galaxy_database_credentials" {
+  secret_id = aws_secretsmanager_secret.galaxy_database_credentials.id
   secret_string = jsonencode(zipmap(
     [
       "dbinstanceidentifier",
@@ -282,7 +282,7 @@ resource "aws_db_subnet_group" "galaxy" {
 *   - Backup and snapshot expiry
 */
 resource "aws_db_instance" "galaxy" {
-  identifier = trim(join("-", ["underpass", lookup(var.deployment_environment, "production", "0")]), "-")
+  identifier = trim(join("-", ["galaxy", lookup(var.name_suffix, var.deployment_environment, "0")]), "-")
 
   allocated_storage     = lookup(var.disk_sizes, "db_min", 100)
   max_allocated_storage = lookup(var.disk_sizes, "db_max", 1000) # Storage auto-scaling
