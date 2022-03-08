@@ -91,7 +91,7 @@ data "aws_iam_policy_document" "galaxy-api-execution-role" {
     ]
 
     resources = [
-      aws_secretsmanager_secret.underpass_database_credentials.arn,
+      aws_secretsmanager_secret.galaxy_database_credentials.arn,
       aws_secretsmanager_secret.quay_robot_credentials.arn,
     ]
 
@@ -145,7 +145,7 @@ resource "aws_ecs_task_definition" "galaxy-api" {
       secrets = [
         {
           name      = "POSTGRES_CONNECTION_PARAMS"
-          valueFrom = aws_secretsmanager_secret_version.underpass_database_credentials.arn
+          valueFrom = aws_secretsmanager_secret_version.galaxy_database_credentials.arn
         }
       ]
 
@@ -211,7 +211,7 @@ resource "aws_lb_target_group" "osm-stats" {
   name     = "osm-stats"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = aws_vpc.underpass.id
+  vpc_id   = aws_vpc.galaxy.id
   health_check {
     enabled = true
     path    = "/"
@@ -249,7 +249,7 @@ resource "aws_lb_target_group" "galaxy-api" {
   name        = "galaxy-api"
   port        = 8000
   protocol    = "HTTP"
-  vpc_id      = aws_vpc.underpass.id
+  vpc_id      = aws_vpc.galaxy.id
   target_type = "ip"
 
   health_check {
