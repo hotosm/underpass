@@ -211,7 +211,7 @@ resource "aws_lb_target_group" "osm-stats" {
   name     = "osm-stats"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = aws_vpc.underpass.id
+  vpc_id   = aws_vpc.galaxy.id
   health_check {
     enabled = true
     path    = "/"
@@ -249,7 +249,7 @@ resource "aws_lb_target_group" "galaxy-api" {
   name        = "galaxy-api"
   port        = 8000
   protocol    = "HTTP"
-  vpc_id      = aws_vpc.underpass.id
+  vpc_id      = aws_vpc.galaxy.id
   target_type = "ip"
 
   health_check {
