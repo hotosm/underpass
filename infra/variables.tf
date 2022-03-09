@@ -1,4 +1,10 @@
 variable "deployment_environment" {
+  type = string
+
+  default = "production"
+}
+
+variable "name_suffix" {
   type = map(string)
 
   default = {
@@ -39,17 +45,17 @@ variable "ssh_key_pair_name" {
 
 variable "database_engine_version" {
   type    = string
-  default = "12.8"
+  default = "12.9"
 }
 
 variable "database_name" {
   type    = string
-  default = "underpass"
+  default = "galaxy"
 }
 
 variable "database_username" {
   type    = string
-  default = "mineworker"
+  default = "galaxy"
 }
 
 variable "database_final_snapshot_identifier" {
@@ -57,17 +63,12 @@ variable "database_final_snapshot_identifier" {
   default = "bye-underpass"
 }
 
-variable "underpass_database_credentials" {
+variable "quay_robot_credentials" {
   type = map(string)
 
   default = {
-    engine               = "postgres"
-    port                 = 5432
-    username             = "underpass"
-    password             = ""
-    dbinstanceidentifier = ""
-    host                 = ""
-    dbname               = ""
+    username = "quay"
+    password = "DummyDefault123!"
   }
 }
 

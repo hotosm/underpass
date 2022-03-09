@@ -1,3 +1,22 @@
+resource "aws_cloudwatch_log_group" "galaxy" {
+  name              = "galaxy"
+  retention_in_days = 7
+}
+
+resource "aws_secretsmanager_secret" "quay_robot_credentials" {
+  name = "quay-robot-pull-credentials"
+
+  tags = {
+    name = "quay_robot_pull_credentials"
+    Role = "Container Image access credentials"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "quay_robot_credentials" {
+  secret_id     = aws_secretsmanager_secret.quay_robot_credentials.id
+  secret_string = jsonencode(var.quay_robot_credentials)
+}
+
 resource "aws_ecs_cluster" "galaxy" {
   name = "galaxy"
 
@@ -52,12 +71,14 @@ data "aws_iam_policy_document" "galaxy-api-execution-role" {
     sid = "1"
 
     actions = [
+      "logs:CreateLogGroup",
       "logs:CreateLogStream",
       "logs:PutLogEvents",
     ]
 
-    resources = [
-      "*",
+    resources = [ // TODO: Improve?
+      "arn:aws:logs:*:670261699094:log-group:galaxy",
+      "arn:aws:logs:*:670261699094:log-group:galaxy:log-stream:*",
     ]
 
   }
@@ -70,8 +91,8 @@ data "aws_iam_policy_document" "galaxy-api-execution-role" {
     ]
 
     resources = [
-      aws_secretsmanager_secret.underpass_database_credentials.arn,
-      "arn:aws:secretsmanager:*:*:secret:temporary_credentials",
+      aws_secretsmanager_secret.galaxy_database_credentials.arn,
+      aws_secretsmanager_secret.quay_robot_credentials.arn,
     ]
 
   }
@@ -103,20 +124,40 @@ resource "aws_ecs_task_definition" "galaxy-api" {
 
   container_definitions = jsonencode([
     {
-      name      = "galaxy-api"
-      image     = "quay.io/hotosm/galaxy-api:web-flow-a55d89f"
+      name  = "galaxy-api"
+      image = "quay.io/hotosm/galaxy-api:web-flow-a55d89f"
+
+      repositoryCredentials = {
+        credentialsParameter = aws_secretsmanager_secret.quay_robot_credentials.arn
+      }
+
       cpu       = 10
       memory    = 512
       essential = true
+
       portMappings = [
         {
-          containerPort = 8080
-          hostPort      = 8080
+          containerPort = 8000
+          hostPort      = 8000
+        },
+      ]
+
+      secrets = [
+        {
+          name      = "POSTGRES_CONNECTION_PARAMS"
+          valueFrom = aws_secretsmanager_secret_version.galaxy_database_credentials.arn
         }
       ]
-      secrets = [
-        { name : "POSTGRES_CONNECTION_PARAMS", valueFrom : aws_secretsmanager_secret_version.underpass_database_credentials.arn }
-      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.galaxy.name
+          awslogs-region        = var.aws_region
+          awslogs-stream-prefix = "api"
+        }
+      }
+
       environment = [
 
       ]
@@ -126,7 +167,7 @@ resource "aws_ecs_task_definition" "galaxy-api" {
 }
 
 resource "aws_ecs_service" "galaxy-api" {
-  name            = "galaxy-api"
+  name            = "api"
   cluster         = aws_ecs_cluster.galaxy.id
   launch_type     = "FARGATE"
   task_definition = aws_ecs_task_definition.galaxy-api.arn
@@ -135,9 +176,15 @@ resource "aws_ecs_service" "galaxy-api" {
   propagate_tags = "SERVICE"
 
   network_configuration {
-    subnets         = aws_subnet.public[*].id
-    security_groups = [aws_security_group.api.id]
-    // assign_public_ip = true // valid only for FARGATE
+    subnets          = aws_subnet.public[*].id
+    security_groups  = [aws_security_group.api.id]
+    assign_public_ip = true // valid only for FARGATE
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.galaxy-api.arn
+    container_name   = "galaxy-api"
+    container_port   = 8000
   }
 
   lifecycle {
@@ -164,7 +211,11 @@ resource "aws_lb_target_group" "osm-stats" {
   name     = "osm-stats"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = aws_vpc.underpass.id
+  vpc_id   = aws_vpc.galaxy.id
+  health_check {
+    enabled = true
+    path    = "/"
+  }
 }
 
 resource "aws_lb_listener" "osm-stats-secure" {
@@ -177,6 +228,46 @@ resource "aws_lb_listener" "osm-stats-secure" {
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.osm-stats.arn
+  }
+}
+
+resource "aws_lb" "galaxy-api" {
+  name               = "galaxy-api"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.api.id]
+  subnets            = aws_subnet.public[*].id
+
+  enable_deletion_protection = false
+
+  tags = {
+    Environment = "production"
+  }
+}
+
+resource "aws_lb_target_group" "galaxy-api" {
+  name        = "galaxy-api"
+  port        = 8000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.galaxy.id
+  target_type = "ip"
+
+  health_check {
+    enabled = true
+    path    = "/docs"
+  }
+}
+
+resource "aws_lb_listener" "galaxy-api-secure" {
+  load_balancer_arn = aws_lb.galaxy-api.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-FS-1-2-Res-2019-08"
+  certificate_arn   = data.aws_acm_certificate.wildcard.arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.galaxy-api.arn
   }
 }
 

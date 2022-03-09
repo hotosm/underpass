@@ -218,7 +218,7 @@ resource "aws_instance" "api" {
   }
 }
 
-resource "random_password" "underpass_database_password_string" {
+resource "random_password" "galaxy_database_admin_password" {
   length  = 32
   special = false
   number  = true
@@ -231,17 +231,17 @@ resource "random_password" "underpass_database_password_string" {
   }
 }
 
-resource "aws_secretsmanager_secret" "underpass_database_credentials" {
-  name = "underpass-db"
+resource "aws_secretsmanager_secret" "galaxy_database_credentials" {
+  name = "${var.deployment_environment}/galaxy/database"
 
   tags = {
-    name = "underpass"
+    name = "Galaxy Database Admin Credentials"
     Role = "Database access credentials"
   }
 }
 
-resource "aws_secretsmanager_secret_version" "underpass_database_credentials" {
-  secret_id = aws_secretsmanager_secret.underpass_database_credentials.id
+resource "aws_secretsmanager_secret_version" "galaxy_database_credentials" {
+  secret_id = aws_secretsmanager_secret.galaxy_database_credentials.id
   secret_string = jsonencode(zipmap(
     [
       "dbinstanceidentifier",
@@ -253,15 +253,20 @@ resource "aws_secretsmanager_secret_version" "underpass_database_credentials" {
       "password",
     ],
     [
-      aws_db_instance.underpass.id,
-      aws_db_instance.underpass.name,
-      aws_db_instance.underpass.engine,
-      aws_db_instance.underpass.address,
-      aws_db_instance.underpass.port,
-      aws_db_instance.underpass.username,
-      random_password.underpass_database_password_string.result,
+      aws_db_instance.galaxy.id,
+      aws_db_instance.galaxy.name,
+      aws_db_instance.galaxy.engine,
+      aws_db_instance.galaxy.address,
+      aws_db_instance.galaxy.port,
+      aws_db_instance.galaxy.username,
+      random_password.galaxy_database_admin_password.result,
     ]
   ))
+}
+
+resource "aws_db_subnet_group" "galaxy" {
+  name       = "galaxy"
+  subnet_ids = aws_subnet.private[*].id
 }
 
 /** TODO
@@ -276,24 +281,43 @@ resource "aws_secretsmanager_secret_version" "underpass_database_credentials" {
 * Backup:
 *   - Backup and snapshot expiry
 */
-resource "aws_db_instance" "underpass" {
-  identifier                          = trim(join("-", ["underpass", lookup(var.deployment_environment, "production", "0")]), "-")
-  allocated_storage                   = lookup(var.disk_sizes, "db_min", 100)
-  max_allocated_storage               = lookup(var.disk_sizes, "db_max", 1000) # Storage auto-scaling
-  engine                              = "postgres"
-  engine_version                      = var.database_engine_version
-  instance_class                      = lookup(var.instance_types, "database", "db.t4g.micro")
-  name                                = var.database_name
-  username                            = var.database_username
-  password                            = random_password.underpass_database_password_string.result
-  skip_final_snapshot                 = true
-  final_snapshot_identifier           = var.database_final_snapshot_identifier
+resource "aws_db_instance" "galaxy" {
+  lifecycle {
+    ignore_changes = [
+      # Updated manually or by other processes
+      // max_allocated_storage,
+
+      # Manually updated often
+      // instance_class,
+    ]
+  }
+
+  identifier = trim(join("-", ["galaxy", lookup(var.name_suffix, var.deployment_environment, "0")]), "-")
+
+  allocated_storage     = lookup(var.disk_sizes, "db_min", 100)
+  max_allocated_storage = lookup(var.disk_sizes, "db_max", 1000) # Storage auto-scaling
+
+  engine         = "postgres"
+  engine_version = var.database_engine_version
+  instance_class = lookup(var.instance_types, "database", "db.t4g.micro")
+
+  name     = var.database_name
+  username = var.database_username
+  password = random_password.galaxy_database_admin_password.result
+
+  skip_final_snapshot       = true
+  final_snapshot_identifier = var.database_final_snapshot_identifier
+
   iam_database_authentication_enabled = true
 
+  vpc_security_group_ids = [aws_security_group.database.id]
+  db_subnet_group_name   = aws_db_subnet_group.galaxy.name
+
   tags = {
-    Name = "underpass"
+    Name = "galaxy-db"
     Role = "Database server"
   }
+
 }
 
 data "aws_route53_zone" "hotosm-org" {
