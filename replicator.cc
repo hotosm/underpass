@@ -580,7 +580,7 @@ main(int argc, char *argv[])
                 }
                 osmchange = replicator.findRemotePath(config, config.start_time);
             } catch (const std::exception &ex) {
-                log_error("ERROR: could not parse timestamps!");
+                log_error("could not parse timestamps!");
                 exit(-1);
             }
         } else if (vm.count("url")) {
@@ -602,14 +602,14 @@ main(int argc, char *argv[])
         }
 
         // osmchange->dump();
-        std::thread oscthr(threads::startMonitorChanges, std::ref(*osmchange),
+        std::thread oscthr(threads::startMonitorChanges, std::ref(osmchange),
                            std::ref(geou.boundary), std::ref(config));
         config.frequency = replication::changeset;
         auto changeset = replicator.findRemotePath(config, config.start_time);
         // changeset->dump();
 
         // Changesets thread
-        std::thread osmthr(threads::startMonitorChangesets, std::ref(*changeset),
+        std::thread osmthr(threads::startMonitorChangesets, std::ref(changeset),
                            std::ref(geou.boundary), std::ref(config));
         log_info(_("Waiting..."));
 
