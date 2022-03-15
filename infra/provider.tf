@@ -15,9 +15,9 @@ provider "aws" {
   region = var.aws_region
   default_tags {
     tags = {
-      Project       = "underpass"
-      Maintainer    = "Dakota_Benjamin and Yogesh_Girikumar"
-      Documentation = "https://docs.hotosm.org/underpass_infra"
+      Project       = "galaxy"
+      Maintainer    = "DK_Benjamin and Yogesh_Girikumar"
+      Documentation = "https://docs.hotosm.org/galaxy_infra"
     }
   }
 }
