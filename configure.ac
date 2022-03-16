@@ -43,6 +43,9 @@ AC_SUBST(DLPREOPEN)
 AC_PATH_PROG(GIT, git)
 AC_SUBST(GIT)
 
+dnl Set the path to our pkg-config files
+export PKG_CONFIG_PATH=$(dirname $0)/m4
+
 build_single_loader=yes
 build_multi_loader=no
 AC_ARG_ENABLE(threads,
