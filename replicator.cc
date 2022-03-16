@@ -602,14 +602,14 @@ main(int argc, char *argv[])
         }
 
         // osmchange->dump();
-        std::thread oscthr(threads::startMonitorChanges, std::ref(*osmchange),
+        std::thread oscthr(threads::startMonitorChanges, std::ref(osmchange),
                            std::ref(geou.boundary), std::ref(config));
         config.frequency = replication::changeset;
         auto changeset = replicator.findRemotePath(config, config.start_time);
         // changeset->dump();
 
         // Changesets thread
-        std::thread osmthr(threads::startMonitorChangesets, std::ref(*changeset),
+        std::thread osmthr(threads::startMonitorChangesets, std::ref(changeset),
                            std::ref(geou.boundary), std::ref(config));
         log_info(_("Waiting..."));
 
