@@ -42,19 +42,29 @@ using namespace boost::gregorian;
 
 namespace tmdb {
 
+/// \class TMTeam
+/// \brief The class contains Team information from the Tasking Manger
 class TMTeam
 {
 public:
     TMTeam(pqxx::result::const_iterator &row);
+    /// Get the Team name
     std::string &getName(void) { return name; };
+    /// Get the Team ID
     int getID(void) const { return teamid; };
+    /// Get the Orgtanization ID
     int getOrgID(void) const { return orgid; };
 //private:
-    int teamid;
-    int orgid;
-    std::string name;
-    std::vector<long> members;
+    int teamid; ///< The Team ID from Tasking Manager
+    int orgid; ///< The Oragnization ID from Tasking Manager
+    std::string name; ///< The team name from Tasking Manager
+    std::vector<long> members; ///< The members of this team
 };
 
 } // EOF tmdb namespace
 #endif  // EOF __TMTEAMS_HH__
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

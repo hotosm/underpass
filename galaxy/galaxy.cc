@@ -51,7 +51,6 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "data/osmobjects.hh"
-#include "data/underpass.hh"
 #include "log.hh"
 #include "galaxy/changeset.hh"
 #include "galaxy/galaxy.hh"

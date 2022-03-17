@@ -32,27 +32,38 @@
 #include "data/osmobjects.hh"
 #include "validate/validate.hh"
 
+/// \namespace conflate
 namespace conflate {
 
+/// \class Conflate
+/// \brief This class conflates buildings and highways
 class Conflate {
 public:
     Conflate(void);
     Conflate(const multipolygon_t &poly);
     Conflate(const std::string &dburl);
     Conflate(const std::string &dburl, const multipolygon_t &poly);
+    /// COnnect to the database os OSM data
     bool connect(const std::string &dburl);
     /// Create a postgres view using a multipolygon for the boundary
     bool createView(const multipolygon_t &poly);
     /// Create a postgres view using a WKT string for the boundary
     bool createView(const std::string &wkt);
+    /// Compare a new building polygon against OSM data
+    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
+    newDuplicatePolygon(const osmobjects::OsmWay &way);
+    /// Scan the database for duplicate buildings
+    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
+    existingDuplicatePolygon(void);
+    /// Compare a highway against OSM data
+    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
+    newDuplicateLineString(const osmobjects::OsmWay &way);
+    /// Scan the database for duplicate highways
+    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
+    existingDuplicateLineString(void);
 
-    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> newDuplicatePolygon(const osmobjects::OsmWay &way);
-    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> existingDuplicatePolygon(void);
-    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> newDuplicateLineString(const osmobjects::OsmWay &way);
-    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> existingDuplicateLineString(void);
-
-    pq::Pq conf_db;
-    multipolygon_t view;
+    pq::Pq conf_db; ///< The handle for the database connection
+    multipolygon_t view; ///< The boundary used to filter data
 };
     
 } // namespace conflate

@@ -42,17 +42,15 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
+/// \namespace tmdb
 namespace tmdb {
 
-/**
- * \brief The TMUser class represents a user with information extracted from the
- * TM DB.
- */
+/// \class TMUser
+/// \brief This class contains user information from the Tasking Manager
 struct TMUser {
 
-    /**
-     * \brief The Gender enum maps the TM database numeric gender.
-     */
+    /// \enum Gender
+    /// \brief The Gender enum maps the TM database numeric gender.
     enum class Gender : int {
         UNSET = 0,
         MALE = 1,
@@ -61,9 +59,8 @@ struct TMUser {
         PREFER_NOT = 4
     };
 
-    /**
-     * \brief The Access enum maps the TM database numeric Access.
-     */
+    /// \enum Access
+    /// \brief The Access enum maps the TM database numeric Access.
     enum class Access : int {
         UNSET = 0,
         READ_ONLY = 1,
@@ -71,9 +68,8 @@ struct TMUser {
         ADMIN = 3
     };
 
-    /**
-     * \brief The MappingLevel enum maps the TM database numeric level.
-     */
+    /// \enum MappingLevel
+    /// \brief The MappingLevel enum maps the TM database numeric level.
     enum class MappingLevel : int {
         UNSET = 0,
         BEGINNER = 1,
@@ -96,6 +92,7 @@ struct TMUser {
     int tasks_mapped;
     int tasks_validated;
     int tasks_invalidated;
+    // These columns from the database aren't used
     //     email_address character varying,
     //     is_email_verified boolean,
     //     is_expert boolean,
@@ -120,3 +117,8 @@ struct TMUser {
 
 } // namespace tmdb
 #endif // EOF __TMUSERS_HH__
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

@@ -47,7 +47,7 @@ using namespace boost::gregorian;
 
 namespace tmdb {
 
-/// \class Tasking Manager
+/// \class TaskingManager
 /// \brief The TaskingManager class connects to the TM DB.
 class TaskingManager
 {

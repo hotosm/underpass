@@ -64,12 +64,10 @@ namespace opts = boost::program_options;
 // #include "galaxy/replication.hh"
 #include "data/import.hh"
 #include "data/threads.hh"
-#include "data/underpass.hh"
 #include "log.hh"
 #include "replicatorconfig.hh"
 
 using namespace galaxy;
-using namespace underpass;
 using namespace replicatorconfig;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1

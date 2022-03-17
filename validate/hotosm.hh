@@ -51,8 +51,11 @@ using namespace boost::gregorian;
 
 #include "validate.hh"
 
+/// \namespace hotosm
 namespace hotosm {
 
+/// \class Hotosm
+/// \brief This is the plugin class, deprived from the Validate class
 class Hotosm : public Validate
 {
 public:

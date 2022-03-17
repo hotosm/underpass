@@ -73,7 +73,6 @@ using tcp = net::ip::tcp;         // from <boost/asio/ip/tcp.hpp>
 
 #include "data/osmobjects.hh"
 #include "data/threads.hh"
-#include "data/underpass.hh"
 #include "hottm.hh"
 #include "log.hh"
 #include "galaxy/changeset.hh"

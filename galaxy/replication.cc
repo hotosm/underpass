@@ -77,10 +77,8 @@ namespace ssl = boost::asio::ssl; // from <boost/asio/ssl.hpp>
 namespace http = beast::http;     // from <boost/beast/http.hpp>
 using tcp = net::ip::tcp;         // from <boost/asio/ip/tcp.hpp>
 
-#include "data/underpass.hh"
 #include "galaxy/changeset.hh"
 #include "galaxy/replication.hh"
-using namespace underpass;
 
 /// Control access to the database connection
 std::mutex db_mutex;

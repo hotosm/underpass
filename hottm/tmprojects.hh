@@ -40,8 +40,11 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
+/// \namespace tmdb
 namespace tmdb {
 
+/// \class TMProject
+/// \brief This class contains Project information from the Tasking Manager
 class TMProject
 {
 public:
@@ -86,3 +89,8 @@ public:
 
 } // EOF tmdb namespace
 #endif  // EOF __TMPROJECTS_HH__
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

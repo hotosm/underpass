@@ -94,7 +94,7 @@ typedef enum {
     duplicate
 } valerror_t;
 
-/// \class Validate Status
+/// \class ValidateStatus
 /// \brief This class stores data from the validation process
 class ValidateStatus {
   public:
@@ -154,6 +154,9 @@ class ValidateStatus {
     double angle = 0;		///< The calculated angle of a corner
 };
 
+
+/// \class Validate
+/// \brief This class contains shared methods for validatint OSM map data
 class BOOST_SYMBOL_VISIBLE Validate {
   public:
     Validate(void) {

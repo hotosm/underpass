@@ -295,6 +295,12 @@ inline void log_info(StringType msg, Args... args)
     log_impl(msg, processLog_info, args...);
 }
 
+
+/// \class HostFunctionReport
+/// \brief This class implements simple execution tracing
+///
+/// This class implements into the constructor and destructor of the class
+/// to do simple function tracing.
 class DSOEXPORT HostFunctionReport
 {
 public:

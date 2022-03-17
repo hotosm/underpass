@@ -28,13 +28,12 @@
 #include "unconfig.h"
 #endif
 
-#include "data/underpass.hh"
 #include "galaxy/replication.hh"
 #include <boost/format.hpp>
 #include <string>
 using namespace replication;
-using namespace underpass;
 
+/// \namespace replicatorconfig
 namespace replicatorconfig {
 
 ///
