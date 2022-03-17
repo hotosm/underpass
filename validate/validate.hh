@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -16,6 +16,13 @@
 //     You should have received a copy of the GNU General Public License
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
+
+/// \file validate.hh
+/// \brief This class tries to validate the OSM objects
+///
+/// This class analyzes an OSM object to look for errors. This may
+/// include lack of tags on a POI node or a way. This is not an
+/// exhaustive test, mostly just a fast sanity-check.
 
 #ifndef __VALIDATE_HH__
 #define __VALIDATE_HH__
@@ -47,13 +54,6 @@ using namespace boost::gregorian;
 
 using namespace logger;
 
-/// \file validate.hh
-/// \brief This class tries to validate the OSM objects
-///
-/// This class analyzes an OSM object to look for errors. This may
-/// include lack of tags on a POI node or a way. This is not an
-/// exhaustive test, mostly just a fast sanity-check.
-
 // JOSM validator
 //   Crossing ways
 //   Duplicate Ways
@@ -79,6 +79,9 @@ using namespace logger;
 //
 //
 
+
+/// \enum osmtype_t
+/// The data validation values for the status column in the database.
 typedef enum {
     notags,
     complete,
@@ -91,6 +94,8 @@ typedef enum {
     duplicate
 } valerror_t;
 
+/// \class Validate Status
+/// \brief This class stores data from the validation process
 class ValidateStatus {
   public:
     ValidateStatus(void){};
@@ -109,6 +114,7 @@ class ValidateStatus {
         timestamp = way.timestamp;
     }
     //valerror_t operator[](int index){ return status[index]; };
+    /// Does this change have a particular status value
     bool hasStatus(const valerror_t &val) const {
         auto match = std::find(status.begin(), status.end(), val);
         if (match != status.end()) {
@@ -116,6 +122,7 @@ class ValidateStatus {
         }
         return false;
     }
+    /// Dump internal data for debugging
     void dump(void) const {
         std::cerr << "Dumping Validation Statistics" << std::endl;
         std::cerr << "\tOSM ID: " << osm_id << std::endl;
@@ -139,12 +146,12 @@ class ValidateStatus {
     }
     std::unordered_set<valerror_t> status;
     osmobjects::osmtype_t objtype;
-    long osm_id = 0;
-    long user_id = 0;
-    long change_id = 0;
-    ptime timestamp;
-    point_t center;
-    double angle = 0;
+    long osm_id = 0;		///< The OSM ID of the feature
+    long user_id = 0;		///< The user ID of the mapper creqating/m odifying this feature
+    long change_id = 0;		///< The changeset ID
+    ptime timestamp;		///< The timestamp when this validation was performed
+    point_t center;		///< The centroid of the building polygon
+    double angle = 0;		///< The calculated angle of a corner
 };
 
 class BOOST_SYMBOL_VISIBLE Validate {
@@ -211,6 +218,14 @@ class BOOST_SYMBOL_VISIBLE Validate {
 #ifdef TIMING_DEBUG_X
 	    boost::timer::auto_cpu_timer timer("validate::overlaps: took %w seconds\n");
 #endif
+	    if (way.numPoints() <= 1) {
+		return false;
+	    }
+	    // It's probably a cicle
+	    if (way.numPoints() > 5 && cornerAngle(way.linestring) < 30) {
+		log_debug(_("Building %1% is round"), way.id);
+		return false;
+	    }
 	    for (auto nit = std::begin(allways); nit != std::end(allways); ++nit) {
 		osmobjects::OsmWay *oldway = nit->get();
 		if (boost::geometry::overlaps(oldway->polygon, way.polygon)) {

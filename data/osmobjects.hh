@@ -168,7 +168,7 @@ class OsmWay : public OsmObject {
         return false;
     };
     /// Return the number of nodes in this way
-    int numPoints(void) { return refs.size(); };
+    int numPoints(void) { return boost::geometry::num_points(linestring); };
 
     /// Add a point to the way's geometric data storage
     // void makeLinestring(point_t point);

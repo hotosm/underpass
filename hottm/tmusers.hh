@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -16,6 +16,9 @@
 //     You should have received a copy of the GNU General Public License
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
+
+/// \file tmusers.hh
+/// \brief Store users from the Tasking Manager in the Galaxy database
 
 #ifndef __TMUSERS_HH__
 #define __TMUSERS_HH__

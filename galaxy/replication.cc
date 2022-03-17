@@ -453,7 +453,8 @@ Planet::Planet(void){
 void
 Planet::dump(void)
 {
-    log_debug(_("Dumping Planet data"));
+    std::cerr << "Dumping Planet data" << std::endl;
+    std::cerr << "\tDomain: " << domain << std::endl;
 #if 0
     for (auto it = std::begin(changeset); it != std::end(changeset); ++it) {
         std::cerr << "Changeset at: " << it->first << it->second << std::endl;
@@ -509,6 +510,8 @@ Planet::connectServer(const std::string &planet)
 
     // Verify the remote server's certificate
     ctx.set_verify_mode(ssl::verify_none);
+
+    domain = planet;
     return true;
 }
 

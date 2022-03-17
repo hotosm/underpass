@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -16,6 +16,9 @@
 //     You should have received a copy of the GNU General Public License
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
+
+/// \file hottm.hh
+/// \brief Access data from a Tasking Manager database
 
 #ifndef __HOTTM_HH__
 #define __HOTTM_HH__
@@ -44,18 +47,15 @@ using namespace boost::gregorian;
 
 namespace tmdb {
 
-/**
- * \brief The TaskingManager class connects to the TM DB.
- */
+/// \class Tasking Manager
+/// \brief The TaskingManager class connects to the TM DB.
 class TaskingManager
 {
   public:
-    /**
-     * \brief connect to the DB specified with \a dburl.
-     * \param dburl DB server connection: HOST or
-     *        USER:PASSSWORD@HOST/DATABASENAME
-     * \return TRUE on success.
-     */
+    /// connect to the DB specified with \a dburl.
+    /// \param dburl DB server connection: HOST or
+    ///        USER:PASSSWORD@HOST/DATABASENAME
+    /// \return TRUE on success.
     bool connect(const std::string &dburl);
 
     /**
@@ -92,3 +92,8 @@ class TaskingManager
 } // namespace tmdb
 
 #endif // EOF __HOTTM_HH__
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

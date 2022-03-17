@@ -17,6 +17,9 @@
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
 
+/// \file replicatorconfig.hh
+/// \brief Store config infomation from a file or environment variables
+
 #ifndef __REPLICATOR_CONFIG_HH__
 #define __REPLICATOR_CONFIG_HH__
 

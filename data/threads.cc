@@ -151,7 +151,8 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
 	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
 	    std::rotate(planets.begin(), planets.begin()+1, planets.end());
 	    remote->Increment();
-	    auto delay = std::chrono::milliseconds{100};
+	    remote->updateDomain(planets.front()->domain);
+	    auto delay = std::chrono::milliseconds{100}; // FIXME: this should probably be tuned
 	    std::this_thread::sleep_for(delay);
 	}
 	ptime timestamp;
@@ -256,7 +257,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
 	    std::rotate(rawosm.begin(), rawosm.begin()+1, rawosm.end());
 	    boost::asio::post(pool, task);
 	    remote->Increment();
-	    auto delay = std::chrono::seconds{1};
+	    auto delay = std::chrono::milliseconds{100}; // FIXME: this should probably be tuned
 	    std::this_thread::sleep_for(delay);
 	    // remote.dump();
 	}

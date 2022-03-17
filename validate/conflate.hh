@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -16,6 +16,9 @@
 //     You should have received a copy of the GNU General Public License
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
+
+/// \file conflate.hh
+/// \brief This file implements conflation of buildings and highways
 
 #ifndef __CONFLATE_HH__
 #define __CONFLATE_HH__
@@ -38,7 +41,10 @@ public:
     Conflate(const std::string &dburl);
     Conflate(const std::string &dburl, const multipolygon_t &poly);
     bool connect(const std::string &dburl);
+    /// Create a postgres view using a multipolygon for the boundary
     bool createView(const multipolygon_t &poly);
+    /// Create a postgres view using a WKT string for the boundary
+    bool createView(const std::string &wkt);
 
     std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> newDuplicatePolygon(const osmobjects::OsmWay &way);
     std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> existingDuplicatePolygon(void);
