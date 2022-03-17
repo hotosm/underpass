@@ -85,11 +85,6 @@ val_test_CPPFLAGS = -I$(top_srcdir) -DDATADIR=\"$(top_srcdir)\"
 #rplication_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
 #replication_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
-under_test_SOURCES = under-test.cc
-under_test_LDFLAGS = -L../..
-under_test_CPPFLAGS = -DDATADIR=\"$(top_srcdir)\" -I$(top_srcdir)
-under_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
-
 # Test the OSM DB classes
 #hotosm_test_SOURCES = hotosm-test.cc
 #hotosm_test_LDFLAGS = -L../..
@@ -129,7 +124,6 @@ CLEANFILES = \
 	underpass.log \
 	tm-test.log \
 	usersync-test.log \
-	under-test.log \
 	pq-test.log \
 	change-test.log \
 	geo-test.log \
