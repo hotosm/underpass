@@ -80,7 +80,6 @@ libunderpass_la_SOURCES = \
 	data/osmobjects.cc data/osmobjects.hh \
 	data/osm2pgsql.cc data/osm2pgsql.hh \
 	data/threads.cc data/threads.hh \
-	data/underpass.cc data/underpass.hh \
 	data/yaml.hh data/yaml.cc \
 	data/pq.hh data/pq.cc \
 	data/setupdb.sh \
