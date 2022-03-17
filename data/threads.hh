@@ -113,7 +113,7 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
 
 /// This updates several fields in the raw_changesets table, which are part of
 /// the changeset file, and don't need to be calculated.
-/ /extern bool threadChangeSet(const std::string &file);
+// extern bool threadChangeSet(const std::string &file);
 extern std::unique_ptr<changeset::ChangeSetFile>
 threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
 		std::shared_ptr<replication::Planet> &planet,
