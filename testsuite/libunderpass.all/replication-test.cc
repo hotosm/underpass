@@ -155,3 +155,8 @@ main(int argc, char *argv[])
            "Connect to server")
 
 }
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

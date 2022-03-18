@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -299,3 +299,8 @@ test_geom(std::shared_ptr<Validate> &plugin)
         runtest.pass("Validate::overlaps()");
     }
 }
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

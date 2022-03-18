@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -161,3 +161,8 @@ main(int argc, char *argv[])
         runtest.fail("taskingManager::getProjectTeams()");
     }
 }
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

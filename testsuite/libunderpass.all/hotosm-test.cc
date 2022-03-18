@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -281,3 +281,8 @@ test_leaderboard(void)
     last = testpg.lastUpdate(uid, last);
     std::cout << "LAST: " << last << std::endl;
 }
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

@@ -311,3 +311,8 @@ main(int argc, char *argv[])
     COMPARE(member.type, osmobjects::osmtype_t::way,
             "ChangeSetFile::readXML(xml) - relation member type");
 };
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:
