@@ -56,18 +56,22 @@ main(int argc, char* argv[])
         runtest.fail("Read file with no path");
     }   
 
-    if (!tgu.readFile("../../data/priority.geojson")) {
+    std::string test_data_dir(DATADIR);
+
+    if (!tgu.readFile("../../data/data/priority.geojson")) {
         runtest.pass("Read file with bad relative path");
     } else {
         runtest.fail("Read file with bad relative path");
     }   
 
+#if 1
+    // FIXME: this test is bogus under CI
     if (tgu.readFile("/usr/local/lib/underpass/priority.geojson")) {
         runtest.pass("Read file with absolute path");
     } else {
         runtest.fail("Read file with absolute path");
     }   
-    
+#endif
     /// Read an EWKT string as the boundary, instead of a file.
     // tgu.readPoly();
 };
