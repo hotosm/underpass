@@ -147,7 +147,7 @@ class ValidateStatus {
     std::unordered_set<valerror_t> status;
     osmobjects::osmtype_t objtype;
     long osm_id = 0;		///< The OSM ID of the feature
-    long user_id = 0;		///< The user ID of the mapper creqating/m odifying this feature
+    long user_id = 0;		///< The user ID of the mapper creating/modifying this feature
     long change_id = 0;		///< The changeset ID
     ptime timestamp;		///< The timestamp when this validation was performed
     point_t center;		///< The centroid of the building polygon
@@ -156,7 +156,7 @@ class ValidateStatus {
 
 
 /// \class Validate
-/// \brief This class contains shared methods for validatint OSM map data
+/// \brief This class contains shared methods for validating OSM map data
 class BOOST_SYMBOL_VISIBLE Validate {
   public:
     Validate(void) {
