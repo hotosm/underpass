@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -265,6 +265,10 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     if (way.refs.front() == way.refs.back()) {
         // If it's a building, check for square corners
         if (way.tags.count("building") || way.tags.count("amenity")) {
+	    if (boost::geometry::num_points(way.linestring) < 3 && way.action == osmobjects::modify) {
+		log_debug(_("Not enough nodes in linestring to calculate the angle!"));
+		return status;
+	    }
             double angle = cornerAngle(way.linestring);
             status->angle = std::abs(angle);
             // std::cerr << "Angle for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
