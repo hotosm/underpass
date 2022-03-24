@@ -43,7 +43,7 @@ struct PlanetServer {
 
     ///
     /// \brief PlanetServer
-    /// \param domin domain part (without https://)
+    /// \param domain domain part (without https://)
     /// \param datadir (usually "replication")
     /// \param daily supports daily
     /// \param hourly supports hourly

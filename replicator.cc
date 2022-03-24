@@ -166,7 +166,7 @@ class Replicator : public replication::Planet {
             suffix = ".osm.gz";
             default_states = default_changesets;
         }
-        connectServer("https://planet.maps.mail.ru");
+        connectServer("https://" + config.planet_server);
         auto remote = std::make_shared<RemoteURL>();
         ptime now = boost::posix_time::microsec_clock::universal_time();
 
@@ -248,7 +248,7 @@ class Replicator : public replication::Planet {
         std::string path = majorfmt.str() + "/" + minorfmt.str() + "/" + indexfmt.str();
         std::string cached = config.datadir + StateFile::freq_to_string(config.frequency);
         cached += "/" + path + suffix;
-        fullurl = "https://planet.maps.mail.ru/" + cached;
+        fullurl = "https://" + config.planet_server + "/" + cached;
         remote->parse(fullurl);
         if (config.frequency != replication::changeset) {
             if (!boost::filesystem::exists(cached)) {
@@ -436,6 +436,8 @@ main(int argc, char *argv[])
         if (boost::algorithm::ends_with(config.planet_server, "/")) {
             config.planet_server.resize(config.planet_server.size() - 1);
         }
+    } else {
+        config.planet_server = config.planet_servers[0].domain;
     }
 
     // TM users options
@@ -582,11 +584,11 @@ main(int argc, char *argv[])
                 exit(-1);
             }
         } else if (vm.count("url")) {
-            replicator.connectServer("https://planet.maps.mail.ru");
+            replicator.connectServer("https://" + config.planet_server);
             // This is the changesets path part (ex. 000/075/000), takes precedence over 'timestamp'
             // option. This only applies to the osm change files, as it's timestamp is used to
             // start the changesets.
-            std::string fullurl = "https://planet.maps.mail.ru/replication/" + StateFile::freq_to_string(config.frequency);
+            std::string fullurl = "https://" + config.planet_server + "/replication/" + StateFile::freq_to_string(config.frequency);
             std::vector<std::string> parts;
             boost::split(parts, vm["url"].as<std::string>(), boost::is_any_of("/"));
             // fullurl += "/" + vm["url"].as<std::string>() + "/" + parts[2] + ".state.txt";
