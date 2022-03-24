@@ -625,10 +625,6 @@ main(int argc, char *argv[])
     if (vm.count("osm")) {
         osmdb = vm["osm"].as<std::vector<std::string>>()[0];
     }
-    if (vm.count("import")) {
-        std::string file = vm["import"].as<std::string>();
-        import::ImportOSM osm(file, osmdb);
-    }
 
     if (tmUserSyncMonitorThread) {
         if (tmUserSyncMonitorThread->joinable() && tmUserSyncIsActive) {

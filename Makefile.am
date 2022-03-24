@@ -75,8 +75,6 @@ libunderpass_la_SOURCES = \
 	galaxy/osmchange.cc galaxy/osmchange.hh \
 	galaxy/replication.cc galaxy/replication.hh \
 	data/geoutil.cc data/geoutil.hh \
-	data/pgsnapshot.cc data/pgsnapshot.hh\
-	data/import.cc data/import.hh \
 	data/osmobjects.cc data/osmobjects.hh \
 	data/osm2pgsql.cc data/osm2pgsql.hh \
 	data/threads.cc data/threads.hh \
@@ -199,7 +197,6 @@ PCHHEADERS = \
         $(top_srcdir)/galaxy/replication.hh \
         $(top_srcdir)/galaxy/osmchange.hh \
         $(top_srcdir)/galaxy/changeset.hh \
-        $(top_srcdir)/data/import.hh \
         $(top_srcdir)/data/validate.hh \
         $(top_srcdir)/data/pgsnapshot.hh \
         $(top_srcdir)/data/osmobjects.hh \
