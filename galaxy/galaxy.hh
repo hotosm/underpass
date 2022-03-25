@@ -66,36 +66,6 @@ class ChangeStats;
 /// \namespace galaxy
 namespace galaxy {
 
-/// \class RawChangeset
-/// \brief This is the data structure for a raw changeset
-///
-/// The raw_changesets table contains all the calculated statistics
-/// for a change. This stores the data as parsed from the database.
-class RawChangeset {
-  public:
-    RawChangeset(pqxx::const_result_iterator &res);
-    RawChangeset(const std::string filespec);
-    void dump(void);
-    // protected:
-    std::map<std::string, long> counters;
-    long id;                           ///< The change ID
-    std::string editor;                ///< The editor used for this change
-    long user_id;                      ///< The user ID
-    ptime created_at;                  ///< The starting timestamp
-    ptime closed_at;                   ///< The finished timestamp
-    bool verified;                     ///< Whether this change has been validated
-    std::vector<long> augmented_diffs; ///< The diffs, currently unused
-    ptime updated_at;                  ///< Time this change was updated
-    //
-    long updateCounter(const std::string &key, long value)
-    {
-        counters[key] = value;
-        // FIXME: this should return a real value
-        return 0;
-    };
-    long operator[](const std::string &key) { return counters[key]; };
-};
-
 /// \class RawUser
 /// \brief Stores the data from the raw user table
 ///
@@ -118,30 +88,6 @@ class RawUser {
     }
     int id;           ///< The users OSM ID
     std::string name; ///< The users OSM username
-};
-
-/// \class RawHashtag
-/// \brief Stores the data from the raw hashtag table
-///
-/// The raw_hashtag table is used to coorelate a hashtag ID with the
-/// hashtag name. This stores the data as parsed from the database.
-class RawHashtag {
-  public:
-    RawHashtag(void){};
-    /// Instantiate the hashtag data from an iterator
-    RawHashtag(pqxx::const_result_iterator &res)
-    {
-        id = res[0].as(int(0));
-        name = res[1].c_str();
-    }
-    /// Instantiate the hashtag data
-    RawHashtag(int hid, const std::string &tag)
-    {
-        id = hid;
-        name = tag;
-    }
-    int id = 0;       ///< The hashtag ID
-    std::string name; ///< The hashtag value
 };
 
 /// \class QueryGalaxy

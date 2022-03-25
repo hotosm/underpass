@@ -377,7 +377,7 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     boost::timer::auto_cpu_timer timer("applyChange(validation): took %w seconds\n");
 #endif
     log_debug(_("Applying Validation data"));
-    // validation.dump();
+    validation.dump();
 
     if (validation.angle == 0 && validation.status.size() == 0) {
         return true;
@@ -397,10 +397,16 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
         {overlaping, "overlaping"},
         {duplicate, "duplicate"},
         {badgeom, "badgeom"}};
-    std::string query =
-        "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, timestamp, location) VALUES(";
-    boost::format fmt(
-        "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)");
+    std::string format;
+    std::string query;
+    if (validation.values.size() > 0) {
+	query = "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, values, timestamp, location) VALUES(";
+	format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], ARRAY[%s], \'%s\', ST_GeomFromText(\'%s\', 4326)";
+    } else {
+	query = "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, timestamp, location) VALUES(";
+	format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)";
+    }
+    boost::format fmt(format);
     fmt % validation.osm_id;
     fmt % validation.change_id;
     if (isnan(validation.angle)) {
@@ -410,22 +416,34 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     }
     fmt % validation.user_id;
     fmt % objtypes[validation.objtype];
-    std::string tmp;
+    std::string stattmp, valtmp;
     for (const auto &_stat: std::as_const(validation.status)) {
-        tmp += " \'" + status[_stat] + "\',";
+        stattmp += " \'" + status[_stat] + "\',";
     }
-    if (!tmp.empty()) {
-        tmp.pop_back();
+    if (!stattmp.empty()) {
+        stattmp.pop_back();
     }
-    fmt % tmp;
+    fmt % stattmp;
+    if (validation.values.size() > 0) {
+	for (const auto &tag: std::as_const(validation.values)) {
+	    valtmp += " \'" + tag + "\',";
+	}
+	if (!valtmp.empty()) {
+	    valtmp.pop_back();
+	}
+	fmt % valtmp;
+    }
     fmt % to_simple_string(validation.timestamp);
     // Postgres wants the order of lat,lon reversed from how they
     // are stored in the WKT.
     fmt % boost::geometry::wkt(validation.center);
     query += fmt.str();
     query += ") ON CONFLICT (osm_id) DO UPDATE ";
-    query += " SET status = ARRAY[" + tmp + " ]::status[]";
-    // log_debug(_("QUERY: %1%"), query);
+    query += " SET status = ARRAY[" + stattmp + " ]::status[]";
+    if (validation.values.size() > 0) {
+	query += ", values = ARRAY[" + valtmp + " ]";
+    }
+//    log_debug(_("QUERY: %1%"), query);
 
     std::scoped_lock write_lock{pqxx_mutex};
     pqxx::work worker(*sdb);
@@ -453,19 +471,6 @@ QueryGalaxy::getLastUpdate(void)
     }
 
     return not_a_date_time;
-}
-
-void
-RawChangeset::dump(void)
-{
-    log_debug("-----------------------------------");
-    log_debug(_("changeset id: \t\t %1%"), std::to_string(id));
-    log_debug(_("Editor: \t\t %1%"), editor);
-    log_debug(_("User ID: \t\t %1%"), std::to_string(user_id));
-    log_debug(_("Created At: \t\t %1%"), to_simple_string(created_at));
-    log_debug(_("Closed At: \t\t %1%"), to_simple_string(closed_at));
-    log_debug(_("Verified: \t\t %1%"), verified);
-    // log_debug(_("Updated At: \t\t %1%"). to_simple_string(updated_at));
 }
 
 QueryGalaxy::SyncResult
