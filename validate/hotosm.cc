@@ -148,6 +148,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
         } else {
             status->status.insert(badvalue);
 	    log_debug(_("Bad value: %1% for %2%"), vit->second, vit->first);
+	    status->values.insert(vit->first + "=" +  vit->second);
         }
         status->center = node.point;
     }
@@ -266,7 +267,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
         // If it's a building, check for square corners
         if (way.tags.count("building") || way.tags.count("amenity")) {
 	    if (boost::geometry::num_points(way.linestring) < 3 && way.action == osmobjects::modify) {
-		log_debug(_("Not enough nodes in linestring to calculate the angle!"));
+		log_debug(_("Not enough nodes in modified linestring to calculate the angle!"));
 		return status;
 	    }
             double angle = cornerAngle(way.linestring);

@@ -142,7 +142,13 @@ class ValidateStatus {
         results[duplicate] = "Duplicate";
         for (const auto &stat: std::as_const(status)) {
             std::cerr << "\tResult: " << results[stat] << std::endl;
-        }
+	}
+	if (values.size() > 0) {
+	    std::cerr << "\tValues: ";
+	    for (auto it = std::begin(values); it != std::end(values); ++it ) {
+		std::cerr << *it << ", " << std::endl;
+	    }
+	}
     }
     std::unordered_set<valerror_t> status;
     osmobjects::osmtype_t objtype;
@@ -152,6 +158,7 @@ class ValidateStatus {
     ptime timestamp;		///< The timestamp when this validation was performed
     point_t center;		///< The centroid of the building polygon
     double angle = 0;		///< The calculated angle of a corner
+    std::unordered_set<std::string> values; ///< The found bad tag values
 };
 
 
@@ -242,6 +249,10 @@ class BOOST_SYMBOL_VISIBLE Validate {
 	return false;
     }
     double cornerAngle(const linestring_t &way) {
+	if (boost::geometry::num_points(way) < 2) {
+	    log_error(_("way has no line segments!"));
+	    return -1;
+	}
         // first segment
         double x1 = boost::geometry::get<0>(way[0]);
         double y1 = boost::geometry::get<1>(way[0]);
