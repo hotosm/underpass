@@ -249,24 +249,29 @@ class BOOST_SYMBOL_VISIBLE Validate {
 	return false;
     }
     double cornerAngle(const linestring_t &way) {
-	if (boost::geometry::num_points(way) < 2) {
+	if (boost::geometry::num_points(way) <= 3) {
 	    log_error(_("way has no line segments!"));
 	    return -1;
 	}
         // first segment
-        double x1 = boost::geometry::get<0>(way[0]);
-        double y1 = boost::geometry::get<1>(way[0]);
-        double x2 = boost::geometry::get<0>(way[1]);
-        double y2 = boost::geometry::get<1>(way[1]);
+	try {
+	    double x1 = boost::geometry::get<0>(way[0]);
+	    double y1 = boost::geometry::get<1>(way[0]);
+	    double x2 = boost::geometry::get<0>(way[1]);
+	    double y2 = boost::geometry::get<1>(way[1]);
 
-        // Next segment that intersects
-        double x3 = boost::geometry::get<0>(way[2]);
-        double y3 = boost::geometry::get<1>(way[2]);
+	    // Next segment that intersects
+	    double x3 = boost::geometry::get<0>(way[2]);
+	    double y3 = boost::geometry::get<1>(way[2]);
 
-        double s1 = (y2 - y1) / (x2 - x1);
-        double s2 = (y3 - y2) / (x3 - x2);
-        double angle = std::atan((s2 - s1) / (1 + (s2 * s1))) * 180 / M_PI;
-        return angle;
+	    double s1 = (y2 - y1) / (x2 - x1);
+	    double s2 = (y3 - y2) / (x3 - x2);
+	    double angle = std::atan((s2 - s1) / (1 + (s2 * s1))) * 180 / M_PI;
+	    return angle;
+	} catch (const std::exception &ex) {
+	    log_error(_("way doesn't have enough points"));
+	    return -1;
+	}
     };
 
   protected:
