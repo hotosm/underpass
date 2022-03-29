@@ -122,7 +122,10 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
 
     // Support multiple database connections
     std::vector<std::shared_ptr<galaxy::QueryGalaxy>> galaxies;
-    std::vector<std::string> servers{"openstreetmap.org", "planet.maps.mail.ru"};
+    std::vector<std::string> servers;
+    for (int i = 0; i < config.planet_servers.size(); i++) {
+        servers.push_back(config.planet_servers[i].domain);
+    }
     std::vector<std::shared_ptr<replication::Planet>> planets;
     int cores = std::thread::hardware_concurrency();
     int i = 0;
@@ -219,7 +222,10 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
 #endif	// JEMALLOC memory debugging
     // Support multiple database connections
     std::vector<std::shared_ptr<galaxy::QueryGalaxy>> galaxies;
-    std::vector<std::string> servers{"openstreetmap.org", "planet.maps.mail.ru"};
+    std::vector<std::string> servers;
+    for (int i = 0; i < config.planet_servers.size(); i++) {
+        servers.push_back(config.planet_servers[i].domain);
+    }
     std::vector<std::shared_ptr<replication::Planet>> planets;
     std::vector<std::shared_ptr<osm2pgsql::Osm2Pgsql>> rawosm;
     int cores = std::thread::hardware_concurrency();
