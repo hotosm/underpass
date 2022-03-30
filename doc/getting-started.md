@@ -1,15 +1,12 @@
 # Getting started with Underpass
 
-The easiest way to start using Underpass is with Docker.
-
-If you don't have Docker installed, see https://docs.docker.com/get-docker/
+The easiest way to start using Underpass is with [Docker](https://docs.docker.com/get-docker/) and [docker-compose](https://docs.docker.com/compose/install/).
 
 ## Build
 
 After cloning the project from https://github.com/hotosm/underpass , run:
 
-    cd docker
-    docker-compose up -d
+    cd docker && docker-compose up -d
 
 Now you can login into the container:
 
@@ -22,14 +19,15 @@ And once inside the container's `/code` directory, build Underpass:
 The last parameter `-j2` is for speeding up the building process (is the number of jobs run in parallel). This value depends on your hardware, you can try using the value shown at `echo $(nproc)` and add 1 to it,  but this is not a guarantee. If you see errors during the build process
 you can try with a smaller number.
 
+If you don't want to use Docker, see https://github.com/hotosm/underpass/blob/master/doc/install.md
+
 ## Setting up a replicator + validation process
 
 The replicator will download data from OSM planet servers and save the validation results in a database.
 
 ### 1. Install PostgreSQL, create a database and tables for data output
 
-    apt update
-    apt-get -y install postgresql postgresql-contrib
+    apt update && apt-get -y install postgresql postgresql-contrib
     psql -U underpass_test -c 'create database galaxy_test'
     cd /code/data && psql -U underpass_test galaxy_test < galaxy.sql
 
@@ -37,8 +35,7 @@ _Galaxy is a work in progress project focused on bringing together all of the OS
 
 ### 1. Create directories and copy configuration files for validation:
 
-    cd /code/build
-    mkdir /usr/local/lib/underpass/ && mkdir replication 
+    cd /code/build && mkdir /usr/local/lib/underpass/ && mkdir replication 
     cp ../validate/*.yaml /usr/local/lib/underpass/
 
 ### 3. Run replicator
