@@ -2,7 +2,11 @@
 
 The easiest way to start using Underpass is with [Docker](https://docs.docker.com/get-docker/) and [docker-compose](https://docs.docker.com/compose/install/).
 
+
 ## Build
+
+_If you don't want to use Docker, see https://github.com/hotosm/underpass/blob/master/doc/install.md and
+skip this section._
 
 After cloning the project from https://github.com/hotosm/underpass , run:
 
@@ -18,8 +22,6 @@ And once inside the container's `/code` directory, build Underpass:
 
 The last parameter `-j2` is for speeding up the building process (is the number of jobs run in parallel). This value depends on your hardware, you can try using the value shown at `echo $(nproc)` and add 1 to it,  but this is not a guarantee. If you see errors during the build process
 you can try with a smaller number.
-
-If you don't want to use Docker, see https://github.com/hotosm/underpass/blob/master/doc/install.md
 
 ## Setting up a replicator + validation process
 
