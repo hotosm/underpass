@@ -137,7 +137,7 @@ struct ReplicatorConfig {
         // Initialize servers
         planet_servers = {
             {"planet.maps.mail.ru", "replication", true, true, true, true},
-            {"download.openstreetmap.fr", "replication", false, false, true, false},
+            // {"download.openstreetmap.fr", "replication", false, false, true, false},
             // This may be too slow
             {"planet.openstreetmap.org", "replication", true, true, true, true},
             // This is not up to date (one day late, I'm keeping here for debugging purposes because it fails on updates):
