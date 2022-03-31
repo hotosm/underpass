@@ -14,7 +14,7 @@ After cloning the project from https://github.com/hotosm/underpass , run:
 
 Now you can login into the container:
 
-    docker exec -w /code -ti docker_underpass-build-deps_1  /bin/bash
+    docker exec -w /code -ti docker-underpass-build-deps-1  /bin/bash 
 
 And once inside the container's `/code` directory, build Underpass:
 
