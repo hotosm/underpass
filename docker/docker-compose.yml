@@ -4,6 +4,7 @@ services:
   # PostGIS stock image
   postgis:
     image: postgis/postgis:11-2.5-alpine
+    container_name: "underpass_postgis"
     ports:
       - "5439:5432"
     environment:
@@ -25,6 +26,7 @@ services:
   underpass-build-deps:
     # Pre-built for speed:
     image: quay.io/hotosm/underpass-build-deps:focal
+    container_name: "underpass_build"
     # Build recipe:
     #build:
     #  context: .
