@@ -1,5 +1,5 @@
 resource "aws_cloudwatch_log_group" "galaxy" {
-  name              = "galaxy"
+  name              = var.project_name
   retention_in_days = 7
 }
 
@@ -18,7 +18,7 @@ resource "aws_secretsmanager_secret_version" "quay_robot_credentials" {
 }
 
 resource "aws_ecs_cluster" "galaxy" {
-  name = "galaxy"
+  name = var.project_name
 
   capacity_providers = ["FARGATE", "FARGATE_SPOT"]
   setting {
@@ -26,9 +26,9 @@ resource "aws_ecs_cluster" "galaxy" {
     value = "enabled"
   }
   tags = {
-    Name    = "galaxy"
+    Name    = var.project_name
     Role    = "galaxy"
-    Project = "galaxy"
+    Project = var.project_name
   }
 }
 
@@ -93,6 +93,7 @@ data "aws_iam_policy_document" "galaxy-api-execution-role" {
     resources = [
       aws_secretsmanager_secret.galaxy_database_credentials.arn,
       aws_secretsmanager_secret.quay_robot_credentials.arn,
+      aws_secretsmanager_secret.configfile.arn,
     ]
 
   }
@@ -125,7 +126,7 @@ resource "aws_ecs_task_definition" "galaxy-api" {
   container_definitions = jsonencode([
     {
       name  = "galaxy-api"
-      image = "quay.io/hotosm/galaxy-api:web-flow-a55d89f"
+      image = var.container_image_uri
 
       repositoryCredentials = {
         credentialsParameter = aws_secretsmanager_secret.quay_robot_credentials.arn
@@ -146,7 +147,11 @@ resource "aws_ecs_task_definition" "galaxy-api" {
         {
           name      = "POSTGRES_CONNECTION_PARAMS"
           valueFrom = aws_secretsmanager_secret_version.galaxy_database_credentials.arn
-        }
+        },
+        {
+          name      = "GALAXY_API_CONFIG_FILE"
+          valueFrom = aws_secretsmanager_secret_version.configfile.arn
+        },
       ]
 
       logConfiguration = {
@@ -283,5 +288,43 @@ resource "aws_lb_target_group_attachment" "underpass-instance" {
   target_group_arn = aws_lb_target_group.osm-stats.arn
   target_id        = aws_instance.file-processor[0].id
   port             = 80
+}
+
+resource "aws_secretsmanager_secret" "configfile" {
+  name = "${var.deployment_environment}/galaxy/api-configfile"
+}
+
+resource "aws_secretsmanager_secret_version" "configfile" {
+  secret_id = aws_secretsmanager_secret.configfile.id
+  secret_string = base64gzip(
+    templatefile(
+      "${path.module}/config.txt.tpl",
+      {
+        pg_host     = lookup(var.default_db_config_credentials, "host", "")
+        pg_port     = lookup(var.default_db_config_credentials, "port", "")
+        pg_user     = lookup(var.default_db_config_credentials, "user", "")
+        pg_password = lookup(var.default_db_config_credentials, "password", "")
+        pg_database = lookup(var.default_db_config_credentials, "database", "")
+
+        insights_pg_host     = lookup(var.insights_db_config_credentials, "host", "")
+        insights_pg_port     = lookup(var.insights_db_config_credentials, "port", "")
+        insights_pg_user     = lookup(var.insights_db_config_credentials, "user", "")
+        insights_pg_password = lookup(var.insights_db_config_credentials, "password", "")
+        insights_pg_database = lookup(var.insights_db_config_credentials, "database", "")
+
+        underpass_pg_host     = lookup(var.underpass_db_config_credentials, "host", "")
+        underpass_pg_port     = lookup(var.underpass_db_config_credentials, "port", "")
+        underpass_pg_user     = lookup(var.underpass_db_config_credentials, "user", "")
+        underpass_pg_password = lookup(var.underpass_db_config_credentials, "password", "")
+        underpass_pg_database = lookup(var.underpass_db_config_credentials, "database", "")
+
+        dump_path = var.dump_path
+
+        oauth2_client_id     = lookup(var.oauth2_credentials, "client_id", "")
+        oauth2_client_secret = lookup(var.oauth2_credentials, "client_secret", "")
+        oauth2_secret_key    = lookup(var.oauth2_credentials, "secret_key", "")
+      }
+    )
+  )
 }
 
