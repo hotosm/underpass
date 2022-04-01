@@ -301,7 +301,7 @@ resource "aws_db_instance" "galaxy" {
   engine_version = var.database_engine_version
   instance_class = lookup(var.instance_types, "database", "db.t4g.micro")
 
-  name     = var.database_name
+  db_name     = var.database_name
   username = var.database_username
   password = random_password.galaxy_database_admin_password.result
 
@@ -341,12 +341,16 @@ resource "aws_route53_record" "underpass" {
 */
 resource "aws_s3_bucket" "underpass" {
   bucket_prefix = "underpass"
-  acl           = "private"
 
   tags = {
     name = "underpass"
     Role = "Backup store"
   }
 
+}
+
+resource "aws_s3_bucket_acl" "galaxy" {
+  bucket = aws_s3_bucket.underpass.id
+  acl    = "private"
 }
 
