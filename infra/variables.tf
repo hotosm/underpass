@@ -1,3 +1,81 @@
+variable "project_name" {
+  type = string
+
+  default = "galaxy"
+}
+
+/*****************************************
+** SECRET VARIABES AND SENSITIVE STRINGS
+******************************************/
+
+variable "quay_robot_credentials" {
+  type = map(string)
+
+  default = {
+    username = "quay"
+    password = "DummyDefault123!"
+  }
+
+  sensitive = true
+}
+
+variable "default_db_config_credentials" {
+  type = map(string)
+
+  default = {
+    host     = "localhost"
+    port     = "5432"
+    database = "postgres"
+    user     = "postgres_dba"
+    password = "secret123"
+  }
+
+  sensitive = true
+}
+
+variable "underpass_db_config_credentials" {
+  type = map(string)
+
+  default = {
+    host     = "localhost"
+    port     = "5432"
+    database = "postgres"
+    user     = "postgres_dba"
+    password = "secret123"
+  }
+
+  sensitive = true
+}
+
+variable "insights_db_config_credentials" {
+  type = map(string)
+
+  default = {
+    host     = "localhost"
+    port     = "5432"
+    database = "postgres"
+    user     = "postgres_dba"
+    password = "secret123"
+  }
+
+  sensitive = true
+}
+
+variable "oauth2_credentials" {
+  type = map(string)
+
+  default = {
+    client_id     = ""
+    client_secret = ""
+    secret_key    = ""
+  }
+
+  sensitive = true
+}
+
+/***********************
+** NON-SECRET VARIABES
+************************/
 variable "deployment_environment" {
   type = string
 
@@ -63,15 +141,6 @@ variable "database_final_snapshot_identifier" {
   default = "bye-underpass"
 }
 
-variable "quay_robot_credentials" {
-  type = map(string)
-
-  default = {
-    username = "quay"
-    password = "DummyDefault123!"
-  }
-}
-
 variable "server_count" {
   type = map(number)
 
@@ -107,4 +176,14 @@ variable "libpqxx_version" {
 variable "tasking-manager_vpc_id" {
   type    = string
   default = "vpc-ea28198f"
+}
+
+variable "dump_path" {
+  type    = string
+  default = "/var/log/galaxy-api"
+}
+
+variable "container_image_uri" {
+  type    = string
+  default = "quay.io/hotosm/galaxy-api:container"
 }
