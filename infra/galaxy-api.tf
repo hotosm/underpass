@@ -20,15 +20,27 @@ resource "aws_secretsmanager_secret_version" "quay_robot_credentials" {
 resource "aws_ecs_cluster" "galaxy" {
   name = var.project_name
 
-  capacity_providers = ["FARGATE", "FARGATE_SPOT"]
   setting {
     name  = "containerInsights"
     value = "enabled"
   }
+
   tags = {
     Name    = var.project_name
     Role    = "galaxy"
     Project = var.project_name
+  }
+}
+
+resource "aws_ecs_cluster_capacity_providers" "galaxy" {
+  cluster_name = aws_ecs_cluster.galaxy.name
+
+  capacity_providers = ["FARGATE", "FARGATE_SPOT"]
+
+  default_capacity_provider_strategy {
+    base              = 1
+    weight            = 100
+    capacity_provider = "FARGATE"
   }
 }
 
