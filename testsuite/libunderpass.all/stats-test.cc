@@ -18,56 +18,37 @@
 //
 
 #include <dejagnu.h>
+#include "galaxy/osmchange.hh"
 #include <iostream>
-#include <string>
-#include <pqxx/pqxx>
 
-#include "hottm.hh"
-#include "galaxy/galaxy.hh"
-
-#include <boost/date_time.hpp>
-#include "boost/date_time/posix_time/posix_time.hpp"
-#include "boost/date_time/gregorian/gregorian.hpp"
-
-#include "galaxy/galaxy.hh"
-
-using namespace boost::posix_time;
-using namespace boost::gregorian;
-using namespace galaxy;
+class TestOsmChanges : public osmchange::OsmChangeFile {
+};
 
 TestState runtest;
 
-class TestStats : public QueryOSMStats
-{
-};
-
 int
-main(int argc, char *argv[])
-{
-    std::string database = "galaxy";
+main(int argc, char *argv[]) {
 
-    TestStats testos;
-    if (testos.connect(database)) {
-        runtest.pass("taskingManager::connect()");
+    std::string test_data_dir(DATADIR);
+    test_data_dir += "/testsuite/testdata/";
+    TestOsmChanges osmchanges;
+    osmchanges.readChanges(test_data_dir + "/test_stats.osc");
+    
+    const multipolygon_t poly; 
+    auto stats = osmchanges.collectStats(poly);
+    
+    if (std::begin(*stats)->second->added.size() == 2) {
+        runtest.pass("Calculating added (created) highways");
     } else {
-        runtest.fail("taskingManager::connect()");
-    }
+        runtest.fail("Calculating added (created) highways");
+    }   
 
-    //testos.populate();
-    std::vector<long> cids;
-    cids.push_back(57293600);
-    cids.push_back(77274475);
-    cids.push_back(69360891);
-    cids.push_back(69365434);
-    cids.push_back(69365911);
-
-    // Changesets have a bounding box, so we want to find the
-    // country the changes were made in.
-    double min_lat = -2.8042325;
-    double min_lon = 29.5842812;
-    double max_lat = -2.7699398;
-    double max_lon = 29.6012844;
-#endif
+    if (std::begin(*stats)->second->modified.size() == 1) {
+        runtest.pass("Calculating modified highways");
+    } else {
+        runtest.fail("Calculating modified highways");
+    }   
+ 
 }
 
 // local Variables:
