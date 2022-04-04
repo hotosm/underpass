@@ -18,7 +18,8 @@ Now you can login into the container:
 
 And once inside the container's `/code` directory, build Underpass:
 
-    ./autogen.sh && mkdir build && cd build && ../configure && make -j2
+    ./autogen.sh && mkdir build && cd build
+    ../configure CXX="ccache g++" CXXFLAGS="-std=c++17 -g -O0" CPPFLAGS="-DTIMING_DEBUG" && make -j2
 
 The last parameter `-j2` is for speeding up the building process (is the number of jobs run in parallel). This value depends on your hardware, you can try using the value shown at `echo $(nproc)` and add 1 to it,  but this is not a guarantee. If you see errors during the build process
 you can try with a smaller number.
@@ -37,8 +38,8 @@ _Galaxy is a work in progress project focused on bringing together all of the OS
 
 ### 1. Create directories and copy configuration files for validation:
 
-    cd /code/build && mkdir /usr/local/lib/underpass/ && mkdir replication 
-    cp ../validate/*.yaml /usr/local/lib/underpass/
+    cd /code/build && mkdir replication 
+    mkdir /usr/local/lib/underpass/ && cp ../validate/*.yaml /usr/local/lib/underpass/
 
 ### 3. Run replicator
     
