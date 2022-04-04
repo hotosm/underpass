@@ -27,6 +27,7 @@ check_PROGRAMS = \
 	val-test \
 	osm2pgsql-test \
 	yaml-test \
+	stats-test \
 	geo-test
 
 TOPSRC := $(shell cd $(top_srcdir) && pwd)
@@ -96,9 +97,9 @@ tm_test_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
 tm_test_LDADD = -lpqxx -lunderpass  $(BOOST_LIBS)
 
 # Test the OSM Stats class
-#stats_test_SOURCES = stats-test.cc
-#stats_test_LDFLAGS = -L../..
-#stats_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+stats_test_SOURCES = stats-test.cc
+stats_test_LDFLAGS = -L../..
+stats_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 # Test the Changeset class
 change_test_SOURCES = change-test.cc
