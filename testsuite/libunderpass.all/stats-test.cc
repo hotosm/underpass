@@ -19,7 +19,11 @@
 
 #include <dejagnu.h>
 #include "galaxy/osmchange.hh"
+#include <boost/geometry.hpp>
 #include <iostream>
+#include "log.hh"
+
+using namespace logger;
 
 class TestOsmChanges : public osmchange::OsmChangeFile {
 };
@@ -29,12 +33,19 @@ TestState runtest;
 int
 main(int argc, char *argv[]) {
 
+    logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
+    dbglogfile.setWriteDisk(true);
+    dbglogfile.setLogFilename("stats-test.log");
+    dbglogfile.setVerbosity(3);
+
     std::string test_data_dir(DATADIR);
     test_data_dir += "/testsuite/testdata/";
     TestOsmChanges osmchanges;
-    osmchanges.readChanges(test_data_dir + "/test_stats.osc");
+    osmchanges.readChanges(test_data_dir + "test_stats.osc");
     
-    const multipolygon_t poly; 
+    multipolygon_t poly;
+    boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", poly);
+
     auto stats = osmchanges.collectStats(poly);    
     auto changestats = std::begin(*stats)->second;
 
@@ -49,7 +60,32 @@ main(int argc, char *argv[]) {
     } else {
         runtest.fail("Calculating modified highways");
     }
- 
+
+    if (changestats->added.at("building") == 1) {
+        runtest.pass("Calculating added (created) buildings");
+    } else {
+        runtest.fail("Calculating added (created) buildings");
+    }   
+
+    if (changestats->modified.at("building") == 1) {
+        runtest.pass("Calculating modified buildings");
+    } else {
+        runtest.fail("Calculating modified buildings");
+    }   
+
+    if (changestats->added.at("waterway") == 1) {
+        runtest.pass("Calculating added (created) waterways");
+    } else {
+        runtest.fail("Calculating added (created) waterways");
+    }   
+
+    if (changestats->modified.at("waterway") == 1) {
+        runtest.pass("Calculating modified waterways");
+    } else {
+        runtest.fail("Calculating modified waterways");
+    }   
+
+
 }
 
 // local Variables:
