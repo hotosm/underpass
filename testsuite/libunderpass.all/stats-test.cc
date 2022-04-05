@@ -35,19 +35,20 @@ main(int argc, char *argv[]) {
     osmchanges.readChanges(test_data_dir + "/test_stats.osc");
     
     const multipolygon_t poly; 
-    auto stats = osmchanges.collectStats(poly);
-    
-    if (std::begin(*stats)->second->added.size() == 2) {
+    auto stats = osmchanges.collectStats(poly);    
+    auto changestats = std::begin(*stats)->second;
+
+    if (changestats->added.at("highway") == 3) {
         runtest.pass("Calculating added (created) highways");
     } else {
         runtest.fail("Calculating added (created) highways");
     }   
 
-    if (std::begin(*stats)->second->modified.size() == 1) {
+    if (changestats->modified.at("highway") == 2) {
         runtest.pass("Calculating modified highways");
     } else {
         runtest.fail("Calculating modified highways");
-    }   
+    }
  
 }
 
