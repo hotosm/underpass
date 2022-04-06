@@ -163,7 +163,7 @@ QueryGalaxy::applyChange(const osmchange::ChangeStats &change) const
 
     aquery += " closed_at = \'" + to_simple_string(change.closed_at) + "\',";
     aquery += " updated_at = \'" + to_simple_string(now) + "\'";
-    aquery += " WHERE changesets.id=" + std::to_string(change.change_id);
+    // aquery += " WHERE changesets.id=" + std::to_string(change.change_id); //Fix me : we are not sure whether the changefile comes first or changeset comes first in planet , we are dependent on planet and planet doesnot always provide changefile and changeset file parallely sometimes there is delay , hence decided to store it for now , when we will be removing changeset from area filter those rows coming from changefile should be removed
 
     // _debug(_("QUERY stats: %1%"), aquery);
     // Serialize changes writing
@@ -445,6 +445,24 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     }
 //    log_debug(_("QUERY: %1%"), query);
 
+    std::scoped_lock write_lock{pqxx_mutex};
+    pqxx::work worker(*sdb);
+    pqxx::result result = worker.exec(query);
+    worker.commit();
+
+    return true;
+}
+
+// get the changeset id filtered by the area filter and remove it from table 
+bool
+QueryGalaxy::deleteChangeset(long id)
+{
+#ifdef TIMING_DEBUG_X
+    boost::timer::auto_cpu_timer timer("updateChangeset: took %w seconds\n");
+#endif
+    log_debug(_("Deleting changeset %1% since it is not in a priority area"), change->id);
+    std::string query = "DELETE FROM changesets WHERE id=";
+    query += std::to_string(id);
     std::scoped_lock write_lock{pqxx_mutex};
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);

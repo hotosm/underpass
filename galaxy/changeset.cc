@@ -213,6 +213,9 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly)
                 // log_debug(_("Validating changeset %1% is not in a priority
                 // area"), change->id);
                 change->priority = false;
+
+                galaxy->deleteChangeset(change->id); // It will delete if that row already exists on table coming from changefile since in changefile we can't know where it is coming from we can remove them to reduce table size which are coming from outside the our priority area
+
                 changes.erase(it--);
             } else {
                 // log_debug(_("Validating changeset %1% is in a priority area"),
