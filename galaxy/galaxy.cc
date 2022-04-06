@@ -460,7 +460,7 @@ QueryGalaxy::deleteChangeset(long id)
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("updateChangeset: took %w seconds\n");
 #endif
-    log_debug(_("Deleting changeset %1% since it is not in a priority area"), change->id);
+    log_debug(_("Deleting changeset %1% since it is not in a priority area"), id);
     std::string query = "DELETE FROM changesets WHERE id=";
     query += std::to_string(id);
     std::scoped_lock write_lock{pqxx_mutex};
