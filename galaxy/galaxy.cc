@@ -271,7 +271,7 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 
     if (fff < fudge) {
         // log_debug(_("FIXME: line too short! "), fff);
-        return false;
+        // return false; Fix me : this was the main cause we were missing so many changesets even line is too short we are storing it in to db for now may require attention when we identify major issue later
     }
 
     // a changeset with a single node in it doesn't draw a line
