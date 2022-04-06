@@ -212,14 +212,15 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly)
             if (!boost::geometry::within(pt, poly)) {
                 // log_debug(_("Validating changeset %1% is not in a priority
                 // area"), change->id);
-                change->priority = false;
                 galaxy::QueryGalaxy qg;
                 qg.deleteChangeset(change->id); // It will delete if that row already exists on table coming from changefile since in changefile we can't know where it is coming from we can remove them to reduce table size which are coming from outside the our priority area
 
+                change->priority = false;
+
                 changes.erase(it--);
             } else {
-                // log_debug(_("Validating changeset %1% is in a priority area"),
-                // change->id);
+                log_debug(_("Validating changeset %1% is in a priority area"),
+                change->id);
                 change->priority = true;
             }
         }
