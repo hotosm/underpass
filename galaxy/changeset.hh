@@ -149,7 +149,7 @@ class ChangeSetFile
     ChangeSetFile(void){};
 
     /// Delete features not in the boundary
-    void areaFilter(const multipolygon_t &poly);
+    std::vector<long> areaFilter(const multipolygon_t &poly);
 
     /// Read a changeset file from disk or memory into internal storage
     bool readChanges(const std::string &file);

@@ -449,7 +449,11 @@ threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
 	changeset->readXML(input);
     }
 
-   changeset->areaFilter(poly);
+   std::vector<long> changesetsToDelete = changeset->areaFilter(poly);
+
+   for (auto it = std::begin(changesetsToDelete); it != std::end(changesetsToDelete); ++it) {
+        galaxy->deleteChangeset(*it);
+   }
 
    // std::scoped_lock write_lock{time_mutex};
    for (auto cit = std::begin(changeset->changes); cit != std::end(changeset->changes); ++cit) {

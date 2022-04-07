@@ -521,9 +521,12 @@ main(int argc, char *argv[])
         std::cout << "Importing change file " << file << std::endl;
         auto changeset = std::make_shared<changeset::ChangeSetFile>();
         changeset->readChanges(file);
-        changeset->areaFilter(geou.boundary);
+        std::vector<long> changesetsToDelete = changeset->areaFilter(geou.boundary);
         galaxy::QueryGalaxy ostats;
         if (ostats.connect(config.galaxy_db_url)) {
+            for (auto it = std::begin(changesetsToDelete); it != std::end(changesetsToDelete); ++it) {
+                ostats.deleteChangeset(*it);
+            }
             for (auto it = std::begin(changeset->changes); it != std::end(changeset->changes); ++it) {
                 ostats.applyChange(*it->get());
             }

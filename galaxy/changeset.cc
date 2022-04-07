@@ -188,13 +188,14 @@ ChangeSetFile::readChanges(const std::string &file)
     change.close();
 }
 
-void
+std::vector<long>
 ChangeSetFile::areaFilter(const multipolygon_t &poly)
 {
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("ChangeSetFile::areaFilter: took %w seconds\n");
 #endif
     // log_debug(_("Pre filtering changeset size is %1%"), changes.size());
+    std::vector<long> changesetsOutsideArea;
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
         ChangeSet *change = it->get();
         point_t pt;
@@ -212,9 +213,7 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly)
             if (!boost::geometry::within(pt, poly)) {
                 // log_debug(_("Validating changeset %1% is not in a priority
                 // area"), change->id);
-                galaxy::QueryGalaxy qg;
-                qg.deleteChangeset(change->id); // It will delete if that row already exists on table coming from changefile since in changefile we can't know where it is coming from we can remove them to reduce table size which are coming from outside the our priority area
-
+                changesetsOutsideArea.push_back(change->id);
                 change->priority = false;
 
                 changes.erase(it--);
@@ -227,6 +226,7 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly)
     }
     // log_debug(_("Post filtering changeset size is %1%"),
     // changeset->changes.size());
+    return changesetsOutsideArea;
 }
 
 void
