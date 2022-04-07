@@ -239,7 +239,14 @@ class Replicator : public replication::Planet {
             }
             i--;
         }
-
+        // Fix ME : IMPORTANT ! This is very temporary fix to align changeset and change file , need to find breach in while generating in code above and following code block needs to be removed
+        // if (config.frequency != replication::minutely) {
+        //     minor+=3;
+        //     index=953;
+        // } else {
+        //     index=0;
+        // }
+        // Temporary code block above ... FIXEMEEEEE 
         majorfmt % (major);
         minorfmt % (minor);
         index = 0;

@@ -132,6 +132,9 @@ class QueryGalaxy : public pq::Pq {
     bool applyChange(const ValidateStatus &validation) const;
     /// Update the validation table, delete any feature that has been fixed.
     bool updateValidation(long id);
+    /// Deletes changeset id from changeset table outside the priority areas , delete if it is processed from changefile already 
+    bool deleteChangeset(long id);
+
 
     /// Get the timestamp of the last update in the database
     ptime getLastUpdate(void);
