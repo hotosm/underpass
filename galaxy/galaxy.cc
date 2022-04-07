@@ -265,14 +265,8 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
     double max_lon = change.max_lon;
     // FIXME: There are bugs in the bounding box coordinates in some of the
     // older changeset files, but for now ignore these.
-    double fff = relative_difference(max_lon, min_lon);
     // std::cout << "FIXME: Float diff " << fff << std::endl;
     const double fudge{0.0001};
-
-    if (fff < fudge) {
-        // log_debug(_("FIXME: line too short! "), fff);
-        return false;
-    }
 
     // a changeset with a single node in it doesn't draw a line
     if (change.max_lon < 0 && change.min_lat < 0) {
