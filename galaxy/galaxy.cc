@@ -263,7 +263,10 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
     double max_lat = change.max_lat;
     double min_lon = change.min_lon;
     double max_lon = change.max_lon;
-    // FIXME: There are bugs in the bounding box coordinates in some of thes
+    // FIXME: There are bugs in the bounding box coordinates in some of the
+    // older changeset files, but for now ignore these.
+  
+    const double fudge{0.0001};
 
     // a changeset with a single node in it doesn't draw a line
     if (change.max_lon < 0 && change.min_lat < 0) {
