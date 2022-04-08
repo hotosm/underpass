@@ -163,7 +163,7 @@ QueryGalaxy::applyChange(const osmchange::ChangeStats &change) const
 
     aquery += " closed_at = \'" + to_simple_string(change.closed_at) + "\',";
     aquery += " updated_at = \'" + to_simple_string(now) + "\'";
-    aquery += " WHERE changesets.id=" + std::to_string(change.change_id);
+    // aquery += " WHERE changesets.id=" + std::to_string(change.change_id); //Fix me : we are not sure whether the changefile comes first or changeset comes first in planet , we are dependent on planet and planet doesnot always provide changefile and changeset file parallely sometimes there is delay , hence decided to store it for now , when we will be removing changeset from area filter those rows coming from changefile should be removed
 
     // _debug(_("QUERY stats: %1%"), aquery);
     // Serialize changes writing
@@ -265,7 +265,7 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
     double max_lon = change.max_lon;
     // FIXME: There are bugs in the bounding box coordinates in some of the
     // older changeset files, but for now ignore these.
-    // std::cout << "FIXME: Float diff " << fff << std::endl;
+  
     const double fudge{0.0001};
 
     // a changeset with a single node in it doesn't draw a line
@@ -371,7 +371,7 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     boost::timer::auto_cpu_timer timer("applyChange(validation): took %w seconds\n");
 #endif
     log_debug(_("Applying Validation data"));
-    validation.dump();
+    // validation.dump();
 
     if (validation.angle == 0 && validation.status.size() == 0) {
         return true;

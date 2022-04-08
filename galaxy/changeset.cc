@@ -17,7 +17,7 @@
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
 
-/// \file changeset.hh
+/// \file changeset.cc
 /// \brief The file is used for processing changeset files
 ///
 /// The Changeset file contains the raw data on just the change,
@@ -197,26 +197,26 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly)
     // log_debug(_("Pre filtering changeset size is %1%"), changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
         ChangeSet *change = it->get();
-        point_t pt;
         boost::geometry::append(change->bbox, point_t(change->max_lon, change->max_lat));
         boost::geometry::append(change->bbox, point_t(change->max_lon, change->min_lat));
         boost::geometry::append(change->bbox, point_t(change->min_lon, change->min_lat));
         boost::geometry::append(change->bbox, point_t(change->min_lon, change->max_lat));
         boost::geometry::append(change->bbox, point_t(change->max_lon, change->max_lat));
-        boost::geometry::centroid(change->bbox, pt);
+        // point_t pt;
+        // boost::geometry::centroid(change->bbox, pt);
         if (poly.empty()) {
             // log_debug(_("Accepting changeset %1% as in priority area because area information is missing"),
             // change->id);
             change->priority = true;
         } else {
-            if (!boost::geometry::within(pt, poly)) {
-                // log_debug(_("Validating changeset %1% is not in a priority
-                // area"), change->id);
+            if (!boost::geometry::overlaps(change->bbox, poly)) {
+                // log_debug(_("Validating changeset %1% is not in a priority area"), change->id);
+
                 change->priority = false;
+
                 changes.erase(it--);
             } else {
-                // log_debug(_("Validating changeset %1% is in a priority area"),
-                // change->id);
+                // log_debug(_("Validating changeset %1% is in a priority area"), change->id);
                 change->priority = true;
             }
         }

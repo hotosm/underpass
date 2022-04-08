@@ -585,7 +585,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
             OsmWay *way = it->get();
             // If there are no tags, assume it's part of a relation
             if (way->tags.size() == 0 && way->action != osmobjects::remove) {
-                log_debug(_("Way %1% has no tags!"), way->id);
+                // log_debug(_("Way %1% has no tags!"), way->id);
                 continue;
             }
             if (way->action == osmobjects::remove) {
