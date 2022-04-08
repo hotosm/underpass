@@ -371,7 +371,7 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     boost::timer::auto_cpu_timer timer("applyChange(validation): took %w seconds\n");
 #endif
     log_debug(_("Applying Validation data"));
-    validation.dump();
+    // validation.dump();
 
     if (validation.angle == 0 && validation.status.size() == 0) {
         return true;
@@ -439,24 +439,6 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     }
 //    log_debug(_("QUERY: %1%"), query);
 
-    std::scoped_lock write_lock{pqxx_mutex};
-    pqxx::work worker(*sdb);
-    pqxx::result result = worker.exec(query);
-    worker.commit();
-
-    return true;
-}
-
-// get the changeset id filtered by the area filter and remove it from table 
-bool
-QueryGalaxy::deleteChangeset(long id)
-{
-#ifdef TIMING_DEBUG_X
-    boost::timer::auto_cpu_timer timer("updateChangeset: took %w seconds\n");
-#endif
-    log_debug(_("Deleting changeset %1% since it is not in a priority area"), id);
-    std::string query = "DELETE FROM changesets WHERE id=";
-    query += std::to_string(id);
     std::scoped_lock write_lock{pqxx_mutex};
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
