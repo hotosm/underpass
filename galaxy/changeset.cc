@@ -197,30 +197,26 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly)
     // log_debug(_("Pre filtering changeset size is %1%"), changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
         ChangeSet *change = it->get();
-        point_t pt;
         boost::geometry::append(change->bbox, point_t(change->max_lon, change->max_lat));
         boost::geometry::append(change->bbox, point_t(change->max_lon, change->min_lat));
         boost::geometry::append(change->bbox, point_t(change->min_lon, change->min_lat));
         boost::geometry::append(change->bbox, point_t(change->min_lon, change->max_lat));
         boost::geometry::append(change->bbox, point_t(change->max_lon, change->max_lat));
-        boost::geometry::centroid(change->bbox, pt);
+        // point_t pt;
+        // boost::geometry::centroid(change->bbox, pt);
         if (poly.empty()) {
             // log_debug(_("Accepting changeset %1% as in priority area because area information is missing"),
             // change->id);
             change->priority = true;
         } else {
-            if (!boost::geometry::within(pt, poly)) {
-                // log_debug(_("Validating changeset %1% is not in a priority
-                // area"), change->id);
-                galaxy::QueryGalaxy qg;
-                qg.deleteChangeset(change->id); // It will delete if that row already exists on table coming from changefile since in changefile we can't know where it is coming from we can remove them to reduce table size which are coming from outside the our priority area
+            if (!boost::geometry::overlaps(change->bbox, poly)) {
+                // log_debug(_("Validating changeset %1% is not in a priority area"), change->id);
 
                 change->priority = false;
 
                 changes.erase(it--);
             } else {
-                log_debug(_("Validating changeset %1% is in a priority area"),
-                change->id);
+                // log_debug(_("Validating changeset %1% is in a priority area"), change->id);
                 change->priority = true;
             }
         }
