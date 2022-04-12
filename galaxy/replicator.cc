@@ -92,6 +92,8 @@ operator<<(std::ostream &os, const std::vector<T> &v)
     return os;
 }
 
+// TODO: move Replicator class logic to Planet class
+
 /// \class Replicator
 /// \brief This class does all the actual work
 ///
@@ -119,8 +121,12 @@ Replicator::Replicator(void) {
     default_minutes.push_back(state3);
 
     ptime time4 = time_from_string("2020-04-30 06:41:02");
-    StateFile state4("/004/000/000", 3000000, time4, replication::minutely);
+    StateFile state4("/004/000/000", 4000000, time4, replication::minutely);
     default_minutes.push_back(state4);
+
+    // ptime time5 = time_from_string("2022-04-03 16:25:35");
+    // StateFile state4("/005/000/000", 5000000, time5, replication::minutely);
+    // default_minutes.push_back(state5);
 
     // Changesets
     ptime time9 = time_from_string("2012-10-28 19:36:01");
@@ -209,7 +215,7 @@ std::shared_ptr<RemoteURL> Replicator::findRemotePath(const replicatorconfig::Re
             delta = default_states[i].timestamp - time;
             major = default_states[i].getMajor() + 1;
             minor = abs((drift*lowerdiff)/933)/1000;
-            default_states[i].dump();
+            // default_states[i].dump();
             break;
         } else if (upperdiff < 0) {
             major = default_states[i-1].getMajor();
@@ -247,6 +253,7 @@ std::shared_ptr<RemoteURL> Replicator::findRemotePath(const replicatorconfig::Re
     index = 0;
     indexfmt % (index);
     std::string path = majorfmt.str() + "/" + minorfmt.str() + "/" + indexfmt.str();
+
     std::string cached = config.datadir + StateFile::freq_to_string(config.frequency);
     cached += "/" + path + suffix;
     fullurl = "https://" + config.planet_server + "/" + cached;
@@ -262,7 +269,7 @@ std::shared_ptr<RemoteURL> Replicator::findRemotePath(const replicatorconfig::Re
                     minor -= drift;
                 }
                 remote->updatePath(major, minor, 0);
-                remote->dump();
+                // remote->dump();
                 data = downloadFile(*remote);
                 if (data->size() == 0) {
                     minor--;
@@ -270,7 +277,7 @@ std::shared_ptr<RemoteURL> Replicator::findRemotePath(const replicatorconfig::Re
             }
         }
         StateFile start(remote->filespec, false);
-        start.dump();
+        // start.dump();
         if (start.timestamp == not_a_date_time) {
             // break;
         }
@@ -279,7 +286,7 @@ std::shared_ptr<RemoteURL> Replicator::findRemotePath(const replicatorconfig::Re
     } else {
         changeset::ChangeSetFile change;
         remote->updatePath(major, minor, index);
-        remote->dump();
+        // remote->dump();
         if (boost::filesystem::exists(remote->filespec)) {
             change.readChanges(remote->filespec);
         } else {
@@ -288,11 +295,11 @@ std::shared_ptr<RemoteURL> Replicator::findRemotePath(const replicatorconfig::Re
             std::istream& input(xml);
             change.readXML(input);
         }
-        change.dump();
+        // change.dump();
         timestamp = change.changes.back()->created_at;
     }
 
-    remote->dump();
+    // remote->dump();
     time_duration delta4 = time - timestamp;
     index = abs((delta4.hours()*60) + delta4.minutes());
     if (index > drift) {
@@ -327,6 +334,7 @@ std::shared_ptr<RemoteURL> Replicator::findRemotePath(const replicatorconfig::Re
         remote->filespec = remote->filespec.replace(pos, suffix.size(), ".osc.gz");
     }
 
+    remote->dump();
     return remote;
 };
 

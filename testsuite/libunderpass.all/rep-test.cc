@@ -24,11 +24,17 @@
 #include "galaxy/osmchange.hh"
 #include "replicatorconfig.hh"
 #include "galaxy/replicator.hh"
+#include "galaxy/changeset.hh"
 
 using namespace logger;
 using namespace replicatorconfig;
 using namespace replicator;
 using namespace boost::posix_time;
+
+class TestCO : public osmchange::OsmChangeFile {
+};
+
+TestState runtest;
 
 int
 main(int argc, char *argv[]) {
@@ -40,18 +46,30 @@ main(int argc, char *argv[]) {
 
     ReplicatorConfig config;
     config.planet_server = config.planet_servers[0].domain + "/replication";
-    std::string ts("2020-01-01T00:00:00");
+
+    // TODO: generate dates for testing 
+    std::string ts("2020-03-30T00:00:00");
     config.start_time = from_iso_extended_string(ts);
 
     replicator::Replicator replicator;
     auto osmchange = replicator.findRemotePath(config, config.start_time);
-    osmchange->dump();
+    TestCO change;
+    if (boost::filesystem::exists(osmchange->filespec)) {
+        change.readChanges(osmchange->filespec);
+    } else { 
+        // TODO: download file
+        std::cout << "File not found: " << osmchange->filespec << std::endl;
+    }
 
-    // if () {
-    //     runtest.pass("Find remote path from timestamp");    
-    // } else {
-    //     runtest.fail("Find remote path from timestamp");    
-    // }
+    ptime timestamp = change.changes.back()->final_entry;
+    auto timestamp_string = to_simple_string(timestamp);
+    auto start_time_string = to_simple_string(config.start_time);
+
+    if (timestamp.date().year() == 2020 && timestamp.date().month() == 3 && timestamp.date().day() >= 29 && timestamp.date().day() <= 31) {
+        runtest.pass("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
+    } else {
+        runtest.fail("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
+    }
     
 }
 

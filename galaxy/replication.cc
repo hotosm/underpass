@@ -199,10 +199,12 @@ StateFile::StateFile(const std::string &file, bool memory)
 void
 StateFile::dump(void)
 {
-    std::cerr << "Dumping state.txt file" << std::endl;
+    std::cout << "\t * * * * * " << std::endl;
+    std::cerr << "\tDumping state.txt file" << std::endl;
     std::cerr << "\tTimestamp: " << timestamp << std::endl;
     std::cerr << "\tSequence: " << sequence << std::endl;
     std::cerr << "\tPath: " << path << std::endl;
+    std::cout << "\t * * * * * " << std::endl;
 }
 
 bool
@@ -749,6 +751,7 @@ RemoteURL::RemoteURL(const RemoteURL &inr)
 void
 RemoteURL::dump(void)
 {
+    std::cout << "\t------" << std::endl;
     std::cerr << "\tDomain: " << domain << std::endl;
     std::cerr << "\tDatadir: " << datadir << std::endl;
     std::cerr << "\tSubpath: " << subpath << std::endl;
