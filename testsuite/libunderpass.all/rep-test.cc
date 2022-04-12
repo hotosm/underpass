@@ -25,14 +25,20 @@
 #include "replicatorconfig.hh"
 #include "galaxy/replicator.hh"
 #include "galaxy/changeset.hh"
+#include "galaxy/replication.hh"
 
 using namespace logger;
 using namespace replicatorconfig;
 using namespace replicator;
+using namespace replication;
 using namespace boost::posix_time;
 
 class TestCO : public osmchange::OsmChangeFile {
 };
+
+class TestPlanet : public replication::Planet {
+};
+
 
 TestState runtest;
 
@@ -47,28 +53,34 @@ main(int argc, char *argv[]) {
     ReplicatorConfig config;
     config.planet_server = config.planet_servers[0].domain + "/replication";
 
-    // TODO: generate dates for testing 
-    std::string ts("2020-03-30T00:00:00");
-    config.start_time = from_iso_extended_string(ts);
+    for (int i = 2017; i != 2023; ++i) {
 
-    replicator::Replicator replicator;
-    auto osmchange = replicator.findRemotePath(config, config.start_time);
-    TestCO change;
-    if (boost::filesystem::exists(osmchange->filespec)) {
-        change.readChanges(osmchange->filespec);
-    } else { 
-        // TODO: download file
-        std::cout << "File not found: " << osmchange->filespec << std::endl;
-    }
+        std::string year_string = std::to_string(i);
+        std::string ts(year_string + "-03-15T00:00:00");
+        config.start_time = from_iso_extended_string(ts);
 
-    ptime timestamp = change.changes.back()->final_entry;
-    auto timestamp_string = to_simple_string(timestamp);
-    auto start_time_string = to_simple_string(config.start_time);
+        replicator::Replicator replicator;
+        auto osmchange = replicator.findRemotePath(config, config.start_time);
+        TestCO change;
+        if (boost::filesystem::exists(osmchange->filespec)) {
+            change.readChanges(osmchange->filespec);
+        } else { 
+            TestPlanet planet;
+            auto data = planet.downloadFile(osmchange->getURL());
+            auto xml = planet.processData(osmchange->filespec, *data);
+            std::istream& input(xml);
+            change.readXML(input);
+        }
 
-    if (timestamp.date().year() == 2020 && timestamp.date().month() == 3 && timestamp.date().day() >= 29 && timestamp.date().day() <= 31) {
-        runtest.pass("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
-    } else {
-        runtest.fail("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
+        ptime timestamp = change.changes.back()->final_entry;
+        auto timestamp_string = to_simple_string(timestamp);
+        auto start_time_string = to_simple_string(config.start_time);
+
+        if (timestamp.date().year() == i && timestamp.date().month() == 3 && timestamp.date().day() >= 14 && timestamp.date().day() <= 16) {
+            runtest.pass("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
+        } else {
+            runtest.fail("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
+        }
     }
     
 }
