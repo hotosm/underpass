@@ -19,7 +19,7 @@ variable "quay_robot_credentials" {
   sensitive = true
 }
 
-variable "default_db_config_credentials" {
+variable "tasking_manager_db_config_credentials" {
   type = map(string)
 
   default = {

@@ -301,7 +301,7 @@ resource "aws_db_instance" "galaxy" {
   engine_version = var.database_engine_version
   instance_class = lookup(var.instance_types, "database", "db.t4g.micro")
 
-  db_name     = var.database_name
+  db_name  = var.database_name
   username = var.database_username
   password = random_password.galaxy_database_admin_password.result
 
