@@ -19,6 +19,7 @@
 
 #include <dejagnu.h>
 #include <iostream>
+#include <vector>
 #include "log.hh"
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "galaxy/osmchange.hh"
@@ -53,33 +54,45 @@ main(int argc, char *argv[]) {
     ReplicatorConfig config;
     config.planet_server = config.planet_servers[0].domain + "/replication";
 
-    for (int i = 2017; i != 2023; ++i) {
+    std::vector<std::string> dates = {
+        "-01-01T00:00:00",
+        "-03-07T00:00:00",
+        "-05-12T00:00:00",
+        "-07-17T00:00:00",
+        "-09-22T00:00:00",
+        "-12-28T00:00:00",
+    };
 
-        std::string year_string = std::to_string(i);
-        std::string ts(year_string + "-03-15T00:00:00");
-        config.start_time = from_iso_extended_string(ts);
+    for (auto it = std::begin(dates); it != std::end(dates); ++it) {
+        for (int i = 2017; i != 2023; ++i) {
 
-        replicator::Replicator replicator;
-        auto osmchange = replicator.findRemotePath(config, config.start_time);
-        TestCO change;
-        if (boost::filesystem::exists(osmchange->filespec)) {
-            change.readChanges(osmchange->filespec);
-        } else { 
-            TestPlanet planet;
-            auto data = planet.downloadFile(osmchange->getURL());
-            auto xml = planet.processData(osmchange->filespec, *data);
-            std::istream& input(xml);
-            change.readXML(input);
-        }
+            std::string year_string = std::to_string(i);
+            std::string ts(year_string + *it);
+            config.start_time = from_iso_extended_string(ts);
 
-        ptime timestamp = change.changes.back()->final_entry;
-        auto timestamp_string = to_simple_string(timestamp);
-        auto start_time_string = to_simple_string(config.start_time);
+            replicator::Replicator replicator;
+            auto osmchange = replicator.findRemotePath(config, config.start_time);
+            TestCO change;
+            if (boost::filesystem::exists(osmchange->filespec)) {
+                change.readChanges(osmchange->filespec);
+            } else { 
+                TestPlanet planet;
+                auto data = planet.downloadFile(osmchange->getURL());
+                auto xml = planet.processData(osmchange->filespec, *data);
+                std::istream& input(xml);
+                change.readXML(input);
+            }
 
-        if (timestamp.date().year() == i && timestamp.date().month() == 3 && timestamp.date().day() >= 14 && timestamp.date().day() <= 16) {
-            runtest.pass("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
-        } else {
-            runtest.fail("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
+            ptime timestamp = change.changes.back()->final_entry;
+            auto timestamp_string = to_simple_string(timestamp);
+            auto start_time_string = to_simple_string(config.start_time);
+
+            time_duration delta = timestamp - config.start_time;
+            if (delta.hours() > -24 && delta.hours() < 24) {
+                runtest.pass("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
+            } else {
+                runtest.fail("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
+            }
         }
     }
     
