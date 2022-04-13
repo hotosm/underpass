@@ -37,7 +37,7 @@
 #include <tuple>
 #include <vector>
 
-#include "galaxy/replicator.hh"
+#include "galaxy/planetreplicator.hh"
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/date_time.hpp>
 using namespace boost::posix_time;
@@ -253,7 +253,7 @@ main(int argc, char *argv[])
 
     // End of Tasking Manager user sync setup
 
-    replicator::Replicator replicator;
+    planetreplicator::PlanetReplicator replicator;
     if (vm.count("changefile")) {
         std::string file = vm["changefile"].as<std::string>();
         std::cout << "Importing change file " << file << std::endl;

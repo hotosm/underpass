@@ -24,13 +24,13 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "galaxy/osmchange.hh"
 #include "replicatorconfig.hh"
-#include "galaxy/replicator.hh"
+#include "galaxy/planetreplicator.hh"
 #include "galaxy/changeset.hh"
 #include "galaxy/replication.hh"
 
 using namespace logger;
 using namespace replicatorconfig;
-using namespace replicator;
+using namespace planetreplicator;
 using namespace replication;
 using namespace boost::posix_time;
 
@@ -39,7 +39,6 @@ class TestCO : public osmchange::OsmChangeFile {
 
 class TestPlanet : public replication::Planet {
 };
-
 
 TestState runtest;
 
@@ -56,42 +55,50 @@ main(int argc, char *argv[]) {
 
     std::vector<std::string> dates = {
         "-01-01T00:00:00",
-        "-03-07T00:00:00",
-        "-05-12T00:00:00",
-        "-07-17T00:00:00",
-        "-09-22T00:00:00",
-        "-12-28T00:00:00",
+        "-01-07T00:00:00",
+        "-02-12T00:00:00",
+        "-02-17T00:00:00",
+        "-03-22T00:00:00",
+        "-03-28T00:00:00",
     };
 
-    for (auto it = std::begin(dates); it != std::end(dates); ++it) {
-        for (int i = 2017; i != 2023; ++i) {
+    ptime now = boost::posix_time::microsec_clock::universal_time();
+    int next_year = now.date().year() + 1;
+
+    for (int i = 2017; i != next_year; ++i) {
+        for (auto it = std::begin(dates); it != std::end(dates); ++it) {
 
             std::string year_string = std::to_string(i);
             std::string ts(year_string + *it);
             config.start_time = from_iso_extended_string(ts);
 
-            replicator::Replicator replicator;
-            auto osmchange = replicator.findRemotePath(config, config.start_time);
-            TestCO change;
-            if (boost::filesystem::exists(osmchange->filespec)) {
-                change.readChanges(osmchange->filespec);
-            } else { 
-                TestPlanet planet;
-                auto data = planet.downloadFile(osmchange->getURL());
-                auto xml = planet.processData(osmchange->filespec, *data);
-                std::istream& input(xml);
-                change.readXML(input);
-            }
+            time_duration diffWithNow = now - config.start_time;
 
-            ptime timestamp = change.changes.back()->final_entry;
-            auto timestamp_string = to_simple_string(timestamp);
-            auto start_time_string = to_simple_string(config.start_time);
+            if (diffWithNow.hours() > 0) {
 
-            time_duration delta = timestamp - config.start_time;
-            if (delta.hours() > -24 && delta.hours() < 24) {
-                runtest.pass("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
-            } else {
-                runtest.fail("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
+                planetreplicator::PlanetReplicator replicator;
+                auto osmchange = replicator.findRemotePath(config, config.start_time);
+                TestCO change;
+                if (boost::filesystem::exists(osmchange->filespec)) {
+                    change.readChanges(osmchange->filespec);
+                } else { 
+                    TestPlanet planet;
+                    auto data = planet.downloadFile(osmchange->getURL());
+                    auto xml = planet.processData(osmchange->filespec, *data);
+                    std::istream& input(xml);
+                    change.readXML(input);
+                }
+
+                ptime timestamp = change.changes.back()->final_entry;
+                auto timestamp_string = to_simple_string(timestamp);
+                auto start_time_string = to_simple_string(config.start_time);
+
+                time_duration delta = timestamp - config.start_time;
+                if (delta.hours() > -24 && delta.hours() < 24) {
+                    runtest.pass("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
+                } else {
+                    runtest.fail("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
+                }
             }
         }
     }

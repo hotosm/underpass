@@ -17,10 +17,10 @@
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
 
-#ifndef __REPLICATOR_HH__
-#define __REPLICATOR_HH__
+#ifndef __PLANETREPLICATOR_HH__
+#define __PLANETREPLICATOR_HH__
 
-/// \file replicator.hh
+/// \file planetreplicator.hh
 /// \brief This file is used to indentify, download and process replication files
 ///
 /// Identifies, downloads, and processes replication files.
@@ -40,13 +40,13 @@
 using namespace galaxy;
 using namespace replicatorconfig;
 
-/// \namespace replicator
-namespace replicator {
+/// \namespace planetreplicator
+namespace planetreplicator {
 
-class Replicator : public replication::Planet {
+class PlanetReplicator : public replication::Planet {
     public:
-        Replicator(void);
-        ~Replicator(void) {};
+        PlanetReplicator(void);
+        ~PlanetReplicator(void) {};
         bool initializeRaw(std::vector<std::string> &rawfile, const std::string &database);
         std::shared_ptr<RemoteURL> findRemotePath(const replicatorconfig::ReplicatorConfig &config, ptime time);
     // These are used for the import command
@@ -57,9 +57,9 @@ class Replicator : public replication::Planet {
         std::shared_ptr<std::map<std::string, int>> hashes; ///< Existing hashtags
 };
 
-} // namespace replicator
+} // namespace planetreplicator
 
-#endif // EOF __REPLICATOR_HH__
+#endif // EOF __PLANETREPLICATOR_HH__
 
 // local Variables:
 // mode: C++
