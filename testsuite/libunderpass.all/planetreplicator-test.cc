@@ -47,7 +47,7 @@ main(int argc, char *argv[]) {
 
     logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
     dbglogfile.setWriteDisk(true);
-    dbglogfile.setLogFilename("rep-test.log");
+    dbglogfile.setLogFilename("planetreplicator-test.log");
     dbglogfile.setVerbosity(3);
 
     ReplicatorConfig config;
@@ -94,7 +94,7 @@ main(int argc, char *argv[]) {
                 auto start_time_string = to_simple_string(config.start_time);
 
                 time_duration delta = timestamp - config.start_time;
-                if (delta.hours() > -24 && delta.hours() < 24) {
+                if (delta.hours() > -24 && delta.hours() < 12) {
                     runtest.pass("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
                 } else {
                     runtest.fail("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
