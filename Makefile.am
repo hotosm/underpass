@@ -74,6 +74,7 @@ libunderpass_la_SOURCES = \
 	galaxy/changeset.cc galaxy/changeset.hh \
 	galaxy/osmchange.cc galaxy/osmchange.hh \
 	galaxy/replication.cc galaxy/replication.hh \
+	galaxy/planetreplicator.cc galaxy/planetreplicator.hh \
 	data/geoutil.cc data/geoutil.hh \
 	data/osmobjects.cc data/osmobjects.hh \
 	data/osm2pgsql.cc data/osm2pgsql.hh \
@@ -193,6 +194,7 @@ PCHFLAGS = \
 PCHHEADERS = \
         $(top_srcdir)/timer.hh \
         $(top_srcdir)/hottm.hh \
+        $(top_srcdir)/galaxy/planetreplicator.hh \
         $(top_srcdir)/galaxy/galaxy.hh \
         $(top_srcdir)/galaxy/replication.hh \
         $(top_srcdir)/galaxy/osmchange.hh \

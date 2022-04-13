@@ -17,7 +17,7 @@
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
 
-/// \file changeset.hh
+/// \file changeset.cc
 /// \brief The file is used for processing changeset files
 ///
 /// The Changeset file contains the raw data on just the change,
