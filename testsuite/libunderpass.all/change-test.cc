@@ -190,7 +190,7 @@ main(int argc, char *argv[])
             break;
         }
     }
-    if (all_changesets_present) {
+    if (all_changesets_tracked) {
         runtest.pass("ChangeSetFile::readChanges(tracking all changesets from file)");
     } else {
         runtest.fail("ChangeSetFile::readChanges(tracking all changesets from file)");
