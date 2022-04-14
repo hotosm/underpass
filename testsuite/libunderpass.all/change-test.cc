@@ -169,6 +169,33 @@ main(int argc, char *argv[])
         runtest.fail("ChangeSetFile::readChanges(parsed file)");
     }
 
+    // Tracking all changeset from file
+    std::vector<long> changeset_ids = {8580445, 94802322, 98934881, 98935384, 98935857, 99055952, 99056962, 99062100, 99063443, 99069702, 99069879};
+    std::map<long, long> changeset_ids_found;
+    for (const auto &change: testco.changes) {
+        for (const auto &node: change->nodes) {
+            changeset_ids_found.insert(std::pair<long, long>(node->change_id, node->change_id));
+        }
+        for (const auto &way: change->ways) {
+            changeset_ids_found.insert(std::pair<long, long>(way->change_id, way->change_id));
+        }
+        for (const auto &relation: change->relations) {
+            changeset_ids_found.insert(std::pair<long, long>(relation->change_id, relation->change_id));
+        }
+    }
+    bool all_changesets_tracked = true;
+    for (auto it = std::begin(changeset_ids); it != std::end(changeset_ids); ++it) {
+        if (!changeset_ids_found.count(*it)) {
+            all_changesets_tracked = false;
+            break;
+        }
+    }
+    if (all_changesets_present) {
+        runtest.pass("ChangeSetFile::readChanges(tracking all changesets from file)");
+    } else {
+        runtest.fail("ChangeSetFile::readChanges(tracking all changesets from file)");
+    }
+
     auto tf = testco.changes.front();
     auto tnf = tf->nodes.front();
     if (tnf->change_id == 99069702 && tnf->id == 5776216755) {
