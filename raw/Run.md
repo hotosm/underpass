@@ -17,4 +17,4 @@ Now run init , This will create
 
 Now Run update with your style file -s parameter like this 
 
-```python rawdata-replication update -s /home/kshitij/hot/rawdata/raw.lua```
+```python rawdata-replication update -s /home/user/underpass/raw/raw.lua```
