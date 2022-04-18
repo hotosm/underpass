@@ -86,9 +86,9 @@ def pretty_format_timedelta(seconds):
     return output
 
 def connect(args):
-    """ Create a connection from the given command line arguments.
+    """ Create a connection from the config file
     """
-    return psycopg.connect(**dict(config.items("local")))
+    return psycopg.connect(**dict(config.items("RAW")))
 
 
 def compute_database_date(conn, prefix):
@@ -380,17 +380,17 @@ def update(conn, args):
         outfile = Path(tmpdir.name) / 'osm2pgsql_diff.osc.gz'
 
     # osm2pgsql = [args.osm2pgsql_cmd, '--append', '--slim','--flat-nodes','/home/kshitij/hot/rawdata/nodes.cache', '--prefix', args.prefix,'--output=flex','--extra-attributes','--style','/home/kshitij/hot/rawdata/raw.lua']
-    osm2pgsql = [args.osm2pgsql_cmd, '--append','-W','--slim','--prefix', args.prefix,'--output=flex','--extra-attributes','--style','/home/kshitij/rawdata/raw.lua']
+    osm2pgsql = [args.osm2pgsql_cmd, '--append','-W','--slim','--prefix', args.prefix,'--output=flex','--extra-attributes','--style',args.style]
     
     osm2pgsql.extend(args.extra_params)
-    if args.database:
-        osm2pgsql.extend(('-d', args.database))
-    if args.username:
-        osm2pgsql.extend(('-U', args.username))
-    if args.host:
-        osm2pgsql.extend(('-H', args.host))
-    if args.port:
-        osm2pgsql.extend(('-P', args.port))
+    
+    osm2pgsql.extend(('-d', dict(config.items("RAW"))["dbname"]))
+
+    osm2pgsql.extend(('-U', dict(config.items("RAW"))["user"]))
+
+    osm2pgsql.extend(('-H', dict(config.items("RAW"))["host"]))
+
+    osm2pgsql.extend(('-P', dict(config.items("RAW"))["port"]))
     osm2pgsql.append(str(outfile))
     LOG.debug("Calling osm2pgsql with: %s", ' '.join(osm2pgsql))
     # return 1
@@ -425,8 +425,9 @@ def update(conn, args):
             LOG.info("Data imported until %s. Backlog remaining: %s",
                      nextstate.timestamp,
                      dt.datetime.now(dt.timezone.utc) - nextstate.timestamp)
-            LOG.info('Starting Country list update')
-            update_country_list(conn,ts)
+            if args.country: # updates if the paramter is supplied
+                LOG.info('Starting Country list update')
+                update_country_list(conn,ts)
 
         if args.once:
             break
@@ -472,16 +473,13 @@ def get_parser():
     group.add_argument('-v', '--verbose', action='count', default=2,
                        help='Increase verboseness of output')
     group = default_args.add_argument_group('Database arguments')
-    group.add_argument('-d', '--database', metavar='DB',
-                       help='Name of PostgreSQL database to connect to or conninfo string')
-    group.add_argument('-U', '--username', metavar='NAME',
-                       help='PostgreSQL user name')
-    group.add_argument('-H', '--host', metavar='HOST',
-                       help='Database server host name or socket location')
-    group.add_argument('-P', '--port', metavar='PORT',
-                       help='Database server port')
+
     group.add_argument('-p', '--prefix', metavar='PREFIX', default='planet_osm',
                        help="Prefix for table names (default 'planet_osm')")
+    group.add_argument('-s', '--style', metavar='STYLE',
+                       help='Raw Data Style Lua Script location')
+    group.add_argument('-c', '--country', action='store_true',
+                       help='Update country column of table')
 
     # Arguments for init
     cmd = subs.add_parser('init', parents=[default_args],
