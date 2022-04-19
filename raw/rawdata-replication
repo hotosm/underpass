@@ -7,7 +7,7 @@
 # Copyright (C) 2006-2022 by the osm2pgsql developer community.
 # For a full list of authors see the git log.
 
-# python rawdata-replication update  -H 'host' -U user -P 5432 -d db
+# python rawdata-replication update  -s raw.lua
 
 """
 Update an osm2pgsql rawdata custom database schema with changes from a OSM replication server.
@@ -23,7 +23,7 @@ how to use %(prog)s.
 QUICK Commands to start : 
 
 python rawdata-replication init 
-python rawdata-replication update -H localhost -U admin -P 5432 -d postgres
+python rawdata-replication update -s raw.lua
 """
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
