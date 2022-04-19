@@ -6,7 +6,7 @@ Prepare your osm.pbf for loading before start. You can download it from differen
 - Navigate to raw Directory 
 - Run Following command  with your db credentials to terminal, ***--slim** mode will be important if you want to do replication later ( if you don't need to update your database remove --slim option ( this will consume more ram during loading )* 
 ```osm2pgsql --create -H localhost -U admin -P 5432 -d postgres -W --extra-attributes --slim --output=flex --style ./raw.lua yourdownloaded.osm.pbf ```
-> **Note:** It is tested with osm2pgsql 1.6.0 version only
+> **Note:** It is tested with osm2pgsql 1.6.0 version only , If data is loaded without --slim mode you will have query ready tables nodes,ways_line,ways_poly and relations . Even if you use --slim mode it will store meta data to database itself . It will create three additional tables : planet_osm_nodes,planet_osm_ways, planet_osm_relations which will be used during update only , Rather than that you will be querying nodes,ways_line,ways_poly and relations table to get data !
 
 ##  Initialize Update Script
 
