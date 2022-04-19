@@ -4,7 +4,7 @@ Prepare your osm.pbf for loading before start. You can download it from differen
 - Install [osm2pgsql v1.6.0](https://github.com/openstreetmap/osm2pgsql/releases/tag/1.6.0)
 - Download and clone this underpass
 - Navigate to raw Directory 
-- Run Following command  with your db credentials to terminal, ***--slim** mode will be important if you want to do replication later* 
+- Run Following command  with your db credentials to terminal, ***--slim** mode will be important if you want to do replication later ( if you don't need to update your database remove --slim option ( this will consume more ram during loading )* 
 ```osm2pgsql --create -H localhost -U admin -P 5432 -d postgres -W --extra-attributes --slim --output=flex --style ./raw.lua yourdownloaded.osm.pbf ```
 > **Note:** It is tested with osm2pgsql 1.6.0 version only
 
