@@ -31,7 +31,7 @@ port=
 
 ```
 
-Now run init , This will create
+Now run init , This will create replication status table in db
 
   
 
