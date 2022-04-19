@@ -147,9 +147,9 @@ PlanetReplicator::PlanetReplicator(void) {
     StateFile state7("/004/000/000", 3000000, time7, replication::changeset);
     default_changesets.push_back(state7);
 
-    // ptime time6 = time_from_string("2022-04-03 16:25:35");
-    // StateFile state6("/005/000/000", 3000000, time6, replication::changeset);
-    // default_changesets.push_back(state6);
+    ptime time6 = time_from_string("2022-04-03 16:25:35");
+    StateFile state6("/005/000/000", 3000000, time6, replication::changeset);
+    default_changesets.push_back(state6);
 };
 
 /// Initialize the raw_user, raw_hashtags, and raw_changeset tables
@@ -342,3 +342,7 @@ std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const replicatorconf
 
 } // namespace planetreplicator
 
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:
