@@ -104,8 +104,8 @@ stats_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 # Test the PlanetReplicator class
 planetreplicator_test_SOURCES = planetreplicator-test.cc
-planetreplicator_test_SOURCES = -L../..
-planetreplicator_test_SOURCES = -lpqxx -lunderpass $(BOOST_LIBS)
+planetreplicator_test_LDFLAGS = -L../..
+planetreplicator_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 # Test the Changeset class
 change_test_SOURCES = change-test.cc
