@@ -312,12 +312,6 @@ resource "aws_secretsmanager_secret_version" "configfile" {
     templatefile(
       "${path.module}/config.txt.tpl",
       {
-        pg_host     = lookup(var.default_db_config_credentials, "host", "")
-        pg_port     = lookup(var.default_db_config_credentials, "port", "")
-        pg_user     = lookup(var.default_db_config_credentials, "user", "")
-        pg_password = lookup(var.default_db_config_credentials, "password", "")
-        pg_database = lookup(var.default_db_config_credentials, "database", "")
-
         insights_pg_host     = lookup(var.insights_db_config_credentials, "host", "")
         insights_pg_port     = lookup(var.insights_db_config_credentials, "port", "")
         insights_pg_user     = lookup(var.insights_db_config_credentials, "user", "")
@@ -329,6 +323,12 @@ resource "aws_secretsmanager_secret_version" "configfile" {
         underpass_pg_user     = lookup(var.underpass_db_config_credentials, "user", "")
         underpass_pg_password = lookup(var.underpass_db_config_credentials, "password", "")
         underpass_pg_database = lookup(var.underpass_db_config_credentials, "database", "")
+
+        tasking_manager_pg_host     = lookup(var.tasking_manager_db_config_credentials, "host", "")
+        tasking_manager_pg_port     = lookup(var.tasking_manager_db_config_credentials, "port", "")
+        tasking_manager_pg_user     = lookup(var.tasking_manager_db_config_credentials, "user", "")
+        tasking_manager_pg_password = lookup(var.tasking_manager_db_config_credentials, "password", "")
+        tasking_manager_pg_database = lookup(var.tasking_manager_db_config_credentials, "database", "")
 
         dump_path = var.dump_path
 

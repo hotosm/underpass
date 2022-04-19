@@ -233,7 +233,7 @@ class BOOST_SYMBOL_VISIBLE Validate {
 	    }
 	    // It's probably a cicle
 	    if (way.numPoints() > 5 && cornerAngle(way.linestring) < 30) {
-		log_debug(_("Building %1% is round"), way.id);
+		// log_debug(_("Building %1% is round"), way.id);
 		return false;
 	    }
 	    for (auto nit = std::begin(allways); nit != std::end(allways); ++nit) {

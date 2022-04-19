@@ -28,6 +28,7 @@ check_PROGRAMS = \
 	osm2pgsql-test \
 	yaml-test \
 	stats-test \
+	rep-test \
 	geo-test
 
 TOPSRC := $(shell cd $(top_srcdir) && pwd)
@@ -101,6 +102,11 @@ stats_test_SOURCES = stats-test.cc
 stats_test_LDFLAGS = -L../..
 stats_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
+# Test the Replicator class
+rep_test_SOURCES = rep-test.cc
+rep_test_LDFLAGS = -L../..
+rep_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+
 # Test the Changeset class
 change_test_SOURCES = change-test.cc
 change_test_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
@@ -128,6 +134,8 @@ CLEANFILES = \
 	change-test.log \
 	geo-test.log \
 	osm2pgsql-test.log \
+	stats-test.log \
+	rep-test.log \
 	replication-test.log
 
 RUNTESTFLAGS = -xml

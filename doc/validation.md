@@ -119,3 +119,12 @@ buildings is the amount of intersecting areas. the area of the
 new buildings is compared to the area of one of the buildings. If the
 are of intersection is less than 30%, it's assumed to be overlapping,
 instead of a duplicate.
+
+## Highway Validation
+
+Validating highways starts the correct tag valu. More than validating
+the values for the highway tag, this also will check the values of
+important tags, like surface, smoothness, tracktype, and
+sac_scale. The important validation is making sure any new highway
+actually connects to the highway network. Otherwise navigation doesn't
+work.
