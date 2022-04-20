@@ -119,5 +119,4 @@ for stat in stats:
         if insights != stat:
             print("** STAT ** \n", stat, "\n ** INSIGHTS ** \n", insights, "\n\n")
 
-print(stats)
 
