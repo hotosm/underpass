@@ -45,7 +45,8 @@ void
 collectStats(opts::variables_map vm) {
 
     ReplicatorConfig config;
-
+    config.frequency == replication::minutely;
+    
     if (vm.count("timestamp")) {
         auto timestamp = vm["timestamp"].as<std::string>();
         config.start_time = from_iso_extended_string(timestamp);

@@ -2,7 +2,7 @@
 
 There are two types of data files related to changes in the map
 data. These files contain all the changes made during a time interval,
-every moinute, hour, or daily data files are available from the
+every minute, hour, or daily data files are available from the
 OpenStreetMap [planet](https://planet.openstreetmap.org/replication/)
 server. 
 

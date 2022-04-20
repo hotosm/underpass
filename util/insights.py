@@ -54,7 +54,7 @@ class InsightsConnection:
 
     def getChangesetsStats(self, changesetId):
         query = """SELECT changeset, added_buildings, modified_buildings, added_amenity, \
-                added_highway, modified_highway, added_highway_meters, modified_highway_meters, \
+                added_highway, modified_highway, added_highway_meters, \
                 added_places, modified_places FROM all_changesets_stats WHERE changeset = %s""" \
                 % changesetId
         self.dbcursor.execute(query)
@@ -68,9 +68,8 @@ class InsightsConnection:
                 'added_highway': changeset[4] or 0,
                 'modified_highway': changeset[5] or 0,
                 'added_highway_km': round(changeset[6]) or 0,
-                # 'modified_highway_meters': changeset[7],
-                'added_places': changeset[8] or 0,
-                'modified_places': changeset[9] or 0
+                'added_places': changeset[7] or 0,
+                'modified_places': changeset[8] or 0
             }
         else:
             return None
@@ -85,18 +84,29 @@ class UnderpassStats:
         dataFromFile = json.load(f)
         data = []
         for row in dataFromFile:
-            data.append({
-                'changeset': row['changeset_id'],
-                'added_buildings': self.getValue(row, 'added','building'),
-                'modified_buildings': self.getValue(row, 'modified','building'),
-                'added_amenity': self.getValue(row, 'added','amenity'),
-                'added_highway': self.getValue(row, 'added','highway'),
-                'modified_highway': self.getValue(row, 'modified','highway'),
-                'added_highway_km': self.getValue(row, 'added','highway_km'),
-                # 'modified_highway_meters': self.getValue(row, 'modified','highway_km'),
-                'added_places': self.getValue(row, 'added','places'),
-                'modified_places': self.getValue(row, 'modified','places'),
-            })
+            existingItemIndex = next((i for i, item in enumerate(data) if item["changeset"] == row['changeset_id']), None)
+            if existingItemIndex == None:
+                data.append({
+                    'changeset': row['changeset_id'],
+                    'added_buildings': self.getValue(row, 'added','building'),
+                    'modified_buildings': self.getValue(row, 'modified','building'),
+                    'added_amenity': self.getValue(row, 'added','amenity'),
+                    'added_highway': self.getValue(row, 'added','highway'),
+                    'modified_highway': self.getValue(row, 'modified','highway'),
+                    'added_highway_km': self.getValue(row, 'added','highway_km'),
+                    'added_places': self.getValue(row, 'added','places'),
+                    'modified_places': self.getValue(row, 'modified','places'),
+                })
+            else:
+                data[existingItemIndex]['added_buildings'] += self.getValue(row, 'added','building')
+                data[existingItemIndex]['modified_buildings'] += self.getValue(row, 'modified','building')
+                data[existingItemIndex]['added_amenity'] += self.getValue(row, 'added','amenity')
+                data[existingItemIndex]['added_highway'] += self.getValue(row, 'added','highway')
+                data[existingItemIndex]['modified_highway'] += self.getValue(row, 'modified','highway')
+                data[existingItemIndex]['added_highway_km'] += self.getValue(row, 'added','highway_km')
+                data[existingItemIndex]['added_places'] += self.getValue(row, 'added','places')
+                data[existingItemIndex]['modified_places'] += self.getValue(row, 'modified','places')
+        
         return data
 
     def getValue(self, row, column, label):
