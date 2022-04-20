@@ -61,16 +61,16 @@ class InsightsConnection:
         changeset = self.dbcursor.fetchone()
         if changeset:
             return {
-                'changeset': changeset[0],
-                'added_buildings': changeset[1],
-                'modified_buildings': changeset[2],
-                'added_amenity': changeset[3],
-                'added_highway': changeset[4],
-                'modified_highway': changeset[5],
-                'added_highway_km': round(changeset[6]),
+                'changeset': changeset[0] or 0,
+                'added_buildings': changeset[1] or 0,
+                'modified_buildings': changeset[2] or 0,
+                'added_amenity': changeset[3] or 0,
+                'added_highway': changeset[4] or 0,
+                'modified_highway': changeset[5] or 0,
+                'added_highway_km': round(changeset[6]) or 0,
                 # 'modified_highway_meters': changeset[7],
-                'added_places': changeset[8],
-                'modified_places': changeset[9]
+                'added_places': changeset[8] or 0,
+                'modified_places': changeset[9] or 0
             }
         else:
             return None
@@ -113,10 +113,15 @@ bar = PixelSpinner('Connecting ... ')
 insightsDB = InsightsConnection()
 bar = PixelSpinner('Getting data ... ')
 
+bad_stats = []
 for stat in stats:
     insights = insightsDB.getChangesetsStats(stat['changeset'])
     if insights is not None:
         if insights != stat:
-            print("** STAT ** \n", stat, "\n ** INSIGHTS ** \n", insights, "\n\n")
-
+            bad_stat = {'changeset': stat['changeset']}
+            for value in insights:
+                if insights[value] != stat[value]:
+                    bad_stat['stats_' + str(value)] = stat[value]
+                    bad_stat['insights__' + str(value)] = insights[value]
+            print(bad_stat)
 
