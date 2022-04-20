@@ -28,7 +28,7 @@ check_PROGRAMS = \
 	osm2pgsql-test \
 	yaml-test \
 	stats-test \
-	rep-test \
+	planetreplicator-test \
 	geo-test
 
 TOPSRC := $(shell cd $(top_srcdir) && pwd)
@@ -102,10 +102,10 @@ stats_test_SOURCES = stats-test.cc
 stats_test_LDFLAGS = -L../..
 stats_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
-# Test the Replicator class
-rep_test_SOURCES = rep-test.cc
-rep_test_LDFLAGS = -L../..
-rep_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+# Test the PlanetReplicator class
+planetreplicator_test_SOURCES = planetreplicator-test.cc
+planetreplicator_test_LDFLAGS = -L../..
+planetreplicator_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 # Test the Changeset class
 change_test_SOURCES = change-test.cc
@@ -135,7 +135,7 @@ CLEANFILES = \
 	geo-test.log \
 	osm2pgsql-test.log \
 	stats-test.log \
-	rep-test.log \
+	planetreplicator-test.log \
 	replication-test.log
 
 RUNTESTFLAGS = -xml
