@@ -122,22 +122,6 @@ class TestPlanet : public Planet {
     std::string source_tree_root;
 };
 
-
-class TestPath : public Path {
-  public:
-    TestPath() = default;
-
-    bool run_test()
-    {
-        auto config = ReplicatorConfig();
-        config.frequency == replication::minutely;
-        config.start_time = boost::posix_time::second_clock::universal_time();
-        auto replicator = Replicator();
-        osmchange = replicator.findRemotePath(config, config.start_time);
-        std::cout << "Stop here." << std::endl;
-    }
-}
-
 int
 main(int argc, char *argv[])
 {

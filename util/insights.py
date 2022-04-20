@@ -21,12 +21,13 @@ import psycopg2
 from urllib.parse import urlparse
 from sys import argv
 from progress.spinner import PixelSpinner
+import json
 
 def usage():
     out = """
     Usage:
 
-    python insights.py <db_connection_string> <changeset_id>
+    python insights.py <db_connection_string> <stats_json_file>
     """
     print(out)
     quit()
@@ -35,7 +36,7 @@ if len(argv) <= 1:
     usage()
 
 database = argv[1]
-changesetId = argv[2]
+json_file = argv[2]
 
 class InsightsConnection:
     def __init__(self):
@@ -58,22 +59,65 @@ class InsightsConnection:
                 % changesetId
         self.dbcursor.execute(query)
         changeset = self.dbcursor.fetchone()
-        return {
-            'changeset': changeset[0],
-            'added_buildings': changeset[1],
-            'modified_buildings': changeset[2],
-            'added_amenity': changeset[3],
-            'added_highway': changeset[4],
-            'modified_highway': changeset[5],
-            'added_highway_meters': changeset[6],
-            'modified_highway_meters': changeset[7],
-            'added_places': changeset[8],
-            'modified_places': changeset[9]
-        }
+        if changeset:
+            return {
+                'changeset': changeset[0],
+                'added_buildings': changeset[1],
+                'modified_buildings': changeset[2],
+                'added_amenity': changeset[3],
+                'added_highway': changeset[4],
+                'modified_highway': changeset[5],
+                'added_highway_km': round(changeset[6]),
+                # 'modified_highway_meters': changeset[7],
+                'added_places': changeset[8],
+                'modified_places': changeset[9]
+            }
+        else:
+            return None
+
+
+class UnderpassStats:
+    def __init__(self):
+        pass
+
+    def readJSON(self, json_file):
+        f = open(json_file)
+        dataFromFile = json.load(f)
+        data = []
+        for row in dataFromFile:
+            data.append({
+                'changeset': row['changeset_id'],
+                'added_buildings': self.getValue(row, 'added','building'),
+                'modified_buildings': self.getValue(row, 'modified','building'),
+                'added_amenity': self.getValue(row, 'added','amenity'),
+                'added_highway': self.getValue(row, 'added','highway'),
+                'modified_highway': self.getValue(row, 'modified','highway'),
+                'added_highway_km': self.getValue(row, 'added','highway_km'),
+                # 'modified_highway_meters': self.getValue(row, 'modified','highway_km'),
+                'added_places': self.getValue(row, 'added','places'),
+                'modified_places': self.getValue(row, 'modified','places'),
+            })
+        return data
+
+    def getValue(self, row, column, label):
+        for value in row[column]:
+            if label in value:
+                return value[label]
+        return 0
+
+bar = PixelSpinner('Reading Underpass stats ... ')
+underpassStats = UnderpassStats()
+stats = underpassStats.readJSON(json_file)
 
 bar = PixelSpinner('Connecting ... ')
 insightsDB = InsightsConnection()
 bar = PixelSpinner('Getting data ... ')
-stats = insightsDB.getChangesetsStats(changesetId)
+
+for stat in stats:
+    insights = insightsDB.getChangesetsStats(stat['changeset'])
+    if insights is not None:
+        if insights != stat:
+            print("** STAT ** \n", stat, "\n ** INSIGHTS ** \n", insights, "\n\n")
+
 print(stats)
 
