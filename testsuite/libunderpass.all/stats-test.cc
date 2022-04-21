@@ -21,6 +21,7 @@
 #include "galaxy/osmchange.hh"
 #include <boost/geometry.hpp>
 #include <boost/program_options.hpp>
+#include "data/geoutil.hh"
 #include <iostream>
 #include "log.hh"
 #include "replicatorconfig.hh"
@@ -44,9 +45,7 @@ class TestPlanet : public replication::Planet {
 void
 collectStats(opts::variables_map vm) {
 
-    ReplicatorConfig config;
-    config.frequency == replication::minutely;
-    
+    ReplicatorConfig config;    
     if (vm.count("timestamp")) {
         auto timestamp = vm["timestamp"].as<std::string>();
         config.start_time = from_iso_extended_string(timestamp);
@@ -54,9 +53,19 @@ collectStats(opts::variables_map vm) {
         config.start_time = from_iso_extended_string("2022-01-01T00:00:00");
     }
     config.planet_server = config.planet_servers[0].domain + "/replication";
+    std::string boundary = "priority.geojson";
+    if (vm.count("boundary")) {
+        boundary = vm["boundary"].as<std::string>();
+    }
+    geoutil::GeoUtil geou;
     multipolygon_t poly;
-    boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", poly);
-
+    if (!geou.readFile(boundary)) {
+        log_debug(_("Could not find '%1%' area file!"), boundary);
+        boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", poly);
+    } else {
+        poly = geou.boundary;
+    }
+ 
     int increment;
     if (vm.count("increment")) {
         const auto str_increment = vm["increment"].as<std::string>();
@@ -80,7 +89,7 @@ collectStats(opts::variables_map vm) {
             std::istream& input(xml);
             change.readXML(input);
         }
-
+        change.areaFilter(poly);
         auto stats = change.collectStats(poly);
 
         for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
@@ -188,7 +197,8 @@ main(int argc, char *argv[]) {
     desc.add_options()
         ("mode,m", opts::value<std::string>(), "Mode (collect-stats)")
         ("timestamp,t", opts::value<std::string>(), "Starting timestamp (default: 2022-01-01T00:00:00)")
-        ("increment,i", opts::value<std::string>(), "Number of increments to do (default: 1)");
+        ("increment,i", opts::value<std::string>(), "Number of increments to do (default: 1)")
+        ("boundary,b", opts::value<std::string>(), "Boundary polygon file name");
 
     opts::store(opts::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
     opts::notify(vm);

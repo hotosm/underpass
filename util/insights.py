@@ -123,15 +123,24 @@ bar = PixelSpinner('Connecting ... ')
 insightsDB = InsightsConnection()
 bar = PixelSpinner('Getting data ... ')
 
-bad_stats = []
+insightsCount = 0
+badStatsCount = 0
+notFound = []
 for stat in stats:
     insights = insightsDB.getChangesetsStats(stat['changeset'])
     if insights is not None:
+        insightsCount += 1
         if insights != stat:
+            badStatsCount += 1
             bad_stat = {'changeset': stat['changeset']}
             for value in insights:
                 if insights[value] != stat[value]:
                     bad_stat['stats_' + str(value)] = stat[value]
                     bad_stat['insights__' + str(value)] = insights[value]
             print(bad_stat)
+    else:
+        notFound.append(stat['changeset'])
 
+print("\n---------")
+print(len(notFound), "changesets not found in Insights DB")
+print(badStatsCount, "/", insightsCount, "are not equal (", badStatsCount * 100 / insightsCount, "%)")
