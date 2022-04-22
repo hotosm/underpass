@@ -643,9 +643,9 @@ RemoteURL::updatePath(int _major, int _minor, int _index)
     // minor = _minor;
     // index = _index;
 
-    majorfmt % (_major);
-    minorfmt % (_minor);
-    indexfmt % (_index);
+    majorfmt % (abs(_major));
+    minorfmt % (abs(_minor));
+    indexfmt % (abs(_index));
     std::size_t pos = filespec.rfind(".", filespec.size()-5);
     std::string suffix = filespec.substr(pos, filespec.size() - pos);
 

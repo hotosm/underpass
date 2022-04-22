@@ -122,9 +122,9 @@ PlanetReplicator::PlanetReplicator(void) {
     StateFile state4("/004/000/000", 4000000, time4, replication::minutely);
     default_minutes.push_back(state4);
 
-    // ptime time5 = time_from_string("2022-04-03 16:25:35");
-    // StateFile state5("/005/000/000", 5000000, time5, replication::minutely);
-    // default_minutes.push_back(state5);
+    ptime time5 = time_from_string("2022-04-03 16:25:35");
+    StateFile state5("/005/000/000", 5000000, time5, replication::minutely);
+    default_minutes.push_back(state5);
 
     // Changesets
     ptime time11 = time_from_string("2012-10-28 19:36:01");
