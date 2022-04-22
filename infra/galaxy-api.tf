@@ -269,6 +269,7 @@ resource "aws_appautoscaling_policy" "galaxy-api-alb-requests" {
 
     predefined_metric_specification {
       predefined_metric_type = "ALBRequestCountPerTarget"
+      resource_label         = "app/${aws_lb.galaxy-api.name}/${aws_lb.galaxy-api.id}/targetgroup/${aws_lb_target_group.galaxy-api.name}/${aws_lb_target_group.galaxy-api.id}"
     }
 
     target_value = "100"
