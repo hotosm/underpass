@@ -242,13 +242,15 @@ resource "aws_security_group" "api" {
     ipv6_cidr_blocks = ["::/0"]
   }
 
+  /** API containers and the load-balancer use the same security group
+   and tcp/8000 need only be allowed from self.
+  **/
   ingress {
-    description      = "Allow access to API App"
-    from_port        = 8000
-    to_port          = 8000
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+    description = "Allow access to API App"
+    from_port   = 8000
+    to_port     = 8000
+    protocol    = "tcp"
+    self        = true
   }
 
   egress {
