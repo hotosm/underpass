@@ -149,7 +149,7 @@ class Underpass:
         query = f"""select min("timestamp") as minimum , max("timestamp") as maximum from  {table};"""
         record = self.database.executequery(query)
         logging.debug(
-            f"""Maximum osm_poly  timestamp fetched is {record[0][1]} and minimum is  {record[0][0]}""")
+            f"""Maximum {table}  timestamp fetched is {record[0][1]} and minimum is  {record[0][0]}""")
         return record[0][1], record[0][0]
 
     def update_field(self, start, end,target_table,target_column,source_table, source_column):
@@ -186,7 +186,7 @@ class Underpass:
             raise TypeError('Batch Frequency Invalid')
         # Considering date is in yyyy-mm-dd H:M:S format
         logging.debug(
-            f"""----------Update Field Function has been started for {start_batch_date} to {end_batch_date} with batch frequency {batch_frequency.value}----------""")
+            f"""----------Update Field Function has been started for {target_table}:{target_column} From {start_batch_date} to {end_batch_date} with frequency {batch_frequency.value} with source as {source_table}:{source_column}----------""")
         looping_date = start_batch_date
         loop_count = 1
         while looping_date >= end_batch_date:
