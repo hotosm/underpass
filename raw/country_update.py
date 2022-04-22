@@ -16,7 +16,7 @@
 #     along with Underpass.  If not, see <https:#www.gnu.org/licenses/>.
 
 
-"""[Responsible for Country Update of Rawdata Table's , It will be one time update for all elements ]
+"""[Responsible for Field Update of Rawdata Table's , It will be one time update for all elements ]
 Raises:
     err: [Database Connection Error]
     err: [Null Query Error]
@@ -140,7 +140,7 @@ class Underpass:
     """This class connects to Underpass database and responsible for Values derived from database"""
 
     def __init__(self, parameters=None):
-        self.database = Database(dict(config.items("local")))
+        self.database = Database(dict(config.items("RAW")))
         self.con, self.cur = self.database.connect()
         self.params = parameters
 
@@ -153,58 +153,57 @@ class Underpass:
             f"""Maximum osm_poly  timestamp fetched is {record[0][1]} and minimum is  {record[0][0]}""")
         return record[0][1], record[0][0]
 
-    def update_country(self, start, end,table):
-        """Function that updates Country column of table"""
+    def update_field(self, start, end,target_table,target_column,source_table, source_column):
+        """Function that updates grid column of table"""
         query = f"""update
-	{table} as w
+	{target_table} as w
     set
-        country = (
+        {target_column} = (
         select
-            b.id
+            b.{source_column}
         from
-            boundaries b
+            {source_table} b
         where
             ST_Intersects( w.geom ,
-            ST_SetSRID(b.boundary,
-            4326))
+            b.geom)
         limit 1	)::int
-    where country is null
+    where {target_column} is null
     and "timestamp" >= '{start}'
     and "timestamp" < '{end}'"""
         result = self.database.executequery(query)
         logging.debug(f"""Changed Row : {result}""")
 
-    def batch_update(self, start_batch_date, end_batch_date, batch_frequency,table_name):
-        """Updates Country with  given start timestamp (python datetime format) , end timestamp along with batch frequency , Here Batch frequency means frequency that you want to run a batch with, Currently Supported : DAILY,WEEKLY,MONTHLY,QUARTERLY,YEARLY Only Supports with default Python Enum Type input (eg: BatchFrequency.DAILY). This function is made with the purpose for future usage as well if we want to update specific element between timestamp"""
+    def batch_update(self, start_batch_date, end_batch_date, batch_frequency,target_table,target_column,source_table,source_column):
+        """Updates Field with  given start timestamp (python datetime format) , end timestamp along with batch frequency , Here Batch frequency means frequency that you want to run a batch with, Currently Supported : DAILY,WEEKLY,MONTHLY,QUARTERLY,YEARLY Only Supports with default Python Enum Type input (eg: BatchFrequency.DAILY). This function is made with the purpose for future usage as well if we want to update specific element between timestamp"""
         # BatchFrequency.DAILY
         
         if start_batch_date is None : 
-            start_batch_date,end=self.getMax_timestamp(table_name)
+            start_batch_date,end=self.getMax_timestamp(target_table)
         if end_batch_date is None : 
-            start,end_batch_date=self.getMax_timestamp(table_name)
+            start,end_batch_date=self.getMax_timestamp(target_table)
         batch_start_time = time.time()
         # Type checking
         if not isinstance(batch_frequency, BatchFrequency):
             raise TypeError('Batch Frequency Invalid')
         # Considering date is in yyyy-mm-dd H:M:S format
         logging.debug(
-            f"""----------Update Country Function has been started for {start_batch_date} to {end_batch_date} with batch frequency {batch_frequency.value}----------""")
+            f"""----------Update Field Function has been started for {start_batch_date} to {end_batch_date} with batch frequency {batch_frequency.value}----------""")
         looping_date = start_batch_date
         loop_count = 1
         while looping_date >= end_batch_date:
             start_time = time.time()
             start_date = looping_date
             end_date = assign_end_wrt_frequency(start_date, batch_frequency)
-            self.update_country(end_date,start_date,table_name)
+            self.update_field(end_date,start_date,target_table,target_column,source_table,source_column)
             logging.debug(
-                f"""Batch {loop_count} Country Update from {end_date} to {start_date} , Completed in {(time.time() - start_time)} Seconds""")
+                f"""Batch {loop_count} Field Update from {end_date} to {start_date} , Completed in {(time.time() - start_time)} Seconds""")
             loop_count += 1
             looping_date = end_date
 
         # closing connection
         self.database.close_conn()
         logging.debug(
-            f"""-----Updating Country Took-- {(time.time() - batch_start_time)} seconds for {start_batch_date} to {end_batch_date} with batch frequency {batch_frequency.value} -----""")
+            f"""-----Updating Field Took-- {(time.time() - batch_start_time)} seconds for {start_batch_date} to {end_batch_date} with batch frequency {batch_frequency.value} -----""")
 
 
 # The parser is only called if this script is called as a script/executable (via command line) but not when imported by another script
@@ -212,18 +211,21 @@ if __name__ == '__main__':
     #connection to the database
     connect = Underpass()
     """You can get min and max timestamp available in the table as well which will be default or you can pass it through arguments"""
-    argParser = argparse.ArgumentParser(description="Updates Country column of Table")
-    argParser.add_argument('-start', '--start', action='store',type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d'), dest='start',default=None, help='The start date of updating Country, Default is minimum timestamp of table')
-    argParser.add_argument('-end', '--end', action='store',type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d'), dest='end',default=None, help='The end date of updating Country , Default is maximum timestamp of table')
+    argParser = argparse.ArgumentParser(description="Updates Field column of Table")
+    argParser.add_argument('-start', '--start', action='store',type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d'), dest='start',default=None, help='The start date of updating Field, Default is minimum timestamp of table')
+    argParser.add_argument('-end', '--end', action='store',type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d'), dest='end',default=None, help='The end date of updating Field , Default is maximum timestamp of table')
     argParser.add_argument('-f', '--f', action='store', type=BatchFrequency, choices=list(BatchFrequency), dest='f',default='d', help='Frequency for Batch, Default is Monthly')
-    argParser.add_argument('-table', '--table', action='store',  dest='table',default='nodes', help='Table Name to update')
+    argParser.add_argument('-target_table', '--target_table', action='store',  dest='target_table',default='nodes', help='Target Table Name to update')
+    argParser.add_argument('-target_column', '--target_column', action='store',  dest='target_column',default='grid', help='Target tables column Name to update')
+    argParser.add_argument('-source_table', '--source_table', action='store',  dest='source_table',default='grid', help='Source table from where rows will be intersected')
+    argParser.add_argument('-source_column', '--source_column', action='store',  dest='source_column',default='poly_id', help='Source table column name from which will be used for intersection')
 
     args = argParser.parse_args()
     try:
-        # Note : You can not run function forward , if you want to update Country of 2020 you need to pass  2020-12-30 to 2020-01-01
+        # Note : You can not run function forward , if you want to update Field of 2020 you need to pass  2020-12-30 to 2020-01-01
         # """This function can be imported and reused in other scripts """
         connect.batch_update(args.start, args.end,
-                            args.f,args.table)
+                            args.f,target_table=args.target_table,target_column=args.target_column,source_table=args.source_table,source_column=args.source_column)
     except Exception as e:
         logging.error(e)
         sys.exit(1)
