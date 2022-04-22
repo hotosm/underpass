@@ -100,13 +100,13 @@ class Database:
                     # catch exception for invalid SQL statement
 
                     try:
-                        logging.debug('Query sent to Database')
+                        
                         self.cursor.execute(query)
                         self.conn.commit()
                         # print(query)
                         try:
                             result = self.cursor.fetchall()
-                            logging.debug('Result fetched from Database')
+                       
                             return result
                         except:
                             return self.cursor.statusmessage
@@ -213,7 +213,7 @@ if __name__ == '__main__':
     argParser = argparse.ArgumentParser(description="Updates Field column of Table")
     argParser.add_argument('-start', '--start', action='store',type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d'), dest='start',default=None, help='The start date of updating Field, Default is minimum timestamp of table')
     argParser.add_argument('-end', '--end', action='store',type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d'), dest='end',default=None, help='The end date of updating Field , Default is maximum timestamp of table')
-    argParser.add_argument('-f', '--f', action='store', type=BatchFrequency, choices=list(BatchFrequency), dest='f',default='d', help='Frequency for Batch, Default is Monthly')
+    argParser.add_argument('-f', '--f', action='store', type=BatchFrequency, choices=list(BatchFrequency), dest='f',default='d', help='Frequency for Batch, Default is Daily')
     argParser.add_argument('-target_table', '--target_table', action='store',  dest='target_table',default='ways_poly', help='Target Table Name to update, Default is ways_poly')
     argParser.add_argument('-target_column', '--target_column', action='store',  dest='target_column',default='grid', help='Target tables column Name to update, Default is grid')
     argParser.add_argument('-source_table', '--source_table', action='store',  dest='source_table',default='grid', help='Source table from where rows will be intersected, Default is grid')
