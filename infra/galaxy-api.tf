@@ -218,8 +218,8 @@ resource "aws_appautoscaling_target" "galaxy-api" {
   service_namespace  = "ecs"
 }
 
-resource "aws_appautoscaling_policy" "galaxy-api" {
-  name               = "galaxy-api-scalingpolicy"
+resource "aws_appautoscaling_policy" "galaxy-api-memory" {
+  name               = "scale-by-memory-load"
   policy_type        = "TargetTrackingScaling"
   resource_id        = aws_appautoscaling_target.galaxy-api.resource_id
   scalable_dimension = aws_appautoscaling_target.galaxy-api.scalable_dimension
@@ -234,6 +234,44 @@ resource "aws_appautoscaling_policy" "galaxy-api" {
     }
 
     target_value = "75"
+  }
+}
+
+resource "aws_appautoscaling_policy" "galaxy-api-cpu" {
+  name               = "scale-by-cpu-load"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.galaxy-api.resource_id
+  scalable_dimension = aws_appautoscaling_target.galaxy-api.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.galaxy-api.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 40
+
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+
+    target_value = "75"
+  }
+}
+
+resource "aws_appautoscaling_policy" "galaxy-api-alb-requests" {
+  name               = "scale-by-requests-to-alb"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.galaxy-api.resource_id
+  scalable_dimension = aws_appautoscaling_target.galaxy-api.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.galaxy-api.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    scale_in_cooldown  = 120
+    scale_out_cooldown = 120
+
+    predefined_metric_specification {
+      predefined_metric_type = "ALBRequestCountPerTarget"
+    }
+
+    target_value = "100"
   }
 }
 
