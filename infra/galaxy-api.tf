@@ -188,7 +188,7 @@ resource "aws_ecs_service" "galaxy-api" {
   cluster         = aws_ecs_cluster.galaxy.id
   launch_type     = "FARGATE"
   task_definition = aws_ecs_task_definition.galaxy-api.arn
-  desired_count   = 3
+  desired_count   = 1
 
   propagate_tags = "SERVICE"
 
@@ -208,6 +208,33 @@ resource "aws_ecs_service" "galaxy-api" {
     ignore_changes = [desired_count]
   }
 
+}
+
+resource "aws_appautoscaling_target" "galaxy-api" {
+  max_capacity       = 5
+  min_capacity       = 1
+  resource_id        = "service/${aws_ecs_cluster.galaxy.name}/${aws_ecs_service.galaxy-api.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+resource "aws_appautoscaling_policy" "galaxy-api" {
+  name               = "galaxy-api-scalingpolicy"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.galaxy-api.resource_id
+  scalable_dimension = aws_appautoscaling_target.galaxy-api.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.galaxy-api.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 60
+
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    }
+
+    target_value = "75"
+  }
 }
 
 resource "aws_lb" "osm-stats" {
@@ -239,7 +266,7 @@ resource "aws_lb_listener" "osm-stats-secure" {
   load_balancer_arn = aws_lb.osm-stats.arn
   port              = "443"
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-FS-1-2-Res-2019-08"
+  ssl_policy        = var.alb_tls_policy
   certificate_arn   = data.aws_acm_certificate.wildcard.arn
 
   default_action {
@@ -279,7 +306,7 @@ resource "aws_lb_listener" "galaxy-api-secure" {
   load_balancer_arn = aws_lb.galaxy-api.arn
   port              = "443"
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-FS-1-2-Res-2019-08"
+  ssl_policy        = var.alb_tls_policy
   certificate_arn   = data.aws_acm_certificate.wildcard.arn
 
   default_action {

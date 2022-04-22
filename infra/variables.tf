@@ -187,3 +187,8 @@ variable "container_image_uri" {
   type    = string
   default = "quay.io/hotosm/galaxy-api:container"
 }
+
+variable "alb_tls_policy" {
+  type    = string
+  default = "ELBSecurityPolicy-FS-1-2-Res-2020-10"
+}
