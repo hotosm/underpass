@@ -29,10 +29,10 @@ CREATE TABLE IF NOT EXISTS  nodes (
 	"timestamp" timestamp NULL,
 	tags jsonb NULL,
 	geom geometry(point, 4326) NULL,
-	country int4 NULL
+	grid int4 NULL
 );
--- Multi column index is used for the larger datasets which will have large gist index size (such as loading asia, america) to reduce amount of the index to look for spatial query , db with smaller datasets such as only with few country level data it makes no sense , by default with lua script it will create gist index ordered with geohash method 
-CREATE INDEX CONCURRENTLY  IF NOT EXISTS   nodes_country_geom_idx ON public.nodes USING gist (country, geom);
+-- Multi column index is used for the larger datasets which will have large gist index size (such as loading asia, america) to reduce amount of the index to look for spatial query , db with smaller datasets such as only with few grid level data it makes no sense , by default with lua script it will create gist index ordered with geohash method 
+CREATE INDEX CONCURRENTLY  IF NOT EXISTS   nodes_grid_geom_idx ON public.nodes USING gist (grid, geom);
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS   nodes_osm_id_idx ON public.nodes USING btree (osm_id);
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS   nodes_timestamp_idx ON public.nodes USING btree ("timestamp");
 
@@ -47,9 +47,9 @@ CREATE TABLE IF NOT EXISTS  ways_line (
 	"timestamp" timestamp NULL,
 	tags jsonb NULL,
 	geom geometry(linestring, 4326) NULL,
-	country int4 NULL
+	grid int4 NULL
 );
-CREATE INDEX CONCURRENTLY  IF NOT EXISTS  ways_line_country_geom_idx ON public.ways_line USING gist (country, geom);
+CREATE INDEX CONCURRENTLY  IF NOT EXISTS  ways_line_grid_geom_idx ON public.ways_line USING gist (grid, geom);
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS  ways_line_osm_id_idx ON public.ways_line USING btree (osm_id);
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS  ways_line_timestamp_idx ON public.ways_line USING btree ("timestamp");
 
@@ -63,9 +63,9 @@ CREATE TABLE IF NOT EXISTS  ways_poly (
 	"timestamp" timestamp NULL,
 	tags jsonb NULL,
 	geom geometry(polygon, 4326) NULL,
-	country int4 NULL
+	grid int4 NULL
 );
-CREATE INDEX CONCURRENTLY  IF NOT EXISTS  ways_poly_country_geom_idx ON public.ways_poly USING gist (country, geom);
+CREATE INDEX CONCURRENTLY  IF NOT EXISTS  ways_poly_grid_geom_idx ON public.ways_poly USING gist (grid, geom);
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS  ways_poly_osm_id_idx ON public.ways_poly USING btree (osm_id);
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS  ways_poly_timestamp_idx ON public.ways_poly USING btree ("timestamp");
 
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS  relations (
 	"timestamp" timestamp NULL,
 	tags jsonb NULL,
 	geom geometry(geometry, 4326) NULL,
-	country int4 NULL
+	grid int4 NULL
 );
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS  relations_geom_idx ON public.relations USING gist (geom);
 CREATE INDEX CONCURRENTLY  IF NOT EXISTS  relations_osm_id_idx ON public.relations USING btree (osm_id);
@@ -88,6 +88,6 @@ CREATE INDEX CONCURRENTLY  IF NOT EXISTS  relations_tags_idx ON public.relations
 
 -- Clustering command , it is recommended for larger datasets , It will be easy for indexes to find right files faster , will also reduce coutry geom index size since all related rows will be clustered as block 
 
-CLUSTER nodes USING nodes_country_geom_idx;
-CLUSTER ways_line USING ways_line_country_geom_idx;
-CLUSTER ways_poly USING ways_poly_country_geom_idx;
+CLUSTER nodes USING nodes_grid_geom_idx;
+CLUSTER ways_line USING ways_line_grid_geom_idx;
+CLUSTER ways_poly USING ways_poly_grid_geom_idx;
