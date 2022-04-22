@@ -75,7 +75,6 @@ class Database:
         """Database class constructor"""
 
         self.db_params = db_params
-        print('Database class object created...')
 
     def connect(self):
         """Database class instance method used to connect to database parameters with error printing"""
