@@ -228,14 +228,13 @@ resource "aws_appautoscaling_policy" "galaxy-api" {
   target_tracking_scaling_policy_configuration {
     scale_in_cooldown  = 60
     scale_out_cooldown = 60
+
     predefined_metric_specification {
       predefined_metric_type = "ECSServiceAverageMemoryUtilization"
     }
 
-    target_value = "50"
-
+    target_value = "75"
   }
-
 }
 
 resource "aws_lb" "osm-stats" {
