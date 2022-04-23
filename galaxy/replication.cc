@@ -639,9 +639,9 @@ RemoteURL::updatePath(int _major, int _minor, int _index)
     boost::format minorfmt("%03d");
     boost::format indexfmt("%03d");
 
-    // major = _major;
-    // minor = _minor;
-    // index = _index;
+    major = _major;
+    minor = _minor;
+    index = _index;
 
     majorfmt % (abs(_major));
     minorfmt % (abs(_minor));
