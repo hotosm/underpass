@@ -67,7 +67,7 @@ class InsightsConnection:
                 'added_amenity': changeset[3] or 0,
                 'added_highway': changeset[4] or 0,
                 'modified_highway': changeset[5] or 0,
-                'added_highway_km': round(changeset[6]) or 0,
+                'added_highway_km': round(changeset[6] or 0),
                 'added_places': changeset[7] or 0,
                 'modified_places': changeset[8] or 0
             }

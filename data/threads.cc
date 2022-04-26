@@ -143,20 +143,29 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     while (mainloop) {
 	boost::asio::thread_pool pool(cores);
 	i = 0;
-	while (i++ <= 4) {
-	    auto task = boost::bind(threadChangeSet,
-				    std::ref(remote),
-				    std::ref(planets.front()),
-				    std::ref(poly),
-				    std::ref(galaxies.front()));
-	    boost::asio::post(pool, std::ref(task));
+	// while (i++ <= 4) {
+	//     auto task = boost::bind(threadChangeSet,
+	// 			    std::ref(remote),
+	// 			    std::ref(planets.front()),
+	// 			    std::ref(poly),
+	// 			    std::ref(galaxies.front()));
+	//     boost::asio::post(pool, std::ref(task));
+
+        threadChangeSet(
+            std::ref(remote),
+            std::ref(planets.front()),
+            std::ref(poly),
+            std::ref(galaxies.front())
+        );
+
 	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
 	    std::rotate(planets.begin(), planets.begin()+1, planets.end());
 	    remote->Increment();
 	    remote->updateDomain(planets.front()->domain);
-	    auto delay = std::chrono::milliseconds{100}; // FIXME: this should probably be tuned
-	    std::this_thread::sleep_for(delay);
-	}
+	    // auto delay = std::chrono::milliseconds{100}; // FIXME: this should probably be tuned
+	    // std::this_thread::sleep_for(delay);
+	// }
+
 	ptime timestamp;
 	ptime now = boost::posix_time::microsec_clock::universal_time();
 	if (lastosm != not_a_date_time) {
@@ -246,27 +255,38 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     bool mainloop = true;
     auto removals = std::make_shared<std::vector<long>>();
     while (mainloop) {
-	boost::asio::thread_pool pool(cores);
+	// boost::asio::thread_pool pool(cores);
 	i = 0;
-	while (i++ <= cores*2) {
-	    auto task = boost::bind(threadOsmChange,
-				    std::ref(remote),
-				    std::ref(planets.front()),
-				    std::ref(poly),
-				    std::ref(galaxies.front()),
-				    std::ref(rawosm.front()),
-				    std::ref(validator),
-				    std::ref(removals));
+	// while (i++ <= cores*2) {
+	//     auto task = boost::bind(threadOsmChange,
+	// 			    std::ref(remote),
+	// 			    std::ref(planets.front()),
+	// 			    std::ref(poly),
+	// 			    std::ref(galaxies.front()),
+	// 			    std::ref(rawosm.front()),
+	// 			    std::ref(validator),
+	// 			    std::ref(removals));
+
+            threadOsmChange(
+            std::ref(remote),
+            std::ref(planets.front()),
+            std::ref(poly),
+            std::ref(galaxies.front()),
+            std::ref(rawosm.front()),
+            std::ref(validator),
+            std::ref(removals)
+        );
+
 	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
 	    std::rotate(planets.begin(), planets.begin()+1, planets.end());
 	    std::rotate(rawosm.begin(), rawosm.begin()+1, rawosm.end());
-	    boost::asio::post(pool, task);
+	//     boost::asio::post(pool, task);
 	    remote->Increment();
-	    auto delay = std::chrono::milliseconds{100}; // FIXME: this should probably be tuned
-	    std::this_thread::sleep_for(delay);
-	    // remote.dump();
-	}
-	pool.join();
+	//     auto delay = std::chrono::milliseconds{100}; // FIXME: this should probably be tuned
+	//     std::this_thread::sleep_for(delay);
+	//     // remote.dump();
+	// }
+	// pool.join();
 	ptime timestamp;
 	ptime now = boost::posix_time::microsec_clock::universal_time();
 	if (lastosc != not_a_date_time) {
