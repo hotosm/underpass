@@ -277,7 +277,7 @@ resource "aws_appautoscaling_policy" "galaxy-api-alb-requests" {
 
     predefined_metric_specification {
       predefined_metric_type = "ALBRequestCountPerTarget"
-      resource_label         = join("/", [trimprefix(data.aws_arn.api-alb.service, "loadbalancer/"), data.aws_arn.api-targetgroup.resource])
+      resource_label         = join("/", [trimprefix(data.aws_arn.api-alb.resource, "loadbalancer/"), data.aws_arn.api-targetgroup.resource])
     }
 
     target_value = "100"
