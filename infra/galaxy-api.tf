@@ -264,7 +264,6 @@ data "aws_arn" "api-targetgroup" {
   arn = aws_lb_target_group.galaxy-api.id
 }
 
-/**
 resource "aws_appautoscaling_policy" "galaxy-api-alb-requests" {
   name               = "scale-by-requests-to-alb"
   policy_type        = "TargetTrackingScaling"
@@ -278,14 +277,12 @@ resource "aws_appautoscaling_policy" "galaxy-api-alb-requests" {
 
     predefined_metric_specification {
       predefined_metric_type = "ALBRequestCountPerTarget"
-      # arn:aws:elasticloadbalancing:us-east-1:670261699094:targetgroup/galaxy-api/1d723b6babea76f0
-      #      resource_label         = "split("loadbalancer/", aws_lb.galaxy-api.id)/element(split(":", aws_lb_target_group.galaxy-api.id), length(split(":", aws_lb_target_group.galaxy-api.id))-1) "
+      resource_label         = join("/", [trimprefix(data.aws_arn.api-alb.service, "loadbalancer/"), data.aws_arn.api-targetgroup.resource])
     }
 
     target_value = "100"
   }
 }
-**/
 
 resource "aws_lb" "osm-stats" {
   name               = "osm-stats"
