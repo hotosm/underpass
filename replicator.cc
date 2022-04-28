@@ -348,9 +348,9 @@ main(int argc, char *argv[])
         // OsmChanges thread
         std::thread oscthr(threads::startMonitorChanges, std::ref(osmchange),
                            std::ref(geou.boundary), std::ref(config));
-        config.frequency = replication::changeset;
 
         // Changesets thread
+        config.frequency = replication::changeset;
         auto changeset = replicator.findRemotePath(config, config.start_time);
         changeset->updatePath(osmchange->major, osmchange->minor, osmchange->index);
         std::thread osmthr(threads::startMonitorChangesets, std::ref(changeset),
