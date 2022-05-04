@@ -96,10 +96,10 @@ std::mutex remove_mutex;
 std::mutex time_mutex;
 static ptime lastosc;
 static ptime lastosm;
-static bool osm_not_found =  false;
-static std::string osm_subpath = "";
-static bool osc_not_found =  false;
-static std::string osc_subpath = "";
+static bool osm_not_found =  false; // flag for osmchanges
+static std::string osm_subpath = ""; // subpath for osmchanges
+static bool osc_not_found =  false; // flag for changesets
+static std::string osc_subpath = ""; // subpath changesets
 
 
 // Starting with this URL, download the file, incrementing
@@ -143,35 +143,39 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
 
     bool mainloop = true;
     while (mainloop) {
-	boost::asio::thread_pool pool(cores);
-	i = 0;
-	while (i++ <= cores*2) {
-	    auto task = boost::bind(threadChangeSet,
-				    std::make_shared<replication::RemoteURL>(remote->getURL()),
-				    std::ref(planets.front()),
-				    std::ref(poly),
-				    std::ref(galaxies.front()));
-	    boost::asio::post(pool, task);
-	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
-	    std::rotate(planets.begin(), planets.begin()+1, planets.end());
-	    remote->Increment();
-	    remote->updateDomain(planets.front()->domain);
-	}
-	if (osm_not_found) {
-        break;
-	}
-	pool.join();
+        i = 0;
+        boost::asio::thread_pool pool(cores*2);
+        while (i++ <= cores*2) {
+            auto task = boost::bind(threadChangeSet,
+                        std::make_shared<replication::RemoteURL>(remote->getURL()),
+                        std::ref(planets.front()),
+                        std::ref(poly),
+                        std::ref(galaxies.front()));
+            boost::asio::post(pool, task);
+            std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
+            std::rotate(planets.begin(), planets.begin()+1, planets.end());
+            remote->Increment();
+            remote->updateDomain(planets.front()->domain);
+        }
+        pool.join();
+        if (osc_not_found) {
+            break;
+        }
     }
 
-    int major = std::stoi(osm_subpath.substr(0, 3));
-    int minor = std::stoi(osm_subpath.substr(4, 3));
-    int index = std::stoi(osm_subpath.substr(8, 3));
+    int major = std::stoi(osc_subpath.substr(0, 3));
+    int minor = std::stoi(osc_subpath.substr(4, 3));
+    int index = std::stoi(osc_subpath.substr(8, 3));
     remote->updatePath(
         major,
         minor,
         index
     );
-    remote->Decrement();
+    i = 0;
+    while (i++ <= cores*2) {
+        remote->Decrement();
+    }
+
     std::cout << "Caught up with: " << remote->filespec << std::endl;
     std::this_thread::sleep_for(std::chrono::minutes{1});
     auto delay = std::chrono::seconds{45};
@@ -182,7 +186,7 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
                 std::ref(planets.front()),
                 std::ref(poly),
                 std::ref(galaxies.front()));
-        if (!osm_not_found) {
+        if (!osc_not_found) {
             remote->Increment();
         }
         std::this_thread::sleep_for(delay);
@@ -249,45 +253,49 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     bool mainloop = true;
     auto removals = std::make_shared<std::vector<long>>();
     while (mainloop) {
-	boost::asio::thread_pool pool(cores);
-	i = 0;
-	while (i++ <= cores*2) {
-	    auto task = boost::bind(threadOsmChange,
-				    std::make_shared<replication::RemoteURL>(remote->getURL()),
-				    std::ref(planets.front()),
-				    std::ref(poly),
-				    std::ref(galaxies.front()),
-				    std::ref(rawosm.front()),
-				    std::ref(validator),
-				    std::ref(removals));
-	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
-	    std::rotate(planets.begin(), planets.begin()+1, planets.end());
-	    std::rotate(rawosm.begin(), rawosm.begin()+1, rawosm.end());
-	    boost::asio::post(pool, task);
-	    remote->Increment();
-	}
-	std::cout << "Removals: " << removals->size() << std::endl;
-	for (auto it = std::begin(*removals); it != std::end(*removals); ++it) {
-	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
-	    long osm_id = *it;
-	    galaxies.front()->updateValidation(osm_id);
-	}
-	removals->clear();
-
-	if (osc_not_found) {
-        break;
-	} 
-	pool.join();
+        i = 0;
+        boost::asio::thread_pool pool(cores*2);
+        while (i++ <= cores*2) {
+            auto task = boost::bind(threadOsmChange,
+                        std::make_shared<replication::RemoteURL>(remote->getURL()),
+                        std::ref(planets.front()),
+                        std::ref(poly),
+                        std::ref(galaxies.front()),
+                        std::ref(rawosm.front()),
+                        std::ref(validator),
+                        std::ref(removals));
+            std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
+            std::rotate(planets.begin(), planets.begin()+1, planets.end());
+            std::rotate(rawosm.begin(), rawosm.begin()+1, rawosm.end());
+            boost::asio::post(pool, task);
+            remote->Increment();
+        }
+        pool.join();
+        std::cout << "Removals: " << removals->size() << std::endl;
+        for (auto it = std::begin(*removals); it != std::end(*removals); ++it) {
+            std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
+            long osm_id = *it;
+            galaxies.front()->updateValidation(osm_id);
+        }
+        removals->clear();
+        if (osm_not_found) {
+            break;
+        } 
     }
-    int major = std::stoi(osc_subpath.substr(0, 3));
-    int minor = std::stoi(osc_subpath.substr(4, 3));
-    int index = std::stoi(osc_subpath.substr(8, 3));
+
+    int major = std::stoi(osm_subpath.substr(0, 3));
+    int minor = std::stoi(osm_subpath.substr(4, 3));
+    int index = std::stoi(osm_subpath.substr(8, 3));
     remote->updatePath(
         major,
         minor,
         index
     );
-    remote->Decrement();
+    i = 0;
+    while (i++ <= cores*2) {
+        remote->Decrement();
+    }
+
     std::cout << "Caught up with: " << remote->filespec << std::endl;
     std::this_thread::sleep_for(std::chrono::minutes{1});
     auto delay = std::chrono::seconds{45};
@@ -300,7 +308,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
                 std::ref(rawosm.front()),
                 std::ref(validator),
                 std::ref(removals));
-        if (!osc_not_found) {
+        if (!osm_not_found) {
             remote->Increment();
         }
         std::this_thread::sleep_for(delay);
@@ -324,10 +332,10 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
 #endif
     // log_debug(_("Processing osmChange: %1%"), remote.filespec);
     auto data = planet->downloadFile(*remote.get());
-    if (data->size() == 0 && !osc_not_found) {
+    if (data->size() == 0 && !osm_not_found) {
         log_error(_("osmChange file not found: %1% %2%"), remote->filespec, ".osc.gz");
-        osc_not_found = true;
-        osc_subpath = remote->subpath;
+        osm_not_found = true;
+        osm_subpath = remote->subpath;
         return osmchanges;
     } else {        
         try {
@@ -344,7 +352,7 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
 
             try {
                 osmchanges->readXML(changes_xml);
-                osc_not_found = false;
+                osm_not_found = false;
             } catch (std::exception &e) {
                 log_error(_("Couldn't parse: %1%"), remote->filespec);
                 std::cerr << e.what() << std::endl;
@@ -352,6 +360,10 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
 
         } catch (std::exception &e) {
             log_error(_("%1% is corrupted!"), remote->filespec);
+            if (!osm_not_found) {
+                osm_not_found = true;
+                osm_subpath = remote->subpath;
+            }
             std::cerr << e.what() << std::endl;
         }
     }
@@ -445,16 +457,16 @@ threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
 	log_debug(_("Download error for %1%: %2%"), remote->filespec, ex.what());
     }
 
-    if (data->size() == 0 && !osm_not_found) {
+    if (data->size() == 0 && !osc_not_found) {
         log_error(_("ChangeSet file not found: %1%"), remote->filespec);
         changeset->download_error = true;
-        osm_not_found = true;
-        osm_subpath = remote->subpath;
+        osc_not_found = true;
+        osc_subpath = remote->subpath;
     } else {
-	auto xml = planet->processData(remote->filespec, *data);
-	std::istream& input(xml);
-	changeset->readXML(input);
-    osm_not_found = false;
+        auto xml = planet->processData(remote->filespec, *data);
+        std::istream& input(xml);
+        changeset->readXML(input);
+        osc_not_found = false;
     }
 
    changeset->areaFilter(poly);
