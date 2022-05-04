@@ -122,9 +122,9 @@ PlanetReplicator::PlanetReplicator(void) {
     StateFile state4("/004/000/000", 4000000, time4, replication::minutely);
     default_minutes.push_back(state4);
 
-    // ptime time5 = time_from_string("2022-04-03 16:25:35");
-    // StateFile state5("/005/000/000", 5000000, time5, replication::minutely);
-    // default_minutes.push_back(state5);
+    ptime time5 = time_from_string("2022-04-03 16:25:35");
+    StateFile state5("/005/000/000", 5000000, time5, replication::minutely);
+    default_minutes.push_back(state5);
 
     // Changesets
     ptime time11 = time_from_string("2012-10-28 19:36:01");
@@ -146,10 +146,6 @@ PlanetReplicator::PlanetReplicator(void) {
     ptime time7 = time_from_string("2020-06-28 23:26:01");
     StateFile state7("/004/000/000", 3000000, time7, replication::changeset);
     default_changesets.push_back(state7);
-
-    ptime time6 = time_from_string("2022-04-03 16:25:35");
-    StateFile state6("/005/000/000", 3000000, time6, replication::changeset);
-    default_changesets.push_back(state6);
 };
 
 /// Initialize the raw_user, raw_hashtags, and raw_changeset tables
@@ -298,7 +294,9 @@ std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const replicatorconf
             change.readXML(input);
         }
         // change.dump();
-        timestamp = change.changes.back()->created_at;
+        if (change.changes.size() > 0) {
+            timestamp = change.changes.back()->created_at;
+        }
     }
 
     // remote->dump();
