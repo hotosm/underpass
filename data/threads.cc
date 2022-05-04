@@ -173,8 +173,8 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     );
     remote->Decrement();
     std::cout << "Caught up with: " << remote->filespec << std::endl;
-    auto delay = std::chrono::minutes{1};
-    std::this_thread::sleep_for(delay);
+    std::this_thread::sleep_for(std::chrono::minutes{1});
+    auto delay = std::chrono::seconds{30};
     osm_not_found = false;
     while (mainloop) {
         std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
@@ -291,9 +291,8 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     );
     remote->Decrement();
     std::cout << "Caught up with: " << remote->filespec << std::endl;
-    auto delay = std::chrono::minutes{1};
-    std::this_thread::sleep_for(delay);
-    osc_not_found = false;
+    std::this_thread::sleep_for(std::chrono::minutes{1});
+    auto delay = std::chrono::seconds{30};
     while (mainloop) {
         std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
         std::rotate(planets.begin(), planets.begin()+1, planets.end());
@@ -332,7 +331,7 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
         osc_not_found = true;
         osc_subpath = remote->subpath;
         return osmchanges;
-    } else {
+    } else {        
         try {
             std::istringstream changes_xml;
             // Scope to deallocate buffers
@@ -347,7 +346,7 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
 
             try {
                 osmchanges->readXML(changes_xml);
-
+                osc_not_found = false;
             } catch (std::exception &e) {
                 log_error(_("Couldn't parse: %1%"), remote->filespec);
                 std::cerr << e.what() << std::endl;
@@ -457,6 +456,7 @@ threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
 	auto xml = planet->processData(remote->filespec, *data);
 	std::istream& input(xml);
 	changeset->readXML(input);
+    osm_not_found = false;
     }
 
    changeset->areaFilter(poly);
