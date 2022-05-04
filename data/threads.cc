@@ -96,8 +96,10 @@ std::mutex remove_mutex;
 std::mutex time_mutex;
 static ptime lastosc;
 static ptime lastosm;
-static bool osmdone =  false;
-static bool oscdone =  false;
+static bool osm_not_found =  false;
+static std::string osm_subpath = "";
+static bool osc_not_found =  false;
+static std::string osc_subpath = "";
 
 
 // Starting with this URL, download the file, incrementing
@@ -155,30 +157,37 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
 	    remote->Increment();
 	    remote->updateDomain(planets.front()->domain);
 	}
-	ptime timestamp;
-	ptime now = boost::posix_time::microsec_clock::universal_time();
-	if (lastosm != not_a_date_time) {
-	    // std::cout << "TIMESTAMP1: " << to_simple_string(lastosm) << std::endl;
-	    boost::posix_time::time_duration diff = now - lastosm;
-	    // std::cout << "DELTA: " << (diff.hours()*60) + diff.minutes() << std::endl;
-	    if ((diff.hours()*60) + diff.minutes() <= 50 || threads::osmdone) {
-		//break;
-	    }
+	if (osm_not_found) {
+        break;
 	}
 	pool.join();
     }
-    // std::cout << "Caught up with: " << remote.filespec << std::endl;
+
+    int major = std::stoi(osm_subpath.substr(0, 3));
+    int minor = std::stoi(osm_subpath.substr(4, 3));
+    int index = std::stoi(osm_subpath.substr(8, 3));
+    remote->updatePath(
+        major,
+        minor,
+        index
+    );
+    remote->Decrement();
+    std::cout << "Caught up with: " << remote->filespec << std::endl;
     auto delay = std::chrono::minutes{1};
+    std::this_thread::sleep_for(delay);
+    osm_not_found = false;
     while (mainloop) {
-	std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
-	std::rotate(planets.begin(), planets.begin()+1, planets.end());
-	// std::cout << "Caught up with: " << remote.filespec << std::endl;
-	threadChangeSet(std::ref(remote),
-			std::ref(planets.front()),
-			std::ref(poly),
-			std::ref(galaxies.front()));
-	remote->Increment();
-	std::this_thread::sleep_for(delay);
+        std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
+        std::rotate(planets.begin(), planets.begin()+1, planets.end());
+        // std::cout << "Caught up with: " << remote.filespec << std::endl;
+        threadChangeSet(std::ref(remote),
+                std::ref(planets.front()),
+                std::ref(poly),
+                std::ref(galaxies.front()));
+        if (!osm_not_found) {
+            remote->Increment();
+        }
+        std::this_thread::sleep_for(delay);
     }
 }
 
@@ -259,17 +268,6 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
 	    boost::asio::post(pool, task);
 	    remote->Increment();
 	}
-	pool.join();
-	ptime timestamp;
-	ptime now = boost::posix_time::microsec_clock::universal_time();
-	if (lastosc != not_a_date_time) {
-	    boost::posix_time::time_duration delta = now - lastosc;
-	    auto delay = std::chrono::minutes{1};
-	    // std::cout << "TIMESTAMP2: " << to_simple_string(lastosc) << std::endl;
-	    if ((delta.hours()*60) + delta.minutes() <= 50 || threads::oscdone) {
-		break;
-	    }
-	}
 	std::cout << "Removals: " << removals->size() << std::endl;
 	for (auto it = std::begin(*removals); it != std::end(*removals); ++it) {
 	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
@@ -277,21 +275,38 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
 	    galaxies.front()->updateValidation(osm_id);
 	}
 	removals->clear();
+
+	if (osc_not_found) {
+        break;
+	} 
+	pool.join();
     }
-    // std::cout << "Caught up with: " << remote.filespec << std::endl;
+    int major = std::stoi(osc_subpath.substr(0, 3));
+    int minor = std::stoi(osc_subpath.substr(4, 3));
+    int index = std::stoi(osc_subpath.substr(8, 3));
+    remote->updatePath(
+        major,
+        minor,
+        index
+    );
+    remote->Decrement();
+    std::cout << "Caught up with: " << remote->filespec << std::endl;
     auto delay = std::chrono::minutes{1};
+    std::this_thread::sleep_for(delay);
+    osc_not_found = false;
     while (mainloop) {
-	std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
-	std::rotate(planets.begin(), planets.begin()+1, planets.end());
-	std::rotate(rawosm.begin(), rawosm.begin()+1, rawosm.end());
-	// std::cout << "Caught up with: " << remote.filespec << std::endl;
-	threadOsmChange(std::ref(remote), std::ref(planets.front()),
-			std::ref(poly), std::ref(galaxies.front()),
-			std::ref(rawosm.front()),
-			std::ref(validator),
-			std::ref(removals));
-	remote->Increment();
-	std::this_thread::sleep_for(delay);
+        std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
+        std::rotate(planets.begin(), planets.begin()+1, planets.end());
+        std::rotate(rawosm.begin(), rawosm.begin()+1, rawosm.end());
+        threadOsmChange(std::ref(remote), std::ref(planets.front()),
+                std::ref(poly), std::ref(galaxies.front()),
+                std::ref(rawosm.front()),
+                std::ref(validator),
+                std::ref(removals));
+        if (!osc_not_found) {
+            remote->Increment();
+        }
+        std::this_thread::sleep_for(delay);
     }
 }
 
@@ -312,9 +327,10 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
 #endif
     // log_debug(_("Processing osmChange: %1%"), remote.filespec);
     auto data = planet->downloadFile(*remote.get());
-    if (data->size() == 0) {
+    if (data->size() == 0 && !osc_not_found) {
         log_error(_("osmChange file not found: %1% %2%"), remote->filespec, ".osc.gz");
-	oscdone = true;
+        osc_not_found = true;
+        osc_subpath = remote->subpath;
         return osmchanges;
     } else {
         try {
@@ -432,10 +448,11 @@ threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
 	log_debug(_("Download error for %1%: %2%"), remote->filespec, ex.what());
     }
 
-    if (data->size() == 0) {
+    if (data->size() == 0 && !osm_not_found) {
         log_error(_("ChangeSet file not found: %1%"), remote->filespec);
         changeset->download_error = true;
-	threads::osmdone = true;
+        osm_not_found = true;
+        osm_subpath = remote->subpath;
     } else {
 	auto xml = planet->processData(remote->filespec, *data);
 	std::istream& input(xml);
