@@ -174,12 +174,10 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     remote->Decrement();
     std::cout << "Caught up with: " << remote->filespec << std::endl;
     std::this_thread::sleep_for(std::chrono::minutes{1});
-    auto delay = std::chrono::seconds{30};
-    osm_not_found = false;
+    auto delay = std::chrono::seconds{45};
     while (mainloop) {
         std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
         std::rotate(planets.begin(), planets.begin()+1, planets.end());
-        // std::cout << "Caught up with: " << remote.filespec << std::endl;
         threadChangeSet(std::ref(remote),
                 std::ref(planets.front()),
                 std::ref(poly),
@@ -292,7 +290,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     remote->Decrement();
     std::cout << "Caught up with: " << remote->filespec << std::endl;
     std::this_thread::sleep_for(std::chrono::minutes{1});
-    auto delay = std::chrono::seconds{30};
+    auto delay = std::chrono::seconds{45};
     while (mainloop) {
         std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
         std::rotate(planets.begin(), planets.begin()+1, planets.end());
