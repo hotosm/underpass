@@ -133,6 +133,36 @@ collectStats(opts::variables_map vm) {
 
 }
 
+std::shared_ptr<std::map<long, std::shared_ptr<osmchange::ChangeStats>>>
+getStatsFromFile(std::string filename) {
+    TestOsmChanges osmchanges;
+    osmchanges.readChanges(filename);
+
+    multipolygon_t poly;
+    boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", poly);
+
+    auto stats = osmchanges.collectStats(poly);    
+    return stats;    
+}
+
+int
+getValidationStatsFromFile(std::string filename) {
+    yaml::Yaml yaml;
+    yaml.read(filename);
+    auto added = yaml.tags.at("added");
+    // auto modified = yaml.getConfig(modified);
+    return 1;
+}
+
+void
+validateStatsFromFile(std::vector<std::string> files) {
+    std::string validationFile(DATADIR);
+    validationFile += "/testsuite/testdata/" + files.at(1);
+
+    auto stats = getStatsFromFile(files.at(0));
+    auto validation = getValidationStatsFromFile(validationFile);
+}
+
 void runTests() {
     TestState runtest;
     logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
@@ -142,13 +172,8 @@ void runTests() {
 
     std::string test_data_dir(DATADIR);
     test_data_dir += "/testsuite/testdata/";
-    TestOsmChanges osmchanges;
-    osmchanges.readChanges(test_data_dir + "test_stats.osc");
-    
-    multipolygon_t poly;
-    boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", poly);
 
-    auto stats = osmchanges.collectStats(poly);    
+    auto stats = getStatsFromFile(test_data_dir + "test_stats.osc");
     auto changestats = std::begin(*stats)->second;
 
     if (changestats->added.at("highway") == 3) {
@@ -196,6 +221,7 @@ main(int argc, char *argv[]) {
     opts::options_description desc("Allowed options");
     desc.add_options()
         ("mode,m", opts::value<std::string>(), "Mode (collect-stats)")
+        ("file,f", opts::value<std::vector<std::string>>(), "OsmChange file, YAML file with expected values")
         ("timestamp,t", opts::value<std::string>(), "Starting timestamp (default: 2022-01-01T00:00:00)")
         ("increment,i", opts::value<std::string>(), "Number of increments to do (default: 1)")
         ("boundary,b", opts::value<std::string>(), "Boundary polygon file name");
@@ -207,6 +233,9 @@ main(int argc, char *argv[]) {
         if (vm["mode"].as<std::string>() == "collect-stats") {
             collectStats(vm);
         }
+    } else if (vm.count("file")) {
+        auto files = vm["file"].as<std::vector<std::string>>();
+        validateStatsFromFile(files);
     } else {
         runTests();
     }
