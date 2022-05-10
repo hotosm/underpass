@@ -133,59 +133,85 @@ collectStats(opts::variables_map vm) {
 
 }
 
-void runTests() {
+std::shared_ptr<std::map<long, std::shared_ptr<osmchange::ChangeStats>>>
+getStatsFromFile(std::string filename) {
+    TestOsmChanges osmchanges;
+    osmchanges.readChanges(filename);
+    multipolygon_t poly;
+    boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", poly);
+    auto stats = osmchanges.collectStats(poly);
+    return stats;    
+}
+
+std::map<std::string, long>
+getValidationStatsFromFile(std::string filename) {
+    yaml::Yaml yaml;
+    yaml.read(filename);
+    std::map<std::string, long> config;
+    for (auto it = std::begin(yaml.config); it != std::end(yaml.config); ++it) {
+        auto keyvalue = std::pair<std::string,long>(it->first, std::stol(yaml.getConfig(it->first)));
+        config.insert(keyvalue);
+    }
+    return config;
+}
+void
+testStat(std::shared_ptr<osmchange::ChangeStats> changestats, std::map<std::string, long> validation, std::string tag) {
+
     TestState runtest;
+
     logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
     dbglogfile.setWriteDisk(true);
     dbglogfile.setLogFilename("stats-test.log");
     dbglogfile.setVerbosity(3);
 
-    std::string test_data_dir(DATADIR);
-    test_data_dir += "/testsuite/testdata/";
-    TestOsmChanges osmchanges;
-    osmchanges.readChanges(test_data_dir + "test_stats.osc");
-    
-    multipolygon_t poly;
-    boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", poly);
-
-    auto stats = osmchanges.collectStats(poly);    
-    auto changestats = std::begin(*stats)->second;
-
-    if (changestats->added.at("highway") == 3) {
-        runtest.pass("Calculating added (created) highways");
-    } else {
-        runtest.fail("Calculating added (created) highways");
-    }   
-
-    if (changestats->modified.at("highway") == 2) {
-        runtest.pass("Calculating modified highways");
-    } else {
-        runtest.fail("Calculating modified highways");
+    if (changestats->added.size() > 0) {
+        if (changestats->added.count(tag)) {
+            // std::cout << "added_ " + tag + "(stats): " << changestats->added.at(tag) << std::endl;
+            // std::cout << "added_" + tag + " (validation): " << validation.at("added_" + tag) << std::endl;
+            if (changestats->added.at(tag) == validation.at("added_" + tag)) {
+                runtest.pass("Calculating added (created) " + tag);
+            } else{
+                runtest.fail("Calculating added (created) " + tag);
+            }
+        }
     }
+    if (changestats->modified.size() > 0) {
+        if (changestats->modified.count(tag)) {
+            // std::cout << "modified_" + tag + " (stats): " << changestats->modified.at(tag) << std::endl;
+            // std::cout << "modified_" + tag + " (validation): " << validation.at("modified_" + tag) << std::endl;
+            if (changestats->modified.at(tag) == validation.at("modified_" + tag)) {
+                runtest.pass("Calculating modified " + tag);
+            } else{
+                runtest.fail("Calculating modified " + tag);
+            }
+        }
+    }
+}
 
-    if (changestats->added.at("building") == 1) {
-        runtest.pass("Calculating added (created) buildings");
-    } else {
-        runtest.fail("Calculating added (created) buildings");
-    }   
+void
+validateStatsFromFile(std::vector<std::string> files) {
+    std::string statsFile(DATADIR);
+    statsFile += "/testsuite/testdata/" + files.at(0);
+    auto stats = getStatsFromFile(statsFile);
 
-    if (changestats->modified.at("building") == 1) {
-        runtest.pass("Calculating modified buildings");
-    } else {
-        runtest.fail("Calculating modified buildings");
-    }   
+    std::string validationFile(DATADIR);
+    validationFile += "/testsuite/testdata/" + files.at(1);
+    auto validation = getValidationStatsFromFile(validationFile);
 
-    if (changestats->added.at("waterway") == 1) {
-        runtest.pass("Calculating added (created) waterways");
-    } else {
-        runtest.fail("Calculating added (created) waterways");
-    }   
+    for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
+        auto changestats = it->second;
+        if (changestats->change_id == validation.at("change_id")) {
+            // std::cout << "change_id: " << changestats->change_id << std::endl;
+            testStat(changestats, validation, "highway");
+            testStat(changestats, validation, "building");
+            testStat(changestats, validation, "waterway");
+        }
+    }
+}
 
-    if (changestats->modified.at("waterway") == 1) {
-        runtest.pass("Calculating modified waterways");
-    } else {
-        runtest.fail("Calculating modified waterways");
-    }   
+void runTests() {
+    std::vector<std::string> files = {"test_stats.osc", "test_stats.yaml"};
+    validateStatsFromFile(files);
 }
 
 int
@@ -196,6 +222,7 @@ main(int argc, char *argv[]) {
     opts::options_description desc("Allowed options");
     desc.add_options()
         ("mode,m", opts::value<std::string>(), "Mode (collect-stats)")
+        ("file,f", opts::value<std::vector<std::string>>(), "OsmChange file, YAML file with expected values")
         ("timestamp,t", opts::value<std::string>(), "Starting timestamp (default: 2022-01-01T00:00:00)")
         ("increment,i", opts::value<std::string>(), "Number of increments to do (default: 1)")
         ("boundary,b", opts::value<std::string>(), "Boundary polygon file name");
@@ -207,6 +234,9 @@ main(int argc, char *argv[]) {
         if (vm["mode"].as<std::string>() == "collect-stats") {
             collectStats(vm);
         }
+    } else if (vm.count("file")) {
+        auto files = vm["file"].as<std::vector<std::string>>();
+        validateStatsFromFile(files);
     } else {
         runTests();
     }

@@ -1,0 +1,7 @@
+config:
+  - change_id:
+      - 107235440
+  - modified_highway:
+      - 8
+  - added_highway:
+      - 8
