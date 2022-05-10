@@ -154,115 +154,64 @@ getValidationStatsFromFile(std::string filename) {
     }
     return config;
 }
-
 void
-validateStatsFromFile(std::vector<std::string> files) {
+testStat(std::shared_ptr<osmchange::ChangeStats> changestats, std::map<std::string, long> validation, std::string tag) {
+
     TestState runtest;
 
-    std::string validationFile(DATADIR);
-    validationFile += "/testsuite/testdata/" + files.at(1);
-    auto validation = getValidationStatsFromFile(validationFile);
-
-    std::string statsFile(DATADIR);
-    statsFile += "/testsuite/testdata/" + files.at(0);
-    auto stats = getStatsFromFile(statsFile);
-
-    for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
-        auto changestats = it->second;
-        if (changestats->change_id == validation.at("change_id")) {
-            std::cout << "change_id: " << changestats->change_id << std::endl;
-            if (changestats->added.size() > 0) {
-                if (changestats->added.count("highway")) {
-                    std::cout << "added_highway (stats): " << changestats->added.at("highway") << std::endl;
-                    std::cout << "added_highway (validation): " << validation.at("added_highway") << std::endl;
-                    if (changestats->added.at("highway") == validation.at("added_highway")) {
-                        runtest.pass("Calculating added (created) highways");
-                    } else{
-                        runtest.fail("Calculating added (created) highways");
-                    }
-                }
-                if (changestats->added.count("building")) {
-                    std::cout << "added_building (stats): " << changestats->added.at("building") << std::endl;
-                    std::cout << "added_building (validation): " << validation.at("added_building") << std::endl;
-                    if (changestats->added.at("highway") == validation.at("added_building")) {
-                        runtest.pass("Calculating added (created) buildings");
-                    } else{
-                        runtest.fail("Calculating added (created) buildings");
-                    }
-                }
-            }
-            if (changestats->modified.size() > 0) {
-                if (changestats->modified.count("highway")) {
-                    std::cout << "modified_highway (stats): " << changestats->modified.at("highway") << std::endl;
-                    std::cout << "modified_highway (validation): " << validation.at("modified_highway") << std::endl;
-                    if (changestats->modified.at("highway") == validation.at("modified_highway")) {
-                        runtest.pass("Calculating modified highways");
-                    } else{
-                        runtest.fail("Calculating modified highways");
-                    }
-                }
-                if (changestats->modified.count("building")) {
-                    std::cout << "modified_building (stats): " << changestats->modified.at("building") << std::endl;
-                    std::cout << "modified_building (validation): " << validation.at("modified_building") << std::endl;
-                    if (changestats->modified.at("building") == validation.at("modified_building")) {
-                        runtest.pass("Calculating modified buildings");
-                    } else{
-                        runtest.fail("Calculating modified buildings");
-                    }
-                }
-            }
-        }
-    }
-}
-
-void runTests() {
-    TestState runtest;
     logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
     dbglogfile.setWriteDisk(true);
     dbglogfile.setLogFilename("stats-test.log");
     dbglogfile.setVerbosity(3);
 
-    std::string test_data_dir(DATADIR);
-    test_data_dir += "/testsuite/testdata/";
-
-    auto stats = getStatsFromFile(test_data_dir + "test_stats.osc");
-    auto changestats = std::begin(*stats)->second;
-
-    if (changestats->added.at("highway") == 3) {
-        runtest.pass("Calculating added (created) highways");
-    } else {
-        runtest.fail("Calculating added (created) highways");
-    }   
-
-    if (changestats->modified.at("highway") == 2) {
-        runtest.pass("Calculating modified highways");
-    } else {
-        runtest.fail("Calculating modified highways");
+    if (changestats->added.size() > 0) {
+        if (changestats->added.count(tag)) {
+            std::cout << "added_ " + tag + "(stats): " << changestats->added.at(tag) << std::endl;
+            std::cout << "added_" + tag + " (validation): " << validation.at("added_" + tag) << std::endl;
+            if (changestats->added.at(tag) == validation.at("added_" + tag)) {
+                runtest.pass("Calculating added (created) " + tag);
+            } else{
+                runtest.fail("Calculating added (created) " + tag);
+            }
+        }
     }
+    if (changestats->modified.size() > 0) {
+        if (changestats->modified.count(tag)) {
+            std::cout << "modified_" + tag + " (stats): " << changestats->modified.at(tag) << std::endl;
+            std::cout << "modified_" + tag + " (validation): " << validation.at("modified_" + tag) << std::endl;
+            if (changestats->modified.at(tag) == validation.at("modified_" + tag)) {
+                runtest.pass("Calculating modified " + tag);
+            } else{
+                runtest.fail("Calculating modified " + tag);
+            }
+        }
+    }
+}
 
-    if (changestats->added.at("building") == 1) {
-        runtest.pass("Calculating added (created) buildings");
-    } else {
-        runtest.fail("Calculating added (created) buildings");
-    }   
+void
+validateStatsFromFile(std::vector<std::string> files) {
+    std::string statsFile(DATADIR);
+    statsFile += "/testsuite/testdata/" + files.at(0);
+    auto stats = getStatsFromFile(statsFile);
 
-    if (changestats->modified.at("building") == 1) {
-        runtest.pass("Calculating modified buildings");
-    } else {
-        runtest.fail("Calculating modified buildings");
-    }   
+    std::string validationFile(DATADIR);
+    validationFile += "/testsuite/testdata/" + files.at(1);
+    auto validation = getValidationStatsFromFile(validationFile);
 
-    if (changestats->added.at("waterway") == 1) {
-        runtest.pass("Calculating added (created) waterways");
-    } else {
-        runtest.fail("Calculating added (created) waterways");
-    }   
+    for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
+        auto changestats = it->second;
+        if (changestats->change_id == validation.at("change_id")) {
+            std::cout << "change_id: " << changestats->change_id << std::endl;
+            testStat(changestats, validation, "highway");
+            testStat(changestats, validation, "building");
+            testStat(changestats, validation, "waterway");
+        }
+    }
+}
 
-    if (changestats->modified.at("waterway") == 1) {
-        runtest.pass("Calculating modified waterways");
-    } else {
-        runtest.fail("Calculating modified waterways");
-    }   
+void runTests() {
+    std::vector<std::string> files = {"test_stats.osc", "test_stats.yaml"};
+    validateStatsFromFile(files);
 }
 
 int
