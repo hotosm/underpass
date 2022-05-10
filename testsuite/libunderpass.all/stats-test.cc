@@ -166,8 +166,8 @@ testStat(std::shared_ptr<osmchange::ChangeStats> changestats, std::map<std::stri
 
     if (changestats->added.size() > 0) {
         if (changestats->added.count(tag)) {
-            std::cout << "added_ " + tag + "(stats): " << changestats->added.at(tag) << std::endl;
-            std::cout << "added_" + tag + " (validation): " << validation.at("added_" + tag) << std::endl;
+            // std::cout << "added_ " + tag + "(stats): " << changestats->added.at(tag) << std::endl;
+            // std::cout << "added_" + tag + " (validation): " << validation.at("added_" + tag) << std::endl;
             if (changestats->added.at(tag) == validation.at("added_" + tag)) {
                 runtest.pass("Calculating added (created) " + tag);
             } else{
@@ -177,8 +177,8 @@ testStat(std::shared_ptr<osmchange::ChangeStats> changestats, std::map<std::stri
     }
     if (changestats->modified.size() > 0) {
         if (changestats->modified.count(tag)) {
-            std::cout << "modified_" + tag + " (stats): " << changestats->modified.at(tag) << std::endl;
-            std::cout << "modified_" + tag + " (validation): " << validation.at("modified_" + tag) << std::endl;
+            // std::cout << "modified_" + tag + " (stats): " << changestats->modified.at(tag) << std::endl;
+            // std::cout << "modified_" + tag + " (validation): " << validation.at("modified_" + tag) << std::endl;
             if (changestats->modified.at(tag) == validation.at("modified_" + tag)) {
                 runtest.pass("Calculating modified " + tag);
             } else{
@@ -201,7 +201,7 @@ validateStatsFromFile(std::vector<std::string> files) {
     for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
         auto changestats = it->second;
         if (changestats->change_id == validation.at("change_id")) {
-            std::cout << "change_id: " << changestats->change_id << std::endl;
+            // std::cout << "change_id: " << changestats->change_id << std::endl;
             testStat(changestats, validation, "highway");
             testStat(changestats, validation, "building");
             testStat(changestats, validation, "waterway");
