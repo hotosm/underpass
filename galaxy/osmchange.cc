@@ -726,12 +726,13 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 
     // These are values for the highway tag
     std::vector<std::string> highways = {
-        "highway",
+	"highway",
 	"tertiary",
 	"secondary",
 	"unclassified",
 	"track",
-        "residential",
+	"residential",
+	"service",
 	"path",
 	"bridge",
 	"waterway"};
