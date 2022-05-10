@@ -36,6 +36,7 @@ tags:
          - secondary
          - unclassified
          - track
+         - service
          - residential
          - path
          - bridge
@@ -44,4 +45,4 @@ tags:
     - schools:
          - primary
          - secondary
-         - kindergarten"
+         - kindergarten
