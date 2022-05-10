@@ -137,30 +137,82 @@ std::shared_ptr<std::map<long, std::shared_ptr<osmchange::ChangeStats>>>
 getStatsFromFile(std::string filename) {
     TestOsmChanges osmchanges;
     osmchanges.readChanges(filename);
-
     multipolygon_t poly;
     boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", poly);
-
-    auto stats = osmchanges.collectStats(poly);    
+    auto stats = osmchanges.collectStats(poly);
     return stats;    
 }
 
-int
+std::map<std::string, long>
 getValidationStatsFromFile(std::string filename) {
     yaml::Yaml yaml;
     yaml.read(filename);
-    auto added = yaml.tags.at("added");
-    // auto modified = yaml.getConfig(modified);
-    return 1;
+    std::map<std::string, long> config;
+    for (auto it = std::begin(yaml.config); it != std::end(yaml.config); ++it) {
+        auto keyvalue = std::pair<std::string,long>(it->first, std::stol(yaml.getConfig(it->first)));
+        config.insert(keyvalue);
+    }
+    return config;
 }
 
 void
 validateStatsFromFile(std::vector<std::string> files) {
+    TestState runtest;
+
     std::string validationFile(DATADIR);
     validationFile += "/testsuite/testdata/" + files.at(1);
-
-    auto stats = getStatsFromFile(files.at(0));
     auto validation = getValidationStatsFromFile(validationFile);
+
+    std::string statsFile(DATADIR);
+    statsFile += "/testsuite/testdata/" + files.at(0);
+    auto stats = getStatsFromFile(statsFile);
+
+    for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
+        auto changestats = it->second;
+        if (changestats->change_id == validation.at("change_id")) {
+            std::cout << "change_id: " << changestats->change_id << std::endl;
+            if (changestats->added.size() > 0) {
+                if (changestats->added.count("highway")) {
+                    std::cout << "added_highway (stats): " << changestats->added.at("highway") << std::endl;
+                    std::cout << "added_highway (validation): " << validation.at("added_highway") << std::endl;
+                    if (changestats->added.at("highway") == validation.at("added_highway")) {
+                        runtest.pass("Calculating added (created) highways");
+                    } else{
+                        runtest.fail("Calculating added (created) highways");
+                    }
+                }
+                if (changestats->added.count("building")) {
+                    std::cout << "added_building (stats): " << changestats->added.at("building") << std::endl;
+                    std::cout << "added_building (validation): " << validation.at("added_building") << std::endl;
+                    if (changestats->added.at("highway") == validation.at("added_building")) {
+                        runtest.pass("Calculating added (created) buildings");
+                    } else{
+                        runtest.fail("Calculating added (created) buildings");
+                    }
+                }
+            }
+            if (changestats->modified.size() > 0) {
+                if (changestats->modified.count("highway")) {
+                    std::cout << "modified_highway (stats): " << changestats->modified.at("highway") << std::endl;
+                    std::cout << "modified_highway (validation): " << validation.at("modified_highway") << std::endl;
+                    if (changestats->modified.at("highway") == validation.at("modified_highway")) {
+                        runtest.pass("Calculating modified highways");
+                    } else{
+                        runtest.fail("Calculating modified highways");
+                    }
+                }
+                if (changestats->modified.count("building")) {
+                    std::cout << "modified_building (stats): " << changestats->modified.at("building") << std::endl;
+                    std::cout << "modified_building (validation): " << validation.at("modified_building") << std::endl;
+                    if (changestats->modified.at("building") == validation.at("modified_building")) {
+                        runtest.pass("Calculating modified buildings");
+                    } else{
+                        runtest.fail("Calculating modified buildings");
+                    }
+                }
+            }
+        }
+    }
 }
 
 void runTests() {
