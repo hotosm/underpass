@@ -133,86 +133,111 @@ collectStats(opts::variables_map vm) {
 
 }
 
-std::shared_ptr<std::map<long, std::shared_ptr<osmchange::ChangeStats>>>
-getStatsFromFile(std::string filename) {
-    TestOsmChanges osmchanges;
-    osmchanges.readChanges(filename);
-    multipolygon_t poly;
-    boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", poly);
-    auto stats = osmchanges.collectStats(poly);
-    return stats;    
-}
+class TestStats {
 
-std::map<std::string, long>
-getValidationStatsFromFile(std::string filename) {
-    yaml::Yaml yaml;
-    yaml.read(filename);
-    std::map<std::string, long> config;
-    for (auto it = std::begin(yaml.config); it != std::end(yaml.config); ++it) {
-        auto keyvalue = std::pair<std::string,long>(it->first, std::stol(yaml.getConfig(it->first)));
-        config.insert(keyvalue);
-    }
-    return config;
-}
-void
-testStat(std::shared_ptr<osmchange::ChangeStats> changestats, std::map<std::string, long> validation, std::string tag) {
+	private:
+		bool verbose;
+	public:
+		TestStats() {
+			this->verbose = false;
+		};
+		TestStats(bool verbosity) {
+			this->verbose = verbosity;
+		};
+		std::shared_ptr<std::map<long, std::shared_ptr<osmchange::ChangeStats>>>
+		getStatsFromFile(std::string filename) {
+			TestOsmChanges osmchanges;
+			osmchanges.readChanges(filename);
+			multipolygon_t poly;
+			boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", poly);
+			auto stats = osmchanges.collectStats(poly);
+			return stats;    
+		}
 
-    TestState runtest;
+		std::map<std::string, long>
+		getValidationStatsFromFile(std::string filename) {
+			yaml::Yaml yaml;
+			yaml.read(filename);
+			std::map<std::string, long> config;
+			for (auto it = std::begin(yaml.config); it != std::end(yaml.config); ++it) {
+				auto keyvalue = std::pair<std::string,long>(it->first, std::stol(yaml.getConfig(it->first)));
+				config.insert(keyvalue);
+			}
+			return config;
+		}
+		void
+		testStat(std::shared_ptr<osmchange::ChangeStats> changestats, std::map<std::string, long> validation, std::string tag) {
 
-    logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
-    dbglogfile.setWriteDisk(true);
-    dbglogfile.setLogFilename("stats-test.log");
-    dbglogfile.setVerbosity(3);
+			TestState runtest;
 
-    if (changestats->added.size() > 0) {
-        if (changestats->added.count(tag)) {
-            // std::cout << "added_ " + tag + "(stats): " << changestats->added.at(tag) << std::endl;
-            // std::cout << "added_" + tag + " (validation): " << validation.at("added_" + tag) << std::endl;
-            if (changestats->added.at(tag) == validation.at("added_" + tag)) {
-                runtest.pass("Calculating added (created) " + tag);
-            } else{
-                runtest.fail("Calculating added (created) " + tag);
-            }
-        }
-    }
-    if (changestats->modified.size() > 0) {
-        if (changestats->modified.count(tag)) {
-            // std::cout << "modified_" + tag + " (stats): " << changestats->modified.at(tag) << std::endl;
-            // std::cout << "modified_" + tag + " (validation): " << validation.at("modified_" + tag) << std::endl;
-            if (changestats->modified.at(tag) == validation.at("modified_" + tag)) {
-                runtest.pass("Calculating modified " + tag);
-            } else{
-                runtest.fail("Calculating modified " + tag);
-            }
-        }
-    }
-}
+			logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
+			dbglogfile.setWriteDisk(true);
+			dbglogfile.setLogFilename("stats-test.log");
+			dbglogfile.setVerbosity(3);
 
-void
-validateStatsFromFile(std::vector<std::string> files) {
-    std::string statsFile(DATADIR);
-    statsFile += "/testsuite/testdata/" + files.at(0);
-    auto stats = getStatsFromFile(statsFile);
+			if (changestats->added.size() > 0) {
+				if (changestats->added.count(tag)) {
+					if (this->verbose) {
+						std::cout << "[Underpass] added_" + tag + ": " << changestats->added.at(tag) << std::endl;
+						if (validation.count("added_" + tag)) {
+							std::cout << "[Validation] added_" + tag + ": " << validation.at("added_" + tag) << std::endl;
+						} else if (this->verbose) {
+							std::cout << "[Validation] added_" + tag + ": 0" << std::endl;
+						}
+					}
+					if (validation.count("added_" + tag) && changestats->added.at(tag) == validation.at("added_" + tag)) {
+						runtest.pass("Calculating added (created) " + tag);
+					} else{
+						runtest.fail("Calculating added (created) " + tag);
+					}
+				}
+			} else if (this->verbose) {
+				std::cout << "[Underpass] Added: 0" << std::endl;
+			}
+			if (changestats->modified.size() > 0) {
+				if (changestats->modified.count(tag)) {
+					if (this->verbose) {
+						if (validation.count("modified_" + tag)) {
+							std::cout << "[Validation] modified_" + tag + " : " << validation.at("modified_" + tag) << std::endl;
+						} else if (this->verbose) {
+							std::cout << "[Validation] modified_" + tag + ": 0" << std::endl;
+						}
+						std::cout << "[Underpass] modified_" + tag + " : " << changestats->modified.at(tag) << std::endl;
+					}
+					if (validation.count("modified_" + tag) && changestats->modified.at(tag) == validation.at("modified_" + tag)) {
+						runtest.pass("Calculating modified " + tag);
+					} else {
+						runtest.fail("Calculating modified " + tag);
+					}
+				}
+			} else if (this->verbose) {
+				std::cout << "[Underpass] Modified: 0" << std::endl;
+			}
+		}
 
-    std::string validationFile(DATADIR);
-    validationFile += "/testsuite/testdata/" + files.at(1);
-    auto validation = getValidationStatsFromFile(validationFile);
+		void
+		validateStatsFromFile(std::vector<std::string> files) {
+			std::string statsFile(DATADIR);
+			statsFile += "/testsuite/testdata/" + files.at(0);
+			auto stats = getStatsFromFile(statsFile);
 
-    for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
-        auto changestats = it->second;
-        if (changestats->change_id == validation.at("change_id")) {
-            // std::cout << "change_id: " << changestats->change_id << std::endl;
-            testStat(changestats, validation, "highway");
-            testStat(changestats, validation, "building");
-            testStat(changestats, validation, "waterway");
-        }
-    }
-}
+			std::string validationFile(DATADIR);
+			validationFile += "/testsuite/testdata/" + files.at(1);
+			auto validation = getValidationStatsFromFile(validationFile);
 
-void runTests() {
-    std::vector<std::string> files = {"test_stats.osc", "test_stats.yaml"};
-    validateStatsFromFile(files);
-}
+			for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
+				auto changestats = it->second;
+				if (changestats->change_id == validation.at("change_id")) {
+					if (this->verbose) {
+						std::cout << "change_id: " << changestats->change_id << std::endl;
+					}
+					testStat(changestats, validation, "highway");
+					testStat(changestats, validation, "building");
+					testStat(changestats, validation, "waterway");
+				}
+			}
+		}
+};
 
 int
 main(int argc, char *argv[]) {
@@ -225,7 +250,8 @@ main(int argc, char *argv[]) {
         ("file,f", opts::value<std::vector<std::string>>(), "OsmChange file, YAML file with expected values")
         ("timestamp,t", opts::value<std::string>(), "Starting timestamp (default: 2022-01-01T00:00:00)")
         ("increment,i", opts::value<std::string>(), "Number of increments to do (default: 1)")
-        ("boundary,b", opts::value<std::string>(), "Boundary polygon file name");
+        ("boundary,b", opts::value<std::string>(), "Boundary polygon file name")
+		("verbose,v", "Enable verbosity");
 
     opts::store(opts::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
     opts::notify(vm);
@@ -236,9 +262,12 @@ main(int argc, char *argv[]) {
         }
     } else if (vm.count("file")) {
         auto files = vm["file"].as<std::vector<std::string>>();
-        validateStatsFromFile(files);
+		TestStats testStats(vm.count("verbose"));
+        testStats.validateStatsFromFile(files);
     } else {
-        runTests();
+		std::vector<std::string> files = {"test_stats.osc", "test_stats.yaml"};
+		TestStats testStats(vm.count("verbose"));
+		testStats.validateStatsFromFile(files);
     }
 
 }
