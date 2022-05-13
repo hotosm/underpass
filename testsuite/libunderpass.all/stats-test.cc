@@ -42,6 +42,44 @@ class TestCO : public osmchange::OsmChangeFile {
 class TestPlanet : public replication::Planet {
 };
 
+std::string
+statsToJSON(std::shared_ptr<std::map<long, std::shared_ptr<osmchange::ChangeStats>>> stats, std::string filespec) {
+	std::string jsonstr = "";
+	for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
+		auto changestats = it->second;
+		jsonstr += "{\"changeset_id\":" + std::to_string(changestats->change_id) + ", ";
+		jsonstr += "\"filespec\": \"" + filespec + "\" ";
+
+		if (changestats->added.size() > 0) {
+			jsonstr += ", \"added\":[";
+			for (const auto &added: std::as_const(changestats->added)) {
+				if (added.second > 0) {
+					jsonstr += "{\"" + added.first + "\":" + std::to_string(added.second) + "},";
+				}
+			}
+			jsonstr.erase(jsonstr.size() - 1);
+			jsonstr += "]";
+		} else {
+			jsonstr += ", \"added\": []";
+		}
+
+		if (changestats->modified.size() > 0) {
+			jsonstr += ", \"modified\":[";
+			for (const auto &modified: std::as_const(changestats->modified)) {
+				if (modified.second > 0) {
+					jsonstr += "{\"" + modified.first + "\":" + std::to_string(modified.second) + "},";
+				}
+			}
+			jsonstr.erase(jsonstr.size() - 1);
+			jsonstr += "]},\n";
+		} else {
+			jsonstr += ", \"modified\": []},\n";
+		}
+
+	}
+	return jsonstr;
+}
+
 void
 collectStats(opts::variables_map vm) {
 
@@ -53,18 +91,8 @@ collectStats(opts::variables_map vm) {
         config.start_time = from_iso_extended_string("2022-01-01T00:00:00");
     }
     config.planet_server = config.planet_servers[0].domain + "/replication";
-    std::string boundary = "priority.geojson";
-    if (vm.count("boundary")) {
-        boundary = vm["boundary"].as<std::string>();
-    }
-    geoutil::GeoUtil geou;
     multipolygon_t poly;
-    if (!geou.readFile(boundary)) {
-        log_debug(_("Could not find '%1%' area file!"), boundary);
-        boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", poly);
-    } else {
-        poly = geou.boundary;
-    }
+	boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", poly);
  
     int increment;
     if (vm.count("increment")) {
@@ -89,40 +117,10 @@ collectStats(opts::variables_map vm) {
             std::istream& input(xml);
             change.readXML(input);
         }
-        change.areaFilter(poly);
-        auto stats = change.collectStats(poly);
 
-        for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
-            auto changestats = it->second;
-            jsonstr += "{\"changeset_id\":" + std::to_string(changestats->change_id);
-
-            if (changestats->added.size() > 0) {
-                jsonstr += ", \"added\":[";
-                for (const auto &added: std::as_const(changestats->added)) {
-                    if (added.second > 0) {
-                        jsonstr += "{\"" + added.first + "\":" + std::to_string(added.second) + "},";
-                    }
-                }
-                jsonstr.erase(jsonstr.size() - 1);
-                jsonstr += "]";
-            } else {
-                jsonstr += ", \"added\": []";
-            }
-
-            if (changestats->modified.size() > 0) {
-                jsonstr += ", \"modified\":[";
-                for (const auto &modified: std::as_const(changestats->modified)) {
-                    if (modified.second > 0) {
-                        jsonstr += "{\"" + modified.first + "\":" + std::to_string(modified.second) + "},";
-                    }
-                }
-                jsonstr.erase(jsonstr.size() - 1);
-                jsonstr += "]},\n";
-            } else {
-                jsonstr += ", \"modified\": []},\n";
-            }
-
-        }
+		change.areaFilter(poly);
+		auto stats = change.collectStats(poly);
+		jsonstr += statsToJSON(stats, osmchange->filespec);
 
         osmchange->Increment();
     }
@@ -132,6 +130,7 @@ collectStats(opts::variables_map vm) {
     std::cout << jsonstr << std::endl;
 
 }
+
 
 class TestStats {
 
@@ -145,11 +144,13 @@ class TestStats {
 			this->verbose = verbosity;
 		};
 		std::shared_ptr<std::map<long, std::shared_ptr<osmchange::ChangeStats>>>
+		
 		getStatsFromFile(std::string filename) {
 			TestOsmChanges osmchanges;
 			osmchanges.readChanges(filename);
 			multipolygon_t poly;
 			boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", poly);
+			osmchanges.areaFilter(poly);
 			auto stats = osmchanges.collectStats(poly);
 			return stats;    
 		}
@@ -175,6 +176,10 @@ class TestStats {
 			dbglogfile.setLogFilename("stats-test.log");
 			dbglogfile.setVerbosity(3);
 
+			if (this->verbose) {
+				std::cout << "Tag: " << tag << std::endl;
+			}
+
 			if (changestats->added.size() > 0) {
 				if (changestats->added.count(tag)) {
 					if (this->verbose) {
@@ -186,13 +191,15 @@ class TestStats {
 						}
 					}
 					if (validation.count("added_" + tag) && changestats->added.at(tag) == validation.at("added_" + tag)) {
-						runtest.pass("Calculating added (created) " + tag);
+						runtest.pass("Calculating added " + tag);
 					} else{
-						runtest.fail("Calculating added (created) " + tag);
+						runtest.fail("Calculating added " + tag);
 					}
+				} else if (this->verbose) {
+					std::cout << "[Underpass] added_" + tag + ": 0" << std::endl;
 				}
 			} else if (this->verbose) {
-				std::cout << "[Underpass] Added: 0" << std::endl;
+				std::cout << "[Underpass] added: 0" << std::endl;
 			}
 			if (changestats->modified.size() > 0) {
 				if (changestats->modified.count(tag)) {
@@ -209,9 +216,11 @@ class TestStats {
 					} else {
 						runtest.fail("Calculating modified " + tag);
 					}
+				} else if (this->verbose) {
+					std::cout << "[Underpass] modified_" + tag + ": 0" << std::endl;
 				}
 			} else if (this->verbose) {
-				std::cout << "[Underpass] Modified: 0" << std::endl;
+				std::cout << "[Underpass] modified: 0" << std::endl;
 			}
 		}
 
@@ -257,16 +266,28 @@ main(int argc, char *argv[]) {
     opts::notify(vm);
 
     if (vm.count("mode")) {
+		// Collect stats
         if (vm["mode"].as<std::string>() == "collect-stats") {
             collectStats(vm);
         }
     } else if (vm.count("file")) {
+		TestStats testStats(vm.count("verbose"));
         auto files = vm["file"].as<std::vector<std::string>>();
-		TestStats testStats(vm.count("verbose"));
-        testStats.validateStatsFromFile(files);
+
+		if (files.size() == 2) {
+			// OsmChange + validation file
+			testStats.validateStatsFromFile(files);
+		} else {
+			// OsmChange file
+			std::string statsFile(DATADIR);
+			statsFile += "/testsuite/testdata/" + files.at(0);
+			auto stats = testStats.getStatsFromFile(statsFile);
+			std::cout << statsToJSON(stats, statsFile);
+		}
     } else {
-		std::vector<std::string> files = {"test_stats.osc", "test_stats.yaml"};
+		// Default OsmChange + validation file
 		TestStats testStats(vm.count("verbose"));
+		std::vector<std::string> files = {"test_stats.osc", "test_stats.yaml"};
 		testStats.validateStatsFromFile(files);
     }
 
