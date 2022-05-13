@@ -710,6 +710,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 	"health_facility",
 	"health_center",
 	"healthcare"};
+	// These are values for the buildings tag
     std::vector<std::string> buildings = {
 	"hospital",
 	"hut",
