@@ -259,7 +259,6 @@ main(int argc, char *argv[]) {
         ("file,f", opts::value<std::vector<std::string>>(), "OsmChange file, YAML file with expected values")
         ("timestamp,t", opts::value<std::string>(), "Starting timestamp (default: 2022-01-01T00:00:00)")
         ("increment,i", opts::value<std::string>(), "Number of increments to do (default: 1)")
-        ("boundary,b", opts::value<std::string>(), "Boundary polygon file name")
 		("verbose,v", "Enable verbosity");
 
     opts::store(opts::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
