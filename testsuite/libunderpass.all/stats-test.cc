@@ -282,7 +282,9 @@ main(int argc, char *argv[]) {
 			std::string statsFile(DATADIR);
 			statsFile += "/testsuite/testdata/" + files.at(0);
 			auto stats = testStats.getStatsFromFile(statsFile);
-			std::cout << statsToJSON(stats, statsFile);
+			std::string jsonstr = statsToJSON(stats, statsFile);
+			jsonstr.erase(jsonstr.size() - 2);
+			std::cout << jsonstr << std::endl;
 		}
     } else {
 		// Default OsmChange + validation file
