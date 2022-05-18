@@ -19,9 +19,25 @@
 
 import psycopg2
 from urllib.parse import urlparse
-from sys import argv
-from progress.spinner import PixelSpinner
+from sys import argv, stdout
+import progressbar
 import json
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.StreamHandler(stdout)
+    ]
+)
+
+def progressbarWidget(title):
+    return [' [',
+        progressbar.Timer(format = title + ' (%(elapsed)s'),'] ',
+        progressbar.Bar('*')
+    ]
+
 
 def usage():
     out = """
@@ -53,18 +69,18 @@ class InsightsConnection:
         self.dbcursor = self.dbshell.cursor()
 
     def getChangesetsStats(self, changesetId):
-        query = """SELECT changeset, added_buildings, modified_buildings, added_amenity, \
-                added_highway, modified_highway, added_highway_meters, \
+        query = """SELECT added_buildings, modified_buildings, added_amenity, \
+                modified_amenity, added_highway, modified_highway, added_highway_meters, \
                 added_places, modified_places FROM all_changesets_stats WHERE changeset = %s""" \
                 % changesetId
         self.dbcursor.execute(query)
         changeset = self.dbcursor.fetchone()
         if changeset:
             return {
-                'changeset': changeset[0] or 0,
-                'added_buildings': changeset[1] or 0,
-                'modified_buildings': changeset[2] or 0,
-                'added_amenity': changeset[3] or 0,
+                'added_buildings': changeset[0] or 0,
+                'modified_buildings': changeset[1] or 0,
+                'added_amenity': changeset[2] or 0,
+				'modified_amenity': changeset[3] or 0,
                 'added_highway': changeset[4] or 0,
                 'modified_highway': changeset[5] or 0,
                 'added_highway_km': round(changeset[6] or 0) ,
@@ -82,31 +98,37 @@ class UnderpassStats:
     def readJSON(self, json_file):
         f = open(json_file)
         dataFromFile = json.load(f)
-        data = []
+        data = {}
+        bar = progressbar.ProgressBar(max_value=len(dataFromFile), widgets=progressbarWidget("Processing Underpass stats")).start()
+        data_count = 0
         for row in dataFromFile:
-            existingItemIndex = next((i for i, item in enumerate(data) if item["changeset"] == row['changeset_id']), None)
-            if existingItemIndex == None:
-                data.append({
-                    'changeset': row['changeset_id'],
-                    'added_buildings': self.getValue(row, 'added','building'),
-                    'modified_buildings': self.getValue(row, 'modified','building'),
-                    'added_amenity': self.getValue(row, 'added','amenity'),
-                    'added_highway': self.getValue(row, 'added','highway'),
-                    'modified_highway': self.getValue(row, 'modified','highway'),
-                    'added_highway_km': self.getValue(row, 'added','highway_km'),
-                    'added_places': self.getValue(row, 'added','places'),
-                    'modified_places': self.getValue(row, 'modified','places'),
-                })
+            changeset_id = row['changeset_id']
+            if not changeset_id in data:
+                data[changeset_id] = {
+                    'underpass': {
+                        'added_buildings': self.getValue(row, 'added','building'),
+                        'modified_buildings': self.getValue(row, 'modified','building'),
+                        'added_amenity': self.getValue(row, 'added','amenity'),
+                        'modified_amenity': self.getValue(row, 'modified','amenity'),
+                        'added_highway': self.getValue(row, 'added','highway'),
+                        'modified_highway': self.getValue(row, 'modified','highway'),
+                        'added_highway_km': self.getValue(row, 'added','highway_km'),
+                        'added_places': self.getValue(row, 'added','places'),
+                        'modified_places': self.getValue(row, 'modified','places'),
+                    }
+                }          
             else:
-                data[existingItemIndex]['added_buildings'] += self.getValue(row, 'added','building')
-                data[existingItemIndex]['modified_buildings'] += self.getValue(row, 'modified','building')
-                data[existingItemIndex]['added_amenity'] += self.getValue(row, 'added','amenity')
-                data[existingItemIndex]['added_highway'] += self.getValue(row, 'added','highway')
-                data[existingItemIndex]['modified_highway'] += self.getValue(row, 'modified','highway')
-                data[existingItemIndex]['added_highway_km'] += self.getValue(row, 'added','highway_km')
-                data[existingItemIndex]['added_places'] += self.getValue(row, 'added','places')
-                data[existingItemIndex]['modified_places'] += self.getValue(row, 'modified','places')
-        
+                data[changeset_id]['underpass']['added_buildings'] += self.getValue(row, 'added','building')
+                data[changeset_id]['underpass']['modified_buildings'] += self.getValue(row, 'modified','building')
+                data[changeset_id]['underpass']['added_amenity'] += self.getValue(row, 'added','amenity')
+                data[changeset_id]['underpass']['modified_amenity'] += self.getValue(row, 'modified','amenity')
+                data[changeset_id]['underpass']['added_highway'] += self.getValue(row, 'added','highway')
+                data[changeset_id]['underpass']['modified_highway'] += self.getValue(row, 'modified','highway')
+                data[changeset_id]['underpass']['added_highway_km'] += self.getValue(row, 'added','highway_km')
+                data[changeset_id]['underpass']['added_places'] += self.getValue(row, 'added','places')
+                data[changeset_id]['underpass']['modified_places'] += self.getValue(row, 'modified','places')
+            data_count += 1
+            bar.update(data_count)
         return data
 
     def getValue(self, row, column, label):
@@ -115,32 +137,22 @@ class UnderpassStats:
                 return value[label]
         return 0
 
-bar = PixelSpinner('Reading Underpass stats ... ')
+try:
+    insightsDB = InsightsConnection()
+except:
+    logging.error('Error connecting to Insights DB')
+    quit()
+
 underpassStats = UnderpassStats()
 stats = underpassStats.readJSON(json_file)
 
-bar = PixelSpinner('Connecting ... ')
-insightsDB = InsightsConnection()
-bar = PixelSpinner('Getting data ... ')
+count = 0
+bar = progressbar.ProgressBar(max_value=len(stats), widgets=progressbarWidget("Getting Insights stats")).start()
+for changeset_id in stats:
+    stats[changeset_id]["changeset"] = changeset_id
+    stats[changeset_id]["insights"] = insightsDB.getChangesetsStats(changeset_id)
+    bar.update(count)
+    count += 1
+ 
+print(json.dumps(stats))
 
-insightsCount = 0
-badStatsCount = 0
-notFound = []
-for stat in stats:
-    insights = insightsDB.getChangesetsStats(stat['changeset'])
-    if insights is not None:
-        insightsCount += 1
-        if insights != stat:
-            badStatsCount += 1
-            bad_stat = {'changeset': stat['changeset']}
-            for value in insights:
-                if insights[value] != stat[value]:
-                    bad_stat['stats_' + str(value)] = stat[value]
-                    bad_stat['insights__' + str(value)] = insights[value]
-            print(bad_stat)
-    else:
-        notFound.append(stat['changeset'])
-
-print("\n---------")
-print(len(notFound), "changesets not found in Insights DB")
-print(badStatsCount, "/", insightsCount, "are not equal (", badStatsCount * 100 / insightsCount, "%)")
