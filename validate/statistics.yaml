@@ -1,48 +1,61 @@
-tags:
-  - places:
-        - village
-        - hamlet
-        - neigborhood
-        - city
-        - town
+places:
+  area:
+    - place:
+      - yes
+      - village
+      - hamlet
+      - neigborhood
+      - city
+      - town
+    
+amenities:
+  area:
+    - amenity:
+      - yes
+      - hospital
+      - school
+      - clinic
+      - kindergarten
+      - drinking_water
+      - health_facility
+      - health_center
+      - healthcare
 
-    - amenities:
-        - hospital
-        - school
-        - clinic
-        - kindergarten
-        - drinking_water
-        - health_facility
-        - health_center
-        - healthcare
+buildings:
+  area:
+    - building:
+      - yes
+      - hospital
+      - hut
+      - school
+      - healthcare
+      - clinic
+      - kindergarten
+      - health center
+      - health centre
+      - latrine
+      - latrines
+      - toilet
+      - toilets
 
-     - buildings:
-         - hospital
-         - hut
-         - school
-         - healthcare
-         - clinic
-         - kindergarten
-         - health center
-         - health centre
-         - latrine
-         - latrines
-         - toilet
-         - toilets
+schools:
+  area:
+    - school:
+      - yes
+      - primary
+      - secondary
+      - kindergarten
 
-      - highways:
-         - highway
-         - tertiary
-         - secondary
-         - unclassified
-         - track
-         - service
-         - residential
-         - path
-         - bridge
-         - waterway
-
-    - schools:
-         - primary
-         - secondary
-         - kindergarten
+highways:
+  line:
+    - school:
+      - yes
+      - tertiary
+      - secondary
+      - unclassified
+      - track
+      - residential
+      - service
+      - path
+      - bridge
+      - waterway

@@ -62,6 +62,8 @@ using namespace boost::gregorian;
 #include "galaxy/osmchange.hh"
 #include <ogr_geometry.h>
 
+#include "data/statsconfig.hh"
+
 using namespace osmobjects;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
@@ -691,6 +693,12 @@ std::shared_ptr<std::vector<std::string>>
 OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
 {
     auto hits = std::make_shared<std::vector<std::string>>();
+
+    // statsconfig::StatsConfigFile statsconfigfile;
+    // std::string filename = SRCDIR;
+    // filename += "/validate/statistics.yaml";    
+    // std::vector<statsconfig::StatsConfig> statsconfig;
+    // statsconfigfile.read_yaml(filename, statsconfig);
 
     // FIXME: Parse this a YAML file instead of hardcoded!
     // These are values for the place tag
