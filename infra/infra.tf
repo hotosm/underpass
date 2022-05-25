@@ -360,7 +360,7 @@ resource "aws_route53_record" "galaxy-api-lb" {
 
   alias {
     name                   = aws_lb.galaxy-api.dns_name
-    zone_id                = aws_lb.galaxy-api.dns_name
+    zone_id                = aws_lb.galaxy-api.zone_id
     evaluate_target_health = true
   }
 }
