@@ -1,5 +1,5 @@
-places:
-  area:
+place:
+  node:
     - place:
       - yes
       - village
@@ -8,8 +8,8 @@ places:
       - city
       - town
     
-amenities:
-  area:
+amenity:
+  node:
     - amenity:
       - yes
       - hospital
@@ -21,8 +21,8 @@ amenities:
       - health_center
       - healthcare
 
-buildings:
-  area:
+building:
+  way:
     - building:
       - yes
       - hospital
@@ -38,17 +38,17 @@ buildings:
       - toilet
       - toilets
 
-schools:
-  area:
+school:
+  way:
     - school:
       - yes
       - primary
       - secondary
       - kindergarten
 
-highways:
-  line:
-    - school:
+highway:
+  way:
+    - highway:
       - yes
       - tertiary
       - secondary
@@ -58,4 +58,8 @@ highways:
       - service
       - path
       - bridge
-      - waterway
+
+waterway:
+  way:
+    - waterway:
+      - *

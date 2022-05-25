@@ -1,22 +1,22 @@
 buildings:
-  area:
+  way:
     - building:
       - yes
       - school
     - amenity:
       - hospital
       - emergency
-  poi:
+  node:
     - amenity:
       - school
 
 amenities:
-  poi:
+  node:
     - amenity:
       - emergency
 
 highways:
-  line:
+  way:
     - highway:
       - yes
 

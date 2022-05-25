@@ -21,6 +21,7 @@
 #include "log.hh"
 
 #include "data/statsconfig.hh"
+#include "galaxy/osmchange.hh"
 
 using namespace logger;
 TestState runtest;
@@ -55,22 +56,27 @@ main(int argc, char *argv[])
 
     // for (int i = 0; i < statsconfig.size(); ++i) {
     //     std::cout << "Stat: " << statsconfig[i].name << std::endl;
-    //     std::cout << " area: " << std::endl;
-    //     dump_tags(statsconfig[i].area);
-    //     std::cout << " poi: " << std::endl;
-    //     dump_tags(statsconfig[i].poi);
-    //     std::cout << " line: " << std::endl;
-    //     dump_tags(statsconfig[i].line);
+    //     std::cout << " way: " << std::endl;
+    //     dump_tags(statsconfig[i].way);
+    //     std::cout << " node: " << std::endl;
+    //     dump_tags(statsconfig[i].node);
     // }
 
     if (
-        statsconfig[0].area.count("building") && statsconfig[0].area.at("building")[1] == "school" &&
-        statsconfig[1].poi.count("amenity") && statsconfig[1].poi.at("amenity")[0] == "emergency" &&
-        statsconfig[2].line.count("highway") && statsconfig[2].line.at("highway")[0] == "yes"
+        statsconfig[0].way.count("building") && statsconfig[0].way.at("building")[1] == "school" &&
+        statsconfig[1].node.count("amenity") && statsconfig[1].node.at("amenity")[0] == "emergency" &&
+        statsconfig[2].way.count("highway") && statsconfig[2].way.at("highway")[0] == "yes"
     ) {
         runtest.pass("StatsConfigFile::read_yaml()");
     } else {
         runtest.fail("StatsConfigFile::read_yaml()");
+    }
+
+    statsconfig::StatsConfigSearch search;
+    if (search.tag_value("building", "school", way, statsconfig) == "buildings") {
+        runtest.pass("StatsConfigSearch::tag_value()");
+    } else {
+        runtest.fail("StatsConfigSearch::tag_value()");
     }
 
 }

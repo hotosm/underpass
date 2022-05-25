@@ -33,6 +33,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "galaxy/osmchange.hh"
 
 /// \namespace statsconfig
 namespace statsconfig {
@@ -40,22 +41,26 @@ namespace statsconfig {
     class StatsConfig {
         public:
             std::string name;
-            std::map<std::string, std::vector<std::string>> area;
-            std::map<std::string, std::vector<std::string>> poi;
-            std::map<std::string, std::vector<std::string>> line;
+            std::map<std::string, std::vector<std::string>> way;
+            std::map<std::string, std::vector<std::string>> node;
             StatsConfig(std::string name);
             StatsConfig
             (
                 std::string name,
-                std::map<std::string, std::vector<std::string>> area,
-                std::map<std::string, std::vector<std::string>> poi,
-                std::map<std::string, std::vector<std::string>> line
+                std::map<std::string, std::vector<std::string>> way,
+                std::map<std::string, std::vector<std::string>> node
             );
     };
 
     class StatsConfigFile {
-    public:
-        static int read_yaml(std::string filename, std::vector<StatsConfig> &statsconfig);
+        public:
+            static int read_yaml(std::string filename, std::vector<StatsConfig> &statsconfig);
+    };
+
+    class StatsConfigSearch {
+        public:
+            static std::string tag_value(std::string tag, std::string value, osmchange::osmtype_t type, std::vector<StatsConfig> &statsconfig);
+            static std::string category(std::string tag, std::string value, std::map<std::string, std::vector<std::string>> tags);
     };
 
 } // EOF statsconfig namespace
