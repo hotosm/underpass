@@ -573,7 +573,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                 ostats->closed_at = node->timestamp;
                 (*mstats)[node->change_id] = ostats;
             }
-            auto hits = scanTags(node->tags);
+            auto hits = scanTags(node->tags, osmchange::node);
             for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
                 // log_debug(_("FIXME node: " << *hit << " : " << (int)node->action);
                 if (node->action == osmobjects::create) {
@@ -622,7 +622,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                 ostats->closed_at = way->timestamp;
                 (*mstats)[way->change_id] = ostats;
             }
-            auto hits = scanTags(way->tags);
+            auto hits = scanTags(way->tags, osmchange::way);
             for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
                 // log_debug("FIXME way: ", *hit, (int)way->action);
                 // way->dump();
@@ -690,145 +690,38 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 }
 
 std::shared_ptr<std::vector<std::string>>
-OsmChangeFile::scanTags(std::map<std::string, std::string> tags)
+OsmChangeFile::scanTags(std::map<std::string, std::string> tags, osmchange::osmtype_t type)
 {
+
+    // TODO: load config once
+    statsconfig::StatsConfigFile statsconfigfile;
+    std::string filename = SRCDIR;
+    filename += "/validate/statistics.yaml";    
+    std::vector<statsconfig::StatsConfig> statsconfig;
+    statsconfigfile.read_yaml(filename, statsconfig);
+
     auto hits = std::make_shared<std::vector<std::string>>();
 
-    // statsconfig::StatsConfigFile statsconfigfile;
-    // std::string filename = SRCDIR;
-    // filename += "/validate/statistics.yaml";    
-    // std::vector<statsconfig::StatsConfig> statsconfig;
-    // statsconfigfile.read_yaml(filename, statsconfig);
-
-    // FIXME: Parse this a YAML file instead of hardcoded!
-    // These are values for the place tag
-    std::vector<std::string> places = {
-	"village",
-	"hamlet",
-	"neigborhood",
-	"city",
-	"town"};
-    // These are values for the amenities tag
-    std::vector<std::string> amenities = {
-        "hospital",
-	"school",
-	"clinic",
-        "kindergarten",
-        "drinking_water",
-	"health_facility",
-	"health_center",
-	"healthcare"};
-	// These are values for the buildings tag
-    std::vector<std::string> buildings = {
-	"hospital",
-	"hut",
-	"school",
-	"healthcare"
-	"clinic",
-	"kindergarten",
-	"health center",
-	"health centre",
-	"latrine",
-	"latrines",
-	"toilet",
-	"toilets"};
-
-    // These are values for the highway tag
-    std::vector<std::string> highways = {
-	"highway",
-	"tertiary",
-	"secondary",
-	"unclassified",
-	"track",
-	"residential",
-	"service",
-	"path",
-	"bridge",
-	"waterway"};
-
-    std::vector<std::string> schools = {"primary", "secondary", "kindergarten"};
     // Some older nodes in a way wound up with this one tag, which nobody noticed,
     // so ignore it.
     if (tags.size() == 1 && tags.find("created_at") != tags.end()) {
         return hits;
     }
-    std::map<std::string, bool> cache;
-    for (auto it = std::begin(tags); it != std::end(tags); ++it) {
-        // Look for nodes tagged
-        if (it->first == "building" || it->first == "amenity" ||
-            it->first == "place" || it->first == "school" ||
-            it->first == "healthcare") {
-            auto match = std::find(amenities.begin(), amenities.end(),
-                                   boost::algorithm::to_lower_copy(it->second));
-            if (match != amenities.end()) {
-                if (!cache[it->second]) {
-                    // log_debug(_("\tmatched amenity value: %1%"), it->second);
-                    hits->push_back(boost::algorithm::to_lower_copy(it->second));
-                    cache[it->second] = true;
-                    // An amenity is a building, but the building tag may not be set
-                    hits->push_back("building");
-                } else {
-                    continue;
-                }
-            }
-            match = std::find(places.begin(), places.end(),
-                              boost::algorithm::to_lower_copy(it->second));
-            if (match != places.end()) {
-                if (!cache[it->second]) {
-                    // log_debug(_("\tmatched place value: %1%"), it->second);
-                    hits->push_back(boost::algorithm::to_lower_copy(it->second));
-                    hits->push_back("place");
-                    cache[it->second] = true;
-                }
-            }
 
-            // Add anything with the building tag set
-            if (it->first == "building") {
-                hits->push_back("building");
-                match = std::find(buildings.begin(), buildings.end(),
-                                  boost::algorithm::to_lower_copy(it->second));
-                if (match != buildings.end()) {
-                    if (!cache[it->second]) {
-                        // log_debug(_("\tmatched building value: %1%"), it->second);
-                        hits->push_back(boost::algorithm::to_lower_copy(it->second));
-                        cache[it->second] = true;
-                    }
-                }
-            }
-            match = std::find(schools.begin(), schools.end(),
-                              boost::algorithm::to_lower_copy(it->second));
-            if (match != schools.end()) {
-                if (!cache[it->second]) {
-                    // log_debug(_("\tmatched school value: %1%"), it->second);
-                    // Add the type of school
-                    hits->push_back(boost::algorithm::to_lower_copy(it->second));
-                    // Add a generic school accumulator
-                    hits->push_back("school");
-                    cache[it->second] = true;
-                }
-            }
+    std::map<std::string, bool> cache;
+    statsconfig::StatsConfigSearch search;
+    for (auto it = std::begin(tags); it != std::end(tags); ++it) {
+        std::string category = "";
+        if (type == node) {
+            category = search.tag_value(it->first, it->second, node, statsconfig);
+        } else if (type == way) {
+            category = search.tag_value(it->first, it->second, way, statsconfig);
         }
-        if (it->first == "highway") {
-            // hits->push_back("highway");
-            auto match = std::find(highways.begin(), highways.end(),
-                                   boost::algorithm::to_lower_copy(it->second));
-            if (match != highways.end()) {
-                if (!cache[it->second]) {
-                    // log_debug(_("\tmatched highway value: %1%"), it->second);
-                    hits->push_back(it->first);
-                    cache[it->second] = true;
-                }
-            }
-        }
-        if (it->first == "waterway") {
-            if (!cache[it->second]) {
-                // log_debug(_("\tmatched waterway value: %1%"), it->second);
-                hits->push_back(it->first);
-                cache[it->second] = true;
-            }
+        if (category != "") {
+            hits->push_back(category);
         }
     }
-
+    
     return hits;
 }
 
