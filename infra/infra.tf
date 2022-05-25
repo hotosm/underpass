@@ -93,6 +93,37 @@ resource "aws_iam_role" "underpass" {
   ]
 }
 
+resource "aws_instance" "jumphost" {
+  ami           = data.aws_ami.debian_bullseye.id
+  instance_type = lookup(var.instance_types, "jump_host", "t3.large")
+
+  subnet_id              = aws_subnet.public[2].id
+  vpc_security_group_ids = [aws_security_group.remote-access.id]
+
+  root_block_device {
+    volume_size = lookup(var.disk_sizes, "jump_host_root", 10)
+    volume_type = "gp3"
+    throughput  = 125
+  }
+
+  iam_instance_profile = aws_iam_instance_profile.underpass.name
+  key_name             = var.ssh_key_pair_name
+
+  tags = {
+    Name = "galaxy-jump.hotosm.org"
+    Role = "SSH Jump Host"
+  }
+
+  lifecycle {
+    create_before_destroy = false
+    prevent_destroy       = false
+    ignore_changes = [
+      # Ignore changes to AMI
+      # ami,
+    ]
+  }
+}
+
 /** TODO
 * Monitoring:
 *   - Setup Newrelic Agent
@@ -157,12 +188,10 @@ resource "aws_instance" "file-processor" {
   }
 }
 
-/*
-resource "aws_eip" "underpass" {
-  instance = aws_instance.application.id
+resource "aws_eip" "jumphost" {
+  instance = aws_instance.jumphost.id
   vpc      = true
 }
-*/
 
 /** TODO
 * Monitoring:
@@ -324,15 +353,25 @@ data "aws_route53_zone" "hotosm-org" {
   name = "hotosm.org."
 }
 
-/**
-resource "aws_route53_record" "underpass" {
+resource "aws_route53_record" "galaxy-api-lb" {
   zone_id = data.aws_route53_zone.hotosm-org.zone_id
-  name    = "underpass-demo.${data.aws_route53_zone.hotosm-org.name}"
+  name    = "galaxy-api-lb-temp.${data.aws_route53_zone.hotosm-org.name}"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.galaxy-api.dns_name
+    zone_id                = aws_lb.galaxy-api.dns_name
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_route53_record" "jumphost" {
+  zone_id = data.aws_route53_zone.hotosm-org.zone_id
+  name    = "galaxy-bastion.${data.aws_route53_zone.hotosm-org.name}"
   type    = "A"
   ttl     = "300"
-  records = [aws_eip.underpass.public_ip]
+  records = [aws_eip.jumphost.public_ip]
 }
-*/
 
 /** TODO
 * Figure out Lifecycle rules
