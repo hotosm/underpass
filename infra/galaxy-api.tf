@@ -384,31 +384,18 @@ resource "aws_secretsmanager_secret_version" "configfile" {
   secret_id = aws_secretsmanager_secret.configfile.id
   secret_string = base64gzip(
     templatefile(
-      "${path.module}/config.txt.tpl",
+      "${path.module}/config.txt.tftpl",
       {
-        insights_pg_host     = lookup(var.insights_db_config_credentials, "host", "")
-        insights_pg_port     = lookup(var.insights_db_config_credentials, "port", "")
-        insights_pg_user     = lookup(var.insights_db_config_credentials, "user", "")
-        insights_pg_password = lookup(var.insights_db_config_credentials, "password", "")
-        insights_pg_database = lookup(var.insights_db_config_credentials, "database", "")
-
-        underpass_pg_host     = lookup(var.underpass_db_config_credentials, "host", "")
-        underpass_pg_port     = lookup(var.underpass_db_config_credentials, "port", "")
-        underpass_pg_user     = lookup(var.underpass_db_config_credentials, "user", "")
-        underpass_pg_password = lookup(var.underpass_db_config_credentials, "password", "")
-        underpass_pg_database = lookup(var.underpass_db_config_credentials, "database", "")
-
-        tasking_manager_pg_host     = lookup(var.tasking_manager_db_config_credentials, "host", "")
-        tasking_manager_pg_port     = lookup(var.tasking_manager_db_config_credentials, "port", "")
-        tasking_manager_pg_user     = lookup(var.tasking_manager_db_config_credentials, "user", "")
-        tasking_manager_pg_password = lookup(var.tasking_manager_db_config_credentials, "password", "")
-        tasking_manager_pg_database = lookup(var.tasking_manager_db_config_credentials, "database", "")
+        insights_creds        = var.insights_db_credentials
+        underpass_creds       = var.underpass_db_credentials
+        tasking_manager_creds = var.tasking_manager_db_credentials
 
         dump_path = var.dump_path
 
-        oauth2_client_id     = lookup(var.oauth2_credentials, "client_id", "")
-        oauth2_client_secret = lookup(var.oauth2_credentials, "client_secret", "")
-        oauth2_secret_key    = lookup(var.oauth2_credentials, "secret_key", "")
+        oauth2_creds = var.oauth2_credentials
+
+        api_url  = "${var.api_url_scheme}${var.api_host}"
+        api_port = var.api_port
       }
     )
   )

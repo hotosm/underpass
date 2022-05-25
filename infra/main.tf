@@ -216,6 +216,33 @@ resource "aws_security_group" "app" {
 
 }
 
+resource "aws_security_group" "remote-access" {
+  name        = "remote-access"
+  description = "Underpass Backend API Firewall"
+  vpc_id      = aws_vpc.galaxy.id
+
+  ingress {
+    description = "Allow SSH from nobody do not remove"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["127.0.0.1/32"]
+  }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  tags = {
+    Name = "galaxy-remote-user-access"
+  }
+
+}
+
 resource "aws_security_group" "api" {
   name        = "api"
   description = "Underpass Backend API Firewall"
