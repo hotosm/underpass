@@ -63,7 +63,7 @@ statsToJSON(std::shared_ptr<std::map<long, std::shared_ptr<osmchange::ChangeStat
 			jsonstr += ", \"added\": []";
 		}
 
-		if (changestats->statsconfigmodified.size() > 0) {
+		if (changestats->modified.size() > 0) {
 			jsonstr += ", \"modified\":[";
 			for (const auto &modified: std::as_const(changestats->modified)) {
 				if (modified.second > 0) {

@@ -39,10 +39,6 @@ int
 main(int argc, char *argv[])
 {
 
-    // TODO: 
-    // [ ] Get stats from osmchange file using YAML configuration file
-    // [ ] Assert results
-
     logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
     dbglogfile.setWriteDisk(true);
     dbglogfile.setLogFilename("statsconfig-test.log");
@@ -51,21 +47,12 @@ main(int argc, char *argv[])
     statsconfig::StatsConfigFile statsconfigfile;
     std::string filename = DATADIR;
     filename += "/testsuite/testdata/statsconfig.yaml";    
-    std::vector<statsconfig::StatsConfig> statsconfig;
-    statsconfigfile.read_yaml(filename, statsconfig);
-
-    // for (int i = 0; i < statsconfig.size(); ++i) {
-    //     std::cout << "Stat: " << statsconfig[i].name << std::endl;
-    //     std::cout << " way: " << std::endl;
-    //     dump_tags(statsconfig[i].way);
-    //     std::cout << " node: " << std::endl;
-    //     dump_tags(statsconfig[i].node);
-    // }
+    std::shared_ptr<std::vector<statsconfig::StatsConfig>> statsconfig = statsconfigfile.read_yaml(filename);
 
     if (
-        statsconfig[0].way.count("building") && statsconfig[0].way.at("building")[1] == "school" &&
-        statsconfig[1].node.count("amenity") && statsconfig[1].node.at("amenity")[0] == "emergency" &&
-        statsconfig[2].way.count("highway") && statsconfig[2].way.at("highway")[0] == "yes"
+        statsconfig->at(0).way.count("building") && statsconfig->at(0).way.at("building")[1] == "school" &&
+        statsconfig->at(1).node.count("amenity") && statsconfig->at(1).node.at("amenity")[0] == "emergency" &&
+        statsconfig->at(2).way.count("highway") && statsconfig->at(2).way.at("highway")[0] == "yes"
     ) {
         runtest.pass("StatsConfigFile::read_yaml()");
     } else {
@@ -73,7 +60,7 @@ main(int argc, char *argv[])
     }
 
     statsconfig::StatsConfigSearch search;
-    if (search.tag_value("building", "school", way, statsconfig) == "buildings") {
+    if (search.tag_value("building", "school", osmchange::way, statsconfig) == "buildings") {
         runtest.pass("StatsConfigSearch::tag_value()");
     } else {
         runtest.fail("StatsConfigSearch::tag_value()");
