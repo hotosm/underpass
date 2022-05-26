@@ -41,7 +41,7 @@ resource "aws_subnet" "private" {
   availability_zone = data.aws_availability_zones.available.names[count.index]
 
   cidr_block      = cidrsubnet(aws_vpc.galaxy.cidr_block, 8, "${count.index + var.subnet_count + 1}")
-  ipv6_cidr_block = cidrsubnet(aws_vpc.galaxy.ipv6_cidr_block, 8, "${count.index + var.subnet_count + 16}")
+  ipv6_cidr_block = cidrsubnet(aws_vpc.galaxy.ipv6_cidr_block, 8, "${count.index + 64}")
 
   tags = {
     Name = "galaxy-private${count.index + 1}"
