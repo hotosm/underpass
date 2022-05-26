@@ -330,6 +330,7 @@ resource "aws_lb" "galaxy-api" {
   subnets            = aws_subnet.public[*].id
 
   enable_deletion_protection = false
+  ip_address_type            = "dualstack"
 
   tags = {
     Environment = "production"
