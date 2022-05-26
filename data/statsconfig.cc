@@ -30,9 +30,12 @@
 #include "yaml2.hh"
 #include "statsconfig.hh"
 #include "galaxy/osmchange.hh"
+#include <memory>
 
 /// \namespace statsconfig
 namespace statsconfig {
+
+    std::map<std::string, std::shared_ptr<std::vector<StatsConfig>>> statsconfigs;
 
     StatsConfig::StatsConfig(std::string name) {
         this->name = name;
@@ -48,26 +51,36 @@ namespace statsconfig {
         this->node = node;
     };
 
-    int StatsConfigFile::read_yaml(std::string filename, std::vector<StatsConfig> &statsconfig) {
-        yaml2::Yaml2 yaml;
-        yaml.read(filename);
-        for (auto it = std::begin(yaml.root.children); it != std::end(yaml.root.children); ++it) {
-            std::map<std::string, std::vector<std::string>> way_tags;
-            std::map<std::string, std::vector<std::string>> node_tags;
-            for (auto type_it = std::begin(it->children); type_it != std::end(it->children); ++type_it) {
-                for (auto value_it = std::begin(type_it->children); value_it != std::end(type_it->children); ++value_it) {
-                    for (auto tag_it = std::begin(value_it->children); tag_it != std::end(value_it->children); ++tag_it) {
-                        if (type_it->value == "way") {
-                            way_tags[value_it->value].push_back(tag_it->value);
-                        } else if (type_it->value == "node") {
-                            node_tags[value_it->value].push_back(tag_it->value);
+    std::shared_ptr<std::vector<statsconfig::StatsConfig>> StatsConfigFile::read_yaml(std::string filename) {
+        if (!statsconfig::statsconfigs.count(filename)) {
+            auto statsconfig = std::make_shared<std::vector<statsconfig::StatsConfig>>();
+            yaml2::Yaml2 yaml;
+            yaml.read(filename);
+            for (auto it = std::begin(yaml.root.children); it != std::end(yaml.root.children); ++it) {
+                std::map<std::string, std::vector<std::string>> way_tags;
+                std::map<std::string, std::vector<std::string>> node_tags;
+                for (auto type_it = std::begin(it->children); type_it != std::end(it->children); ++type_it) {
+                    for (auto value_it = std::begin(type_it->children); value_it != std::end(type_it->children); ++value_it) {
+                        for (auto tag_it = std::begin(value_it->children); tag_it != std::end(value_it->children); ++tag_it) {
+                            if (type_it->value == "way") {
+                                way_tags[value_it->value].push_back(tag_it->value);
+                            } else if (type_it->value == "node") {
+                                node_tags[value_it->value].push_back(tag_it->value);
+                            }
                         }
-                    }
-                }            
+                    }            
+                }
+                statsconfig->push_back(
+                    StatsConfig(it->value, way_tags, node_tags)
+                );
             }
-            statsconfig.push_back(StatsConfig(it->value, way_tags, node_tags));
+            statsconfig::statsconfigs.insert(
+                std::pair<std::string, std::shared_ptr<std::vector<statsconfig::StatsConfig>>>(
+                    filename, statsconfig
+                )
+            );
         }
-        return 1;
+        return statsconfig::statsconfigs.at(filename);
     }
 
     std::string StatsConfigSearch::category(std::string tag, std::string value, std::map<std::string, std::vector<std::string>> tags) {
@@ -82,22 +95,21 @@ namespace statsconfig {
         }
         return "";
     };
-    std::string StatsConfigSearch::tag_value(std::string tag, std::string value, osmchange::osmtype_t type, std::vector<StatsConfig> &statsconfig) {
+    std::string StatsConfigSearch::tag_value(std::string tag, std::string value, osmchange::osmtype_t type, std::shared_ptr<std::vector<StatsConfig>> statsconfig) {
         std::string category = "";
-        for (int i = 0; i < statsconfig.size(); ++i) {
+        for (int i = 0; i < statsconfig->size(); ++i) {
             if (type == osmchange::way) {
-                category = StatsConfigSearch::category(tag, value, statsconfig[i].way);
+                category = StatsConfigSearch::category(tag, value, statsconfig->at(i).way);
                 if (category != "") {
-                    return statsconfig[i].name;
+                    return statsconfig->at(i).name;
                 }
             } else if (type == osmchange::node) {
-                category = StatsConfigSearch::category(tag, value, statsconfig[i].node);
+                category = StatsConfigSearch::category(tag, value, statsconfig->at(i).node);
                 if (category != "") {
-                    return statsconfig[i].name;
+                    return statsconfig->at(i).name;
                 }
             }
         }
-
         return category;
     }
 

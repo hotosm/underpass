@@ -697,9 +697,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags, osmchange::osmt
     statsconfig::StatsConfigFile statsconfigfile;
     std::string filename = SRCDIR;
     filename += "/validate/statistics.yaml";    
-    std::vector<statsconfig::StatsConfig> statsconfig;
-    statsconfigfile.read_yaml(filename, statsconfig);
-
+    std::shared_ptr<std::vector<statsconfig::StatsConfig>> statsconfig = statsconfigfile.read_yaml(filename);
     auto hits = std::make_shared<std::vector<std::string>>();
 
     // Some older nodes in a way wound up with this one tag, which nobody noticed,
@@ -711,14 +709,14 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags, osmchange::osmt
     std::map<std::string, bool> cache;
     statsconfig::StatsConfigSearch search;
     for (auto it = std::begin(tags); it != std::end(tags); ++it) {
-        std::string category = "";
+        std::string hit = "";
         if (type == node) {
-            category = search.tag_value(it->first, it->second, node, statsconfig);
+            hit = search.tag_value(it->first, it->second, node, statsconfig);
         } else if (type == way) {
-            category = search.tag_value(it->first, it->second, way, statsconfig);
+            hit = search.tag_value(it->first, it->second, way, statsconfig);
         }
-        if (category != "") {
-            hits->push_back(category);
+        if (hit != "") {
+            hits->push_back(hit);
         }
     }
     
