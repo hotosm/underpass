@@ -355,7 +355,7 @@ data "aws_route53_zone" "hotosm-org" {
 
 resource "aws_route53_record" "galaxy-api-lb" {
   zone_id = data.aws_route53_zone.hotosm-org.zone_id
-  name    = "galaxy-api-lb-temp.${data.aws_route53_zone.hotosm-org.name}"
+  name    = "galaxy-api.${data.aws_route53_zone.hotosm-org.name}"
   type    = "A"
 
   alias {
