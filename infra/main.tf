@@ -11,6 +11,9 @@ resource "aws_vpc" "galaxy" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
 
+  // Amazon-provided IPv6 CIDR block with a /56 prefix
+  assign_generated_ipv6_cidr_block = true
+
   tags = {
     Name       = "Galaxy"
     Maintainer = "Yogesh Girikumar"
@@ -23,7 +26,8 @@ resource "aws_subnet" "public" {
   vpc_id            = aws_vpc.galaxy.id
   availability_zone = data.aws_availability_zones.available.names[count.index]
 
-  cidr_block = cidrsubnet(var.vpc_cidr, 8, "${count.index + 1}")
+  cidr_block      = cidrsubnet(aws_vpc.galaxy.cidr_block, 8, "${count.index + 1}")
+  ipv6_cidr_block = cidrsubnet(aws_vpc.galaxy.ipv6_cidr_block, 8, "${count.index + 16}")
 
   tags = {
     Name = "galaxy-public${count.index + 1}"
@@ -36,7 +40,8 @@ resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.galaxy.id
   availability_zone = data.aws_availability_zones.available.names[count.index]
 
-  cidr_block = cidrsubnet(var.vpc_cidr, 8, "${count.index + var.subnet_count + 1}")
+  cidr_block      = cidrsubnet(aws_vpc.galaxy.cidr_block, 8, "${count.index + var.subnet_count + 1}")
+  ipv6_cidr_block = cidrsubnet(aws_vpc.galaxy.ipv6_cidr_block, 8, "${count.index + 16}")
 
   tags = {
     Name = "galaxy-private${count.index + 1}"
