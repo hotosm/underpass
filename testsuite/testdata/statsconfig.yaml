@@ -1,5 +1,7 @@
 buildings:
   way:
+    - underpass_tag:
+      - underpass_test
     - building:
       - yes
       - school
@@ -9,6 +11,8 @@ buildings:
   node:
     - amenity:
       - school
+    - underpass_tag:
+      - underpass_test
 
 amenities:
   node:
@@ -20,3 +24,10 @@ highways:
     - highway:
       - yes
 
+underpass_category:
+  way:
+    - underpass_tag2:
+      - underpass_test
+  node:
+    - underpass_tag2:
+      - underpass_test

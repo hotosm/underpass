@@ -494,20 +494,20 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
 		}
 		continue;
 	    }
-            if (way->linestring.size() == 0 && way->action == osmobjects::create) {
-		log_error(_("Way %1% has no geometry!"), way->id);
-		return;
-	    }
-            boost::geometry::centroid(way->linestring, way->center);
-            // point_t pt = nodecache.find(way->refs[1])->second;
-            // log_debug("ST_GeomFromEWKT(\'SRID=4326; %1%\'))", boost::geometry::wkt(pt));
-            if (!boost::geometry::within(way->center, poly)) {
-                // log_debug(_("Validating Way %1% is not in a priority area"), way->id);
-                change->ways.erase(wit--);
+            if (way->linestring.size() != 0 && way->action != osmobjects::create) {
+                boost::geometry::centroid(way->linestring, way->center);
+                // point_t pt = nodecache.find(way->refs[1])->second;
+                // log_debug("ST_GeomFromEWKT(\'SRID=4326; %1%\'))", boost::geometry::wkt(pt));
+                if (!boost::geometry::within(way->center, poly)) {
+                    // log_debug(_("Validating Way %1% is not in a priority area"), way->id);
+                    change->ways.erase(wit--);
+                } else {
+                    // log_debug(_("Validating Way %1% is in a priority area"), way->id);
+                    way->priority = true;
+                    priority[way->change_id] = true;
+                }
             } else {
-                // log_debug(_("Validating Way %1% is in a priority area"), way->id);
-                way->priority = true;
-		priority[way->change_id] = true;
+                log_error(_("Way %1% has no geometry!"), way->id);
             }
         }
         // Delete the whole change if no ways or nodes or relations
@@ -693,7 +693,6 @@ std::shared_ptr<std::vector<std::string>>
 OsmChangeFile::scanTags(std::map<std::string, std::string> tags, osmchange::osmtype_t type)
 {
 
-    // TODO: load config once
     statsconfig::StatsConfigFile statsconfigfile;
     std::string filename = SRCDIR;
     filename += "/validate/statistics.yaml";    
