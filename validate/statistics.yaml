@@ -1,17 +1,13 @@
 place:
   node:
     - place:
-      - yes
-      - village
-      - hamlet
-      - neigborhood
-      - city
-      - town
+      - *
     
-amenity:
-  node:
+building:
+  way:
+    - building:
+      - *
     - amenity:
-      - yes
       - hospital
       - school
       - clinic
@@ -20,44 +16,22 @@ amenity:
       - health_facility
       - health_center
       - healthcare
-
-building:
-  way:
+  node:
     - building:
-      - yes
-      - hospital
-      - hut
-      - school
-      - healthcare
-      - clinic
-      - kindergarten
-      - health center
-      - health centre
-      - latrine
-      - latrines
-      - toilet
-      - toilets
-
-school:
-  way:
-    - school:
-      - yes
-      - primary
-      - secondary
-      - kindergarten
+      - *
+      
+amenity:
+  node:
+    - amenity:
+      - *
+  node:
+    - amenity:
+      - *
 
 highway:
   way:
     - highway:
-      - yes
-      - tertiary
-      - secondary
-      - unclassified
-      - track
-      - residential
-      - service
-      - path
-      - bridge
+      - *
 
 waterway:
   way:

@@ -66,6 +66,30 @@ main(int argc, char *argv[])
         runtest.fail("StatsConfigSearch::tag_value()");
     }
 
+    if (search.tag_value("underpass_tag", "underpass_test", osmchange::way, statsconfig) == "buildings") {
+        runtest.pass("StatsConfigSearch::tag_value() - way custom tags");
+    } else {
+        runtest.fail("StatsConfigSearch::tag_value() - way custom tags");
+    }
+
+    if (search.tag_value("underpass_tag", "underpass_test", osmchange::node, statsconfig) == "buildings") {
+        runtest.pass("StatsConfigSearch::tag_value() - node custom tags");
+    } else {
+        runtest.fail("StatsConfigSearch::tag_value() - node custom tags");
+    }
+
+    if (search.tag_value("underpass_tag2", "underpass_test", osmchange::node, statsconfig) == "underpass_category") {
+        runtest.pass("StatsConfigSearch::tag_value() - node custom tags and custom category");
+    } else {
+        runtest.fail("StatsConfigSearch::tag_value() - node custom tags and custom category");
+    }
+
+    if (search.tag_value("underpass_tag2", "underpass_test", osmchange::way, statsconfig) == "underpass_category") {
+        runtest.pass("StatsConfigSearch::tag_value() - way custom tags and custom category");
+    } else {
+        runtest.fail("StatsConfigSearch::tag_value() - way custom tags and custom category");
+    }
+
 }
 
 // local Variables:
