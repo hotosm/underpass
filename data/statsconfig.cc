@@ -100,14 +100,11 @@ namespace statsconfig {
         for (int i = 0; i < statsconfig->size(); ++i) {
             if (type == osmchange::way) {
                 category = StatsConfigSearch::category(tag, value, statsconfig->at(i).way);
-                if (category != "") {
-                    return statsconfig->at(i).name;
-                }
             } else if (type == osmchange::node) {
                 category = StatsConfigSearch::category(tag, value, statsconfig->at(i).node);
-                if (category != "") {
-                    return statsconfig->at(i).name;
-                }
+            }
+            if (category != "") {
+                return statsconfig->at(i).name;
             }
         }
         return category;
