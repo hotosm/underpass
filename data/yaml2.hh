@@ -65,7 +65,7 @@ class Yaml2 {
         std::map<int, std::vector<std::string>> level;
         char idents[2] = {' ', '\t'};
 };
-    
+
 } // EOF yaml2 namespace
 
 #endif  // EOF __YAML2_HH__

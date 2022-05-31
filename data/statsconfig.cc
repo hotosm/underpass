@@ -44,7 +44,7 @@ namespace statsconfig {
         std::string name,
         std::map<std::string, std::vector<std::string>> way,
         std::map<std::string, std::vector<std::string>> node
-    ) 
+    )
     {
         this->name = name;
         this->way = way;
@@ -68,7 +68,7 @@ namespace statsconfig {
                                 node_tags[value_it->value].push_back(tag_it->value);
                             }
                         }
-                    }            
+                    }
                 }
                 statsconfig->push_back(
                     StatsConfig(it->value, way_tags, node_tags)
@@ -103,7 +103,7 @@ namespace statsconfig {
             } else if (type == osmchange::node) {
                 category = StatsConfigSearch::category(tag, value, statsconfig->at(i).node);
             }
-            if (category != "") {
+            if (!category.empty()) {
                 return statsconfig->at(i).name;
             }
         }

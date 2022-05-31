@@ -52,7 +52,7 @@ namespace statsconfig {
                 std::map<std::string, std::vector<std::string>> node
             );
     };
-    
+
     class StatsConfigFile {
         public:
             static std::shared_ptr<std::vector<statsconfig::StatsConfig>> read_yaml(std::string filename);

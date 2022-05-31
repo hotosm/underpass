@@ -2,7 +2,7 @@ place:
   node:
     - place:
       - *
-    
+
 building:
   way:
     - building:
@@ -19,7 +19,7 @@ building:
   node:
     - building:
       - *
-      
+
 amenity:
   node:
     - amenity:

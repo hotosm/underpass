@@ -46,7 +46,7 @@ main(int argc, char *argv[])
 
     statsconfig::StatsConfigFile statsconfigfile;
     std::string filename = DATADIR;
-    filename += "/testsuite/testdata/statsconfig.yaml";    
+    filename += "/testsuite/testdata/statsconfig.yaml";
     std::shared_ptr<std::vector<statsconfig::StatsConfig>> statsconfig = statsconfigfile.read_yaml(filename);
 
     if (

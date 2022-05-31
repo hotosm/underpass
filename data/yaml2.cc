@@ -99,7 +99,7 @@ std::string Yaml2::scan_ident(std::string line) {
     } else {
         return line;
     }
-    
+
 }
 
 
