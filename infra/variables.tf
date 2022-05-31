@@ -207,3 +207,13 @@ variable "api_url_scheme" {
   type    = string
   default = "https://"
 }
+
+variable "sentry_api_key" {
+  type = string
+  default = ""
+}
+
+variable "sentry_galaxy_api_app_id" {
+  type    = string
+  default = ""
+}

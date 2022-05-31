@@ -46,7 +46,7 @@ ${k}=${v}
 %{ endfor ~}
 
 [SENTRY]
-url=https://apikey.ingest.sentry.io/appid
+url=https://${sentry_api_key}.ingest.sentry.io/${sentry_app_id}
 rate=1.0
 
 ; If API and UI are on different hosts

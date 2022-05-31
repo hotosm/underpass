@@ -395,8 +395,11 @@ resource "aws_secretsmanager_secret_version" "configfile" {
 
         oauth2_creds = var.oauth2_credentials
 
-        api_url  = "${var.api_url_scheme}${var.api_host}"
-        api_port = var.api_port
+        api_url        = "${var.api_url_scheme}${var.api_host}"
+        api_port       = var.api_port
+
+        sentry_api_key = var.sentry_api_key
+        sentry_app_id  = var.sentry_galaxy_api_app_id
       }
     )
   )
