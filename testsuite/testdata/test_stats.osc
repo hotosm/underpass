@@ -83,7 +83,21 @@
             <nd ref="4425965490"/>
             <nd ref="4684837924"/>
             <tag k="waterway" v="river"/>
-            </way>
+        </way>
+        <way id="474556695" version="1" timestamp="2021-02-11T01:56:35Z" uid="1" user="some_user" changeset="1">
+            <nd ref="4684837925"/>
+            <nd ref="4684837923"/>
+            <nd ref="4425965490"/>
+            <nd ref="4684837924"/>
+            <tag k="underpass_way" v="test"/>
+        </way>
+    </create>
+    <create>
+        <node id="44" lat="25.8437789" lon="82.6640564" user="some_user" uid="1" version="1" changeset="1" timestamp="2021-02-11T01:56:35Z">
+            <tag k="name" v="Some other interesting point (44)"/>
+            <tag k="addr:housename" v="My house name at N°5" />
+            <tag k="underpass_node" v="test" />
+        </node>
     </create>
     <modify>
         <way id="119581708" version="1" changeset="1"

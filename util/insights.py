@@ -116,7 +116,7 @@ class UnderpassStats:
                         'added_places': self.getValue(row, 'added','places'),
                         'modified_places': self.getValue(row, 'modified','places'),
                     }
-                }          
+                }
             else:
                 data[changeset_id]['underpass']['added_buildings'] += self.getValue(row, 'added','building')
                 data[changeset_id]['underpass']['modified_buildings'] += self.getValue(row, 'modified','building')
@@ -153,6 +153,5 @@ for changeset_id in stats:
     stats[changeset_id]["insights"] = insightsDB.getChangesetsStats(changeset_id)
     bar.update(count)
     count += 1
- 
-print(json.dumps(stats))
 
+print(json.dumps(stats))

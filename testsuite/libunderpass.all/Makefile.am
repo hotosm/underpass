@@ -28,6 +28,7 @@ check_PROGRAMS = \
 	osm2pgsql-test \
 	yaml-test \
 	stats-test \
+    statsconfig-test \
 	planetreplicator-test \
 	geo-test
 
@@ -102,6 +103,11 @@ stats_test_SOURCES = stats-test.cc
 stats_test_LDFLAGS = -L../..
 stats_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
+# Test the OSM StatsConfig
+statsconfig_test_SOURCES = statsconfig-test.cc
+statsconfig_test_LDFLAGS = -L../..
+statsconfig_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+
 # Test the PlanetReplicator class
 planetreplicator_test_SOURCES = planetreplicator-test.cc
 planetreplicator_test_LDFLAGS = -L../..
@@ -135,6 +141,7 @@ CLEANFILES = \
 	geo-test.log \
 	osm2pgsql-test.log \
 	stats-test.log \
+    statsconfig-test.log \
 	planetreplicator-test.log \
 	replication-test.log
 
