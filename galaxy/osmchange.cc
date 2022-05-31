@@ -695,7 +695,7 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags, osmchange::osmt
 
     statsconfig::StatsConfigFile statsconfigfile;
     std::string filename = SRCDIR;
-    filename += "/validate/statistics.yaml";    
+    filename += "/validate/statistics.yaml";
     std::shared_ptr<std::vector<statsconfig::StatsConfig>> statsconfig = statsconfigfile.read_yaml(filename);
     auto hits = std::make_shared<std::vector<std::string>>();
 
@@ -714,11 +714,11 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags, osmchange::osmt
         } else if (type == way) {
             hit = search.tag_value(it->first, it->second, way, statsconfig);
         }
-        if (hit != "") {
+        if (!hit.empty()) {
             hits->push_back(hit);
         }
     }
-    
+
     return hits;
 }
 

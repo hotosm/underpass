@@ -144,7 +144,7 @@ class TestStats {
 			this->verbose = verbosity;
 		};
 		std::shared_ptr<std::map<long, std::shared_ptr<osmchange::ChangeStats>>>
-		
+
 		getStatsFromFile(std::string filename) {
 			TestOsmChanges osmchanges;
 			osmchanges.readChanges(filename);
