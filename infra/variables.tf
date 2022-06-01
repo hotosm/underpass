@@ -208,12 +208,7 @@ variable "api_url_scheme" {
   default = "https://"
 }
 
-variable "sentry_api_key" {
-  type = string
-  default = ""
-}
-
-variable "sentry_galaxy_api_app_id" {
+variable "sentry_dsn" {
   type    = string
   default = ""
 }

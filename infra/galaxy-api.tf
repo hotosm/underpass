@@ -135,6 +135,12 @@ resource "aws_ecs_task_definition" "galaxy-api" {
     cpu_architecture        = "X86_64" // or ARM64
   }
 
+  ephemeral_storage {
+    size_in_gib = 200
+  }
+
+  execution_role_arn = aws_iam_role.ecs_execution_role.arn
+
   container_definitions = jsonencode([
     {
       name  = "galaxy-api"
@@ -180,7 +186,7 @@ resource "aws_ecs_task_definition" "galaxy-api" {
       ]
     }
   ])
-  execution_role_arn = aws_iam_role.ecs_execution_role.arn
+
 }
 
 resource "aws_ecs_service" "galaxy-api" {
@@ -383,7 +389,7 @@ resource "aws_secretsmanager_secret" "configfile" {
 
 resource "aws_secretsmanager_secret_version" "configfile" {
   secret_id = aws_secretsmanager_secret.configfile.id
-  secret_string = base64gzip(
+  secret_string = base64encode(
     templatefile(
       "${path.module}/config.txt.tftpl",
       {
@@ -395,11 +401,10 @@ resource "aws_secretsmanager_secret_version" "configfile" {
 
         oauth2_creds = var.oauth2_credentials
 
-        api_url        = "${var.api_url_scheme}${var.api_host}"
-        api_port       = var.api_port
+        api_url  = "${var.api_url_scheme}${var.api_host}"
+        api_port = var.api_port
 
-        sentry_api_key = var.sentry_api_key
-        sentry_app_id  = var.sentry_galaxy_api_app_id
+        sentry_dsn = var.sentry_dsn
       }
     )
   )
