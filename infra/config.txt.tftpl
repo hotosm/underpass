@@ -12,7 +12,7 @@ port=${api_port}
 
 ; OAuth2 Credentials for OSM.org login
 [OAUTH]
-%{ for k, v in oauth2_creds }
+%{ for k, v in oauth2_creds ~}
 ${k}=${v}
 %{ endfor ~}
 url=https://www.openstreetmap.org
@@ -28,25 +28,25 @@ osmstats=osmstats.sql
 
 ; Insights database access credentials
 [INSIGHTS]
-%{ for k, v in insights_creds }
+%{ for k, v in insights_creds ~}
 ${k}=${v}
 %{ endfor ~}
 
 ; Underpass database access credentials
 [UNDERPASS]
-%{ for k, v in underpass_creds }
+%{ for k, v in underpass_creds ~}
 ${k}=${v}
 %{ endfor ~}
 
 ; Tasking Manager database access credentials
 ; TODO: Rename section title
 [TM]
-%{ for k, v in tasking_manager_creds }
+%{ for k, v in tasking_manager_creds ~}
 ${k}=${v}
 %{ endfor ~}
 
 [SENTRY]
-url=https://${sentry_api_key}.ingest.sentry.io/${sentry_app_id}
+url=${sentry_dsn}
 rate=1.0
 
 ; If API and UI are on different hosts
