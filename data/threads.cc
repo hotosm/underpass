@@ -157,7 +157,7 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     while (mainloop) {
         i = cores*2;
         boost::asio::thread_pool pool(i);
-        while (i--) {
+        while (--i) {
             std::this_thread::sleep_for(delay);
             if (closest->second != not_a_date_time) {
                 remote->Increment();

@@ -163,12 +163,17 @@ OsmChangeFile::readXML(std::istream &xml)
 #ifdef USE_TMPFILE
     boost::property_tree::read_xml("tmp.xml", pt);
 #else
-    boost::property_tree::read_xml(xml, pt);
+    try {
+        boost::property_tree::read_xml(xml, pt);
+    } catch (exception& boost::property_tree::xml_parser::xml_parser_error) {
+        log_error(_("Error parsing XML"));
+        return false;
+    }
 #endif
 
     if (pt.empty()) {
         log_error(_("ERROR: XML data is empty!"));
-        // return false;
+        return false;
     }
 
     //    boost::progress_display show_progress( 7000 );
