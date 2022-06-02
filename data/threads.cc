@@ -326,7 +326,7 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("threadOsmChange: took %w seconds\n");
 #endif
-    // log_debug(_("Processing osmChange: %1%"), remote.filespec);
+    log_debug(_("Processing osmChange: %1%"), remote->filespec);
     auto data = planet->downloadFile(*remote.get());
     auto task = std::pair<std::string, ptime>(
         remote->subpath,
@@ -433,32 +433,22 @@ threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("threadChangeSet: took %w seconds\n");
 #endif
+
+    auto data = planet->downloadFile(*remote.get());
     auto task = std::pair<std::string, ptime>(
         remote->subpath,
         not_a_date_time
     );
     auto changeset = std::make_unique<changeset::ChangeSetFile>();
-    auto data = std::make_shared<std::vector<unsigned char>>();
-
-    // remote->dump();
     log_debug(_("Processing ChangeSet: %1%"), remote->filespec);
-    try {
-	data = planet->downloadFile(*remote);
-    } catch (const std::exception &ex) {
-	log_debug(_("Download error for %1%: %2%"), remote->filespec, ex.what());
-    }
-
-    if (data->size() == 0) {
-        log_error(_("ChangeSet file not found: %1%"), remote->filespec);
-        changeset->download_error = true;
-    } else {
+    if (data->size() > 0) {
         auto xml = planet->processData(remote->filespec, *data);
         std::istream& input(xml);
         changeset->readXML(input);
         if (changeset->changes.back()->closed_at != not_a_date_time) {
-            task.second = changeset->changes.back()->created_at;
+            memcpy ( &task.second, &changeset->changes.back()->closed_at, sizeof(changeset->changes.back()->closed_at) );
         } else if (changeset->changes.back()->created_at != not_a_date_time) {
-            task.second = changeset->changes.back()->created_at;
+            memcpy ( &task.second, &changeset->changes.back()->created_at, sizeof(changeset->changes.back()->created_at) );
         }
     }
 
