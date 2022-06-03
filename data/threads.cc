@@ -181,20 +181,25 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
         pool.join();
         
         ptime now  = boost::posix_time::second_clock::universal_time();
-        closest = getClosest(tasks, now);
-        // Check if caught up with now
-        if (cores > 1) {
-            boost::posix_time::time_duration delta_closest = now - closest->second;
-            if (delta_closest.hours() * 60 + delta_closest.minutes() <= 2) {
-                log_debug(_("Caught up with: %1%"), closest->first);
-                remote->updatePath(
-                    std::stoi(closest->first.substr(0, 3)),
-                    std::stoi(closest->first.substr(4, 3)),
-                    std::stoi(closest->first.substr(8, 3))
-                );
-                cores = 1;
-                delay = std::chrono::seconds{45};        
+        if (tasks->size() > 0 && cores > 1) {
+            closest = getClosest(tasks, now);
+            // Check if caught up with now
+            if (cores > 1) {
+                boost::posix_time::time_duration delta_closest = now - closest->second;
+                if (delta_closest.hours() * 60 + delta_closest.minutes() <= 2) {
+                    log_debug(_("Caught up with: %1%"), closest->first);
+                    remote->updatePath(
+                        std::stoi(closest->first.substr(0, 3)),
+                        std::stoi(closest->first.substr(4, 3)),
+                        std::stoi(closest->first.substr(8, 3))
+                    );
+                    cores = 1;
+                    delay = std::chrono::seconds{45};        
+                }
             }
+        } else if (cores > 1) {
+            cores = 1;
+            delay = std::chrono::seconds{45};        
         }
     }
 }
@@ -297,7 +302,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
         ptime now  = boost::posix_time::second_clock::universal_time();
         closest = getClosest(tasks, now);
         // Check if caught up with now
-        if (cores > 1) {
+        if (tasks->size() > 0 && cores > 1) {
             boost::posix_time::time_duration delta_closest = now - closest->second;
             if (delta_closest.hours() * 60 + delta_closest.minutes() <= 2) {
                 log_debug(_("Caught up with: %1%"), closest->first);
@@ -309,6 +314,9 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
                 cores = 1;
                 delay = std::chrono::seconds{45};        
             }
+        } else if (cores > 1) {
+            cores = 1;
+            delay = std::chrono::seconds{45};                    
         }
     }
 }
