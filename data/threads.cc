@@ -109,6 +109,9 @@ getClosest(std::shared_ptr<std::vector<std::pair<std::string, ptime>>> tasks, pt
             }
         }
     }
+    if (closest.second == not_a_date_time) {
+        closest.second = now;
+    }
     return std::make_shared<std::pair<std::string, ptime>>(closest);
 }
 
@@ -349,6 +352,7 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
             try {
                 osmchanges->readXML(changes_xml);  
                 task.second = osmchanges->changes.back()->final_entry;
+                log_debug(_("OsmChange final_entry: %1%"), task.second);
             } catch (std::exception &e) {
                 log_error(_("Couldn't parse: %1%"), remote->filespec);
                 std::cerr << e.what() << std::endl;
@@ -446,6 +450,7 @@ threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
         std::istream& input(xml);
         changeset->readXML(input);
         task.second = changeset->last_closed_at;
+        log_debug(_("ChangeSet last_closed_at: %1%"), task.second);
         changeset->areaFilter(poly);
         for (auto cit = std::begin(changeset->changes); cit != std::end(changeset->changes); ++cit) {
             galaxy->applyChange(*cit->get());
