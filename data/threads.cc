@@ -93,7 +93,8 @@ using namespace tmdb;
 namespace threads {
 
 std::mutex remove_mutex;
-std::mutex time_mutex;
+std::mutex tasks_change_mutex;
+std::mutex tasks_changeset_mutex;
 
 // Get closest change from a list of tasks
 std::shared_ptr<std::pair<std::string, ptime>> 
@@ -358,6 +359,7 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
             std::cerr << e.what() << std::endl;
         }
     }
+    const std::lock_guard<std::mutex> lock(tasks_change_mutex);
     tasks->push_back(task);
 
 #if 0
@@ -433,26 +435,24 @@ threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
 #endif
 
     auto data = planet->downloadFile(*remote.get());
-    auto task = std::pair<std::string, ptime>(
-        remote->subpath,
-        not_a_date_time
-    );
-    auto changeset = std::make_unique<changeset::ChangeSetFile>();
-    log_debug(_("Processing ChangeSet: %1%"), remote->filespec);
     if (data->size() > 0) {
+        auto changeset = std::make_unique<changeset::ChangeSetFile>();
+        log_debug(_("Processing ChangeSet: %1%"), remote->filespec);
+        auto task = std::pair<std::string, ptime>(
+            remote->subpath,
+            not_a_date_time
+        );
         auto xml = planet->processData(remote->filespec, *data);
         std::istream& input(xml);
         changeset->readXML(input);
         task.second = changeset->last_closed_at;
+        changeset->areaFilter(poly);
+        for (auto cit = std::begin(changeset->changes); cit != std::end(changeset->changes); ++cit) {
+            galaxy->applyChange(*cit->get());
+        }
+        const std::lock_guard<std::mutex> lock(tasks_changeset_mutex);
+        tasks->push_back(task);
     }
-
-   changeset->areaFilter(poly);
-
-   // std::scoped_lock write_lock{time_mutex};
-   for (auto cit = std::begin(changeset->changes); cit != std::end(changeset->changes); ++cit) {
-       galaxy->applyChange(*cit->get());
-   }
-   tasks->push_back(task);
 }
 
 // This updates the calculated fields in the raw_changesets table, based on
