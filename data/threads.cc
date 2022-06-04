@@ -109,9 +109,6 @@ getClosest(std::shared_ptr<std::vector<std::pair<std::string, ptime>>> tasks, pt
             }
         }
     }
-    if (closest.second == not_a_date_time) {
-        closest.second = now;
-    }
     return std::make_shared<std::pair<std::string, ptime>>(closest);
 }
 
@@ -156,14 +153,15 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
 
     bool mainloop = true;
     auto delay = std::chrono::seconds{0};
-    auto closest = std::make_shared<std::pair<std::string, ptime>>();
+    auto closest = std::pair<std::string, ptime>();
+    auto last_task = std::make_shared<std::pair<std::string, ptime>>();
     while (mainloop) {
         auto tasks = std::make_shared<std::vector<std::pair<std::string, ptime>>>();
         i = cores*2;
         boost::asio::thread_pool pool(i-1);
         while (--i) {
             std::this_thread::sleep_for(delay);
-            if (closest->second != not_a_date_time) {
+            if (last_task->second != not_a_date_time) {
                 remote->Increment();
             }
             auto task = boost::bind(threadChangeSet,
@@ -181,25 +179,24 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
         pool.join();
         
         ptime now  = boost::posix_time::second_clock::universal_time();
-        if (tasks->size() > 0 && cores > 1) {
-            closest = getClosest(tasks, now);
+        last_task = getClosest(tasks, now);
+        if (cores > 1) {
             // Check if caught up with now
-            if (cores > 1) {
-                boost::posix_time::time_duration delta_closest = now - closest->second;
-                if (delta_closest.hours() * 60 + delta_closest.minutes() <= 2) {
-                    log_debug(_("Caught up with: %1%"), closest->first);
-                    remote->updatePath(
-                        std::stoi(closest->first.substr(0, 3)),
-                        std::stoi(closest->first.substr(4, 3)),
-                        std::stoi(closest->first.substr(8, 3))
-                    );
-                    cores = 1;
-                    delay = std::chrono::seconds{45};        
-                }
+            if (last_task->second != not_a_date_time) {
+                closest.first = std::string(last_task->first);
+                closest.second = ptime(last_task->second);
             }
-        } else if (cores > 1) {
-            cores = 1;
-            delay = std::chrono::seconds{45};        
+            boost::posix_time::time_duration delta_closest = now - closest.second;
+            if (delta_closest.hours() * 60 + delta_closest.minutes() <= 2) {
+                log_debug(_("Caught up with: %1%"), closest.first);
+                remote->updatePath(
+                    std::stoi(closest.first.substr(0, 3)),
+                    std::stoi(closest.first.substr(4, 3)),
+                    std::stoi(closest.first.substr(8, 3))
+                );
+                cores = 1;
+                delay = std::chrono::seconds{45};        
+            }
         }
     }
 }
@@ -264,14 +261,15 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     bool mainloop = true;
     auto removals = std::make_shared<std::vector<long>>();
     auto delay = std::chrono::seconds{0};
-    auto closest = std::make_shared<std::pair<std::string, ptime>>();
+    auto closest = std::pair<std::string, ptime>();
+    auto last_task = std::make_shared<std::pair<std::string, ptime>>();
     while (mainloop) {
         auto tasks = std::make_shared<std::vector<std::pair<std::string, ptime>>>();
         i = cores*2;
         boost::asio::thread_pool pool(i-1);
         while (--i) {
             std::this_thread::sleep_for(delay);
-            if (closest->second != not_a_date_time) {
+            if (last_task->second != not_a_date_time) {
                 remote->Increment();
             }
             auto task = boost::bind(threadOsmChange,
@@ -300,23 +298,25 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
         removals->clear();
 
         ptime now  = boost::posix_time::second_clock::universal_time();
-        closest = getClosest(tasks, now);
+        last_task = getClosest(tasks, now);
         // Check if caught up with now
-        if (tasks->size() > 0 && cores > 1) {
-            boost::posix_time::time_duration delta_closest = now - closest->second;
+        // looking on closest date
+        if (cores > 1) {
+            if (last_task->second != not_a_date_time) {
+                closest.first = std::string(last_task->first);
+                closest.second = ptime(last_task->second);
+            }
+            boost::posix_time::time_duration delta_closest = now - closest.second;
             if (delta_closest.hours() * 60 + delta_closest.minutes() <= 2) {
-                log_debug(_("Caught up with: %1%"), closest->first);
+                log_debug(_("Caught up with: %1%"), closest.first);
                 remote->updatePath(
-                    std::stoi(closest->first.substr(0, 3)),
-                    std::stoi(closest->first.substr(4, 3)),
-                    std::stoi(closest->first.substr(8, 3))
+                    std::stoi(closest.first.substr(0, 3)),
+                    std::stoi(closest.first.substr(4, 3)),
+                    std::stoi(closest.first.substr(8, 3))
                 );
                 cores = 1;
                 delay = std::chrono::seconds{45};        
             }
-        } else if (cores > 1) {
-            cores = 1;
-            delay = std::chrono::seconds{45};                    
         }
     }
 }
@@ -445,27 +445,26 @@ threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("threadChangeSet: took %w seconds\n");
 #endif
-
+    auto task = std::pair<std::string, ptime>(
+        remote->subpath,
+        not_a_date_time
+    );
     auto data = planet->downloadFile(*remote.get());
     if (data->size() > 0) {
         auto changeset = std::make_unique<changeset::ChangeSetFile>();
         log_debug(_("Processing ChangeSet: %1%"), remote->filespec);
-        auto task = std::pair<std::string, ptime>(
-            remote->subpath,
-            not_a_date_time
-        );
         auto xml = planet->processData(remote->filespec, *data);
         std::istream& input(xml);
         changeset->readXML(input);
-        task.second = changeset->last_closed_at;
         log_debug(_("ChangeSet last_closed_at: %1%"), task.second);
         changeset->areaFilter(poly);
         for (auto cit = std::begin(changeset->changes); cit != std::end(changeset->changes); ++cit) {
             galaxy->applyChange(*cit->get());
         }
-        const std::lock_guard<std::mutex> lock(tasks_changeset_mutex);
-        tasks->push_back(task);
+        task.second = changeset->last_closed_at;
     }
+    const std::lock_guard<std::mutex> lock(tasks_changeset_mutex);
+    tasks->push_back(task);
 }
 
 // This updates the calculated fields in the raw_changesets table, based on
