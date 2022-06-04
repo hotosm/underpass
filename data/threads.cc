@@ -456,12 +456,12 @@ threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
         auto xml = planet->processData(remote->filespec, *data);
         std::istream& input(xml);
         changeset->readXML(input);
-        log_debug(_("ChangeSet last_closed_at: %1%"), task.second);
         changeset->areaFilter(poly);
         for (auto cit = std::begin(changeset->changes); cit != std::end(changeset->changes); ++cit) {
             galaxy->applyChange(*cit->get());
         }
         task.second = changeset->last_closed_at;
+        log_debug(_("ChangeSet last_closed_at: %1%"), task.second);
     }
     const std::lock_guard<std::mutex> lock(tasks_changeset_mutex);
     tasks->push_back(task);
