@@ -405,7 +405,6 @@ void
 ChangeSetFile::on_start_element(const Glib::ustring &name,
                                 const AttributeList &attributes)
 {
-    // log_debug(_("Element %1%"), name);
     if (name == "changeset") {
         auto change = std::make_shared<changeset::ChangeSet>(attributes);
         changes.push_back(change);

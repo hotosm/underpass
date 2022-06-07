@@ -352,6 +352,7 @@ main(int argc, char *argv[])
         // Changesets thread
         config.frequency = replication::changeset;
         auto changeset = replicator.findRemotePath(config, config.start_time);
+
         std::thread changesetsThread(threads::startMonitorChangesets, std::ref(changeset),
                                     std::ref(geou.boundary), std::ref(config));
         
