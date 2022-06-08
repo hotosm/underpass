@@ -124,6 +124,8 @@ main(int argc, char *argv[])
             ("logstdout,l", "Enable logging to stdout, default is log to underpass.log")
             ("changefile", opts::value<std::string>(), "Import change file")
             ("concurrency,c", opts::value<std::string>(), "Concurrency")
+            ("changesets", "Changesets only")
+            ("osmchanges", "OsmChanges only")
             ("debug,d", "Enable debug messages for developers");
         // clang-format on
 
@@ -345,20 +347,25 @@ main(int argc, char *argv[])
             boost::algorithm::replace_all(osmchange->filespec, ".state.txt", ".osc.gz");
         }
 
-        // OsmChanges thread
-        std::thread osmChangesThread(threads::startMonitorChanges, std::ref(osmchange),
-                           std::ref(geou.boundary), std::ref(config));
-
-        // Changesets thread
-        config.frequency = replication::changeset;
-        auto changeset = replicator.findRemotePath(config, config.start_time);
-        std::thread changesetsThread(threads::startMonitorChangesets, std::ref(changeset),
-                                    std::ref(geou.boundary), std::ref(config));
-        
         log_info(_("Waiting..."));
 
-        changesetsThread.join();
-        osmChangesThread.join();
+        if (!vm.count("changesets")) {
+            // OsmChanges thread
+            std::thread osmChangesThread(threads::startMonitorChanges, std::ref(osmchange),
+                            std::ref(geou.boundary), std::ref(config));
+            osmChangesThread.join();
+        }
+
+        if (!vm.count("osmchanges")) {
+            // Changesets thread
+            config.frequency = replication::changeset;
+            auto changeset = replicator.findRemotePath(config, config.start_time);
+
+            std::thread changesetsThread(threads::startMonitorChangesets, std::ref(changeset),
+                                        std::ref(geou.boundary), std::ref(config));
+            changesetsThread.join();
+        }
+
         exit(0);
     }
 
