@@ -307,7 +307,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
             }
             boost::posix_time::time_duration delta_closest = now - closest.timestamp;
             if (delta_closest.hours() * 60 + delta_closest.minutes() <= 2) {
-                std::cout << "Caught up with: " << closest->first << std::endl;
+                log_debug(_("Caught up with: %1%"), closest.url);
                 remote->updatePath(
                     std::stoi(closest.url.substr(0, 3)),
                     std::stoi(closest.url.substr(4, 3)),
