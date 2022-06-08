@@ -84,8 +84,11 @@ typedef std::shared_ptr<Validate>(plugin_t)();
 /// \namespace threads
 namespace threads {
 
-// std::pair<ptime, std::string>
-// getClosestProcessedChange(std::shared_ptr<std::vector<std::pair<ptime, std::string>>> processed, ptime now);
+struct ReplicationTask {
+	std::string url;
+	ptime timestamp;
+	bool processed;
+};
 
 /// This monitors the planet server for new changesets files.
 /// It does a bulk download to catch up the database, then checks for the

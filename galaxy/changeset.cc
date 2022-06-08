@@ -349,7 +349,12 @@ ChangeSetFile::readXML(std::istream &xml)
     // hourly or minutely changes are small, so this is better for that
     // case.
     boost::property_tree::ptree pt;
-    boost::property_tree::read_xml(xml, pt);
+    try {
+        boost::property_tree::read_xml(xml, pt);
+    } catch (exception& boost::property_tree::xml_parser::xml_parser_error) {
+        log_error(_("Error parsing XML"));
+        return false;
+    }
 
     if (pt.empty()) {
         log_error(_("ERROR: XML data is empty!"));
