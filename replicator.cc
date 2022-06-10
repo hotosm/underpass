@@ -347,21 +347,21 @@ main(int argc, char *argv[])
             boost::algorithm::replace_all(osmchange->filespec, ".state.txt", ".osc.gz");
         }
 
-        std::thread osmChangeThread;
-        std::thread changesetThread;
+        std::vector<std::thread> threads;
         if (!vm.count("changesets")) {
-            osmChangeThread = std::thread(threads::startMonitorChanges, std::ref(osmchange),
-                            std::ref(geou.boundary), std::ref(config));
+            threads.push_back(std::thread(threads::startMonitorChanges, std::ref(osmchange),
+                            std::ref(geou.boundary), std::ref(config)));
         }
         config.frequency = replication::changeset;
         auto changeset = replicator.findRemotePath(config, config.start_time);
         if (!vm.count("osmchanges")) {
-            changesetThread = std::thread(threads::startMonitorChangesets, std::ref(changeset),
-                            std::ref(geou.boundary), std::ref(config));
+            threads.push_back(std::thread(threads::startMonitorChangesets, std::ref(changeset),
+                            std::ref(geou.boundary), std::ref(config)));
         }
         log_info(_("Waiting..."));
-        osmChangeThread.join();
-        changesetThread.join();
+        for (int i = 0; i < threads.size(); i++) {
+            threads[i].join();
+        }
 
         exit(0);
     }
