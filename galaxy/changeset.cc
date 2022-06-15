@@ -209,7 +209,7 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly)
             // change->id);
             change->priority = true;
         } else {
-            if (!boost::geometry::overlaps(change->bbox, poly)) {
+            if (!boost::geometry::intersects(change->bbox, poly)) {
                 // log_debug(_("Validating changeset %1% is not in a priority area"), change->id);
 
                 change->priority = false;
