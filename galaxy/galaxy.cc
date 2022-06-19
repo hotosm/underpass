@@ -223,7 +223,7 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
     }
 
     query += ", bbox) VALUES(";
-    query += std::to_string(change.id) + ",\'" + changeset::fixString(change.editor) + "\',\'";
+    query += std::to_string(change.id) + ",\'" + sdb->esc(changeset::fixString(change.editor)) + "\',\'";
 
     query += std::to_string(change.uid) + "\',\'";
     query += to_simple_string(change.created_at) + "\', \'";
@@ -329,7 +329,7 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 
     query += ")\')";
     // query += ")) ON CONFLICT DO NOTHING;";
-    query += ")) ON CONFLICT (id) DO UPDATE SET editor=\'" + changeset::fixString(change.editor);
+    query += ")) ON CONFLICT (id) DO UPDATE SET editor=\'" +  sdb->esc(changeset::fixString(change.editor));
     query += "\', created_at=\'" + to_simple_string(change.created_at);
     // if (!change.open) {
     // 	query += "\', closed_at=\'" + to_simple_string(change.closed_at);
