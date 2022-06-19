@@ -114,6 +114,7 @@ main(int argc, char *argv[])
                                                              "synchronization: -1 (disabled), 0 (single shot), > 0 (interval in seconds)")
             ("planet,p", opts::value<std::string>(), "Replication server (defaults to planet.maps.mail.ru)")
             ("url,u", opts::value<std::string>(), "Starting URL path (ex. 000/075/000), takes precedence over 'timestamp' option")
+            ("changeseturl", opts::value<std::string>(), "Starting URL path for ChangeSet (ex. 000/075/000), takes precedence over 'timestamp' option")
             ("monitor,m", "Start monitoring")
             ("frequency,f", opts::value<std::string>(), "Update frequency (hourly, daily), default minutely)")
             ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp (can be used 2 times to set a range)")
@@ -355,6 +356,11 @@ main(int argc, char *argv[])
         }
         config.frequency = replication::changeset;
         auto changeset = replicator.findRemotePath(config, config.start_time);
+        if (vm.count("changeseturl")) {
+            std::vector<std::string> parts;
+            boost::split(parts, vm["changeseturl"].as<std::string>(), boost::is_any_of("/"));
+            changeset->updatePath(stoi(parts[0]),stoi(parts[1]),stoi(parts[2]));
+        }
         if (!vm.count("osmchanges")) {
             changesetThread = std::thread(threads::startMonitorChangesets, std::ref(changeset),
                             std::ref(geou.boundary), std::ref(config));
