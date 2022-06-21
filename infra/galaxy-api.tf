@@ -182,6 +182,10 @@ resource "aws_ecs_task_definition" "galaxy-api" {
       }
 
       environment = [
+        {
+          name  = "FORWARDED_ALLOW_IPS"
+          value = "*"
+        }
 
       ]
     }
