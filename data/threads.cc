@@ -356,11 +356,16 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
                 changes_xml.str(std::string{std::istreambuf_iterator<char>(instream), {}});
             }
 
-            osmchanges->readXML(changes_xml);
-            task.processed = true;
-            if (osmchanges->changes.size() > 0) {
-                task.timestamp = osmchanges->changes.back()->final_entry;
-                log_debug(_("OsmChange final_entry: %1%"), task.timestamp);
+            try {
+                osmchanges->readXML(changes_xml);  
+                task.processed = true;
+                if (osmchanges->changes.size() > 0) {
+                    task.timestamp = osmchanges->changes.back()->final_entry;
+                    log_debug(_("OsmChange final_entry: %1%"), task.timestamp);
+                }
+            } catch (std::exception &e) {
+                log_error(_("Couldn't parse: %1%"), remote->filespec);
+                std::cerr << e.what() << std::endl;
             }
 
         } catch (std::exception &e) {
