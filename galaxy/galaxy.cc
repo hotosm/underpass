@@ -44,6 +44,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/time_facet.hpp>
 #include <boost/format.hpp>
+#include <boost/locale.hpp>
 #include <boost/math/special_functions/relative_difference.hpp>
 
 using namespace boost::math;
@@ -188,7 +189,7 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 
     // Some old changefiles have no user information
     std::string query = "INSERT INTO users VALUES(";
-    query += std::to_string(change.uid) + ",\'" + sdb->esc(change.user);
+    query += std::to_string(change.uid) + ",\'" + fixString(change.user);
     query += "\') ON CONFLICT DO NOTHING;";
     // log_debug(_("QUERY: %1%"), query);
 
@@ -223,7 +224,7 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
     }
 
     query += ", bbox) VALUES(";
-    query += std::to_string(change.id) + ",\'" + sdb->esc(changeset::fixString(change.editor)) + "\',\'";
+    query += std::to_string(change.id) + ",\'" + fixString(change.editor) + "\',\'";
 
     query += std::to_string(change.uid) + "\',\'";
     query += to_simple_string(change.created_at) + "\', \'";
@@ -243,8 +244,7 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 
         for (const auto &hashtag: std::as_const(change.hashtags)) {
             auto ht{hashtag};
-            boost::algorithm::replace_all(ht, "\"", "&quot;");
-            query += "\"" + sdb->esc(ht) + "\"" + ", ";
+            query += "\"" + fixString(ht) + "\"" + ", ";
         }
 
         // drop the last comma
@@ -254,7 +254,7 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 
     // The source field is not always present
     if (!change.source.empty()) {
-        query += ",\'" + change.source += "\'";
+        query += ",\'" + fixString(change.source) += "\'";
     }
 
     // Store the current values as they may get changed to expand very short
@@ -329,7 +329,7 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 
     query += ")\')";
     // query += ")) ON CONFLICT DO NOTHING;";
-    query += ")) ON CONFLICT (id) DO UPDATE SET editor=\'" +  sdb->esc(changeset::fixString(change.editor));
+    query += ")) ON CONFLICT (id) DO UPDATE SET editor=\'" +  fixString(change.editor);
     query += "\', created_at=\'" + to_simple_string(change.created_at);
     // if (!change.open) {
     // 	query += "\', closed_at=\'" + to_simple_string(change.closed_at);
@@ -420,7 +420,7 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     fmt % stattmp;
     if (validation.values.size() > 0) {
 	for (const auto &tag: std::as_const(validation.values)) {
-	    valtmp += " \'" + changeset::fixString(tag) + "\',";
+	    valtmp += " \'" + fixString(tag) + "\',";
 	}
 	if (!valtmp.empty()) {
 	    valtmp.pop_back();
@@ -654,6 +654,12 @@ QueryGalaxy::syncUsers(const std::vector<TMUser> &users, bool purge)
 
     return syncResult;
 };
+
+std::string
+QueryGalaxy::fixString(std::string text) const
+{
+    return boost::locale::conv::to_utf<char>(sdb->esc(text), "Latin1");
+}
 
 } // namespace galaxy
 

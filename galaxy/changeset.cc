@@ -513,28 +513,4 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
 }
 #endif // EOF LIBXML
 
-std::string
-fixString(std::string text)
-{
-    std::string newstr;
-    int i = 0;
-    while (i < text.size()) {
-        if (text[i] == '\'') {
-            newstr += "&apos;";
-        } else if (text[i] == '\"') {
-            newstr += "&quot;";
-        } else if (text[i] == ')') {
-            newstr += "&#41;";
-        } else if (text[i] == '(') {
-            newstr += "&#40;";
-        } else if (text[i] == '\\') {
-            // drop this character
-        } else {
-            newstr += text[i];
-        }
-        i++;
-    }
-    return boost::locale::conv::to_utf<char>(newstr, "Latin1");
-}
-
 } // namespace changeset
