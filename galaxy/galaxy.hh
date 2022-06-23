@@ -167,6 +167,7 @@ class QueryGalaxy : public pq::Pq {
 
     std::vector<RawUser> users; ///< All the raw user data
 
+    std::string fixString(std::string text) const;
   private:
     mutable std::mutex changes_write_mutex; ///< Mutex for data acccess when writing
                                             ///< to the database
