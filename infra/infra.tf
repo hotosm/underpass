@@ -39,6 +39,13 @@ resource "aws_cloudfront_distribution" "galaxy" {
     compress               = true
     target_origin_id       = "galaxy-website"
 
+    forwarded_values {
+      cookies {
+        forward = "all"
+      }
+      query_string = false
+    }
+
   }
 
   viewer_certificate {
