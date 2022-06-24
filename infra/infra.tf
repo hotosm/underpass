@@ -8,7 +8,7 @@ data "aws_s3_bucket" "galaxy-website" {
 }
 
 data "aws_acm_certificate" "hotosm-wildcard" {
-  domain      = "*.hotosm.org"
+  domain      = "hotosm.org"
   statuses    = ["ISSUED"]
   types       = ["AMAZON_ISSUED"]
   most_recent = true
