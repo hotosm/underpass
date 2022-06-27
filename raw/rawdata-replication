@@ -362,7 +362,7 @@ def update(conn, args):
         outfile = Path(tmpdir.name) / 'osm2pgsql_diff.osc.gz'
 
     # osm2pgsql = [args.osm2pgsql_cmd, '--append', '--slim','--flat-nodes','/home/kshitij/hot/rawdata/nodes.cache', '--prefix', args.prefix,'--output=flex','--extra-attributes','--style','/home/kshitij/hot/rawdata/raw.lua']
-    osm2pgsql = [args.osm2pgsql_cmd, '--append','-W','--slim','--prefix', args.prefix,'--output=flex','--extra-attributes','--style',args.style]
+    osm2pgsql = [args.osm2pgsql_cmd, '--append','--slim','--prefix', args.prefix,'--output=flex','--extra-attributes','--style',args.style]
     
     osm2pgsql.extend(args.extra_params)
     
@@ -407,34 +407,31 @@ def update(conn, args):
             LOG.info("Data imported until %s. Backlog remaining: %s",
                      nextstate.timestamp,
                      dt.datetime.now(dt.timezone.utc) - nextstate.timestamp)
-            if args.country: # updates if the paramter is supplied
-                LOG.info('Starting Country list update')
-                update_country_list(conn,ts)
-
+            LOG.debug('Starting Grid update')
+            update_grid(conn,ts,args.grid)
         if args.once:
             break
 
     return 0
 
-def update_country_list(conn,ts):
-    """Updates country column in ways_poly table , It intersects it's newly inserted data's geometry to the boundaries loaded to underpass and populates info , in order to use multicolumn indexes with geometry"""
+def update_grid(conn,timestamp,table_name):
+    """Updates grid column in table , It intersects it's newly inserted data's geometry to the boundaries loaded to underpass and populates info , in order to use multicolumn indexes with geometry"""
     with conn.cursor() as cur:
         update_query= f"""update
-        ways_poly as w
+        {table_name} as w
         set
-            country = (
+            grid = (
             select
-                b.id
+                b.poly_id
             from
-                boundaries b
+                grid b
             where
                 ST_Intersects( w.geom ,
-                ST_SetSRID(b.boundary,
-                4326))
+                b.geom)
             limit 1	)::int
-        where "timestamp" >= '{ts}'""" 
+        where "timestamp" >= '{timestamp}'""" 
         cur.execute(update_query)
-        LOG.info(f"""Country Update Complete {cur.statusmessage}""")   
+        LOG.info(f"""Grid Update Complete {cur.statusmessage} >= {timestamp}""")   
     conn.commit()
     
     
@@ -460,8 +457,7 @@ def get_parser():
                        help="Prefix for table names (default 'planet_osm')")
     group.add_argument('-s', '--style', metavar='STYLE',
                        help='Raw Data Style Lua Script location')
-    group.add_argument('-c', '--country', action='store_true',
-                       help='Update country column of table')
+
 
     # Arguments for init
     cmd = subs.add_parser('init', parents=[default_args],
@@ -499,7 +495,8 @@ def get_parser():
                      help='Run updates only once, even when more data is available.')
     cmd.add_argument('--post-processing', metavar='SCRIPT',
                      help='Post-processing script to run after each execution of osm2pgsql.')
-
+    cmd.add_argument('--grid', default='ways_poly', action='store_true',
+                       help='Update grid column of table')
     # Arguments for status
     cmd = subs.add_parser('status', parents=[default_args],
                           help=status.__doc__.split('\n', 1)[0],
