@@ -431,7 +431,7 @@ def update_grid(conn,timestamp,table_name):
             limit 1	)::int
         where "timestamp" >= '{timestamp}'""" 
         cur.execute(update_query)
-        LOG.info(f"""Grid Update Complete {cur.statusmessage} >= {timestamp}""")   
+        LOG.info(f"""Grid Update Complete >= {timestamp} : {cur.statusmessage} """)   
     conn.commit()
     
     
