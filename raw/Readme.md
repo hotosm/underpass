@@ -116,6 +116,8 @@ with force password prompt (Only if you wish to supply pass from command) :
 python rawdata-replication update -s raw.lua -- -W
 ```
 
+Read more documentation ['here'](https://osm2pgsql.org/doc/manual.html#advanced-topics) 
+
 ## Configure Per Minute Replication
 
 There are multiple options to run this python script per minute , You can either setup a cronjob or setup a systemd service
