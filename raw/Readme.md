@@ -97,7 +97,7 @@ port=
 
 Now run init , This will create replication status table in db
 
-  
+>Export database password or keep it inside systemd service or pass W after command   -- -W
 
 ```python rawdata-replication init ```
 
@@ -105,9 +105,16 @@ Replication script will use 'https://planet.openstreetmap.org/replication/minute
 
 Now Run update with lua script file location : *-s* parameter like this (Considering you are inside raw data directory)
 
-  
 
-```python rawdata-replication update -s raw.lua```
+```
+python rawdata-replication update -s raw.lua
+```
+
+with force password prompt (Only if you wish to supply pass from command) :
+
+```
+python rawdata-replication update -s raw.lua -- -W
+```
 
 ## Configure Per Minute Replication
 
