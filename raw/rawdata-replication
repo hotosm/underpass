@@ -376,6 +376,7 @@ def update(conn, args):
     osm2pgsql.append(str(outfile))
     LOG.debug("Calling osm2pgsql with: %s", ' '.join(osm2pgsql))
     # return 1
+    grid_timestamp=ts
     while seq < current.sequence:
         LOG.debug("Importing from sequence %d", seq)
         if outfile.exists():
@@ -408,7 +409,8 @@ def update(conn, args):
                      nextstate.timestamp,
                      dt.datetime.now(dt.timezone.utc) - nextstate.timestamp)
             LOG.debug('Starting Grid update')
-            update_grid(conn,ts,args.grid)
+            update_grid(conn,grid_timestamp,args.grid)
+            grid_timestamp=timestamp
         if args.once:
             break
 
