@@ -49,6 +49,7 @@ CREATE TABLE public.validation (
     type public.objtype,
     angle double precision,
     status public.status[],
+    values text[],
     timestamp timestamp with time zone,
     location public.geometry(Geometry,4326)
 );

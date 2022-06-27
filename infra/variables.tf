@@ -1,4 +1,88 @@
+variable "project_name" {
+  type = string
+
+  default = "galaxy"
+}
+
+/*****************************************
+** SECRET VARIABES AND SENSITIVE STRINGS
+******************************************/
+
+variable "quay_robot_credentials" {
+  type = map(string)
+
+  default = {
+    username = "quay"
+    password = "DummyDefault123!"
+  }
+
+  sensitive = true
+}
+
+variable "tasking_manager_db_config_credentials" {
+  type = map(string)
+
+  default = {
+    host     = "localhost"
+    port     = "5432"
+    database = "postgres"
+    user     = "postgres_dba"
+    password = "secret123"
+  }
+
+  sensitive = true
+}
+
+variable "underpass_db_config_credentials" {
+  type = map(string)
+
+  default = {
+    host     = "localhost"
+    port     = "5432"
+    database = "postgres"
+    user     = "postgres_dba"
+    password = "secret123"
+  }
+
+  sensitive = true
+}
+
+variable "insights_db_config_credentials" {
+  type = map(string)
+
+  default = {
+    host     = "localhost"
+    port     = "5432"
+    database = "postgres"
+    user     = "postgres_dba"
+    password = "secret123"
+  }
+
+  sensitive = true
+}
+
+variable "oauth2_credentials" {
+  type = map(string)
+
+  default = {
+    client_id     = ""
+    client_secret = ""
+    secret_key    = ""
+  }
+
+  sensitive = true
+}
+
+/***********************
+** NON-SECRET VARIABES
+************************/
 variable "deployment_environment" {
+  type = string
+
+  default = "production"
+}
+
+variable "name_suffix" {
   type = map(string)
 
   default = {
@@ -14,7 +98,7 @@ variable "instance_types" {
   default = {
     api_server     = "t3.micro"
     file_processor = "r6g.xlarge"
-    database       = "db.t4g.large"
+    database       = "db.t4g.micro"
   }
 }
 
@@ -39,36 +123,22 @@ variable "ssh_key_pair_name" {
 
 variable "database_engine_version" {
   type    = string
-  default = "12.8"
+  default = "12.9"
 }
 
 variable "database_name" {
   type    = string
-  default = "underpass"
+  default = "galaxy"
 }
 
 variable "database_username" {
   type    = string
-  default = "mineworker"
+  default = "galaxy"
 }
 
 variable "database_final_snapshot_identifier" {
   type    = string
   default = "bye-underpass"
-}
-
-variable "underpass_database_credentials" {
-  type = map(string)
-
-  default = {
-    engine               = "postgres"
-    port                 = 5432
-    username             = "underpass"
-    password             = ""
-    dbinstanceidentifier = ""
-    host                 = ""
-    dbname               = ""
-  }
 }
 
 variable "server_count" {
@@ -101,4 +171,19 @@ variable "debfile_name" {
 variable "libpqxx_version" {
   type    = string
   default = "7.6.1"
+}
+
+variable "tasking-manager_vpc_id" {
+  type    = string
+  default = "vpc-ea28198f"
+}
+
+variable "dump_path" {
+  type    = string
+  default = "/var/log/galaxy-api"
+}
+
+variable "container_image_uri" {
+  type    = string
+  default = "quay.io/hotosm/galaxy-api:container"
 }

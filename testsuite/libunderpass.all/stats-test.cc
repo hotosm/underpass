@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -18,54 +18,77 @@
 //
 
 #include <dejagnu.h>
+#include "galaxy/osmchange.hh"
+#include <boost/geometry.hpp>
 #include <iostream>
-#include <string>
-#include <pqxx/pqxx>
+#include "log.hh"
 
-#include "hottm.hh"
-#include "galaxy/galaxy.hh"
+using namespace logger;
 
-#include <boost/date_time.hpp>
-#include "boost/date_time/posix_time/posix_time.hpp"
-#include "boost/date_time/gregorian/gregorian.hpp"
-
-#include "galaxy/galaxy.hh"
-
-using namespace boost::posix_time;
-using namespace boost::gregorian;
-using namespace galaxy;
+class TestOsmChanges : public osmchange::OsmChangeFile {
+};
 
 TestState runtest;
 
-class TestStats : public QueryOSMStats
-{
-};
-
 int
-main(int argc, char *argv[])
-{
-    std::string database = "galaxy";
+main(int argc, char *argv[]) {
 
-    TestStats testos;
-    if (testos.connect(database)) {
-        runtest.pass("taskingManager::connect()");
+    logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
+    dbglogfile.setWriteDisk(true);
+    dbglogfile.setLogFilename("stats-test.log");
+    dbglogfile.setVerbosity(3);
+
+    std::string test_data_dir(DATADIR);
+    test_data_dir += "/testsuite/testdata/";
+    TestOsmChanges osmchanges;
+    osmchanges.readChanges(test_data_dir + "test_stats.osc");
+    
+    multipolygon_t poly;
+    boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", poly);
+
+    auto stats = osmchanges.collectStats(poly);    
+    auto changestats = std::begin(*stats)->second;
+
+    if (changestats->added.at("highway") == 3) {
+        runtest.pass("Calculating added (created) highways");
     } else {
-        runtest.fail("taskingManager::connect()");
+        runtest.fail("Calculating added (created) highways");
+    }   
+
+    if (changestats->modified.at("highway") == 2) {
+        runtest.pass("Calculating modified highways");
+    } else {
+        runtest.fail("Calculating modified highways");
     }
 
-    //testos.populate();
-    std::vector<long> cids;
-    cids.push_back(57293600);
-    cids.push_back(77274475);
-    cids.push_back(69360891);
-    cids.push_back(69365434);
-    cids.push_back(69365911);
+    if (changestats->added.at("building") == 1) {
+        runtest.pass("Calculating added (created) buildings");
+    } else {
+        runtest.fail("Calculating added (created) buildings");
+    }   
 
-    // Changesets have a bounding box, so we want to find the
-    // country the changes were made in.
-    double min_lat = -2.8042325;
-    double min_lon = 29.5842812;
-    double max_lat = -2.7699398;
-    double max_lon = 29.6012844;
-#endif
+    if (changestats->modified.at("building") == 1) {
+        runtest.pass("Calculating modified buildings");
+    } else {
+        runtest.fail("Calculating modified buildings");
+    }   
+
+    if (changestats->added.at("waterway") == 1) {
+        runtest.pass("Calculating added (created) waterways");
+    } else {
+        runtest.fail("Calculating added (created) waterways");
+    }   
+
+    if (changestats->modified.at("waterway") == 1) {
+        runtest.pass("Calculating modified waterways");
+    } else {
+        runtest.fail("Calculating modified waterways");
+    }   
+
+
 }
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

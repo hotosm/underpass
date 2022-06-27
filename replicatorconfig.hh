@@ -17,6 +17,9 @@
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
 
+/// \file replicatorconfig.hh
+/// \brief Store config infomation from a file or environment variables
+
 #ifndef __REPLICATOR_CONFIG_HH__
 #define __REPLICATOR_CONFIG_HH__
 
@@ -25,13 +28,12 @@
 #include "unconfig.h"
 #endif
 
-#include "data/underpass.hh"
 #include "galaxy/replication.hh"
 #include <boost/format.hpp>
 #include <string>
 using namespace replication;
-using namespace underpass;
 
+/// \namespace replicatorconfig
 namespace replicatorconfig {
 
 ///
@@ -41,7 +43,7 @@ struct PlanetServer {
 
     ///
     /// \brief PlanetServer
-    /// \param domin domain part (without https://)
+    /// \param domain domain part (without https://)
     /// \param datadir (usually "replication")
     /// \param daily supports daily
     /// \param hourly supports hourly
@@ -135,7 +137,7 @@ struct ReplicatorConfig {
         // Initialize servers
         planet_servers = {
             {"planet.maps.mail.ru", "replication", true, true, true, true},
-            {"download.openstreetmap.fr", "replication", false, false, true, false},
+            // {"download.openstreetmap.fr", "replication", false, false, true, false},
             // This may be too slow
             {"planet.openstreetmap.org", "replication", true, true, true, true},
             // This is not up to date (one day late, I'm keeping here for debugging purposes because it fails on updates):

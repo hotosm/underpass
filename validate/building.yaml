@@ -29,12 +29,14 @@ tags:
       - bamboo
       - iron_sheet
       - plywood
+      - tin
+      - mud
 
   - building:roof:
       - none
       - metal
       - wood
-      - tiles
+      - tile
       - concrete
       - plastic
       - mixed
@@ -46,6 +48,11 @@ tags:
       - fabric
       - clay_tiles
       - stone
+      - slate
+      - tin
+      - asbestos
+      - permanent
+      - semi-permanent
 
   - building:
       - yes
@@ -68,6 +75,9 @@ tags:
       - church
       - chapel
       - mosque
+      - cathedral
+      - ruins
+      - cafe
       - temple
       - service
       - warehouse
@@ -79,23 +89,31 @@ tags:
       - bungalow
       - hotel
       - farm
+      - monastery
+      - civic
       - hut
       - train_station
+      - greenhouse
+      - guest_house
       - house_boat
       - barn
       - historic
+      - terrace
       - latrine
-      - latrines
-      - toilet
       - toilets
       - bunker
       - dormitory
       - guard_house
+      - kindergarten
+      - fire_station
+      - police
       - cowshed
+      - shed
       - storage_tank
       - garage
       - garages
       - wayside_shrine
+      - bank
       - shrine
       - store
       - supermarket
@@ -103,3 +121,17 @@ tags:
       - college
       - university
       - transformer_tower
+      - library
+      - carport
+      - hanger
+      - manufacture
+      - stadium
+      - stable
+      - museum
+      - tomb
+      - studio
+      - hangar
+      - pumping_station
+      - power_substation
+      - power_plant
+      - pharmacy

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -49,17 +49,29 @@ Conflate::Conflate(const multipolygon_t &poly)
 }
 
 bool
+Conflate::createView(const std::string &wkt)
+{
+    std::string view = "DROP VIEW IF EXISTS boundary;CREATE VIEW boundary AS SELECT osm_id,area,building,highway,amenity,ST_Transform(way, 4326) AS way FROM planet_osm_polygon WHERE ST_Within(ST_Transform(way, 4326), ST_MakeValid(ST_GeomFromEWKT(\'";
+    view += "SRID=4326;" + wkt + "\')));";
+    pqxx::result result = conf_db.query(view);
+    if (result.size() > 0) {
+	return true;
+    } else {
+	return false;
+    }
+}
+
+bool
 Conflate::createView(const multipolygon_t &poly)
 {
     view = poly;
     std::ostringstream bbox;
     bbox << boost::geometry::wkt(poly);
-    std::string view = "DROP VIEW IF EXISTS boundary;CREATE VIEW boundary AS SELECT osm_id,area,building,highway,amenity,ST_Transform(way, 4326) AS way FROM planet_osm_polygon WHERE ST_Within(ST_Transform(way, 4326), ST_MakeValid(ST_GeomFromEWKT(\'";
-    view += "SRID=4326;" + bbox.str() + "\')));";
-    pqxx::result result = conf_db.query(view);
+    // std::string view = "DROP VIEW IF EXISTS boundary;CREATE VIEW boundary AS SELECT osm_id,area,building,highway,amenity,ST_Transform(way, 4326) AS way FROM planet_osm_polygon WHERE ST_Within(ST_Transform(way, 4326), ST_MakeValid(ST_GeomFromEWKT(\'";
+    // view += "SRID=4326;" + bbox.str() + "\')));";
+    // pqxx::result result = conf_db.query(view);
 
-    // FIXME: check the result
-    return true;
+    return createView(bbox.str());
 }
 
 Conflate::Conflate(const std::string &dburl, const multipolygon_t &poly)
@@ -173,7 +185,7 @@ Conflate::existingDuplicatePolygon(void)
 
         float intersect = it[0].as(float(0))/it[2].as(float(0));
         float diff = abs(it[2].as(float(0)) - it[4].as(float(0)));
-//        std::cerr << "DiffE: " << std::fixed << std::setprecision(12) << intersect << " : " << diff << " : " << std::endl;
+        std::cerr << "DiffE: " << std::fixed << std::setprecision(12) << intersect << " : " << diff << " : " << std::endl;
         // similar size, so more likely to be a duplicate
         if (intersect < 2.0) {
 	    // std::cerr << "similar area!" << std::endl;

@@ -15,6 +15,9 @@
    You should have received a copy of the GNU Lesser General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
+/// \file gettext.h
+/// \brief Handle international languages
+
 #ifndef _LIBGETTEXT_H
 #define _LIBGETTEXT_H 1
 

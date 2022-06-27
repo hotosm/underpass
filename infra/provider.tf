@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.0"
+      version = "~> 4.8.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -15,9 +15,9 @@ provider "aws" {
   region = var.aws_region
   default_tags {
     tags = {
-      Project       = "underpass"
-      Maintainer    = "Dakota_Benjamin and Yogesh_Girikumar"
-      Documentation = "https://docs.hotosm.org/underpass_infra"
+      Project       = "galaxy"
+      Maintainer    = "DK_Benjamin and Yogesh_Girikumar"
+      Documentation = "https://docs.hotosm.org/galaxy_infra"
     }
   }
 }

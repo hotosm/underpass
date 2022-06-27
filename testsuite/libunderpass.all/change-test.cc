@@ -134,7 +134,10 @@ main(int argc, char *argv[])
                                   ? getenv("UNDERPASS_SOURCE_TREE_ROOT")
                                   : SRCDIR};
 
-    const auto test_data_dir{basedir + "/testsuite/testdata"};
+    std::string test_data_dir(DATADIR);
+    test_data_dir += "/testsuite/testdata/";
+
+    std::cerr << test_data_dir << std::endl;
 
     // Read the changeset state file
     TestStateFile statefile(test_data_dir + "/993.state.txt", false);
@@ -311,3 +314,8 @@ main(int argc, char *argv[])
     COMPARE(member.type, osmobjects::osmtype_t::way,
             "ChangeSetFile::readXML(xml) - relation member type");
 };
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

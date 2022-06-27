@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+# Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 #
 # This file is part of Underpass.
 #
@@ -74,13 +74,11 @@ libunderpass_la_SOURCES = \
 	galaxy/changeset.cc galaxy/changeset.hh \
 	galaxy/osmchange.cc galaxy/osmchange.hh \
 	galaxy/replication.cc galaxy/replication.hh \
+	galaxy/planetreplicator.cc galaxy/planetreplicator.hh \
 	data/geoutil.cc data/geoutil.hh \
-	data/pgsnapshot.cc data/pgsnapshot.hh\
-	data/import.cc data/import.hh \
 	data/osmobjects.cc data/osmobjects.hh \
 	data/osm2pgsql.cc data/osm2pgsql.hh \
 	data/threads.cc data/threads.hh \
-	data/underpass.cc data/underpass.hh \
 	data/yaml.hh data/yaml.cc \
 	data/pq.hh data/pq.cc \
 	data/setupdb.sh \
@@ -196,11 +194,11 @@ PCHFLAGS = \
 PCHHEADERS = \
         $(top_srcdir)/timer.hh \
         $(top_srcdir)/hottm.hh \
+        $(top_srcdir)/galaxy/planetreplicator.hh \
         $(top_srcdir)/galaxy/galaxy.hh \
         $(top_srcdir)/galaxy/replication.hh \
         $(top_srcdir)/galaxy/osmchange.hh \
         $(top_srcdir)/galaxy/changeset.hh \
-        $(top_srcdir)/data/import.hh \
         $(top_srcdir)/data/validate.hh \
         $(top_srcdir)/data/pgsnapshot.hh \
         $(top_srcdir)/data/osmobjects.hh \

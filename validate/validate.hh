@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -16,6 +16,13 @@
 //     You should have received a copy of the GNU General Public License
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
+
+/// \file validate.hh
+/// \brief This class tries to validate the OSM objects
+///
+/// This class analyzes an OSM object to look for errors. This may
+/// include lack of tags on a POI node or a way. This is not an
+/// exhaustive test, mostly just a fast sanity-check.
 
 #ifndef __VALIDATE_HH__
 #define __VALIDATE_HH__
@@ -47,13 +54,6 @@ using namespace boost::gregorian;
 
 using namespace logger;
 
-/// \file validate.hh
-/// \brief This class tries to validate the OSM objects
-///
-/// This class analyzes an OSM object to look for errors. This may
-/// include lack of tags on a POI node or a way. This is not an
-/// exhaustive test, mostly just a fast sanity-check.
-
 // JOSM validator
 //   Crossing ways
 //   Duplicate Ways
@@ -79,6 +79,9 @@ using namespace logger;
 //
 //
 
+
+/// \enum osmtype_t
+/// The data validation values for the status column in the database.
 typedef enum {
     notags,
     complete,
@@ -91,6 +94,8 @@ typedef enum {
     duplicate
 } valerror_t;
 
+/// \class ValidateStatus
+/// \brief This class stores data from the validation process
 class ValidateStatus {
   public:
     ValidateStatus(void){};
@@ -109,6 +114,7 @@ class ValidateStatus {
         timestamp = way.timestamp;
     }
     //valerror_t operator[](int index){ return status[index]; };
+    /// Does this change have a particular status value
     bool hasStatus(const valerror_t &val) const {
         auto match = std::find(status.begin(), status.end(), val);
         if (match != status.end()) {
@@ -116,6 +122,7 @@ class ValidateStatus {
         }
         return false;
     }
+    /// Dump internal data for debugging
     void dump(void) const {
         std::cerr << "Dumping Validation Statistics" << std::endl;
         std::cerr << "\tOSM ID: " << osm_id << std::endl;
@@ -135,18 +142,28 @@ class ValidateStatus {
         results[duplicate] = "Duplicate";
         for (const auto &stat: std::as_const(status)) {
             std::cerr << "\tResult: " << results[stat] << std::endl;
-        }
+	}
+	if (values.size() > 0) {
+	    std::cerr << "\tValues: ";
+	    for (auto it = std::begin(values); it != std::end(values); ++it ) {
+		std::cerr << *it << ", " << std::endl;
+	    }
+	}
     }
     std::unordered_set<valerror_t> status;
     osmobjects::osmtype_t objtype;
-    long osm_id = 0;
-    long user_id = 0;
-    long change_id = 0;
-    ptime timestamp;
-    point_t center;
-    double angle = 0;
+    long osm_id = 0;		///< The OSM ID of the feature
+    long user_id = 0;		///< The user ID of the mapper creating/modifying this feature
+    long change_id = 0;		///< The changeset ID
+    ptime timestamp;		///< The timestamp when this validation was performed
+    point_t center;		///< The centroid of the building polygon
+    double angle = 0;		///< The calculated angle of a corner
+    std::unordered_set<std::string> values; ///< The found bad tag values
 };
 
+
+/// \class Validate
+/// \brief This class contains shared methods for validating OSM map data
 class BOOST_SYMBOL_VISIBLE Validate {
   public:
     Validate(void) {
@@ -211,6 +228,14 @@ class BOOST_SYMBOL_VISIBLE Validate {
 #ifdef TIMING_DEBUG_X
 	    boost::timer::auto_cpu_timer timer("validate::overlaps: took %w seconds\n");
 #endif
+	    if (way.numPoints() <= 1) {
+		return false;
+	    }
+	    // It's probably a cicle
+	    if (way.numPoints() > 5 && cornerAngle(way.linestring) < 30) {
+		// log_debug(_("Building %1% is round"), way.id);
+		return false;
+	    }
 	    for (auto nit = std::begin(allways); nit != std::end(allways); ++nit) {
 		osmobjects::OsmWay *oldway = nit->get();
 		if (boost::geometry::overlaps(oldway->polygon, way.polygon)) {
@@ -224,20 +249,29 @@ class BOOST_SYMBOL_VISIBLE Validate {
 	return false;
     }
     double cornerAngle(const linestring_t &way) {
+	if (boost::geometry::num_points(way) <= 3) {
+	    log_error(_("way has no line segments!"));
+	    return -1;
+	}
         // first segment
-        double x1 = boost::geometry::get<0>(way[0]);
-        double y1 = boost::geometry::get<1>(way[0]);
-        double x2 = boost::geometry::get<0>(way[1]);
-        double y2 = boost::geometry::get<1>(way[1]);
+	try {
+	    double x1 = boost::geometry::get<0>(way[0]);
+	    double y1 = boost::geometry::get<1>(way[0]);
+	    double x2 = boost::geometry::get<0>(way[1]);
+	    double y2 = boost::geometry::get<1>(way[1]);
 
-        // Next segment that intersects
-        double x3 = boost::geometry::get<0>(way[2]);
-        double y3 = boost::geometry::get<1>(way[2]);
+	    // Next segment that intersects
+	    double x3 = boost::geometry::get<0>(way[2]);
+	    double y3 = boost::geometry::get<1>(way[2]);
 
-        double s1 = (y2 - y1) / (x2 - x1);
-        double s2 = (y3 - y2) / (x3 - x2);
-        double angle = std::atan((s2 - s1) / (1 + (s2 * s1))) * 180 / M_PI;
-        return angle;
+	    double s1 = (y2 - y1) / (x2 - x1);
+	    double s2 = (y3 - y2) / (x3 - x2);
+	    double angle = std::atan((s2 - s1) / (1 + (s2 * s1))) * 180 / M_PI;
+	    return angle;
+	} catch (const std::exception &ex) {
+	    log_error(_("way doesn't have enough points"));
+	    return -1;
+	}
     };
 
   protected:

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -16,6 +16,9 @@
 //     You should have received a copy of the GNU General Public License
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
+
+/// \file hotosm.hh
+/// \brief This file implements the data validation used by HOT
 
 #ifndef __HOTOSM_HH__
 #define __HOTOSM_HH__
@@ -48,8 +51,11 @@ using namespace boost::gregorian;
 
 #include "validate.hh"
 
+/// \namespace hotosm
 namespace hotosm {
 
+/// \class Hotosm
+/// \brief This is the plugin class, deprived from the Validate class
 class Hotosm : public Validate
 {
 public:

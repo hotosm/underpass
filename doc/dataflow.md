@@ -86,7 +86,7 @@ Under each on of these sub-directories are the actual data ones
 	001/
 	000/
 
-Each one of these directories contains 1000 file, roughly 16 hours
+Each one of these directories contains 1000 files, roughly 16 hours
 of data.
 
 	replication/002/
@@ -122,8 +122,12 @@ validator can look into the issue later. If it passes validation, then
 statistics are calculated, and written to the **OSM Stats**
 database. Some data also comes from the Tasking Manager.
 
-In the near future, Changes will also be applied to a standard OSM
-database so it can be quered for data extracts.
+## Output Databases
+
+Underpass currently writes to 2 primary databases. The main one is the
+*galaxy* database, which stores all the calculated statistics and data
+validation results. The other database is a mirror of the raw OSM data
+that also gets updated every minute.
 
 &nbsp;
 ![Flow Chart](https://raw.githubusercontent.com/hotosm/underpass/master/doc/dataflow.png)

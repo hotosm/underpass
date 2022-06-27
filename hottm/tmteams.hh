@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -16,6 +16,9 @@
 //     You should have received a copy of the GNU General Public License
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
+
+/// \file tmteams.hh
+/// \brief Store teams from the Tasking Manager in the Galaxy database
 
 #ifndef __TMTEAMS_HH__
 #define __TMTEAMS_HH__
@@ -39,19 +42,29 @@ using namespace boost::gregorian;
 
 namespace tmdb {
 
+/// \class TMTeam
+/// \brief The class contains Team information from the Tasking Manger
 class TMTeam
 {
 public:
     TMTeam(pqxx::result::const_iterator &row);
+    /// Get the Team name
     std::string &getName(void) { return name; };
+    /// Get the Team ID
     int getID(void) const { return teamid; };
+    /// Get the Orgtanization ID
     int getOrgID(void) const { return orgid; };
 //private:
-    int teamid;
-    int orgid;
-    std::string name;
-    std::vector<long> members;
+    int teamid; ///< The Team ID from Tasking Manager
+    int orgid; ///< The Oragnization ID from Tasking Manager
+    std::string name; ///< The team name from Tasking Manager
+    std::vector<long> members; ///< The members of this team
 };
 
 } // EOF tmdb namespace
 #endif  // EOF __TMTEAMS_HH__
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

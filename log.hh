@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -16,6 +16,9 @@
 //     You should have received a copy of the GNU General Public License
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
+
+/// \file log.hh
+/// \brief This implements a simple logging system for info and debugging messages
 
 #ifndef UNDERPASS_LOG_H
 #define UNDERPASS_LOG_H
@@ -62,11 +65,15 @@
 namespace logger {
 
 // This is a basic file logging class
+/// \class LogFile
+/// \brief Log messages filtered at several levels
 class DSOEXPORT LogFile
 {
 public:
     static LogFile& getDefaultInstance();
     ~LogFile();
+    /// \enum LogLevel
+    /// The levels of message filtering
     enum LogLevel {
         LOG_SILENT,
         LOG_NORMAL,
@@ -74,6 +81,7 @@ public:
         LOG_EXTRA
     };
 
+    /// The status of the log file
     enum FileState {
         CLOSED,
         OPEN,
@@ -82,36 +90,28 @@ public:
     };
 
     /// Intended for use by log_*(). Thread-safe (locks _ioMutex)
-    //
     /// @param label
     ///        The label string ie: "ERROR" for "ERROR: <msg>"
-    ///
     /// @param msg
     ///        The message string ie: "bah" for "ERROR: bah"
-    ///
     void log(const std::string& label, const std::string& msg);
 
     /// Intended for use by log_*(). Thread-safe (locks _ioMutex)
-    //
     /// @param msg
     ///        The message to print
-    ///
     void log(const std::string& msg);
     
     /// Remove the log file
-    //
     /// Does NOT lock _ioMutex (should it?)
-    ///
     bool removeLog();
 
     /// Close the log file
-    //
-    /// Locks _ioMutex to prevent race conditions accessing _outstream
     ///
+    /// Locks _ioMutex to prevent race conditions accessing _outstream
     bool closeLog();
 
     /// Set log filename 
-    //
+    ///
     /// If a log file is opened already, it will be closed
     /// by this call, and will be reopened on next use
     /// if needed.
@@ -295,6 +295,12 @@ inline void log_info(StringType msg, Args... args)
     log_impl(msg, processLog_info, args...);
 }
 
+
+/// \class HostFunctionReport
+/// \brief This class implements simple execution tracing
+///
+/// This class implements into the constructor and destructor of the class
+/// to do simple function tracing.
 class DSOEXPORT HostFunctionReport
 {
 public:

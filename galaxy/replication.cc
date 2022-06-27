@@ -77,10 +77,8 @@ namespace ssl = boost::asio::ssl; // from <boost/asio/ssl.hpp>
 namespace http = beast::http;     // from <boost/beast/http.hpp>
 using tcp = net::ip::tcp;         // from <boost/asio/ip/tcp.hpp>
 
-#include "data/underpass.hh"
 #include "galaxy/changeset.hh"
 #include "galaxy/replication.hh"
-using namespace underpass;
 
 /// Control access to the database connection
 std::mutex db_mutex;
@@ -201,10 +199,12 @@ StateFile::StateFile(const std::string &file, bool memory)
 void
 StateFile::dump(void)
 {
-    std::cerr << "Dumping state.txt file" << std::endl;
+    std::cout << "\t * * * * * " << std::endl;
+    std::cerr << "\tDumping state.txt file" << std::endl;
     std::cerr << "\tTimestamp: " << timestamp << std::endl;
     std::cerr << "\tSequence: " << sequence << std::endl;
     std::cerr << "\tPath: " << path << std::endl;
+    std::cout << "\t * * * * * " << std::endl;
 }
 
 bool
@@ -453,7 +453,8 @@ Planet::Planet(void){
 void
 Planet::dump(void)
 {
-    log_debug(_("Dumping Planet data"));
+    std::cerr << "Dumping Planet data" << std::endl;
+    std::cerr << "\tDomain: " << domain << std::endl;
 #if 0
     for (auto it = std::begin(changeset); it != std::end(changeset); ++it) {
         std::cerr << "Changeset at: " << it->first << it->second << std::endl;
@@ -509,6 +510,8 @@ Planet::connectServer(const std::string &planet)
 
     // Verify the remote server's certificate
     ctx.set_verify_mode(ssl::verify_none);
+
+    domain = planet;
     return true;
 }
 
@@ -748,6 +751,7 @@ RemoteURL::RemoteURL(const RemoteURL &inr)
 void
 RemoteURL::dump(void)
 {
+    std::cout << "\t------" << std::endl;
     std::cerr << "\tDomain: " << domain << std::endl;
     std::cerr << "\tDatadir: " << datadir << std::endl;
     std::cerr << "\tSubpath: " << subpath << std::endl;

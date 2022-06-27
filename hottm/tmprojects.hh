@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -16,6 +16,9 @@
 //     You should have received a copy of the GNU General Public License
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
+
+/// \file tmprojects.hh
+/// \brief Store projects from the Tasking Manager in the Galaxy database
 
 #ifndef __TMPROJECTS_HH__
 #define __TMPROJECTS_HH__
@@ -37,8 +40,11 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
+/// \namespace tmdb
 namespace tmdb {
 
+/// \class TMProject
+/// \brief This class contains Project information from the Tasking Manager
 class TMProject
 {
 public:
@@ -83,3 +89,8 @@ public:
 
 } // EOF tmdb namespace
 #endif  // EOF __TMPROJECTS_HH__
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:

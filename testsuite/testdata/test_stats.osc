@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osmChange version="0.6" generator="manually_generated/1.8.0">
+    <create>
+        <way id="821663801" version="1" changeset="1" timestamp="2012-07-10T00:00:00Z" uid="1" user="some_user">
+            <nd ref="6353646374"/>
+            <nd ref="7672025813"/>
+            <nd ref="7672025812"/>
+            <nd ref="7672025811"/>
+            <nd ref="7672025810"/>
+            <nd ref="7672025809"/>
+            <nd ref="7672025808"/>
+            <nd ref="6353634308"/>
+            <tag k="highway" v="residential"/>
+        </way>
+    </create>
+    <create>
+        <way id="1" user="some_user" uid="1" version="1" changeset="1" timestamp="2012-07-10T00:00:00Z">
+            <nd ref="1"/>
+            <nd ref="2"/>
+            <tag k="highway" v="residential"/>
+        </way>
+    </create>
+    <create>
+        <way id="2" user="some_user" uid="1" version="1" changeset="1" timestamp="2012-07-10T00:00:00Z">
+            <nd ref="3"/>
+            <nd ref="4"/>
+            <tag k="highway" v="path"/>
+        </way>
+    </create>
+    <modify>
+        <way id="815923836" version="1" changeset="1" timestamp="2012-07-10T00:00:00Z" uid="1" user="some_user">
+            <nd ref="7620338992"/>
+            <nd ref="7620338993"/>
+            <nd ref="7620338994"/>
+            <nd ref="7620338995"/>
+            <nd ref="7620338996"/>
+            <nd ref="7620338997"/>
+            <nd ref="7620338998"/>
+            <nd ref="7620338999"/>
+            <nd ref="7620339000"/>
+            <nd ref="7620339001"/>
+            <nd ref="7620339002"/>
+            <nd ref="7620338991"/>
+            <nd ref="7620339003"/>
+            <nd ref="7620339004"/>
+            <nd ref="7620339005"/>
+            <nd ref="7620339006"/>
+            <nd ref="7620339007"/>
+            <nd ref="7620339008"/>
+            <nd ref="7620339009"/>
+            <tag k="highway" v="residential"/>
+        </way>
+    </modify>
+    <modify>
+        <way id="815951903" version="1" changeset="1" timestamp="2012-07-10T00:00:00Z"  uid="1" user="some_user">
+            <nd ref="2281630522"/>
+            <nd ref="7620520783"/>
+            <nd ref="7620520784"/>
+            <nd ref="7620575085"/>
+            <nd ref="7620575086"/>
+            <nd ref="7620575087"/>
+            <nd ref="7620575088"/>
+            <nd ref="7620575089"/>
+            <nd ref="7620339009"/>
+            <tag k="highway" v="residential"/>
+        </way>
+    </modify>
+    <create>
+        <way id="119581708" version="1" changeset="1"
+	 timestamp="2012-07-10T00:00:00Z" user="some_user" uid="1">
+            <nd ref="1343167240"/>
+            <nd ref="1343167236"/>
+            <nd ref="1343167238"/>
+            <nd ref="1343167235"/>
+            <nd ref="1343167237"/>
+            <nd ref="1343167239"/>
+            <nd ref="1343167240"/>
+            <tag k="building" v="yes"/>
+        </way>
+        <way id="474556695" version="1" timestamp="2021-02-11T01:56:35Z" uid="1" user="some_user" changeset="1">
+            <nd ref="4684837925"/>
+            <nd ref="4684837923"/>
+            <nd ref="4425965490"/>
+            <nd ref="4684837924"/>
+            <tag k="waterway" v="river"/>
+            </way>
+    </create>
+    <modify>
+        <way id="119581708" version="1" changeset="1"
+	 timestamp="2012-07-10T00:00:00Z" user="some_user" uid="1">
+            <nd ref="1343167240"/>
+            <nd ref="1343167236"/>
+            <nd ref="1343167238"/>
+            <nd ref="1343167235"/>
+            <nd ref="1343167237"/>
+            <nd ref="1343167239"/>
+            <tag k="waterway" v="stream"/>
+        </way>
+        <way id="821663069" version="1" timestamp="2020-06-30T23:01:19Z" changeset="1" uid="1" user="some_user">
+            <nd ref="7672024395"/>
+            <nd ref="7672024396"/>
+            <nd ref="7672024397"/>
+            <nd ref="7672024398"/>
+            <nd ref="7672024395"/>
+            <tag k="building" v="yes"/>
+        </way>
+    </modify>
+</osmChange>

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -19,104 +19,93 @@
 
 #include <dejagnu.h>
 #include <iostream>
-#include <string>
-#include <pqxx/pqxx>
-
-#include "hottm.hh"
-#include "galaxy/galaxy.hh"
-
-#include <boost/date_time.hpp>
+#include <vector>
+#include "log.hh"
 #include "boost/date_time/posix_time/posix_time.hpp"
-#include "boost/date_time/gregorian/gregorian.hpp"
-
+#include "galaxy/osmchange.hh"
+#include "replicatorconfig.hh"
+#include "galaxy/planetreplicator.hh"
+#include "galaxy/changeset.hh"
 #include "galaxy/replication.hh"
-#include "data/osmobjects.hh"
 
+using namespace logger;
+using namespace replicatorconfig;
+using namespace planetreplicator;
+using namespace replication;
 using namespace boost::posix_time;
-using namespace boost::gregorian;
-using namespace galaxy;
+
+class TestCO : public osmchange::OsmChangeFile {
+};
+
+class TestPlanet : public replication::Planet {
+};
 
 TestState runtest;
 
-class TestRep : public replication::Planet
-{
-public:
-    TestRep(void) {
-    };
-};
-
 int
-main(int argc, char *argv[])
-{
+main(int argc, char *argv[]) {
 
-    TestRep tr;
+    logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
+    dbglogfile.setWriteDisk(true);
+    dbglogfile.setLogFilename("rep-test.log");
+    dbglogfile.setVerbosity(3);
 
-    // 000 tests
-    auto result = tr.findData(replication::changeset, time_from_string("2014-09-07 10:23"));
-    std::cout << result << std::endl;
-    if (result->path == "000/956/986") {
-        runtest.pass("Planet::findData(no state 000)");
-    } else {
-        runtest.fail("Planet::findData(no state 000)");
-    }
-    // auto foo = tr.getState(replication::changeset, time_from_string("2014-11-07 10:23"));
-    // if (foo->path == "000/962/746") {
-    //     runtest.pass("Planet::findData(no state 000)");
-    // } else {
-    //     runtest.fail("Planet::findData(no state 000)");
-    // }
+    ReplicatorConfig config;
+    config.planet_server = config.planet_servers[0].domain + "/replication";
 
-    // 001 tests
-    result = tr.findData(replication::changeset, time_from_string("2016-08-04 09:03"));
-    if (result->path == "001/958/981") {
-        runtest.pass("Planet::findData(no state 001)");
-    } else {
-        runtest.fail("Planet::findData(no state 001)");
-    }
+    std::vector<std::string> dates = {
+        "-01-01T00:00:00",
+        "-01-07T00:00:00",
+        "-02-12T00:00:00",
+        "-02-17T00:00:00",
+        "-03-22T00:00:00",
+        "-03-28T00:00:00",
+    };
 
-    // 002 tests
-    result = tr.findData(replication::changeset, time_from_string("2017-09-07 18:22"));
-    if (result->path == "002/532/990") {
-        runtest.pass("Planet::findData(has state)");
-    } else {
-        runtest.fail("Planet::findData(has state)");
-    }
+    ptime now = boost::posix_time::microsec_clock::universal_time();
+    int next_year = now.date().year() + 1;
 
-    replication::RemoteURL remote("https://planet.openstreetmap.org/replication/changesets/000/956/986");
-    // remote.dump();
-    if (remote.minor == 956 && remote.index == 986) {
-        runtest.pass("RemoteURL(url)");
-    } else {
-        runtest.fail("RemoteURL(url)");
-    }
-    remote.Increment();
-    // remote.dump();
-    if (remote.minor == 956 && remote.index == 987) {
-        runtest.pass("RemoteURL.Increment()");
-    } else {
-        runtest.fail("RemoteURL.Increment()");
-    }
-    remote.parse("https://planet.openstreetmap.org/replication/changesets/000/956/999");
-    remote.Increment();
-    // remote.dump();
-    if (remote.minor == 957 && remote.index == 0) {
-        runtest.pass("RemoteURL.Increment(minor roll-over)");
-    } else {
-        runtest.fail("RemoteURL.Increment(minor roll-over)");
-    }
-    remote.parse("https://planet.openstreetmap.org/replication/changesets/000/999/999");
-    remote.Increment();
-    // remote.dump();
-    if (remote.major == 1 && remote.minor == 0 && remote.index == 1) {
-        runtest.pass("RemoteURL.Increment(major roll-over)");
-    } else {
-        runtest.fail("RemoteURL.Increment(major roll-over)");
+    for (int i = 2017; i != next_year; ++i) {
+        for (auto it = std::begin(dates); it != std::end(dates); ++it) {
+
+            std::string year_string = std::to_string(i);
+            std::string ts(year_string + *it);
+            config.start_time = from_iso_extended_string(ts);
+
+            time_duration diffWithNow = now - config.start_time;
+
+            if (diffWithNow.hours() > 0) {
+
+                planetreplicator::PlanetReplicator replicator;
+                auto osmchange = replicator.findRemotePath(config, config.start_time);
+                TestCO change;
+                if (boost::filesystem::exists(osmchange->filespec)) {
+                    change.readChanges(osmchange->filespec);
+                } else { 
+                    TestPlanet planet;
+                    auto data = planet.downloadFile(osmchange->getURL());
+                    auto xml = planet.processData(osmchange->filespec, *data);
+                    std::istream& input(xml);
+                    change.readXML(input);
+                }
+
+                ptime timestamp = change.changes.back()->final_entry;
+                auto timestamp_string = to_simple_string(timestamp);
+                auto start_time_string = to_simple_string(config.start_time);
+
+                time_duration delta = timestamp - config.start_time;
+                if (delta.hours() > -24 && delta.hours() < 24) {
+                    runtest.pass("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
+                } else {
+                    runtest.fail("Find remote path from timestamp +/- 1 day (" + start_time_string + ") (" + timestamp_string + ")");
+                }
+            }
+        }
     }
     
-    // if (tr.checkTag("building", "yes") == true) {
-    //     runtest.pass("Validate::checkTag(good tag)");
-    // } else {
-    //     runtest.fail("Validate::checkTag(good tag)");
-    // }
-
 }
+
+// local Variables:
+// mode: C++
+// indent-tabs-mode: t
+// End:
