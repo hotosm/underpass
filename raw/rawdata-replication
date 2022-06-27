@@ -84,7 +84,7 @@ def pretty_format_timedelta(seconds):
 def connect(args):
     """ Create a connection from the config file
     """
-    return psycopg.connect(**dict(config.items("RAW")))
+    return psycopg.connect(**dict(config.items("RAW_DATA")))
 
 
 def compute_database_date(conn, prefix):
@@ -366,13 +366,13 @@ def update(conn, args):
     
     osm2pgsql.extend(args.extra_params)
     
-    osm2pgsql.extend(('-d', dict(config.items("RAW"))["dbname"]))
+    osm2pgsql.extend(('-d', dict(config.items("RAW_DATA"))["dbname"]))
 
-    osm2pgsql.extend(('-U', dict(config.items("RAW"))["user"]))
+    osm2pgsql.extend(('-U', dict(config.items("RAW_DATA"))["user"]))
 
-    osm2pgsql.extend(('-H', dict(config.items("RAW"))["host"]))
+    osm2pgsql.extend(('-H', dict(config.items("RAW_DATA"))["host"]))
 
-    osm2pgsql.extend(('-P', dict(config.items("RAW"))["port"]))
+    osm2pgsql.extend(('-P', dict(config.items("RAW_DATA"))["port"]))
     osm2pgsql.append(str(outfile))
     LOG.debug("Calling osm2pgsql with: %s", ' '.join(osm2pgsql))
     # return 1
