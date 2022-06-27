@@ -93,12 +93,24 @@ using namespace tmdb;
 namespace threads {
 
 std::mutex remove_mutex;
-std::mutex time_mutex;
-static ptime lastosc;
-static ptime lastosm;
-static bool osmdone =  false;
-static bool oscdone =  false;
+std::mutex tasks_change_mutex;
+std::mutex tasks_changeset_mutex;
 
+// Get closest change from a list of tasks
+std::shared_ptr<ReplicationTask>
+getClosest(std::shared_ptr<std::vector<ReplicationTask>> tasks, ptime now) {
+    auto closest = tasks->at(0);
+    for (auto it = tasks->begin(); it != tasks->end(); ++it) {
+        if (it->timestamp != not_a_date_time) {
+            boost::posix_time::time_duration delta = now - it->timestamp;
+            boost::posix_time::time_duration delta_oldest = now - closest.timestamp;
+            if (delta.hours() * 60 + delta.minutes() < delta_oldest.hours() * 60 + delta_oldest.minutes()) {
+                closest = *it;
+            }
+        }
+    }
+    return std::make_shared<ReplicationTask>(closest);
+}
 
 // Starting with this URL, download the file, incrementing
 void
@@ -132,57 +144,60 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     while (i <= cores/4) {
         auto xxx = std::make_shared<galaxy::QueryGalaxy>(config.galaxy_db_url);
         galaxies.push_back(xxx);
-	std::rotate(servers.begin(), servers.begin()+1, servers.end());
-	auto yyy = std::make_shared<replication::Planet>(*remote);
-	yyy->connectServer(servers.front());
+        std::rotate(servers.begin(), servers.begin()+1, servers.end());
+        auto yyy = std::make_shared<replication::Planet>(*remote);
+        yyy->connectServer(servers.front());
         planets.push_back(yyy);
         i++;
     }
 
     bool mainloop = true;
+    auto delay = std::chrono::seconds{0};
+    ReplicationTask closest;
+    auto last_task = std::make_shared<ReplicationTask>();
     while (mainloop) {
-	boost::asio::thread_pool pool(cores);
-	i = 0;
-	while (i++ <= 4) {
-	    auto task = boost::bind(threadChangeSet,
-				    std::ref(remote),
-				    std::ref(planets.front()),
-				    std::ref(poly),
-				    std::ref(galaxies.front()));
-	    boost::asio::post(pool, std::ref(task));
-	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
-	    std::rotate(planets.begin(), planets.begin()+1, planets.end());
-	    remote->Increment();
-	    remote->updateDomain(planets.front()->domain);
-	    auto delay = std::chrono::milliseconds{100}; // FIXME: this should probably be tuned
-	    std::this_thread::sleep_for(delay);
-	}
-	ptime timestamp;
-	ptime now = boost::posix_time::microsec_clock::universal_time();
-	if (lastosm != not_a_date_time) {
-	    // std::cout << "TIMESTAMP1: " << to_simple_string(lastosm) << std::endl;
-	    boost::posix_time::time_duration diff = now - lastosm;
-	    // std::cout << "DELTA: " << (diff.hours()*60) + diff.minutes() << std::endl;
-	    if ((diff.hours()*60) + diff.minutes() <= 50 || threads::osmdone) {
-		//break;
-	    }
-	}
-	// pool.join();
-	// std::this_thread::sleep_for(std::chrono::milliseconds{100});
-	// std::cout << "Restarting with: " << remote.filespec << std::endl;
-    }
-    // std::cout << "Caught up with: " << remote.filespec << std::endl;
-    auto delay = std::chrono::minutes{1};
-    while (mainloop) {
-	std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
-	std::rotate(planets.begin(), planets.begin()+1, planets.end());
-	// std::cout << "Caught up with: " << remote.filespec << std::endl;
-	threadChangeSet(std::ref(remote),
-			std::ref(planets.front()),
-			std::ref(poly),
-			std::ref(galaxies.front()));
-	remote->Increment();
-	std::this_thread::sleep_for(delay);
+        auto tasks = std::make_shared<std::vector<ReplicationTask>>();
+        i = cores*2;
+        boost::asio::thread_pool pool(i);
+        while (--i) {
+            std::this_thread::sleep_for(delay);
+            if (last_task->processed) {
+                remote->Increment();
+            }
+            auto task = boost::bind(threadChangeSet,
+                std::make_shared<replication::RemoteURL>(remote->getURL()),
+                std::ref(planets.front()),
+                std::ref(poly),
+                std::ref(galaxies.front()),
+                std::ref(tasks)
+            );
+            boost::asio::post(pool, task);
+            std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
+            std::rotate(planets.begin(), planets.begin()+1, planets.end());
+            remote->updateDomain(planets.front()->domain);
+        }
+        pool.join();
+        
+        ptime now  = boost::posix_time::second_clock::universal_time();
+        last_task = getClosest(tasks, now);
+        if (cores > 1) {
+            // Check if caught up with now
+            if (last_task->timestamp != not_a_date_time) {
+                closest.url = std::string(last_task->url);
+                closest.timestamp = ptime(last_task->timestamp);
+            }
+            boost::posix_time::time_duration delta_closest = now - closest.timestamp;
+            if (delta_closest.hours() * 60 + delta_closest.minutes() <= 2) {
+                log_debug(_("Caught up with: %1%"), closest.url);
+                remote->updatePath(
+                    std::stoi(closest.url.substr(0, 3)),
+                    std::stoi(closest.url.substr(4, 3)),
+                    std::stoi(closest.url.substr(8, 3))
+                );
+                cores = 1;
+                delay = std::chrono::seconds{45};        
+            }
+        }
     }
 }
 
@@ -233,9 +248,9 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     while (i <= cores/4) {
         auto xxx = std::make_shared<galaxy::QueryGalaxy>(config.galaxy_db_url);
         galaxies.push_back(xxx);
-	std::rotate(servers.begin(), servers.begin()+1, servers.end());
+        std::rotate(servers.begin(), servers.begin()+1, servers.end());
         auto yyy = std::make_shared<replication::Planet>(*remote);
-	yyy->connectServer(servers.front());
+        yyy->connectServer(servers.front());
         planets.push_back(yyy);
         auto zzz = std::make_shared<osm2pgsql::Osm2Pgsql>(config.osm2pgsql_db_url);
         rawosm.push_back(zzz);
@@ -245,85 +260,90 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     // Process OSM changes
     bool mainloop = true;
     auto removals = std::make_shared<std::vector<long>>();
+    auto delay = std::chrono::seconds{0};
+    ReplicationTask closest;
+    auto last_task = std::make_shared<ReplicationTask>();
     while (mainloop) {
-	boost::asio::thread_pool pool(cores);
-	i = 0;
-	while (i++ <= cores*2) {
-	    auto task = boost::bind(threadOsmChange,
-				    std::ref(remote),
-				    std::ref(planets.front()),
-				    std::ref(poly),
-				    std::ref(galaxies.front()),
-				    std::ref(rawosm.front()),
-				    std::ref(validator),
-				    std::ref(removals));
-	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
-	    std::rotate(planets.begin(), planets.begin()+1, planets.end());
-	    std::rotate(rawosm.begin(), rawosm.begin()+1, rawosm.end());
-	    boost::asio::post(pool, task);
-	    remote->Increment();
-	    auto delay = std::chrono::milliseconds{100}; // FIXME: this should probably be tuned
-	    std::this_thread::sleep_for(delay);
-	    // remote.dump();
-	}
-	pool.join();
-	ptime timestamp;
-	ptime now = boost::posix_time::microsec_clock::universal_time();
-	if (lastosc != not_a_date_time) {
-	    boost::posix_time::time_duration delta = now - lastosc;
-	    auto delay = std::chrono::minutes{1};
-	    // std::cout << "TIMESTAMP2: " << to_simple_string(lastosc) << std::endl;
-	    if ((delta.hours()*60) + delta.minutes() <= 50 || threads::oscdone) {
-		break;
-	    }
-	}
-	std::cout << "Removals: " << removals->size() << std::endl;
-	for (auto it = std::begin(*removals); it != std::end(*removals); ++it) {
-	    std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
-	    long osm_id = *it;
-	    galaxies.front()->updateValidation(osm_id);
-	}
-	removals->clear();
-    }
-    // std::cout << "Caught up with: " << remote.filespec << std::endl;
-    auto delay = std::chrono::minutes{1};
-    while (mainloop) {
-	std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
-	std::rotate(planets.begin(), planets.begin()+1, planets.end());
-	std::rotate(rawosm.begin(), rawosm.begin()+1, rawosm.end());
-	// std::cout << "Caught up with: " << remote.filespec << std::endl;
-	threadOsmChange(std::ref(remote), std::ref(planets.front()),
-			std::ref(poly), std::ref(galaxies.front()),
-			std::ref(rawosm.front()),
-			std::ref(validator),
-			std::ref(removals));
-	remote->Increment();
-	std::this_thread::sleep_for(delay);
+        auto tasks = std::make_shared<std::vector<ReplicationTask>>();
+        i = cores*2;
+        boost::asio::thread_pool pool(i);
+        while (--i) {
+            std::this_thread::sleep_for(delay);
+            if (last_task->processed) {
+                remote->Increment();
+            }
+            auto task = boost::bind(threadOsmChange,
+                std::make_shared<replication::RemoteURL>(remote->getURL()),
+                std::ref(planets.front()),
+                std::ref(poly),
+                std::ref(galaxies.front()),
+                std::ref(rawosm.front()),
+                std::ref(validator),
+                std::ref(removals),
+                std::ref(tasks)
+            );
+            boost::asio::post(pool, task);
+            std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
+            std::rotate(planets.begin(), planets.begin()+1, planets.end());
+            std::rotate(rawosm.begin(), rawosm.begin()+1, rawosm.end());
+        }
+        pool.join();
+
+        std::cout << "Removals: " << removals->size() << std::endl;
+        for (auto it = std::begin(*removals); it != std::end(*removals); ++it) {
+            std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
+            long osm_id = *it;
+            galaxies.front()->updateValidation(osm_id);
+        }
+        removals->clear();
+
+        ptime now  = boost::posix_time::second_clock::universal_time();
+        last_task = getClosest(tasks, now);
+        // Check if caught up with now
+        if (cores > 1) {
+            if (last_task->timestamp != not_a_date_time) {
+                closest.url = std::string(last_task->url);
+                closest.timestamp = ptime(last_task->timestamp);
+            }
+            boost::posix_time::time_duration delta_closest = now - closest.timestamp;
+            if (delta_closest.hours() * 60 + delta_closest.minutes() <= 2) {
+                log_debug(_("Caught up with: %1%"), closest.url);
+                remote->updatePath(
+                    std::stoi(closest.url.substr(0, 3)),
+                    std::stoi(closest.url.substr(4, 3)),
+                    std::stoi(closest.url.substr(8, 3))
+                );
+                cores = 1;
+                delay = std::chrono::seconds{45};        
+            }
+        }
     }
 }
 
 // This thread get started for every osmChange file
-std::shared_ptr<osmchange::OsmChangeFile>
+void
 threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
 		std::shared_ptr<replication::Planet> &planet,
 		const multipolygon_t &poly,
 		std::shared_ptr<galaxy::QueryGalaxy> &galaxy,
-                std::shared_ptr<osm2pgsql::Osm2Pgsql> &o2pgsql,
+        std::shared_ptr<osm2pgsql::Osm2Pgsql> &o2pgsql,
 		std::shared_ptr<Validate> &plugin,
-		std::shared_ptr<std::vector<long>> removals)
+		std::shared_ptr<std::vector<long>> removals,
+        std::shared_ptr<std::vector<ReplicationTask>> tasks)
 {
-    std::vector<std::string> result;
     auto osmchanges = std::make_shared<osmchange::OsmChangeFile>();
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("threadOsmChange: took %w seconds\n");
 #endif
-    // log_debug(_("Processing osmChange: %1%"), remote.filespec);
+    log_debug(_("Processing osmChange: %1%"), remote->filespec);
     auto data = planet->downloadFile(*remote.get());
+    ReplicationTask task;
+    task.url = remote->subpath;
+    task.timestamp = not_a_date_time;
+    task.processed = false;
     if (data->size() == 0) {
         log_error(_("osmChange file not found: %1% %2%"), remote->filespec, ".osc.gz");
-	oscdone = true;
-        return osmchanges;
-    } else {
+    } else {        
         try {
             std::istringstream changes_xml;
             // Scope to deallocate buffers
@@ -337,8 +357,12 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
             }
 
             try {
-                osmchanges->readXML(changes_xml);
-
+                osmchanges->readXML(changes_xml);  
+                task.processed = true;
+                if (osmchanges->changes.size() > 0) {
+                    task.timestamp = osmchanges->changes.back()->final_entry;
+                    log_debug(_("OsmChange final_entry: %1%"), task.timestamp);
+                }
             } catch (std::exception &e) {
                 log_error(_("Couldn't parse: %1%"), remote->filespec);
                 std::cerr << e.what() << std::endl;
@@ -349,6 +373,8 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
             std::cerr << e.what() << std::endl;
         }
     }
+    const std::lock_guard<std::mutex> lock(tasks_change_mutex);
+    tasks->push_back(task);
 
 #if 0
     for (auto cit = std::begin(osmchanges->changes); cit != std::end(osmchanges->changes); ++cit) {
@@ -363,12 +389,6 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
     }
 #endif
     osmchanges->areaFilter(poly);
-
-    if (osmchanges->changes.size() > 0) {
-	if (osmchanges->changes.back()->final_entry != not_a_date_time) {
-	    threads::lastosc = osmchanges->changes.back()->final_entry;
-	}
-    }
     if (o2pgsql->isOpen()) {
         // o2pgsql.updateDatabase(osmchanges);
     }
@@ -414,55 +434,44 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
     for (auto it = wayval->begin(); it != wayval->end(); ++it) {
         galaxy->applyChange(*it->get());
     }
-
-    return osmchanges;
 }
 
 // This parses the changeset file into changesets
-std::unique_ptr<changeset::ChangeSetFile>
+void
 threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
 		std::shared_ptr<replication::Planet> &planet,
 		const multipolygon_t &poly,
-		std::shared_ptr<galaxy::QueryGalaxy> galaxy)
+		std::shared_ptr<galaxy::QueryGalaxy> galaxy,
+        std::shared_ptr<std::vector<ReplicationTask>> tasks)
 {
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("threadChangeSet: took %w seconds\n");
 #endif
-    auto changeset = std::make_unique<changeset::ChangeSetFile>();
-    auto data = std::make_shared<std::vector<unsigned char>>();
-
-    // remote->dump();
-    log_debug(_("Processing ChangeSet: %1%"), remote->filespec);
-    try {
-	data = planet->downloadFile(*remote);
-    } catch (const std::exception &ex) {
-	log_debug(_("Download error for %1%: %2%"), remote->filespec, ex.what());
+ReplicationTask task;
+    task.url = remote->subpath;
+    task.timestamp = not_a_date_time;
+    task.processed = false;
+    auto data = planet->downloadFile(*remote.get());
+    if (data->size() > 0) {
+        auto changeset = std::make_unique<changeset::ChangeSetFile>();
+        log_debug(_("Processing ChangeSet: %1%"), remote->filespec);
+        auto xml = planet->processData(remote->filespec, *data);
+        std::istream& input(xml);
+        changeset->readXML(input);
+        task.processed = true;
+        if (changeset->last_closed_at != not_a_date_time) {
+            task.timestamp = changeset->last_closed_at;
+        } else if (changeset->changes.size() && changeset->changes.back()->created_at != not_a_date_time) {
+            task.timestamp = changeset->changes.back()->created_at;
+        }
+        log_debug(_("ChangeSet last_closed_at: %1%"), task.timestamp);
+        changeset->areaFilter(poly);
+        for (auto cit = std::begin(changeset->changes); cit != std::end(changeset->changes); ++cit) {
+            galaxy->applyChange(*cit->get());
+        }
     }
-
-    if (data->size() == 0) {
-        log_error(_("ChangeSet file not found: %1%"), remote->filespec);
-        changeset->download_error = true;
-	threads::osmdone = true;
-    } else {
-	auto xml = planet->processData(remote->filespec, *data);
-	std::istream& input(xml);
-	changeset->readXML(input);
-    }
-
-   changeset->areaFilter(poly);
-
-   // std::scoped_lock write_lock{time_mutex};
-   for (auto cit = std::begin(changeset->changes); cit != std::end(changeset->changes); ++cit) {
-       //cit->get()->dump();
-       changeset::ChangeSet *change = cit->get();
-       galaxy->applyChange(*cit->get());
-       if (change->closed_at != not_a_date_time) {
-	   threads::lastosm = change->closed_at;
-       } else if (change->created_at != not_a_date_time) {
-	   threads::lastosm = change->closed_at;
-       }
-   }
-   return changeset;
+    const std::lock_guard<std::mutex> lock(tasks_changeset_mutex);
+    tasks->push_back(task);
 }
 
 // This updates the calculated fields in the raw_changesets table, based on

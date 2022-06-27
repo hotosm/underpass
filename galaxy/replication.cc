@@ -639,9 +639,9 @@ RemoteURL::updatePath(int _major, int _minor, int _index)
     boost::format minorfmt("%03d");
     boost::format indexfmt("%03d");
 
-    // major = _major;
-    // minor = _minor;
-    // index = _index;
+    major = _major;
+    minor = _minor;
+    index = _index;
 
     majorfmt % (_major);
     minorfmt % (_minor);
@@ -751,7 +751,7 @@ RemoteURL::RemoteURL(const RemoteURL &inr)
 void
 RemoteURL::dump(void)
 {
-    std::cout << "\t------" << std::endl;
+    std::cerr << "\t------" << std::endl;
     std::cerr << "\tDomain: " << domain << std::endl;
     std::cerr << "\tDatadir: " << datadir << std::endl;
     std::cerr << "\tSubpath: " << subpath << std::endl;

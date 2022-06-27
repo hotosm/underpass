@@ -1,0 +1,57 @@
+[DATABASE]
+host=localhost
+user=
+password=
+dbname=
+port=
+
+;
+[HOST]
+host=${api_url}
+port=${api_port}
+
+; OAuth2 Credentials for OSM.org login
+[OAUTH]
+%{ for k, v in oauth2_creds ~}
+${k}=${v}
+%{ endfor ~}
+url=https://www.openstreetmap.org
+scope=read_prefs
+login_redirect_uri=${api_url}/auth/callback
+
+; Database downloads
+[DUMP]
+path=${dump_path}
+redirect_uri=${api_url}/callback
+underpass=underpass.sql
+osmstats=osmstats.sql
+
+; Insights database access credentials
+[INSIGHTS]
+%{ for k, v in insights_creds ~}
+${k}=${v}
+%{ endfor ~}
+
+; Underpass database access credentials
+[UNDERPASS]
+%{ for k, v in underpass_creds ~}
+${k}=${v}
+%{ endfor ~}
+
+; Tasking Manager database access credentials
+; TODO: Rename section title
+[TM]
+%{ for k, v in tasking_manager_creds ~}
+${k}=${v}
+%{ endfor ~}
+
+[SENTRY]
+url=${sentry_dsn}
+rate=1.0
+
+; If API and UI are on different hosts
+[EXPORT_CONFIG]
+path=exports/
+api_host=http://127.0.0.1
+api_port=8000
+max_area=100000

@@ -269,7 +269,7 @@ class OsmChangeFile
 
     /// Scan tags for the proper values
     std::shared_ptr<std::vector<std::string>>
-    scanTags(std::map<std::string, std::string> tags);
+    scanTags(std::map<std::string, std::string> tags, osmchange::osmtype_t type);
 
 //    std::map<long, bool> priority;
     /// dump internal data, for debugging only

@@ -1,8 +1,66 @@
-# CloudFront 
 # ACM Cert
 # Cloudwatch monitoring
 # Cloudwatch Alarms
 # Load Balancer?
+
+data "aws_s3_bucket" "galaxy-website" {
+  bucket = "galaxy-ui-website"
+}
+
+data "aws_acm_certificate" "hotosm-wildcard" {
+  domain      = "hotosm.org"
+  statuses    = ["ISSUED"]
+  types       = ["AMAZON_ISSUED"]
+  most_recent = true
+
+}
+
+
+## TODO:
+# Add Origin Access Policy
+
+resource "aws_cloudfront_distribution" "galaxy" {
+  aliases = ["galaxy1.hotosm.org"]
+  comment = "Galaxy production CDN"
+
+  enabled         = true
+  is_ipv6_enabled = true
+
+  origin {
+    domain_name = data.aws_s3_bucket.galaxy-website.bucket_regional_domain_name
+    origin_id   = "galaxy-website"
+  }
+
+
+  default_cache_behavior {
+    allowed_methods        = ["HEAD", "GET"]
+    cached_methods         = ["HEAD", "GET"]
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+    target_origin_id       = "galaxy-website"
+
+    forwarded_values {
+      cookies {
+        forward = "all"
+      }
+      query_string = false
+    }
+
+  }
+
+  viewer_certificate {
+    acm_certificate_arn      = data.aws_acm_certificate.hotosm-wildcard.arn
+    minimum_protocol_version = "TLSv1.2_2021"
+    ssl_support_method       = "sni-only"
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+}
 
 resource "aws_iam_instance_profile" "underpass" {
   name = "underpass_instance_profile"
@@ -93,6 +151,37 @@ resource "aws_iam_role" "underpass" {
   ]
 }
 
+resource "aws_instance" "jumphost" {
+  ami           = data.aws_ami.debian_bullseye.id
+  instance_type = lookup(var.instance_types, "jump_host", "t3.large")
+
+  subnet_id              = aws_subnet.public[2].id
+  vpc_security_group_ids = [aws_security_group.remote-access.id]
+
+  root_block_device {
+    volume_size = lookup(var.disk_sizes, "jump_host_root", 10)
+    volume_type = "gp3"
+    throughput  = 125
+  }
+
+  iam_instance_profile = aws_iam_instance_profile.underpass.name
+  key_name             = var.ssh_key_pair_name
+
+  tags = {
+    Name = "galaxy-jump.hotosm.org"
+    Role = "SSH Jump Host"
+  }
+
+  lifecycle {
+    create_before_destroy = false
+    prevent_destroy       = false
+    ignore_changes = [
+      # Ignore changes to AMI
+      # ami,
+    ]
+  }
+}
+
 /** TODO
 * Monitoring:
 *   - Setup Newrelic Agent
@@ -157,43 +246,22 @@ resource "aws_instance" "file-processor" {
   }
 }
 
-/*
-resource "aws_eip" "underpass" {
-  instance = aws_instance.application.id
-  vpc      = true
-}
-*/
-
-/** TODO
-* Monitoring:
-*   - Setup Newrelic Agent
-*   - Setup CloudWatchAgent
-* User Access (SSH Ingress):
-*   - Add SSH key
-* App Access (Ports Ingress):
-*   - Port: ????
-*   - Needs to be behind private ALB?
-* Service Access (IAM Egress):
-*   - Needs to access S3 bucket
-*   - Needs to access Database
-*   - Needs to access Secrets manager entry for DB creds?
-*/
-resource "aws_instance" "api" {
-  ami           = data.aws_ami.ubuntu_latest.id
-  instance_type = lookup(var.instance_types, "api_server", "t3.micro")
+resource "aws_instance" "file-processor-2" {
+  ami           = data.aws_ami.ubuntu_latest_arm.id
+  instance_type = lookup(var.instance_types, "file_processor", "r6g.xlarge")
 
   subnet_id              = aws_subnet.private[2].id
-  vpc_security_group_ids = [aws_security_group.api.id]
+  vpc_security_group_ids = [aws_security_group.app.id]
 
   root_block_device {
-    volume_size = lookup(var.disk_sizes, "api_server_root", 10)
+    volume_size = lookup(var.disk_sizes, "file_processor_root", 10)
     volume_type = "gp3"
     throughput  = 125
   }
 
   ebs_block_device {
     device_name = "/dev/sdb"
-    volume_size = lookup(var.disk_sizes, "api_server_extra", 100)
+    volume_size = lookup(var.disk_sizes, "file_processor_extra", 1000)
     volume_type = "gp3"
     throughput  = 125
   }
@@ -202,11 +270,9 @@ resource "aws_instance" "api" {
   key_name             = var.ssh_key_pair_name
 
   tags = {
-    Name = "underpass-api"
-    Role = "API Server"
+    Name = "underpass-processor"
+    Role = "Changefile processor server"
   }
-
-  count = lookup(var.server_count, "api_server", 1)
 
   lifecycle {
     create_before_destroy = false
@@ -216,6 +282,11 @@ resource "aws_instance" "api" {
       ami,
     ]
   }
+}
+
+resource "aws_eip" "jumphost" {
+  instance = aws_instance.jumphost.id
+  vpc      = true
 }
 
 resource "random_password" "galaxy_database_admin_password" {
@@ -324,33 +395,23 @@ data "aws_route53_zone" "hotosm-org" {
   name = "hotosm.org."
 }
 
-/**
-resource "aws_route53_record" "underpass" {
+resource "aws_route53_record" "galaxy-api-lb" {
   zone_id = data.aws_route53_zone.hotosm-org.zone_id
-  name    = "underpass-demo.${data.aws_route53_zone.hotosm-org.name}"
+  name    = "galaxy-api.${data.aws_route53_zone.hotosm-org.name}"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.galaxy-api.dns_name
+    zone_id                = aws_lb.galaxy-api.zone_id
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_route53_record" "jumphost" {
+  zone_id = data.aws_route53_zone.hotosm-org.zone_id
+  name    = "galaxy-bastion.${data.aws_route53_zone.hotosm-org.name}"
   type    = "A"
   ttl     = "300"
-  records = [aws_eip.underpass.public_ip]
-}
-*/
-
-/** TODO
-* Figure out Lifecycle rules
-* Figure out ACL and perms
-*
-*/
-resource "aws_s3_bucket" "underpass" {
-  bucket_prefix = "underpass"
-
-  tags = {
-    name = "underpass"
-    Role = "Backup store"
-  }
-
-}
-
-resource "aws_s3_bucket_acl" "galaxy" {
-  bucket = aws_s3_bucket.underpass.id
-  acl    = "private"
+  records = [aws_eip.jumphost.public_ip]
 }
 

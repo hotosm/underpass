@@ -84,6 +84,12 @@ typedef std::shared_ptr<Validate>(plugin_t)();
 /// \namespace threads
 namespace threads {
 
+struct ReplicationTask {
+	std::string url;
+	ptime timestamp;
+	bool processed;
+};
+
 /// This monitors the planet server for new changesets files.
 /// It does a bulk download to catch up the database, then checks for the
 /// minutely change files and processes them.
@@ -102,23 +108,24 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
 
 /// Updates the raw_hashtags, raw_users, and raw_changesets_countries tables
 /// from a changeset file
-extern std::shared_ptr<osmchange::OsmChangeFile>
-threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
+void threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
 		std::shared_ptr<replication::Planet> &planet,
-                const multipolygon_t &poly,
+		const multipolygon_t &poly,
 		std::shared_ptr<galaxy::QueryGalaxy> &galaxy,
-                std::shared_ptr<osm2pgsql::Osm2Pgsql> &rawosm,
-                std::shared_ptr<Validate> &plugin,
-		std::shared_ptr<std::vector<long>> removals);
+		std::shared_ptr<osm2pgsql::Osm2Pgsql> &rawosm,
+		std::shared_ptr<Validate> &plugin,
+		std::shared_ptr<std::vector<long>> removals,
+		std::shared_ptr<std::vector<ReplicationTask>> tasks);
 
 /// This updates several fields in the raw_changesets table, which are part of
 /// the changeset file, and don't need to be calculated.
 // extern bool threadChangeSet(const std::string &file);
-extern std::unique_ptr<changeset::ChangeSetFile>
+void
 threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
 		std::shared_ptr<replication::Planet> &planet,
                 const multipolygon_t &poly,
-		std::shared_ptr<galaxy::QueryGalaxy> galaxy);
+		std::shared_ptr<galaxy::QueryGalaxy> galaxy,
+		std::shared_ptr<std::vector<ReplicationTask>> tasks);
 
 // extern bool threadChangeSet(const std::string &file, std::promise<bool> && result);
 

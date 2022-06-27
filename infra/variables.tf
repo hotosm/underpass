@@ -19,7 +19,7 @@ variable "quay_robot_credentials" {
   sensitive = true
 }
 
-variable "tasking_manager_db_config_credentials" {
+variable "tasking_manager_db_credentials" {
   type = map(string)
 
   default = {
@@ -33,7 +33,7 @@ variable "tasking_manager_db_config_credentials" {
   sensitive = true
 }
 
-variable "underpass_db_config_credentials" {
+variable "underpass_db_credentials" {
   type = map(string)
 
   default = {
@@ -47,7 +47,7 @@ variable "underpass_db_config_credentials" {
   sensitive = true
 }
 
-variable "insights_db_config_credentials" {
+variable "insights_db_credentials" {
   type = map(string)
 
   default = {
@@ -186,4 +186,29 @@ variable "dump_path" {
 variable "container_image_uri" {
   type    = string
   default = "quay.io/hotosm/galaxy-api:container"
+}
+
+variable "alb_tls_policy" {
+  type    = string
+  default = "ELBSecurityPolicy-FS-1-2-Res-2020-10"
+}
+
+variable "api_host" {
+  type    = string
+  default = "galaxy-api.hotosm.org"
+}
+
+variable "api_port" {
+  type    = string
+  default = "443"
+}
+
+variable "api_url_scheme" {
+  type    = string
+  default = "https://"
+}
+
+variable "sentry_dsn" {
+  type    = string
+  default = ""
 }

@@ -135,6 +135,12 @@ resource "aws_ecs_task_definition" "galaxy-api" {
     cpu_architecture        = "X86_64" // or ARM64
   }
 
+  ephemeral_storage {
+    size_in_gib = 200
+  }
+
+  execution_role_arn = aws_iam_role.ecs_execution_role.arn
+
   container_definitions = jsonencode([
     {
       name  = "galaxy-api"
@@ -176,11 +182,15 @@ resource "aws_ecs_task_definition" "galaxy-api" {
       }
 
       environment = [
+        {
+          name  = "FORWARDED_ALLOW_IPS"
+          value = "*"
+        }
 
       ]
     }
   ])
-  execution_role_arn = aws_iam_role.ecs_execution_role.arn
+
 }
 
 resource "aws_ecs_service" "galaxy-api" {
@@ -188,12 +198,12 @@ resource "aws_ecs_service" "galaxy-api" {
   cluster         = aws_ecs_cluster.galaxy.id
   launch_type     = "FARGATE"
   task_definition = aws_ecs_task_definition.galaxy-api.arn
-  desired_count   = 3
+  desired_count   = 1
 
   propagate_tags = "SERVICE"
 
   network_configuration {
-    subnets          = aws_subnet.public[*].id
+    subnets          = [for subnet in aws_subnet.public : subnet.id]
     security_groups  = [aws_security_group.api.id]
     assign_public_ip = true // valid only for FARGATE
   }
@@ -210,12 +220,86 @@ resource "aws_ecs_service" "galaxy-api" {
 
 }
 
+resource "aws_appautoscaling_target" "galaxy-api" {
+  max_capacity       = 5
+  min_capacity       = 1
+  resource_id        = "service/${aws_ecs_cluster.galaxy.name}/${aws_ecs_service.galaxy-api.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+resource "aws_appautoscaling_policy" "galaxy-api-memory" {
+  name               = "scale-by-memory-load"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.galaxy-api.resource_id
+  scalable_dimension = aws_appautoscaling_target.galaxy-api.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.galaxy-api.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 60
+
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    }
+
+    target_value = "75"
+  }
+}
+
+resource "aws_appautoscaling_policy" "galaxy-api-cpu" {
+  name               = "scale-by-cpu-load"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.galaxy-api.resource_id
+  scalable_dimension = aws_appautoscaling_target.galaxy-api.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.galaxy-api.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 40
+
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+
+    target_value = "75"
+  }
+}
+
+data "aws_arn" "api-alb" {
+  arn = aws_lb.galaxy-api.id
+}
+
+data "aws_arn" "api-targetgroup" {
+  arn = aws_lb_target_group.galaxy-api.id
+}
+
+resource "aws_appautoscaling_policy" "galaxy-api-alb-requests" {
+  name               = "scale-by-requests-to-alb"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.galaxy-api.resource_id
+  scalable_dimension = aws_appautoscaling_target.galaxy-api.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.galaxy-api.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    scale_in_cooldown  = 120
+    scale_out_cooldown = 120
+
+    predefined_metric_specification {
+      predefined_metric_type = "ALBRequestCountPerTarget"
+      resource_label         = join("/", [trimprefix(data.aws_arn.api-alb.resource, "loadbalancer/"), data.aws_arn.api-targetgroup.resource])
+    }
+
+    target_value = "100"
+  }
+}
+
 resource "aws_lb" "osm-stats" {
   name               = "osm-stats"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.api.id]
-  subnets            = aws_subnet.public[*].id
+  subnets            = [for subnet in aws_subnet.public : subnet.id]
 
   enable_deletion_protection = false
 
@@ -239,7 +323,7 @@ resource "aws_lb_listener" "osm-stats-secure" {
   load_balancer_arn = aws_lb.osm-stats.arn
   port              = "443"
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-FS-1-2-Res-2019-08"
+  ssl_policy        = var.alb_tls_policy
   certificate_arn   = data.aws_acm_certificate.wildcard.arn
 
   default_action {
@@ -253,9 +337,10 @@ resource "aws_lb" "galaxy-api" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.api.id]
-  subnets            = aws_subnet.public[*].id
+  subnets            = [for subnet in aws_subnet.public : subnet.id]
 
   enable_deletion_protection = false
+  ip_address_type            = "dualstack"
 
   tags = {
     Environment = "production"
@@ -279,12 +364,28 @@ resource "aws_lb_listener" "galaxy-api-secure" {
   load_balancer_arn = aws_lb.galaxy-api.arn
   port              = "443"
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-FS-1-2-Res-2019-08"
+  ssl_policy        = var.alb_tls_policy
   certificate_arn   = data.aws_acm_certificate.wildcard.arn
 
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.galaxy-api.arn
+  }
+}
+
+resource "aws_lb_listener" "galaxy-api-insecure" {
+  load_balancer_arn = aws_lb.galaxy-api.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
   }
 }
 
@@ -308,33 +409,22 @@ resource "aws_secretsmanager_secret" "configfile" {
 
 resource "aws_secretsmanager_secret_version" "configfile" {
   secret_id = aws_secretsmanager_secret.configfile.id
-  secret_string = base64gzip(
+  secret_string = base64encode(
     templatefile(
-      "${path.module}/config.txt.tpl",
+      "${path.module}/config.txt.tftpl",
       {
-        insights_pg_host     = lookup(var.insights_db_config_credentials, "host", "")
-        insights_pg_port     = lookup(var.insights_db_config_credentials, "port", "")
-        insights_pg_user     = lookup(var.insights_db_config_credentials, "user", "")
-        insights_pg_password = lookup(var.insights_db_config_credentials, "password", "")
-        insights_pg_database = lookup(var.insights_db_config_credentials, "database", "")
-
-        underpass_pg_host     = lookup(var.underpass_db_config_credentials, "host", "")
-        underpass_pg_port     = lookup(var.underpass_db_config_credentials, "port", "")
-        underpass_pg_user     = lookup(var.underpass_db_config_credentials, "user", "")
-        underpass_pg_password = lookup(var.underpass_db_config_credentials, "password", "")
-        underpass_pg_database = lookup(var.underpass_db_config_credentials, "database", "")
-
-        tasking_manager_pg_host     = lookup(var.tasking_manager_db_config_credentials, "host", "")
-        tasking_manager_pg_port     = lookup(var.tasking_manager_db_config_credentials, "port", "")
-        tasking_manager_pg_user     = lookup(var.tasking_manager_db_config_credentials, "user", "")
-        tasking_manager_pg_password = lookup(var.tasking_manager_db_config_credentials, "password", "")
-        tasking_manager_pg_database = lookup(var.tasking_manager_db_config_credentials, "database", "")
+        insights_creds        = var.insights_db_credentials
+        underpass_creds       = var.underpass_db_credentials
+        tasking_manager_creds = var.tasking_manager_db_credentials
 
         dump_path = var.dump_path
 
-        oauth2_client_id     = lookup(var.oauth2_credentials, "client_id", "")
-        oauth2_client_secret = lookup(var.oauth2_credentials, "client_secret", "")
-        oauth2_secret_key    = lookup(var.oauth2_credentials, "secret_key", "")
+        oauth2_creds = var.oauth2_credentials
+
+        api_url  = "${var.api_url_scheme}${var.api_host}"
+        api_port = var.api_port
+
+        sentry_dsn = var.sentry_dsn
       }
     )
   )

@@ -1,47 +1,39 @@
-tags:
-  - places:
-        - village
-        - hamlet
-        - neigborhood
-        - city
-        - town
+place:
+  node:
+    - place:
+      - *
 
-    - amenities:
-        - hospital
-        - school
-        - clinic
-        - kindergarten
-        - drinking_water
-        - health_facility
-        - health_center
-        - healthcare
+building:
+  way:
+    - building:
+      - *
+    - amenity:
+      - hospital
+      - school
+      - clinic
+      - kindergarten
+      - drinking_water
+      - health_facility
+      - health_center
+      - healthcare
+  node:
+    - building:
+      - *
 
-     - buildings:
-         - hospital
-         - hut
-         - school
-         - healthcare
-         - clinic
-         - kindergarten
-         - health center
-         - health centre
-         - latrine
-         - latrines
-         - toilet
-         - toilets
+amenity:
+  node:
+    - amenity:
+      - *
+  node:
+    - amenity:
+      - *
 
-      - highways:
-         - highway
-         - tertiary
-         - secondary
-         - unclassified
-         - track
-         - residential
-         - path
-         - bridge
-         - waterway
+highway:
+  way:
+    - highway:
+      - *
 
-    - schools:
-         - primary
-         - secondary
-         - kindergarten"
+waterway:
+  way:
+    - waterway:
+      - *
