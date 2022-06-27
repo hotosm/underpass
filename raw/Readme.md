@@ -18,11 +18,13 @@ Prepare your osm.pbf for loading before start. You can download it from differen
      PGPASSWORD behaves the same as the password connection parameter. Use of this environment variable is not recommended for security reasons, as some operating systems allow non-root users to see process environment variables via ps; instead consider using a password file (see Section 34.15).</font> 
 
 Sample of Exporting Database Creadentials (Optional , You can directly pass it as command line arguments as well )
-<code>export PGHOST=localhost
+```
+export PGHOST=localhost
 export PGPORT=5432
 export PGUSER=admin
 export PGPASSWORD=admin
-export PGDATABASE=postgres</code>
+export PGDATABASE=postgres
+```
 
 ##### Command 
 ```osm2pgsql --create -H localhost -U admin -P 5432 -d postgres -W --extra-attributes --slim --output=flex --style ./raw.lua yourdownloaded.osm.pbf ```
