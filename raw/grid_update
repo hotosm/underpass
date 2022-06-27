@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
 #
 # This file is part of Underpass.
@@ -139,7 +141,7 @@ class Underpass:
     """This class connects to Underpass database and responsible for Values derived from database"""
 
     def __init__(self, parameters=None):
-        self.database = Database(dict(config.items("RAW")))
+        self.database = Database(dict(config.items("RAW_DATA")))
         self.con, self.cur = self.database.connect()
         self.params = parameters
 
