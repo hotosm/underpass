@@ -358,10 +358,8 @@ resource "aws_db_instance" "galaxy" {
   lifecycle {
     ignore_changes = [
       engine_version,
+      allocated_storage,
       max_allocated_storage
-
-      # Manually updated often
-      // instance_class,
     ]
   }
 
