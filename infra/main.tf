@@ -207,6 +207,14 @@ resource "aws_security_group" "app" {
     ipv6_cidr_blocks = ["::/0"]
   }
 
+  ingress {
+    description     = "Allow access to Bastion"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = [aws_security_group.remote-access.id]
+  }
+
   egress {
     from_port        = 0
     to_port          = 0
@@ -244,6 +252,12 @@ resource "aws_security_group" "remote-access" {
 
   tags = {
     Name = "galaxy-remote-user-access"
+  }
+
+  lifecycle {
+    ignore_changes = [
+      ingress
+    ]
   }
 
 }
