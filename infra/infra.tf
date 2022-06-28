@@ -357,7 +357,8 @@ resource "aws_db_subnet_group" "galaxy" {
 resource "aws_db_instance" "galaxy" {
   lifecycle {
     ignore_changes = [
-      engine_version
+      engine_version,
+      max_allocated_storage
 
       # Manually updated often
       // instance_class,
