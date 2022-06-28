@@ -16,11 +16,11 @@ data "aws_acm_certificate" "hotosm-wildcard" {
 }
 
 data "aws_cloudfront_cache_policy" "galaxy" {
-  name = "CachingOptimized"
+  name = "Managed-CachingOptimized"
 }
 
 data "aws_cloudfront_origin_request_policy" "galaxy" {
-  name = "UserAgentRefererHeaders"
+  name = "Managed-UserAgentRefererHeaders"
 }
 
 ## TODO:
