@@ -48,14 +48,6 @@ resource "aws_cloudfront_distribution" "galaxy" {
     cache_policy_id          = data.aws_cloudfront_cache_policy.galaxy.id
     origin_request_policy_id = data.aws_cloudfront_origin_request_policy.galaxy.id
 
-    // LEGACY
-    forwarded_values {
-      cookies {
-        forward = "all"
-      }
-      query_string = false
-    }
-
   }
 
   viewer_certificate {
