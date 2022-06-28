@@ -15,6 +15,13 @@ data "aws_acm_certificate" "hotosm-wildcard" {
 
 }
 
+data "aws_cloudfront_cache_policy" "galaxy" {
+  name = "CachingOptimized"
+}
+
+data "aws_cloudfront_origin_request_policy" "galaxy" {
+  name = "UserAgentRefererHeaders"
+}
 
 ## TODO:
 # Add Origin Access Policy
@@ -31,7 +38,6 @@ resource "aws_cloudfront_distribution" "galaxy" {
     origin_id   = "galaxy-website"
   }
 
-
   default_cache_behavior {
     allowed_methods        = ["HEAD", "GET"]
     cached_methods         = ["HEAD", "GET"]
@@ -39,6 +45,10 @@ resource "aws_cloudfront_distribution" "galaxy" {
     compress               = true
     target_origin_id       = "galaxy-website"
 
+    cache_policy_id          = data.aws_cloudfront_cache_policy.galaxy.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.galaxy.id
+
+    // LEGACY
     forwarded_values {
       cookies {
         forward = "all"
@@ -355,8 +365,7 @@ resource "aws_db_subnet_group" "galaxy" {
 resource "aws_db_instance" "galaxy" {
   lifecycle {
     ignore_changes = [
-      # Updated manually or by other processes
-      // max_allocated_storage,
+      engine_version
 
       # Manually updated often
       // instance_class,
