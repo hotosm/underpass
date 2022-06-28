@@ -37,7 +37,7 @@ void Yaml2::read(const std::string &fspec) {
     filespec = fspec;
     yaml.open(filespec,  std::ifstream::in);
     while (getline(yaml, line)) {
-        if (line.size() > 0) {
+        if (line.size() > 0 && line[0] != '#') {
             auto lineinfo = this->process_line(line);
             auto line = lineinfo.first;
             auto index = lineinfo.second;
@@ -100,6 +100,41 @@ std::string Yaml2::scan_ident(std::string line) {
         return line;
     }
 
+}
+
+bool Yaml2::contains_key(std::string key) {
+    bool result = false;
+    this->contains_key(key, this->root, result);
+    return result;
+}
+
+void Yaml2::contains_key(std::string key, Node &node, bool &result) {
+    for (auto it = std::begin(node.children); it != std::end(node.children); ++it) {
+        if (it->value == key) {
+            result = true;
+            return;
+        }
+        if (it->children.size() > 0) {
+            this->contains_key(key, *it, result);
+        }
+    }
+}
+
+bool Yaml2::contains_value(std::string key, std::string value) {
+    bool result = false;
+    this->contains_value(key, value, this->root, result);
+    return result;
+}
+
+void Yaml2::contains_value(std::string key, std::string value, Node &node, bool &result) {
+    for (auto it = std::begin(node.children); it != std::end(node.children); ++it) {
+        if (it->value == key) {
+            return this->contains_key(value, *it, result);
+        }
+        if (it->children.size() > 0) {
+            this->contains_value(key, value, *it, result);
+        }
+    }
 }
 
 

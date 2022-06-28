@@ -52,6 +52,10 @@ class Yaml2 {
     public:
         Node root;
         void read(const std::string &fspec);
+        bool contains_key(std::string key);
+        void contains_key(std::string key, Node &node, bool &result);
+        bool contains_value(std::string key, std::string value);
+        void contains_value(std::string key, std::string value, Node &node, bool &result);
     private:
         void add_node(Node &node, int index, Node &parent, int depth = 0);
         void clean(std::string &line);

@@ -25,7 +25,7 @@
 #include <fcntl.h>
 
 #include "galaxy/galaxy.hh"
-#include "data/yaml.hh"
+#include "data/yaml2.hh"
 #include "log.hh"
 
 using namespace logger;
@@ -42,37 +42,43 @@ main(int argc, char *argv[])
     dbglogfile.setLogFilename("val-test.log");
     dbglogfile.setVerbosity(3);
 
-    yaml::Yaml yaml;
+    yaml2::Yaml2 yaml;
     std::string filespec = DATADIR;
     filespec += "/testsuite/libunderpass.all/test.yaml";
     yaml.read(filespec);
-    yaml.dump();
+    // yaml.dump();
     
-    if (yaml.tags.size() > 0) {
-        runtest.pass("Yaml::read()");
+    // if (yaml.tags.size() > 0) {
+    //     runtest.pass("Yaml::read()");
+    // } else {
+    //     runtest.fail("Yaml::read()");
+    // }
+
+    if (yaml.contains_key("building:material") && yaml.contains_key("building:roof")) {
+        runtest.pass("Yaml::contains_key()");
     } else {
-        runtest.fail("Yaml::read()");
+        runtest.fail("Yaml::contains_key()");
     }
 
-    if (yaml.containsKey("building:material") && yaml.containsKey("building:roof")) {
+    if (yaml.contains_value("building:material", "metal") && yaml.contains_value("building:roof", "tiles")) {
+        runtest.pass("Yaml::contains_value(good)");
+    } else {
+        runtest.fail("Yaml::contains_value(good)");
+    }
+
+    if (!yaml.contains_value("building:material", "metalx") && !yaml.contains_value("building:roof", "tilesy")) {
+        runtest.pass("Yaml::contains_value(good)");
+    } else {
+        runtest.fail("Yaml::contains_value(good)");
+    }
+
+    if (yaml.contains_key("building:material") && yaml.contains_key("building:roof")) {
         runtest.pass("Yaml::containsKey()");
     } else {
         runtest.fail("Yaml::containsKey()");
     }
 
-    if (yaml.containsValue("building:material", "metal")&& yaml.containsValue("building:roof", "tiles")) {
-        runtest.pass("Yaml::containsValue(good)");
-    } else {
-        runtest.fail("Yaml::containsValue(good)");
-    }
-
-    if (yaml.containsKey("building:material") && yaml.containsKey("building:roof")) {
-        runtest.pass("Yaml::containsKey()");
-    } else {
-        runtest.fail("Yaml::containsKey()");
-    }
-
-    if (yaml.containsKey("building:levels") && yaml["building:levels"].size() == 0) {
+    if (yaml.contains_key("building:levels") && yaml.contains_key("building:levels")) {
         runtest.pass("Yaml::containsValue(none)");
     } else {
         runtest.fail("Yaml::containsValue(none)");
