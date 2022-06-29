@@ -162,8 +162,6 @@ class TestStats {
 			yaml.read(filename);
 			std::map<std::string, long> config;
 			for (auto it = std::begin(yaml.root.children); it != std::end(yaml.root.children); ++it) {
-				std::cout << it->value << std::endl;
-				std::cout << it->children[0].value << std::endl;
 				auto keyvalue = std::pair<std::string,long>(
 					it->value, std::stol(
 						it->children[0].value
