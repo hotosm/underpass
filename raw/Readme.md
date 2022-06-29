@@ -37,7 +37,7 @@ with exported DB Param :
 
 ## Prepare Your Tables
 
-Install [psycopg2](https://pypi.org/project/psycopg2/), [osmium](https://pypi.org/project/osmium/) and [dateutil](https://pypi.org/project/python-dateutil/1.4/](https://dateutil.readthedocs.io/en/stable/) in your python env
+Install [psycopg2](https://pypi.org/project/psycopg2/), [osmium](https://pypi.org/project/osmium/) and [dateutil](https://pypi.org/project/python-dateutil/) in your python env
 
 Create ***config.txt*** file in the directory and Put your credentials inside it like this
 
