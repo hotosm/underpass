@@ -1,33 +1,33 @@
 config:
   - complete:
-      - no
+    - no
   - values:
-      - yes
+    - yes
 
 tags:
-    - opening_hours
+  - opening_hours
 
-    - recyling:
-        - hazardous_waste
-        - car_batteries
-        - cardboard
-        - computers
-        - paint
-        - plastic
-        - electrical
-        - bottles
-        - cans
+  - recyling:
+    - hazardous_waste
+    - car_batteries
+    - cardboard
+    - computers
+    - paint
+    - plastic
+    - electrical
+    - bottles
+    - cans
 
-    - toilets::disposal:
-        - flush
-        - pitlatrine
-        - bucket
-        - chemical
+  - toilets::disposal:
+    - flush
+    - pitlatrine
+    - bucket
+    - chemical
 
-     - operator:type:
-        - government
-        - ngo
-        - community
-        - religious
-        - public
-        - private_individual
+  - operator:type:
+    - government
+    - ngo
+    - community
+    - religious
+    - public
+    - private_individual

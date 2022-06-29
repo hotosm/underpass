@@ -25,7 +25,7 @@
 #include <fcntl.h>
 
 #include "galaxy/galaxy.hh"
-#include "data/yaml2.hh"
+#include "data/yaml.hh"
 #include "log.hh"
 
 using namespace logger;
@@ -42,17 +42,29 @@ main(int argc, char *argv[])
     dbglogfile.setLogFilename("val-test.log");
     dbglogfile.setVerbosity(3);
 
-    yaml2::Yaml2 yaml;
+    yaml::Yaml yaml;
     std::string filespec = DATADIR;
     filespec += "/testsuite/libunderpass.all/test.yaml";
     yaml.read(filespec);
     // yaml.dump();
     
-    // if (yaml.tags.size() > 0) {
-    //     runtest.pass("Yaml::read()");
-    // } else {
-    //     runtest.fail("Yaml::read()");
-    // }
+    if (yaml.get("tags").children.size() > 0) {
+        runtest.pass("Yaml::get().children");
+    } else {
+        runtest.fail("Yaml::get().children");
+    }
+
+    if (yaml.get("config").contains_value("complete", "yes")) {
+        runtest.pass("Yaml::get().contains_value()");
+    } else {
+        runtest.fail("Yaml::get().contains_value()");
+    }
+
+    if (yaml.get("config").get("minangle").children.size() > 0) {
+        runtest.pass("Yaml::get().get().children");
+    } else {
+        runtest.fail("Yaml::get().get().children");
+    }
 
     if (yaml.contains_key("building:material") && yaml.contains_key("building:roof")) {
         runtest.pass("Yaml::contains_key()");

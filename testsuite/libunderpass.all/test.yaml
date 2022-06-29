@@ -1,25 +1,25 @@
 # This is just a test file
 config:
   - minangle:
-      - 84
+    - 84
   - maxangle:
-      - 91
+    - 91
   - complete:
-      - no
+    - no
   - values:
-      - yes
+    - yes
 
 tags:
   - building:levels
 
   - building:material:
-      - cement_block
-      - metal
-      - brick
+    - cement_block
+    - metal
+    - brick
 
   - building:roof:
-      - none
-      - metal
-      - wood
-      - tiles
-      - concrete
+    - none
+    - metal
+    - wood
+    - tiles
+    - concrete
