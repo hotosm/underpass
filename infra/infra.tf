@@ -359,7 +359,6 @@ resource "aws_db_instance" "galaxy" {
     ignore_changes = [
       engine_version,
       allocated_storage,
-      max_allocated_storage
     ]
   }
 
