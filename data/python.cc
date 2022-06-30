@@ -61,8 +61,8 @@ BOOST_PYTHON_MODULE(underpass)
         .def("checkTag", &Hotosm::checkTag)
         .def("checkWay", &Hotosm::checkWay)
         .def("checkPOI", &Hotosm::checkPOI)
-        .def("overlaps", &Hotosm::overlaps);
-        // .def("dump", &Hotosm::dump);
+        .def("overlaps", &Hotosm::overlaps)
+        .def("dump", &Hotosm::dump);
 
     class_<ValidateStatus>("ValidateStatus")
         .def("hasStatus", &ValidateStatus::hasStatus)

@@ -215,7 +215,11 @@ class BOOST_SYMBOL_VISIBLE Validate {
     };
     virtual std::shared_ptr<ValidateStatus> checkTag(const std::string &key, const std::string &value) = 0;
     yaml::Yaml &operator[](const std::string &key) { return yamls[key]; };
-
+    void dump(void) {
+        for (auto it = std::begin(yamls); it != std::end(yamls); ++it) {
+            it->second.dump();
+        }
+    }
     bool overlaps(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, osmobjects::OsmWay &way) {
 	// This test only applies to buildings, as highways often overlap.
     yaml::Yaml tests = yamls["building"];

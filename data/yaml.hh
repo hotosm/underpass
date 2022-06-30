@@ -44,6 +44,7 @@ class Node {
         Node get(std::string key);
         bool contains_key(std::string key);
         bool contains_value(std::string key, std::string value);
+        void dump();
         Node();
         ~Node();
     private:
@@ -60,6 +61,7 @@ class Yaml {
         Node root;
         void read(const std::string &fspec);
         Node get(std::string key);
+        void dump();
         bool contains_key(std::string key);
         bool contains_value(std::string key, std::string value);
     private:

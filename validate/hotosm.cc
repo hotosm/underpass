@@ -106,7 +106,6 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
 
     yaml::Yaml tests = yamls[type];
 
-    int count = 0;
     std::string key;
     int keyexists = 0;
     int valexists = 0;
@@ -196,7 +195,6 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 
     yaml::Yaml tests = yamls[type];
 
-    int count = 0;
     std::string key;
     int keyexists = 0;
     int valexists = 0;
