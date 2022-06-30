@@ -28,9 +28,9 @@
 #endif
 
 #include "yaml.hh"
-#include "log.hh"
-#include <boost/filesystem.hpp>
-using namespace logger;
+#include <iostream>
+#include <fstream>
+#include <filesystem>
 
 namespace yaml {
 
@@ -38,11 +38,14 @@ void Yaml::read(const std::string &fspec) {
     std::ifstream yaml;
     std::string line;
     filespec = fspec;
-    if (!boost::filesystem::exists(filespec)) {
-        log_error(_("%1%  doesn't exist!"), filespec);
-	    return;
+
+    if (!std::filesystem::exists(filespec)) {
+        std::cout << "Couldn't open " << filespec << std::endl;
+        return;
     }
     yaml.open(filespec,  std::ifstream::in);
+    std::cout << "Opened " << filespec << std::endl;
+
     this->root = Node();
     while (getline(yaml, line)) {
         if (line.size() > 0 && line[0] != '#') {

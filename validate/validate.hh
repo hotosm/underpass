@@ -218,11 +218,7 @@ class BOOST_SYMBOL_VISIBLE Validate {
 
     bool overlaps(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, osmobjects::OsmWay &way) {
 	// This test only applies to buildings, as highways often overlap.
-    yaml::Yaml tests;
-    std::string filename = SRCDIR;
-    filename += "building.yaml";
-    tests.read(filename);
-
+    yaml::Yaml tests = yamls["building"];
 	if (tests.get("config").contains_value("overlaps", "yes")) {
 #ifdef TIMING_DEBUG_X
 	    boost::timer::auto_cpu_timer timer("validate::overlaps: took %w seconds\n");

@@ -104,9 +104,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
         return status;
     }
 
-    yaml::Yaml tests;
-    std::string filename = SRCDIR + type + ".yaml";
-    tests.read(filename);
+    yaml::Yaml tests = yamls[type];
 
     int count = 0;
     std::string key;
@@ -196,9 +194,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
         return status;
     }
 
-    yaml::Yaml tests;
-    std::string filename = SRCDIR + type + ".yaml";
-    tests.read(filename);
+    yaml::Yaml tests = yamls[type];
 
     int count = 0;
     std::string key;

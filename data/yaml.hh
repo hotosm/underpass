@@ -33,9 +33,6 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <iostream>
-#include <fstream>
-#include <boost/algorithm/string.hpp>
 
 /// \namespace yaml
 namespace yaml {
