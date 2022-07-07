@@ -195,7 +195,7 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 
     // Serialize changes writing
     {
-	std::scoped_lock write_lock{pqxx_mutex};
+    std::scoped_lock write_lock{pqxx_mutex};
         pqxx::work worker(*sdb);
         pqxx::result result = worker.exec(query);
         worker.commit();
@@ -229,9 +229,9 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
     query += std::to_string(change.uid) + "\',\'";
     query += to_simple_string(change.created_at) + "\', \'";
     if (change.closed_at != not_a_date_time) {
-	query += to_simple_string(change.closed_at) + "\', \'";
+        query += to_simple_string(change.closed_at) + "\', \'";
     } else {
-	query += to_simple_string(change.created_at) + "\', \'";
+        query += to_simple_string(change.created_at) + "\', \'";
     }
     query += to_simple_string(boost::posix_time::second_clock::universal_time()) + "\'";
 
@@ -333,14 +333,14 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
     query += ")) ON CONFLICT (id) DO UPDATE SET editor=\'" + fixString(change.editor);
     query += "\', created_at=\'" + to_simple_string(change.created_at);
     // if (!change.open) {
-    // 	query += "\', closed_at=\'" + to_simple_string(change.closed_at);
+    //     query += "\', closed_at=\'" + to_simple_string(change.closed_at);
     // }
     query += "\', bbox=" + bbox.substr(2) + ")'))";
     // log_debug(_("QUERY: %1%"), query);
 
     // Serialize changes writing
     {
-	std::scoped_lock write_lock{pqxx_mutex};
+    std::scoped_lock write_lock{pqxx_mutex};
         pqxx::work worker(*sdb);
         pqxx::result result = worker.exec(query);
         worker.commit();
@@ -395,19 +395,19 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     std::string format;
     std::string query;
     if (validation.values.size() > 0) {
-	query = "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, values, timestamp, location) VALUES(";
-	format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], ARRAY[%s], \'%s\', ST_GeomFromText(\'%s\', 4326)";
+        query = "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, values, timestamp, location) VALUES(";
+        format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], ARRAY[%s], \'%s\', ST_GeomFromText(\'%s\', 4326)";
     } else {
-	query = "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, timestamp, location) VALUES(";
-	format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)";
+        query = "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, timestamp, location) VALUES(";
+        format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)";
     }
     boost::format fmt(format);
     fmt % validation.osm_id;
     fmt % validation.change_id;
     if (isnan(validation.angle)) {
-	fmt % 0.0;
+        fmt % 0.0;
     } else {
-	fmt % validation.angle;
+        fmt % validation.angle;
     }
     fmt % validation.user_id;
     fmt % objtypes[validation.objtype];
@@ -420,13 +420,13 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     }
     fmt % stattmp;
     if (validation.values.size() > 0) {
-	for (const auto &tag: std::as_const(validation.values)) {
-	    valtmp += " \'" + fixString(tag) + "\',";
-	}
-	if (!valtmp.empty()) {
-	    valtmp.pop_back();
-	}
-	fmt % valtmp;
+        for (const auto &tag: std::as_const(validation.values)) {
+            valtmp += " \'" + fixString(tag) + "\',";
+        }
+        if (!valtmp.empty()) {
+            valtmp.pop_back();
+        }
+        fmt % valtmp;
     }
     fmt % to_simple_string(validation.timestamp);
     // Postgres wants the order of lat,lon reversed from how they
@@ -436,7 +436,7 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     query += ") ON CONFLICT (osm_id) DO UPDATE ";
     query += " SET status = ARRAY[" + stattmp + " ]::status[]";
     if (validation.values.size() > 0) {
-	query += ", values = ARRAY[" + valtmp + " ]";
+        query += ", values = ARRAY[" + valtmp + " ]";
     }
 //    log_debug(_("QUERY: %1%"), query);
 

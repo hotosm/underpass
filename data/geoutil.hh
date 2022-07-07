@@ -96,11 +96,11 @@ public:
 
     /// DUmp internal data for debugging purposes.
     void dump(void) {
-	std::cerr << "Area: " << std::abs(boost::geometry::area(boundary)) << std::endl;
-	std::cerr << "Points: " <<boost::geometry::num_points(boundary) << std::endl;
-	std::cerr << "Polygons: " <<boost::geometry::num_geometries(boundary) << std::endl;
+        std::cerr << "Area: " << std::abs(boost::geometry::area(boundary)) << std::endl;
+        std::cerr << "Points: " <<boost::geometry::num_points(boundary) << std::endl;
+        std::cerr << "Polygons: " <<boost::geometry::num_geometries(boundary) << std::endl;
     };
-// private:
+    // private:
     multipolygon_t boundary; ///< The boundary multipolygon
 };
     

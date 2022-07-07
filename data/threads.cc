@@ -115,8 +115,8 @@ getClosest(std::shared_ptr<std::vector<ReplicationTask>> tasks, ptime now) {
 // Starting with this URL, download the file, incrementing
 void
 startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
-		       const multipolygon_t &poly,
-		       const replicatorconfig::ReplicatorConfig &config)
+               const multipolygon_t &poly,
+               const replicatorconfig::ReplicatorConfig &config)
 {
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("startMonitorChangesets: took %w seconds\n");
@@ -204,8 +204,8 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
 // Starting with this URL, download the file, incrementing
 void
 startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
-		    const multipolygon_t &poly,
-		    const replicatorconfig::ReplicatorConfig &config)
+            const multipolygon_t &poly,
+            const replicatorconfig::ReplicatorConfig &config)
 {
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("startMonitorChanges: took %w seconds\n");
@@ -234,7 +234,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
 
 #ifdef MEMORY_DEBUG
     size_t sz, active1, active2;
-#endif	// JEMALLOC memory debugging
+#endif    // JEMALLOC memory debugging
     // Support multiple database connections
     std::vector<std::shared_ptr<galaxy::QueryGalaxy>> galaxies;
     std::vector<std::string> servers;
@@ -323,12 +323,12 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
 // This thread get started for every osmChange file
 void
 threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
-		std::shared_ptr<replication::Planet> &planet,
-		const multipolygon_t &poly,
-		std::shared_ptr<galaxy::QueryGalaxy> &galaxy,
+        std::shared_ptr<replication::Planet> &planet,
+        const multipolygon_t &poly,
+        std::shared_ptr<galaxy::QueryGalaxy> &galaxy,
         std::shared_ptr<osm2pgsql::Osm2Pgsql> &o2pgsql,
-		std::shared_ptr<Validate> &plugin,
-		std::shared_ptr<std::vector<long>> removals,
+        std::shared_ptr<Validate> &plugin,
+        std::shared_ptr<std::vector<long>> removals,
         std::shared_ptr<std::vector<ReplicationTask>> tasks)
 {
     auto osmchanges = std::make_shared<osmchange::OsmChangeFile>();
@@ -407,21 +407,21 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
     for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
         OsmChange *change = it->get();
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
-	    osmobjects::OsmWay *way = wit->get();
-	    if (way->action == osmobjects::remove) {
-		const std::lock_guard<std::mutex> lock(remove_mutex);
-		removals->push_back(way->id);
-	    }
-	    // galaxy->updateValidation(way->id);
-	}
+            osmobjects::OsmWay *way = wit->get();
+            if (way->action == osmobjects::remove) {
+                const std::lock_guard<std::mutex> lock(remove_mutex);
+                removals->push_back(way->id);
+            }
+            // galaxy->updateValidation(way->id);
+        }
         for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
             osmobjects::OsmNode *node = nit->get();
-	    if (node->action == osmobjects::remove) {
-		const std::lock_guard<std::mutex> lock(remove_mutex);
-		removals->push_back(node->id);
-	    }
-	    // galaxy->updateValidation(node->id);
-	}
+            if (node->action == osmobjects::remove) {
+                const std::lock_guard<std::mutex> lock(remove_mutex);
+                removals->push_back(node->id);
+            }
+            // galaxy->updateValidation(node->id);
+        }
     }
 #endif
     auto nodeval = osmchanges->validateNodes(poly, plugin);
@@ -439,9 +439,9 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
 // This parses the changeset file into changesets
 void
 threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
-		std::shared_ptr<replication::Planet> &planet,
-		const multipolygon_t &poly,
-		std::shared_ptr<galaxy::QueryGalaxy> galaxy,
+        std::shared_ptr<replication::Planet> &planet,
+        const multipolygon_t &poly,
+        std::shared_ptr<galaxy::QueryGalaxy> galaxy,
         std::shared_ptr<std::vector<ReplicationTask>> tasks)
 {
 #ifdef TIMING_DEBUG
@@ -529,7 +529,7 @@ threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive, const replicatorconfig:
         if (tmusersfrequency > 0) {
             if (elapsed.count() < tmusersfrequency) {
                 log_debug("Users sync TM->OS sleeping for %1% seconds...",
-                          std::chrono::seconds(tmusersfrequency - elapsed.count()).count());
+                std::chrono::seconds(tmusersfrequency - elapsed.count()).count());
                 std::this_thread::sleep_for(std::chrono::seconds(tmusersfrequency - elapsed.count()));
             }
         }

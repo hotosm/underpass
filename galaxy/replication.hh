@@ -109,10 +109,10 @@ class StateFile {
 
     StateFile(const std::string &pathin, long seqin, ptime timein, const frequency_t freq)
     {
-	timestamp = timein;
-	sequence = seqin;
-	path = pathin;
-	frequency = freq;
+        timestamp = timein;
+        sequence = seqin;
+        path = pathin;
+        frequency = freq;
     };
 
     /// Initialize with a state file from disk or memory
@@ -168,11 +168,11 @@ class StateFile {
     /// \return a string representation of the frequency.
     ///
     static std::string freq_to_string(frequency_t frequency) {
-	std::map<replication::frequency_t, std::string> frequency_tags = {
-	    {replication::minutely, "minute"},
-	    {replication::hourly, "hour"},
-	    {replication::daily, "day"},
-	    {replication::changeset, "changesets"}};
+    std::map<replication::frequency_t, std::string> frequency_tags = {
+        {replication::minutely, "minute"},
+        {replication::hourly, "hour"},
+        {replication::daily, "day"},
+        {replication::changeset, "changesets"}};
         return frequency_tags[frequency];
     };
     ///
@@ -182,11 +182,11 @@ class StateFile {
     /// \throws std::invalid_argument if the \a frequency_str is not a valid frequency.
     ///
     static frequency_t freq_from_string(const std::string &frequency_str) {
-	std::map<const std::string, replication::frequency_t> frequency_values = {
-	    {"minute", replication::minutely},
-	    {"hour", replication::hourly},
-	    {"day", replication::daily},
-	    {"changesets", replication::changeset}};
+    std::map<const std::string, replication::frequency_t> frequency_values = {
+        {"minute", replication::minutely},
+        {"hour", replication::hourly},
+        {"day", replication::daily},
+        {"changesets", replication::changeset}};
         return frequency_values[frequency_str];
     };
 
@@ -216,15 +216,15 @@ class RemoteURL {
 
     /// Because the remote path gets updated using the same object, it's more efficient
     /// to store the parsed URL as separate variables to be easier to update.
-    std::string domain;		///< The domain for this network connection
-    std::string datadir;	///< The top level directory on the remote server
-    std::string subpath;	///< The numerical part of the remote path
-    frequency_t frequency;	///< The frequency of the change files
-    int major;		        ///< The first element in the numerical path
-    int minor;			///< The second element in the numerical path
-    int index;			///< The third element in the numerical path
-    std::string filespec;	///< The full fiespec
-    std::string destdir;	///< The local directory used to cache files
+    std::string domain;        ///< The domain for this network connection
+    std::string datadir;    ///< The top level directory on the remote server
+    std::string subpath;    ///< The numerical part of the remote path
+    frequency_t frequency;    ///< The frequency of the change files
+    int major;                ///< The first element in the numerical path
+    int minor;            ///< The second element in the numerical path
+    int index;            ///< The third element in the numerical path
+    std::string filespec;    ///< The full fiespec
+    std::string destdir;    ///< The local directory used to cache files
     /// Dump internal data for debugging
     void dump(void);
     /// Increment the numerical part of the path by one file
@@ -233,7 +233,7 @@ class RemoteURL {
     void Decrement(void);
     /// Copy one remote object to another
     RemoteURL &operator=(const RemoteURL &inr);
-    long sequence() const;	///< The sequence number of this path
+    long sequence() const;    ///< The sequence number of this path
 };
 
 /// \class Planet
@@ -268,8 +268,8 @@ class Planet {
     /// \return file data (possibly empty in case of errors)
     std::shared_ptr<std::vector<unsigned char>>downloadFile(const std::string &file);
     std::shared_ptr<std::vector<unsigned char>>downloadFile(const RemoteURL &remote) {
-	std::string str = "https://" + remote.domain + "/" + remote.filespec;
-	return downloadFile(str);
+        std::string str = "https://" + remote.domain + "/" + remote.filespec;
+        return downloadFile(str);
     };
 
     /// Dump internal data to the terminal, used only for debugging

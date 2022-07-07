@@ -74,7 +74,7 @@ public:
     std::shared_ptr<ValidateStatus> checkTag(const std::string &key, const std::string &value);
     // Factory method
     static std::shared_ptr<Hotosm> create(void) {
-	return std::make_shared<Hotosm>();
+    return std::make_shared<Hotosm>();
     };
 private:
     std::vector<long> buildings;       ///< 

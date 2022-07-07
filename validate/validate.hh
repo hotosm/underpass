@@ -142,22 +142,22 @@ class ValidateStatus {
         results[duplicate] = "Duplicate";
         for (const auto &stat: std::as_const(status)) {
             std::cerr << "\tResult: " << results[stat] << std::endl;
-	}
-	if (values.size() > 0) {
-	    std::cerr << "\tValues: ";
-	    for (auto it = std::begin(values); it != std::end(values); ++it ) {
-		std::cerr << *it << ", " << std::endl;
-	    }
-	}
+        }
+        if (values.size() > 0) {
+            std::cerr << "\tValues: ";
+            for (auto it = std::begin(values); it != std::end(values); ++it ) {
+                std::cerr << *it << ", " << std::endl;
+            }
+        }
     }
     std::unordered_set<valerror_t> status;
     osmobjects::osmtype_t objtype;
-    long osm_id = 0;		///< The OSM ID of the feature
-    long user_id = 0;		///< The user ID of the mapper creating/modifying this feature
-    long change_id = 0;		///< The changeset ID
-    ptime timestamp;		///< The timestamp when this validation was performed
-    point_t center;		///< The centroid of the building polygon
-    double angle = 0;		///< The calculated angle of a corner
+    long osm_id = 0;        ///< The OSM ID of the feature
+    long user_id = 0;        ///< The user ID of the mapper creating/modifying this feature
+    long change_id = 0;        ///< The changeset ID
+    ptime timestamp;        ///< The timestamp when this validation was performed
+    point_t center;        ///< The centroid of the building polygon
+    double angle = 0;        ///< The calculated angle of a corner
     std::unordered_set<std::string> values; ///< The found bad tag values
 };
 
@@ -186,13 +186,13 @@ class BOOST_SYMBOL_VISIBLE Validate {
             }
         }
 #if 0
-	Validate(const std::string &filespec) {
-	    yaml::Yaml yaml;
-	    yaml.read(filespec);
-	    if (!config.stem().empty()) {
-		yamls[config.stem()] = yaml;
-	    }
-	}
+    Validate(const std::string &filespec) {
+        yaml::Yaml yaml;
+        yaml.read(filespec);
+        if (!config.stem().empty()) {
+        yamls[config.stem()] = yaml;
+        }
+    }
 #endif
     };
     virtual ~Validate(void){};
@@ -206,12 +206,12 @@ class BOOST_SYMBOL_VISIBLE Validate {
     /// is a building
     virtual std::shared_ptr<ValidateStatus> checkWay(const osmobjects::OsmWay &way, const std::string &type) = 0;
     std::shared_ptr<ValidateStatus> checkTags(std::map<std::string, std::string> tags) {
-	auto status = std::make_shared<ValidateStatus>();
+        auto status = std::make_shared<ValidateStatus>();
         for (auto it = std::begin(tags); it != std::end(tags); ++it) {
             // FIXME: temporarily disabled
             // result = checkTag(it->first, it->second);
         }
-	return status;
+        return status;
     };
     virtual std::shared_ptr<ValidateStatus> checkTag(const std::string &key, const std::string &value) = 0;
     yaml::Yaml &operator[](const std::string &key) { return yamls[key]; };
@@ -221,56 +221,56 @@ class BOOST_SYMBOL_VISIBLE Validate {
         }
     }
     bool overlaps(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, osmobjects::OsmWay &way) {
-	// This test only applies to buildings, as highways often overlap.
+    // This test only applies to buildings, as highways often overlap.
     yaml::Yaml tests = yamls["building"];
-	if (tests.get("config").contains_value("overlaps", "yes")) {
+    if (tests.get("config").contains_value("overlaps", "yes")) {
 #ifdef TIMING_DEBUG_X
-	    boost::timer::auto_cpu_timer timer("validate::overlaps: took %w seconds\n");
+        boost::timer::auto_cpu_timer timer("validate::overlaps: took %w seconds\n");
 #endif
-	    if (way.numPoints() <= 1) {
-		return false;
-	    }
-	    // It's probably a cicle
-	    if (way.numPoints() > 5 && cornerAngle(way.linestring) < 30) {
-		// log_debug(_("Building %1% is round"), way.id);
-		return false;
-	    }
-	    for (auto nit = std::begin(allways); nit != std::end(allways); ++nit) {
-		osmobjects::OsmWay *oldway = nit->get();
-		if (boost::geometry::overlaps(oldway->polygon, way.polygon)) {
-		    if (way.getTagValue("layer") == oldway->getTagValue("layer") && way.id != oldway->id) {
-			log_error(_("Building %1% overlaps with %2%"), way.id, oldway->id);
-			return true;
-		    }
-		}
-	    }
-	}
-	return false;
+        if (way.numPoints() <= 1) {
+            return false;
+        }
+        // It's probably a cicle
+        if (way.numPoints() > 5 && cornerAngle(way.linestring) < 30) {
+            // log_debug(_("Building %1% is round"), way.id);
+            return false;
+        }
+        for (auto nit = std::begin(allways); nit != std::end(allways); ++nit) {
+            osmobjects::OsmWay *oldway = nit->get();
+            if (boost::geometry::overlaps(oldway->polygon, way.polygon)) {
+                if (way.getTagValue("layer") == oldway->getTagValue("layer") && way.id != oldway->id) {
+                    log_error(_("Building %1% overlaps with %2%"), way.id, oldway->id);
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
     }
     double cornerAngle(const linestring_t &way) {
-	if (boost::geometry::num_points(way) <= 3) {
-	    log_error(_("way has no line segments!"));
-	    return -1;
-	}
+    if (boost::geometry::num_points(way) <= 3) {
+        log_error(_("way has no line segments!"));
+        return -1;
+    }
         // first segment
-	try {
-	    double x1 = boost::geometry::get<0>(way[0]);
-	    double y1 = boost::geometry::get<1>(way[0]);
-	    double x2 = boost::geometry::get<0>(way[1]);
-	    double y2 = boost::geometry::get<1>(way[1]);
+    try {
+        double x1 = boost::geometry::get<0>(way[0]);
+        double y1 = boost::geometry::get<1>(way[0]);
+        double x2 = boost::geometry::get<0>(way[1]);
+        double y2 = boost::geometry::get<1>(way[1]);
 
-	    // Next segment that intersects
-	    double x3 = boost::geometry::get<0>(way[2]);
-	    double y3 = boost::geometry::get<1>(way[2]);
+        // Next segment that intersects
+        double x3 = boost::geometry::get<0>(way[2]);
+        double y3 = boost::geometry::get<1>(way[2]);
 
-	    double s1 = (y2 - y1) / (x2 - x1);
-	    double s2 = (y3 - y2) / (x3 - x2);
-	    double angle = std::atan((s2 - s1) / (1 + (s2 * s1))) * 180 / M_PI;
-	    return angle;
-	} catch (const std::exception &ex) {
-	    log_error(_("way doesn't have enough points"));
-	    return -1;
-	}
+        double s1 = (y2 - y1) / (x2 - x1);
+        double s2 = (y3 - y2) / (x3 - x2);
+        double angle = std::atan((s2 - s1) / (1 + (s2 * s1))) * 180 / M_PI;
+        return angle;
+    } catch (const std::exception &ex) {
+        log_error(_("way doesn't have enough points"));
+        return -1;
+    }
     };
 
   protected:
