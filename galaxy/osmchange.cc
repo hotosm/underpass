@@ -460,12 +460,13 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
     // log_debug(_("Pre filtering size is %1%"), changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
         OsmChange *change = it->get();
+
         for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
             OsmNode *node = nit->get();
-        if (node->action == osmobjects::remove) {
-            continue;
-        }
-        nodecache[node->id] = node->point;
+            if (node->action == osmobjects::remove) {
+                continue;
+            }
+            nodecache[node->id] = node->point;
             // log_debug("ST_GeomFromEWKT(\'SRID=4326; %1%\'))", boost::geometry::wkt(node->point));
             // std::cerr << "Checking " << boost::geometry::wkt(node->point) << " within " << boost::geometry::wkt(poly) << std::endl;
             if (!boost::geometry::within(node->point, poly)) {
@@ -478,6 +479,7 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
                 priority[node->change_id] = true;
             }
         }
+
         //log_debug(_("Post filtering size is %1%"), changes.size());
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
             OsmWay *way = wit->get();
