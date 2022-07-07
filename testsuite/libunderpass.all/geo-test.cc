@@ -38,6 +38,7 @@ class TestGU : public GeoUtil
 {
     bool testFile(const std::string &filespec) {
         // std::string basedir="DATADIR";
+        return true;
     };
 };
 

@@ -30,6 +30,8 @@ using namespace apidb;
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
+namespace hotosmtest {
+
 TestState runtest;
 
 class TestPG : public QueryStats
@@ -280,6 +282,8 @@ test_leaderboard(void)
     ptime last;
     last = testpg.lastUpdate(uid, last);
     std::cout << "LAST: " << last << std::endl;
+}
+
 }
 
 // local Variables:
