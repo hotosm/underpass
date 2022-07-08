@@ -26,6 +26,7 @@
 #include "log.hh"
 #include "replicatorconfig.hh"
 #include "galaxy/planetreplicator.hh"
+#include "data/yaml.hh"
 
 namespace opts = boost::program_options;
 
@@ -160,8 +161,12 @@ class TestStats {
 			yaml::Yaml yaml;
 			yaml.read(filename);
 			std::map<std::string, long> config;
-			for (auto it = std::begin(yaml.config); it != std::end(yaml.config); ++it) {
-				auto keyvalue = std::pair<std::string,long>(it->first, std::stol(yaml.getConfig(it->first)));
+			for (auto it = std::begin(yaml.root.children); it != std::end(yaml.root.children); ++it) {
+				auto keyvalue = std::pair<std::string,long>(
+					it->value, std::stol(
+						it->children[0].value
+					)
+				);
 				config.insert(keyvalue);
 			}
 			return config;

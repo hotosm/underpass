@@ -27,7 +27,7 @@
 # include "unconfig.h"
 #endif
 
-#include "yaml2.hh"
+#include "yaml.hh"
 #include "statsconfig.hh"
 #include "galaxy/osmchange.hh"
 #include <memory>
@@ -54,7 +54,7 @@ namespace statsconfig {
     std::shared_ptr<std::vector<statsconfig::StatsConfig>> StatsConfigFile::read_yaml(std::string filename) {
         if (!statsconfig::statsconfigs.count(filename)) {
             auto statsconfig = std::make_shared<std::vector<statsconfig::StatsConfig>>();
-            yaml2::Yaml2 yaml;
+            yaml::Yaml yaml;
             yaml.read(filename);
             for (auto it = std::begin(yaml.root.children); it != std::end(yaml.root.children); ++it) {
                 std::map<std::string, std::vector<std::string>> way_tags;

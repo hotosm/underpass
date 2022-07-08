@@ -105,7 +105,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     }
 
     yaml::Yaml tests = yamls[type];
-    int count = 0;
+
     std::string key;
     int keyexists = 0;
     int valexists = 0;
@@ -115,7 +115,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     bool values = false;
     // This enables/disables writing features flagged for not being tag complete
     // from being written to the database to reduce the size of the results.
-    if (tests.getConfig("complete") == "yes") {
+    if (tests.get("config").contains_value("complete", "yes")) {
         minimal = false;
     } else {
         minimal = true;
@@ -123,7 +123,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     // This enables/disables writing features flagged for not having values
     // in range as defined in the YAML config file. This prevents those
     // from being written to the database to reduce the size of the results.
-    if (tests.getConfig("values") == "yes") {
+    if (tests.get("config").contains_value("values", "yes")) {
         values = true;
     } else {
         values = false;
@@ -133,7 +133,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
 	if (node.action == osmobjects::remove) {
 	    continue;
 	}
-        if (tests.containsKey(vit->first)) {
+        if (tests.contains_key(vit->first)) {
             // std::cerr << "Matched key " << vit->first << "!" << std::endl;
             keyexists++;
         } else {
@@ -141,7 +141,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
                 status->status.insert(incomplete);
             }
         }
-        if (tests.containsValue(vit->first, vit->second)) {
+        if (tests.contains_value(vit->first, vit->second)) {
             // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
             valexists++;
             // status->status.insert(correct);
@@ -154,7 +154,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     }
     // std::cerr << keyexists << " : " << valexists << " : " << tests.config.size() << std::endl;
 
-    if (keyexists == tests.tags.size() && valexists == tests.tags.size()) {
+    if (keyexists == tests.get("tags").children.size() && valexists == tests.get("tags").children.size()) {
         status->status.clear();
         if (!minimal) {
             status->status.insert(complete);
@@ -194,7 +194,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     }
 
     yaml::Yaml tests = yamls[type];
-    int count = 0;
+
     std::string key;
     int keyexists = 0;
     int valexists = 0;
@@ -204,17 +204,22 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     double minangle = 85;
     bool minimal = false;
     bool values = false;
+    auto config = tests.get("config");
+
     // This is the minimum angle used to determine rectangular buildings
-    if (!tests.getConfig("minangle").empty()) {
-        minangle = std::stod(tests.getConfig("minangle"));
+    auto configMinAngle = config.get("minangle").children;
+    if (configMinAngle.size() > 0) {
+        minangle =  std::stod(configMinAngle[0].value);
     }
     // This is the maximum angle used to determine rectangular buildings
-    if (!tests.getConfig("maxangle").empty()) {
-        maxangle = std::stod(tests.getConfig("maxangle"));
+    auto configMaxAngle = config.get("maxangle").children;
+    if (configMaxAngle.size() > 0) {
+        maxangle = std::stod(configMaxAngle[0].value);
     }
     // This enables/disables writing features flagged for not being tag complete
     // from being written to the database to reduce the size of the results.
-    if (tests.getConfig("complete") == "yes") {
+    auto configComplete = config.get("complete");
+    if (configComplete.children.size() > 0 && configComplete.children[0].value == "yes") {
         minimal = false;
     } else {
         minimal = true;
@@ -222,7 +227,8 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     // This enables/disables writing features flagged for not having values
     // in range as defined in the YAML config file. This prevents those
     // from being written to the database to reduce the size of the results.
-    if (tests.getConfig("values") == "yes") {
+    auto configValues = config.get("values");
+    if (configValues.children.size() > 0 && configValues.children[0].value == "yes") {
         values = true;
     } else {
         values = false;
@@ -231,7 +237,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 	if (way.action == osmobjects::remove) {
 	    continue;
 	}
-        if (tests.containsKey(vit->first)) {
+        if (tests.contains_key(vit->first)) {
             // std::cerr << "Matched key " << vit->first << "!" << std::endl;
             keyexists++;
         } else {
@@ -240,7 +246,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             }
 	    continue;
         }
-        if (tests.containsValue(vit->first, vit->second)) {
+        if (tests.contains_value(vit->first, vit->second)) {
             // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
             valexists++;
             // status->status.insert(correct);
@@ -287,7 +293,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
         }
         return status;
     }
-    if (keyexists == tests.tags.size() && valexists == tests.tags.size()) {
+    if (keyexists == tests.get("tags").children.size() && valexists == tests.get("tags").children.size()) {
         status->status.clear();
         if (!minimal) {
 	    status->status.insert(complete);

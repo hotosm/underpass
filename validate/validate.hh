@@ -213,18 +213,17 @@ class BOOST_SYMBOL_VISIBLE Validate {
         }
 	return status;
     };
+    virtual std::shared_ptr<ValidateStatus> checkTag(const std::string &key, const std::string &value) = 0;
+    yaml::Yaml &operator[](const std::string &key) { return yamls[key]; };
     void dump(void) {
         for (auto it = std::begin(yamls); it != std::end(yamls); ++it) {
             it->second.dump();
         }
     }
-    virtual std::shared_ptr<ValidateStatus> checkTag(const std::string &key, const std::string &value) = 0;
-    yaml::Yaml &operator[](const std::string &key) { return yamls[key]; };
-
     bool overlaps(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, osmobjects::OsmWay &way) {
 	// This test only applies to buildings, as highways often overlap.
-	yaml::Yaml tests = yamls["building"];
-	if (tests.getConfig("overlaps") == "yes") {
+    yaml::Yaml tests = yamls["building"];
+	if (tests.get("config").contains_value("overlaps", "yes")) {
 #ifdef TIMING_DEBUG_X
 	    boost::timer::auto_cpu_timer timer("validate::overlaps: took %w seconds\n");
 #endif
