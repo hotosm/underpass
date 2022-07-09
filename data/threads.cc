@@ -122,7 +122,7 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     boost::timer::auto_cpu_timer timer("startMonitorChangesets: took %w seconds\n");
 #endif
     // This function is for changesets only!
-    assert(inr.frequency == frequency_t::changeset);
+    assert(remote->frequency == frequency_t::changeset);
 
     std::shared_ptr<galaxy::QueryGalaxy> ostats = std::make_shared<galaxy::QueryGalaxy>();
     if (!ostats->connect(config.galaxy_db_url)) {
