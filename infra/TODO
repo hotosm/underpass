@@ -1,0 +1,11 @@
+TODO
+
+- Add cloudfront origin (which is the ALB) and the behaviour (for /api/* path)
+- Update ALB TLS policy
+- Make port 8080 accessible only by self since ALB and the containers bothi
+  use the same security group.
+- Desired Count for galaxy-api containers should be min: 1; desired: 1; max: 5
+- Configure auto-scaling - in response to CPU, Memory, ALBTarget
+- Create an S3 bucket for logs with the right lifecycle policy - s3://galaxy.hotosm.org/logs/api
+- Route53 entry for the ALB
+- Cloudfront origin and behaviour
