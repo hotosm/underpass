@@ -179,7 +179,7 @@ resource "aws_instance" "jumphost" {
     prevent_destroy       = false
     ignore_changes = [
       # Ignore changes to AMI
-      # ami,
+      ami,
     ]
   }
 }
@@ -365,7 +365,9 @@ resource "aws_db_instance" "galaxy" {
   identifier = trim(join("-", ["galaxy", lookup(var.name_suffix, var.deployment_environment, "0")]), "-")
 
   allocated_storage     = lookup(var.disk_sizes, "db_min", 100)
-  max_allocated_storage = lookup(var.disk_sizes, "db_max", 1000) # Storage auto-scaling
+
+# Storage auto-scaling atleast 1.1x allocated storage
+  max_allocated_storage = lookup(var.disk_sizes, "db_max", 1000)
 
   engine         = "postgres"
   engine_version = var.database_engine_version

@@ -159,7 +159,7 @@ variable "disk_sizes" {
     api_server_root      = 10
     api_server_extra     = 100
     db_min               = 1000
-    db_max               = 2000
+    db_max               = 5000
   }
 }
 
