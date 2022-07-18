@@ -205,7 +205,7 @@ main(int argc, char *argv[])
         COMPARE(results.at(1)["x"].as(double()), 3.0, "Osm2Pgsql::updateDatabase() - retrieve X 1");
 
         results =
-            testosm2pgsql.query("SELECT * FROM " + testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_nodes WHERE id = 11");
+               testosm2pgsql.query("SELECT * FROM " + testosm2pgsql.OSM2PGSQL_DEFAULT_SCHEMA_NAME + ".planet_osm_nodes WHERE id = 11");
 
         COMPARE(results.size(), 0, "Osm2Pgsql::updateDatabase() - verify node 11 is gone from points");
 
@@ -247,10 +247,11 @@ main(int argc, char *argv[])
                 "Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 parts");
         COMPARE(results.at(0)["members"].as(std::string()), "{w202,inner,w201,outer,w203,inner,w204,outer,w205,inner}",
                 "Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 members");
+        std::cout << "*** DEBUG ***" << std::endl << results.at(0)["tags"].as(std::string()) << std::endl;
         COMPARE(results.at(0)["tags"].as(std::string()), R"tags({"crazy
-                '{}\"tag\"","crazy'\"=>\"
-                {}values",natural,grassland,osm_changeset,1,osm_timestamp,2021-07-10T00:00:00Z,osm_version,1,type,multipolygon})tags",
-                "Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 tags");
+'{}\"tag\"","crazy'\"=>\"
+{}values",natural,grassland,osm_changeset,1,osm_timestamp,2021-07-10T00:00:00Z,osm_version,1,type,multipolygon})tags",
+"Osm2Pgsql::updateDatabase() - verify new multipolygon rel 6 tags");
 
         // Check multipolygons from relations
         results = testosm2pgsql.query("SELECT way_area, ST_AsText(way), \"natural\", tags FROM " +
@@ -269,8 +270,8 @@ main(int argc, char *argv[])
         COMPARE(
             results.at(0)["tags"].as(std::string()),
             R"tags("type"=>"multipolygon", "osm_version"=>"1", "osm_changeset"=>"1", "osm_timestamp"=>"2021-07-10T00:00:00Z", "crazy
-            '{}\"tag\""=>"crazy'\"=>\"
-            {}values")tags",
+'{}\"tag\""=>"crazy'\"=>\"
+{}values")tags",
             "Osm2Pgsql::updateDatabase() - verify new multipolygon tags");
 
         COMPARE(results.at(0)["way_area"].as(double()), 0.0852, "Osm2Pgsql::updateDatabase() - verify new multipolygon way_area");
@@ -314,8 +315,8 @@ main(int argc, char *argv[])
         COMPARE(
             results.at(0)["tags"].as(std::string()),
             R"tags("type"=>"multipolygon", "osm_version"=>"1", "osm_changeset"=>"1", "osm_timestamp"=>"2021-07-10T00:00:00Z", "crazy
-            '{}\"tag\""=>"crazy'\"=>\"
-            {}values")tags",
+'{}\"tag\""=>"crazy'\"=>\"
+{}values")tags",
             "Osm2Pgsql::updateDatabase() - verify changed multipolygon tags");
 
         COMPARE(results.at(0)["way_area"].as(double()), 0.09065,

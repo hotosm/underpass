@@ -34,8 +34,6 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 using namespace boost::filesystem;
 
-namespace tmtest {
-
 TestState runtest;
 
 class TestTM : public TaskingManager
@@ -164,7 +162,6 @@ main(int argc, char *argv[])
     }
 }
 
-}
 // local Variables:
 // mode: C++
 // indent-tabs-mode: t
