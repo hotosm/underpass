@@ -179,5 +179,5 @@ class QueryGalaxy : public pq::Pq {
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

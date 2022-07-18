@@ -302,5 +302,5 @@ test_geom(std::shared_ptr<Validate> &plugin)
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

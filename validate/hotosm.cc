@@ -350,5 +350,5 @@ Hotosm::checkTag(const std::string &key, const std::string &value)
 
 // Local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

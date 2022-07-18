@@ -92,5 +92,5 @@ BOOST_DLL_ALIAS(Hotosm::create, create_plugin)
 
 // Local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

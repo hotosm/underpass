@@ -117,5 +117,5 @@ GeoUtil::readPoly(const std::string &wkt)
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

@@ -1176,5 +1176,5 @@ Osm2Pgsql::TagParser::parse(const std::map<std::string, std::string> &tags, cons
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

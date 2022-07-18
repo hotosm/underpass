@@ -781,5 +781,5 @@ Planet::Planet(const RemoteURL &url)
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

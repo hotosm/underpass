@@ -848,5 +848,5 @@ OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

@@ -243,5 +243,5 @@ void test_out(conflate::Conflate &conf)
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:
