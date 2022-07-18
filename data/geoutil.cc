@@ -63,14 +63,14 @@ GeoUtil::readFile(const std::string &filespec)
             log_error(_("Geo boundary file %1% doesn't exist!"), boundary_file);
         }
     } else {
-    if (!std::filesystem::exists(boundary_file)) {
-        boundary_file = SRCDIR;
-        boundary_file += "/data/" + filespec;
         if (!std::filesystem::exists(boundary_file)) {
-            boundary_file = PKGLIBDIR;
-            boundary_file += "/" + filespec;
+            boundary_file = SRCDIR;
+            boundary_file += "/data/" + filespec;
+            if (!std::filesystem::exists(boundary_file)) {
+                boundary_file = PKGLIBDIR;
+                boundary_file += "/" + filespec;
+            }
         }
-    }
     }
     if (!std::filesystem::exists(boundary_file)) {
         log_error(_("Boundary file %1% doesn't exist!"), boundary_file);
