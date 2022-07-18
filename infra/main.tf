@@ -350,8 +350,7 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   private_dns_enabled = true
   auto_accept         = true
 
-  //  subnet_ids = concat(aws_subnet.private[*].id, aws_subnet.public[*].id)
-  subnet_ids = aws_subnet.public[*].id
+  subnet_ids = [for subnet in aws_subnet.public : subnet.id]
 
   security_group_ids = [aws_security_group.vpc-endpoint.id]
 }
@@ -365,7 +364,7 @@ resource "aws_vpc_endpoint" "awslogs" {
   private_dns_enabled = true
   auto_accept         = true
 
-  subnet_ids = aws_subnet.public[*].id
+  subnet_ids = [for subnet in aws_subnet.public : subnet.id]
 
   security_group_ids = [aws_security_group.vpc-endpoint.id]
 }

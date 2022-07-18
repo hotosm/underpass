@@ -60,6 +60,11 @@ resource "aws_iam_role" "ecs_execution_role" {
     policy = data.aws_iam_policy_document.galaxy-api-execution-role.json
   }
 
+  inline_policy {
+    name   = "access-database-credentials"
+    policy = data.aws_iam_policy_document.access-galaxy-database-credentials.json
+  }
+
 }
 
 data "aws_kms_alias" "secretsmanager" {
