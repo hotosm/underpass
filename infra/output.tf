@@ -13,3 +13,7 @@ output "db-secret-version-arn" {
 output "db-security-group" {
   value = aws_security_group.database.id
 }
+
+output "db-connection-pool-endpoint" {
+  value = aws_db_proxy.galaxy.endpoint
+}
