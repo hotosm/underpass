@@ -192,13 +192,13 @@ struct ReplicatorConfig {
     std::string dbConfigHelp() const
     {
         return str(format(R"raw(
-REPLICATOR_GALAXY_DB_URL=%1%
-REPLICATOR_UNDERPASS_DB_URL=%2%
-REPLICATOR_TASKINGMANAGER_DB_URL=%3%
-REPLICATOR_OSM2PGSQL_DB_URL=%3%
-REPLICATOR_FREQUENCY=%4%
-REPLICATOR_TASKINGMANAGER_USERS_UPDATE_FREQUENCY=%5%
-      )raw") % galaxy_db_url %
+            REPLICATOR_GALAXY_DB_URL=%1%
+            REPLICATOR_UNDERPASS_DB_URL=%2%
+            REPLICATOR_TASKINGMANAGER_DB_URL=%3%
+            REPLICATOR_OSM2PGSQL_DB_URL=%3%
+            REPLICATOR_FREQUENCY=%4%
+            REPLICATOR_TASKINGMANAGER_USERS_UPDATE_FREQUENCY=%5%
+            )raw") % galaxy_db_url %
                    underpass_db_url % taskingmanager_db_url % osm2pgsql_db_url %
                    StateFile::freq_to_string(frequency) % taskingmanager_users_update_frequency);
     };
@@ -210,5 +210,5 @@ REPLICATOR_TASKINGMANAGER_USERS_UPDATE_FREQUENCY=%5%
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

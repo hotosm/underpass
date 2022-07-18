@@ -226,7 +226,7 @@ OsmChangeFile::readXML(std::istream &xml)
             change.version = value.second.get("<xmlattr>.version", 0);
             change.timestamp =
                 value.second.get("<xmlattr>.timestamp",
-                                 boost::posix_time::second_clock::universal_time());
+                boost::posix_time::second_clock::universal_time());
             change.user = value.second.get("<xmlattr>.user", "");
             change.uid = value.second.get("<xmlattr>.uid", 0);
             //changes.push_back(change);
@@ -346,7 +346,7 @@ OsmChangeFile::on_start_element(const Glib::ustring &name,
                 tmp.erase(19); // Drop the final 'Z'
                 // change->setTimestamp(tmp);
                 change->obj->timestamp = time_from_string(tmp);
-		change->final_entry = change->obj->timestamp;
+                change->final_entry = change->obj->timestamp;
             } else {
                 // obj->tags[cache] = attr_pair.value;
                 cache.clear();
@@ -357,7 +357,7 @@ OsmChangeFile::on_start_element(const Glib::ustring &name,
             tmp[10] = ' '; // Drop the 'T' in the middle
             tmp.erase(19); // Drop the final 'Z'
             change->obj->timestamp = time_from_string(tmp);
-	    change->final_entry = change->obj->timestamp;
+            change->final_entry = change->obj->timestamp;
             // change->setTimestamp(tmp);
         } else if (attr_pair.name == "id") {
             // change->setChangeID(std::stol(attr_pair.value));
@@ -460,12 +460,13 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
     // log_debug(_("Pre filtering size is %1%"), changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
         OsmChange *change = it->get();
+
         for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
             OsmNode *node = nit->get();
-	    if (node->action == osmobjects::remove) {
+            if (node->action == osmobjects::remove) {
                 continue;
             }
-        nodecache[node->id] = node->point;
+            nodecache[node->id] = node->point;
             // log_debug("ST_GeomFromEWKT(\'SRID=4326; %1%\'))", boost::geometry::wkt(node->point));
             // std::cerr << "Checking " << boost::geometry::wkt(node->point) << " within " << boost::geometry::wkt(poly) << std::endl;
             if (!boost::geometry::within(node->point, poly)) {
@@ -475,9 +476,10 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
             } else {
                 // log_debug(_("Validating Node %1% is in a priority area"), node->change_id);
                 node->priority = true;
-		priority[node->change_id] = true;
+                priority[node->change_id] = true;
             }
         }
+
         //log_debug(_("Post filtering size is %1%"), changes.size());
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
             OsmWay *way = wit->get();
@@ -490,15 +492,15 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
                 }
             }
             if (way->linestring.size() == 0 && way->action == osmobjects::modify) {
-		if (priority[way->change_id]) {
-		    // log_debug(_("FIXME: priority is TRUE for way %1%"), way->id);
-		    way->priority = true;
-		} else {
-		    change->ways.erase(wit--);
-		    // log_debug(_("FIXME: priority is FALSE for way %1%"), way->id);
-		}
-		continue;
-	    }
+                if (priority[way->change_id]) {
+                    // log_debug(_("FIXME: priority is TRUE for way %1%"), way->id);
+                    way->priority = true;
+                } else {
+                    change->ways.erase(wit--);
+                    // log_debug(_("FIXME: priority is FALSE for way %1%"), way->id);
+                }
+                continue;
+            }
             if (way->linestring.size() != 0 && way->action != osmobjects::create) {
                 boost::geometry::centroid(way->linestring, way->center);
                 // point_t pt = nodecache.find(way->refs[1])->second;
@@ -537,7 +539,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
     // airports and administrative boundaries)
     auto mstats =
         std::make_shared<std::map<long, std::shared_ptr<ChangeStats>>>();
-    std::shared_ptr<ChangeStats> ostats;
+        std::shared_ptr<ChangeStats> ostats;
 
     // log_debug(_("Collecting Statistics for: %1%"), changes.size());
 
@@ -599,12 +601,12 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                 continue;
             }
             // if (way->polygon.outer().size() == 0) {
-            // 	log_error(_("Way %1% has no points"), way->change_id);
-            // 	continue;
+            //     log_error(_("Way %1% has no points"), way->change_id);
+            //     continue;
             // }
 #if 0
-	    // FIXME: Since this now handled by areaFilter(), this is just
-	    // a debugging test to make sure nothing snuck through.
+        // FIXME: Since this now handled by areaFilter(), this is just
+        // a debugging test to make sure nothing snuck through.
             if (way->priority) {
                 log_debug(_("Changeset with way %1% is in a priority area"), way->id);
                 continue;
@@ -649,7 +651,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                         continue;
                     } else {
                         log_debug(_("Changeset with way %1% is in a priority area"), way->id);
-		    }
+                    }
 #endif
                     std::string tag;
                     if (*hit == "highway") {
@@ -681,11 +683,11 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                         continue;
                     } else {
                         //log_debug(_("Changeset with way %1% is in a priority area"),way->change_id);
-			if (way->action == osmobjects::create) {
-			    ostats->added[*hit]++;
-			} else if (way->action == osmobjects::modify) {
-			    ostats->modified[*hit]++;
-			}
+                        if (way->action == osmobjects::create) {
+                            ostats->added[*hit]++;
+                        } else if (way->action == osmobjects::modify) {
+                            ostats->modified[*hit]++;
+                        }
                     }
                 }
             }
@@ -744,7 +746,7 @@ ChangeStats::dump(void)
     }
     // std::cerr << "\tDeleted features: " << added.size() << std::endl;
     // for (auto it = std::begin(deleted << std::endl; it != std::end(deleted << std::endl; ++it) {
-    // 	std::cerr << "\t\t" << it->first << " = " << it->second << std::endl;
+    //     std::cerr << "\t\t" << it->first << " = " << it->second << std::endl;
     // }
 };
 
@@ -759,17 +761,17 @@ OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Validat
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
         for (auto nit = std::begin(change->nodes);
-             nit != std::end(change->nodes); ++nit) {
+            nit != std::end(change->nodes); ++nit) {
             OsmNode *node = nit->get();
             if (!node->priority) {
                 // log_debug(_("Validating Node %1% is not in a priority area"), node->id);
                 continue;
             } else {
                 // log_debug(_("Validating Node %1% is in a priority area"), node->id);
-		// A node with no tags is probably part of a way
-		if (node->tags.empty() || node->action == osmobjects::remove) {
-		    continue;
-		}
+                // A node with no tags is probably part of a way
+                if (node->tags.empty() || node->action == osmobjects::remove) {
+                    continue;
+                }
             }
             std::vector<std::string> node_tests = {"building", "place" "amenity" "place"};
             // "wastepoint";
@@ -828,15 +830,15 @@ OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate
                     //std::cerr << *wit << " Way " << way->id << " is not complete" << std::endl;
                     // way->dump();
                 }
-		if (way->containsKey("building")) {
-		    if (plugin->overlaps(change->ways, *way)) {
-			status->status.insert(overlaping);
-		    }
-		}
+                if (way->containsKey("building")) {
+                    if (plugin->overlaps(change->ways, *way)) {
+                        status->status.insert(overlaping);
+                    }
+                }
                 if (status->status.size() > 0) {
                     totals->push_back(status);
                 }
-	    }
+            }
         }
     }
     return totals;
@@ -846,5 +848,5 @@ OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

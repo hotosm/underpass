@@ -38,6 +38,7 @@ class TestGU : public GeoUtil
 {
     bool testFile(const std::string &filespec) {
         // std::string basedir="DATADIR";
+        return true;
     };
 };
 
@@ -78,5 +79,5 @@ main(int argc, char* argv[])
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

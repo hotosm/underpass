@@ -130,9 +130,9 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     }
 
     for (auto vit = std::begin(node.tags); vit != std::end(node.tags); ++vit) {
-	if (node.action == osmobjects::remove) {
-	    continue;
-	}
+        if (node.action == osmobjects::remove) {
+            continue;
+        }
         if (tests.contains_key(vit->first)) {
             // std::cerr << "Matched key " << vit->first << "!" << std::endl;
             keyexists++;
@@ -147,8 +147,8 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
             // status->status.insert(correct);
         } else {
             status->status.insert(badvalue);
-	    log_debug(_("Bad value: %1% for %2%"), vit->second, vit->first);
-	    status->values.insert(vit->first + "=" +  vit->second);
+            log_debug(_("Bad value: %1% for %2%"), vit->second, vit->first);
+            status->values.insert(vit->first + "=" +  vit->second);
         }
         status->center = node.point;
     }
@@ -165,7 +165,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
         }
     }
     if (status->status.size() == 0) {
-	status->status.insert(correct);
+        status->status.insert(correct);
     }
     return status;
 }
@@ -234,9 +234,9 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
         values = false;
     }
     for (auto vit = std::begin(way.tags); vit != std::end(way.tags); ++vit) {
-	if (way.action == osmobjects::remove) {
-	    continue;
-	}
+        if (way.action == osmobjects::remove) {
+            continue;
+        }
         if (tests.contains_key(vit->first)) {
             // std::cerr << "Matched key " << vit->first << "!" << std::endl;
             keyexists++;
@@ -244,7 +244,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             if (!minimal) {
                 status->status.insert(incomplete);
             }
-	    continue;
+            continue;
         }
         if (tests.contains_value(vit->first, vit->second)) {
             // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
@@ -252,12 +252,12 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             // status->status.insert(correct);
         } else {
             if (!values) {
-		status->status.insert(badvalue);
+                status->status.insert(badvalue);
             }
         }
         if (!values) {
             if ((vit->first == "building" && vit->second == "commercial") && !way.tags.count("name")) {
-		status->status.insert(badvalue);
+                status->status.insert(badvalue);
             }
         }
 
@@ -272,10 +272,10 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     if (way.refs.front() == way.refs.back()) {
         // If it's a building, check for square corners
         if (way.tags.count("building") || way.tags.count("amenity")) {
-	    if (boost::geometry::num_points(way.linestring) < 3 && way.action == osmobjects::modify) {
-		log_debug(_("Not enough nodes in modified linestring to calculate the angle!"));
-		return status;
-	    }
+            if (boost::geometry::num_points(way.linestring) < 3 && way.action == osmobjects::modify) {
+                log_debug(_("Not enough nodes in modified linestring to calculate the angle!"));
+                return status;
+            }
             double angle = cornerAngle(way.linestring);
             status->angle = std::abs(angle);
             // std::cerr << "Angle for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
@@ -296,15 +296,15 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     if (keyexists == tests.get("tags").children.size() && valexists == tests.get("tags").children.size()) {
         status->status.clear();
         if (!minimal) {
-	    status->status.insert(complete);
-	}
+            status->status.insert(complete);
+        }
     } else {
         if (!minimal) {
             status->status.insert(incomplete);
         }
     }
     if (status->status.size() == 0) {
-	// status->status.insert(correct);
+        // status->status.insert(correct);
     }
     return status;
 }
@@ -339,7 +339,7 @@ Hotosm::checkTag(const std::string &key, const std::string &value)
     }
 
     if (status->status.size() == 0) {
-	// status->status.insert(correct);
+        // status->status.insert(correct);
     }
     return status;
 }
@@ -350,5 +350,5 @@ Hotosm::checkTag(const std::string &key, const std::string &value)
 
 // Local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

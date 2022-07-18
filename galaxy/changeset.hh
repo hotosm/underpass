@@ -132,7 +132,7 @@ class ChangeSet {
     std::string editor;  ///< The OSM editor the end user used
     std::string source;  ///< The imagery source
     polygon_t bbox;
-    bool priority;		///< Is this feature in the boundary area
+    bool priority;        ///< Is this feature in the boundary area
 };
 
 /// \class ChangeSetFile
@@ -195,5 +195,5 @@ class ChangeSetFile
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

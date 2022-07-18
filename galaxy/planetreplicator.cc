@@ -346,5 +346,5 @@ std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const replicatorconf
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

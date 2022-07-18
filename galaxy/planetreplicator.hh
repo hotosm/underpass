@@ -63,5 +63,5 @@ class PlanetReplicator : public replication::Planet {
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

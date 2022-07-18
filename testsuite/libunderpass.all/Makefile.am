@@ -30,7 +30,8 @@ check_PROGRAMS = \
 	stats-test \
     statsconfig-test \
 	planetreplicator-test \
-	geo-test
+	geo-test \
+	test-playground
 
 TOPSRC := $(shell cd $(top_srcdir) && pwd)
 AM_CPPFLAGS = -I$(TOPSRC) -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)/hottm
@@ -131,6 +132,10 @@ osm2pgsql_test_CPPFLAGS = -DDATADIR=\"$(srcdir)\" -I$(TOPSRC)
 osm2pgsql_test_LDFLAGS = -L../..
 osm2pgsql_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
+test_playground_SOURCES = test-playground.cc
+test_playground_LDFLAGS = -L../..
+test_playground_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
+test_playground_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 CLEANFILES = \
 	underpass.log \
