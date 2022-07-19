@@ -31,6 +31,7 @@ check_PROGRAMS = \
     statsconfig-test \
 	planetreplicator-test \
 	geo-test \
+	areafilter-test \
 	test-playground
 
 TOPSRC := $(shell cd $(top_srcdir) && pwd)
@@ -132,10 +133,16 @@ osm2pgsql_test_CPPFLAGS = -DDATADIR=\"$(srcdir)\" -I$(TOPSRC)
 osm2pgsql_test_LDFLAGS = -L../..
 osm2pgsql_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
+# Test areaFilter
+areafilter_test_SOURCES = areafilter-test.cc
+areafilter_test_LDFLAGS = -L../..
+areafilter_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+
+# Test playground
 test_playground_SOURCES = test-playground.cc
 test_playground_LDFLAGS = -L../..
-test_playground_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
 test_playground_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+
 
 CLEANFILES = \
 	underpass.log \
@@ -148,6 +155,7 @@ CLEANFILES = \
 	stats-test.log \
     statsconfig-test.log \
 	planetreplicator-test.log \
+	areafilter-test.log \
 	replication-test.log
 
 RUNTESTFLAGS = -xml
