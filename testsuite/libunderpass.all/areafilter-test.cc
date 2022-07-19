@@ -36,7 +36,7 @@ main(int argc, char *argv[])
     // Small changeset in Bangladesh
     std::string changesetFile(DATADIR);
     changesetFile += "/testsuite/testdata/areafilter-test.osc";
-    
+
     TestChangeset changeset;
     multipolygon_t poly;
     changeset::ChangeSet *change;
