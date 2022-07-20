@@ -197,6 +197,12 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly)
     // log_debug(_("Pre filtering changeset size is %1%"), changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
         ChangeSet *change = it->get();
+        if (poly.empty()) {
+            // log_debug(_("Accepting changeset %1% as in priority area because area information is missing"),
+            // change->id);
+            change->priority = true;
+            continue;
+        }
         boost::geometry::append(change->bbox, point_t(change->max_lon, change->max_lat));
         boost::geometry::append(change->bbox, point_t(change->max_lon, change->min_lat));
         boost::geometry::append(change->bbox, point_t(change->min_lon, change->min_lat));
@@ -204,21 +210,15 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly)
         boost::geometry::append(change->bbox, point_t(change->max_lon, change->max_lat));
         // point_t pt;
         // boost::geometry::centroid(change->bbox, pt);
-        if (poly.empty()) {
-            // log_debug(_("Accepting changeset %1% as in priority area because area information is missing"),
-            // change->id);
-            change->priority = true;
+        if (!boost::geometry::intersects(change->bbox, poly)) {
+            // log_debug(_("Validating changeset %1% is not in a priority area"), change->id);
+
+            change->priority = false;
+
+            changes.erase(it--);
         } else {
-            if (!boost::geometry::intersects(change->bbox, poly)) {
-                // log_debug(_("Validating changeset %1% is not in a priority area"), change->id);
-
-                change->priority = false;
-
-                changes.erase(it--);
-            } else {
-                // log_debug(_("Validating changeset %1% is in a priority area"), change->id);
-                change->priority = true;
-            }
+            // log_debug(_("Validating changeset %1% is in a priority area"), change->id);
+            change->priority = true;
         }
     }
     // log_debug(_("Post filtering changeset size is %1%"),
