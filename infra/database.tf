@@ -224,6 +224,27 @@ resource "aws_db_proxy" "galaxy" {
   }
 }
 
+resource "aws_db_proxy_default_target_group" "galaxy" {
+  db_proxy_name = aws_db_proxy.galaxy.name
 
+  connection_pool_config {
+    connection_borrow_timeout = 120
+    # init_query                   = "SET x=1, y=2"
+    max_connections_percent      = 100
+    max_idle_connections_percent = 50
+    session_pinning_filters      = ["EXCLUDE_VARIABLE_SETS"]
+  }
+}
 
+resource "aws_db_proxy_target" "galaxy" {
+  db_instance_identifier = aws_db_instance.galaxy.id
+  db_proxy_name          = aws_db_proxy.galaxy.name
+  target_group_name      = aws_db_proxy_default_target_group.galaxy.name
+}
 
+resource "aws_db_proxy_endpoint" "galaxy-readonly" {
+  db_proxy_name          = aws_db_proxy.galaxy.name
+  db_proxy_endpoint_name = "galaxy-readonly"
+  vpc_subnet_ids         = [for subnet in aws_subnet.private : subnet.id]
+  target_role            = "READ_ONLY"
+}
