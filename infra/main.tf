@@ -114,7 +114,7 @@ resource "aws_route_table" "private" {
   vpc_id = aws_vpc.galaxy.id
 
   route {
-    cidr_block = "0.0.0.0/0"
+    cidr_block     = "0.0.0.0/0"
     nat_gateway_id = aws_nat_gateway.nat.id
   }
 
@@ -151,33 +151,6 @@ resource "aws_route" "tasking-manager-vpc-to-peering-connection" {
   destination_cidr_block    = aws_vpc.galaxy.cidr_block
   vpc_peering_connection_id = aws_vpc_peering_connection.galaxy-tasking-manager.id
   depends_on                = [aws_vpc.galaxy, aws_vpc_peering_connection.galaxy-tasking-manager]
-
-}
-
-resource "aws_security_group" "database" {
-  name        = "database"
-  description = "Underpass Database"
-  vpc_id      = aws_vpc.galaxy.id
-
-  ingress {
-    description     = "Allow connection to database from API"
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.api.id, aws_security_group.app.id]
-  }
-
-  egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
-
-  tags = {
-    Name = "galaxy-database"
-  }
 
 }
 

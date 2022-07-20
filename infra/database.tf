@@ -103,6 +103,60 @@ resource "aws_db_subnet_group" "galaxy" {
   subnet_ids = [for subnet in aws_subnet.private : subnet.id]
 }
 
+resource "aws_security_group" "database" {
+  name        = "database"
+  description = "Underpass Database"
+  vpc_id      = aws_vpc.galaxy.id
+
+  ingress {
+    description     = "Allow connection to database from API"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.api.id, aws_security_group.app.id]
+  }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  tags = {
+    Name = "galaxy-database"
+  }
+
+}
+
+resource "aws_security_group" "database-administration" {
+  name        = "database-administration"
+  description = "Restricted Temporary Access to Galaxy Database"
+  vpc_id      = aws_vpc.galaxy.id
+
+  ingress {
+    description = "Allow connection to database from API"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    self        = true
+  }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  tags = {
+    Name = "galaxy-database"
+  }
+
+}
+
 /** TODO
 * Monitoring:
 *   - Configure enhanced monitoring
@@ -143,7 +197,7 @@ resource "aws_db_instance" "galaxy" {
 
   iam_database_authentication_enabled = true
 
-  vpc_security_group_ids = [aws_security_group.database.id]
+  vpc_security_group_ids = [aws_security_group.database.id, aws_security_group.database-administration.id]
   db_subnet_group_name   = aws_db_subnet_group.galaxy.name
 
   tags = {
@@ -159,7 +213,7 @@ resource "aws_db_proxy" "galaxy" {
   idle_client_timeout    = 1800
   require_tls            = true
   role_arn               = aws_iam_role.access-galaxy-database-credentials.arn
-  vpc_security_group_ids = [aws_security_group.database.id]
+  vpc_security_group_ids = [aws_security_group.database.id, aws_security_group.database-administration.id]
   vpc_subnet_ids         = [for subnet in aws_subnet.private : subnet.id]
 
   auth {
