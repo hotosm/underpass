@@ -466,6 +466,10 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
             if (node->action == osmobjects::remove) {
                 continue;
             }
+            if (poly.empty()) {
+                node->priority = true;
+                continue;
+            }
             nodecache[node->id] = node->point;
             // log_debug("ST_GeomFromEWKT(\'SRID=4326; %1%\'))", boost::geometry::wkt(node->point));
             // std::cerr << "Checking " << boost::geometry::wkt(node->point) << " within " << boost::geometry::wkt(poly) << std::endl;
@@ -486,6 +490,10 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
             if (way->action == osmobjects::remove) {
                 continue;
             }
+            if (poly.empty()) {
+                way->priority = true;
+                continue;
+            }
             for (auto lit = std::begin(way->refs); lit != std::end(way->refs); ++lit) {
                 if (nodecache.count(*lit)) {
                     boost::geometry::append(way->linestring, nodecache[*lit]);
@@ -501,7 +509,7 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
                 }
                 continue;
             }
-            if (way->linestring.size() != 0 && way->action != osmobjects::create) {
+            if (way->linestring.size() != 0) {
                 boost::geometry::centroid(way->linestring, way->center);
                 // point_t pt = nodecache.find(way->refs[1])->second;
                 // log_debug("ST_GeomFromEWKT(\'SRID=4326; %1%\'))", boost::geometry::wkt(pt));
