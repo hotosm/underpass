@@ -120,6 +120,8 @@ main(int argc, char *argv[])
             ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp (can be used 2 times to set a range)")
             ("import,i", opts::value<std::string>(), "Initialize OSM database with datafile")
             ("boundary,b", opts::value<std::string>(), "Boundary polygon file name")
+            ("osmnoboundary", "Disable boundary polygon for OsmChanges")
+            ("oscnoboundary", "Disable boundary polygon for Changesets")
             ("datadir", opts::value<std::string>(), "Base directory for cached files (with ending slash)")
             ("verbose,v", "Enable verbosity")
             ("logstdout,l", "Enable logging to stdout, default is log to underpass.log")
@@ -350,9 +352,14 @@ main(int argc, char *argv[])
 
         std::thread changesetThread;
         std::thread osmChangeThread;
+        multipolygon_t poly;
         if (!vm.count("changesets")) {
+            multipolygon_t * osmboundary = &poly;
+            if (!vm.count("osmnoboundary")) {
+                osmboundary = &geou.boundary;
+            }
             osmChangeThread = std::thread(threads::startMonitorChanges, std::ref(osmchange),
-                            std::ref(geou.boundary), std::ref(config));
+                            std::ref(*osmboundary), std::ref(config));
         }
         config.frequency = replication::changeset;
         auto changeset = replicator.findRemotePath(config, config.start_time);
@@ -362,8 +369,12 @@ main(int argc, char *argv[])
             changeset->updatePath(stoi(parts[0]),stoi(parts[1]),stoi(parts[2]));
         }
         if (!vm.count("osmchanges")) {
+            multipolygon_t * oscboundary = &poly;
+            if (!vm.count("oscnoboundary")) {
+                oscboundary = &geou.boundary;
+            }
             changesetThread = std::thread(threads::startMonitorChangesets, std::ref(changeset),
-                            std::ref(geou.boundary), std::ref(config));
+                            std::ref(*oscboundary), std::ref(config));
         }
         log_info(_("Waiting..."));
         if (changesetThread.joinable()) {
