@@ -16,6 +16,7 @@ building:
       - health_facility
       - health_center
       - healthcare
+
   node:
     - building:
       - *
@@ -24,7 +25,7 @@ amenity:
   node:
     - amenity:
       - *
-  node:
+  way:
     - amenity:
       - *
 

@@ -450,6 +450,7 @@ OsmChangeFile::dump(void)
 #endif
 }
 
+
 void
 OsmChangeFile::areaFilter(const multipolygon_t &poly)
 {
@@ -709,9 +710,10 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags, osmchange::osmt
 {
 
     statsconfig::StatsConfigFile statsconfigfile;
-    std::string filename = SRCDIR;
-    filename += "/validate/statistics.yaml";
-    std::shared_ptr<std::vector<statsconfig::StatsConfig>> statsconfig = statsconfigfile.read_yaml(filename);
+    std::string path = SRCDIR;
+    path += statsConfigFilename;
+
+    std::shared_ptr<std::vector<statsconfig::StatsConfig>> statsconfig = statsconfigfile.read_yaml(path);
     auto hits = std::make_shared<std::vector<std::string>>();
 
     // Some older nodes in a way wound up with this one tag, which nobody noticed,
@@ -757,6 +759,11 @@ ChangeStats::dump(void)
     //     std::cerr << "\t\t" << it->first << " = " << it->second << std::endl;
     // }
 };
+
+void
+OsmChangeFile::setStatsConfigFilename(std::string filename) {
+    statsConfigFilename = filename;
+}
 
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin)

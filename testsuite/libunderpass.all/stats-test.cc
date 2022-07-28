@@ -27,132 +27,120 @@
 #include "replicatorconfig.hh"
 #include "galaxy/planetreplicator.hh"
 #include "data/yaml.hh"
-
+#include "boost/date_time/posix_time/posix_time.hpp"
+#include <boost/date_time.hpp>
 namespace opts = boost::program_options;
 
+using namespace boost::posix_time;
 using namespace replicatorconfig;
 using namespace planetreplicator;
 using namespace logger;
 
-class TestOsmChanges : public osmchange::OsmChangeFile {
-};
-
-class TestCO : public osmchange::OsmChangeFile {
-};
+/// \file stats-test.cc
+/// \brief Testing statistics collection
+///
+/// Using this test you can collect statistics from osmchange
+/// files and assert the results against a YAML file
+/// or save them to a JSON file for other tasks
+/// 
+/// For documentation see doc/stats-test.md
 
 class TestPlanet : public replication::Planet {
 };
 
-std::string
-statsToJSON(std::shared_ptr<std::map<long, std::shared_ptr<osmchange::ChangeStats>>> stats, std::string filespec) {
-    std::string jsonstr = "";
-    for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
-        auto changestats = it->second;
-        jsonstr += "{\"changeset_id\":" + std::to_string(changestats->change_id) + ", ";
-        jsonstr += "\"filespec\": \"" + filespec + "\" ";
-
-        if (changestats->added.size() > 0) {
-            jsonstr += ", \"added\":[";
-            for (const auto &added: std::as_const(changestats->added)) {
-                if (added.second > 0) {
-                    jsonstr += "{\"" + added.first + "\":" + std::to_string(added.second) + "},";
-                }
-            }
-            jsonstr.erase(jsonstr.size() - 1);
-            jsonstr += "]";
-        } else {
-            jsonstr += ", \"added\": []";
-        }
-
-        if (changestats->modified.size() > 0) {
-            jsonstr += ", \"modified\":[";
-            for (const auto &modified: std::as_const(changestats->modified)) {
-                if (modified.second > 0) {
-                    jsonstr += "{\"" + modified.first + "\":" + std::to_string(modified.second) + "},";
-                }
-            }
-            jsonstr.erase(jsonstr.size() - 1);
-            jsonstr += "]},\n";
-        } else {
-            jsonstr += ", \"modified\": []},\n";
-        }
-
-    }
-    return jsonstr;
-}
-
-void
-collectStats(opts::variables_map vm) {
-
-    ReplicatorConfig config;    
-    if (vm.count("timestamp")) {
-        auto timestamp = vm["timestamp"].as<std::string>();
-        config.start_time = from_iso_extended_string(timestamp);
-    } else {
-        config.start_time = from_iso_extended_string("2022-01-01T00:00:00");
-    }
-    config.planet_server = config.planet_servers[0].domain + "/replication";
-    multipolygon_t poly;
-    boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", poly);
- 
-    int increment;
-    if (vm.count("increment")) {
-        const auto str_increment = vm["increment"].as<std::string>();
-        increment = std::stoi(str_increment) + 1;
-    } else { 
-        increment = 2;
-    }
-    planetreplicator::PlanetReplicator replicator;
-    auto osmchange = replicator.findRemotePath(config, config.start_time);
-    
-    std::string jsonstr = "[";
-
-    while (--increment) {
-        TestCO change;
-        if (boost::filesystem::exists(osmchange->filespec)) {
-            change.readChanges(osmchange->filespec);
-        } else { 
-            TestPlanet planet;
-            auto data = planet.downloadFile(osmchange->getURL());
-            auto xml = planet.processData(osmchange->filespec, *data);
-            std::istream& input(xml);
-            change.readXML(input);
-        }
-
-        change.areaFilter(poly);
-        auto stats = change.collectStats(poly);
-        jsonstr += statsToJSON(stats, osmchange->filespec);
-
-        osmchange->Increment();
-    }
-
-    jsonstr.erase(jsonstr.size() - 2);
-    jsonstr += "\n]";
-    std::cout << jsonstr << std::endl;
-
-}
-
-
 class TestStats {
 
-    private:
-        bool verbose;
     public:
-        TestStats() {
-            this->verbose = false;
-        };
-        TestStats(bool verbosity) {
-            this->verbose = verbosity;
-        };
-        std::shared_ptr<std::map<long, std::shared_ptr<osmchange::ChangeStats>>>
+        TestStats() {};
 
+        std::string statsConfigFile = "/validate/statistics.yaml";
+        ptime startTime = boost::posix_time::second_clock::universal_time();
+        int increment = 2;
+        bool verbose = false;
+        multipolygon_t boundary;
+
+        std::string
+        statsToJSON(std::shared_ptr<std::map<long, std::shared_ptr<osmchange::ChangeStats>>> stats, std::string filespec) {
+            std::string jsonstr = "";
+            for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
+                auto changestats = it->second;
+                jsonstr += "{\"changeset_id\":" + std::to_string(changestats->change_id) + ", ";
+                jsonstr += "\"filespec\": \"" + filespec + "\" ";
+
+                if (changestats->added.size() > 0) {
+                    jsonstr += ", \"added\":[";
+                    for (const auto &added: std::as_const(changestats->added)) {
+                        if (added.second > 0) {
+                            jsonstr += "{\"" + added.first + "\":" + std::to_string(added.second) + "},";
+                        }
+                    }
+                    jsonstr.erase(jsonstr.size() - 1);
+                    jsonstr += "]";
+                } else {
+                    jsonstr += ", \"added\": []";
+                }
+
+                if (changestats->modified.size() > 0) {
+                    jsonstr += ", \"modified\":[";
+                    for (const auto &modified: std::as_const(changestats->modified)) {
+                        if (modified.second > 0) {
+                            jsonstr += "{\"" + modified.first + "\":" + std::to_string(modified.second) + "},";
+                        }
+                    }
+                    jsonstr.erase(jsonstr.size() - 1);
+                    jsonstr += "]},\n";
+                } else {
+                    jsonstr += ", \"modified\": []},\n";
+                }
+
+            }
+            return jsonstr;
+        }
+
+        void
+        collectStats(opts::variables_map vm) {
+
+            ReplicatorConfig config;    
+            config.start_time = startTime;
+            config.planet_server = config.planet_servers[0].domain + "/replication";        
+            planetreplicator::PlanetReplicator replicator;
+            auto osmchange = replicator.findRemotePath(config, config.start_time);
+            
+            std::string jsonstr = "[";
+
+            while (--increment) {
+                osmchange::OsmChangeFile change;
+                change.setStatsConfigFilename(statsConfigFile);
+                if (boost::filesystem::exists(osmchange->filespec)) {
+                    change.readChanges(osmchange->filespec);
+                } else { 
+                    TestPlanet planet;
+                    auto data = planet.downloadFile(osmchange->getURL());
+                    auto xml = planet.processData(osmchange->filespec, *data);
+                    std::istream& input(xml);
+                    change.readXML(input);
+                }
+
+                change.areaFilter(boundary);
+                auto stats = change.collectStats(boundary);
+                jsonstr += statsToJSON(stats, osmchange->filespec);
+
+                osmchange->Increment();
+            }
+
+            jsonstr.erase(jsonstr.size() - 2);
+            jsonstr += "\n]";
+            std::cout << jsonstr << std::endl;
+
+        }
+
+        std::shared_ptr<std::map<long, std::shared_ptr<osmchange::ChangeStats>>>    
         getStatsFromFile(std::string filename) {
-            TestOsmChanges osmchanges;
+            osmchange::OsmChangeFile osmchanges;
+            osmchanges.setStatsConfigFilename(statsConfigFile);
             osmchanges.readChanges(filename);
-            multipolygon_t poly;
-            boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", poly);
-            osmchanges.areaFilter(poly);
-            auto stats = osmchanges.collectStats(poly);
+            osmchanges.areaFilter(boundary);
+            auto stats = osmchanges.collectStats(boundary);
             return stats;
         }
 
@@ -174,8 +162,6 @@ class TestStats {
         void
         testStat(std::shared_ptr<osmchange::ChangeStats> changestats, std::map<std::string, long> validation, std::string tag) {
 
-            TestState runtest;
-
             logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
             dbglogfile.setWriteDisk(true);
             dbglogfile.setLogFilename("stats-test.log");
@@ -196,8 +182,10 @@ class TestStats {
                         }
                     }
                     if (validation.count("added_" + tag) && changestats->added.at(tag) == validation.at("added_" + tag)) {
+                        TestState runtest;
                         runtest.pass("Calculating added " + tag);
                     } else{
+                        TestState runtest;
                         runtest.fail("Calculating added " + tag);
                     }
                 } else if (this->verbose) {
@@ -217,8 +205,10 @@ class TestStats {
                         std::cout << "[Underpass] modified_" + tag + " : " << changestats->modified.at(tag) << std::endl;
                     }
                     if (validation.count("modified_" + tag) && changestats->modified.at(tag) == validation.at("modified_" + tag)) {
+                        TestState runtest;
                         runtest.pass("Calculating modified " + tag);
                     } else {
+                        TestState runtest;
                         runtest.fail("Calculating modified " + tag);
                     }
                 } else if (this->verbose) {
@@ -245,8 +235,13 @@ class TestStats {
                     if (this->verbose) {
                         std::cout << "change_id: " << changestats->change_id << std::endl;
                     }
+                    // TODO: get values to test from YAML validation file
                     testStat(changestats, validation, "highway");
                     testStat(changestats, validation, "building");
+                    testStat(changestats, validation, "humanitarian_building");
+                    testStat(changestats, validation, "police");
+                    testStat(changestats, validation, "fire_station");
+                    testStat(changestats, validation, "hospital");
                     testStat(changestats, validation, "waterway");
                 }
             }
@@ -264,18 +259,44 @@ main(int argc, char *argv[]) {
         ("file,f", opts::value<std::vector<std::string>>(), "OsmChange file, YAML file with expected values")
         ("timestamp,t", opts::value<std::string>(), "Starting timestamp (default: 2022-01-01T00:00:00)")
         ("increment,i", opts::value<std::string>(), "Number of increments to do (default: 1)")
+        ("statsconfigfile", opts::value<std::string>(), "Statistics configuration file")
+        ("boundary", opts::value<std::string>(), "Statistics configuration file")
         ("verbose,v", "Enable verbosity");
 
     opts::store(opts::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
     opts::notify(vm);
 
+    TestStats testStats;
+
+    geoutil::GeoUtil geou;
+    if (vm.count("boundary")) {
+        if (!geou.readFile(vm["boundary"].as<std::string>())) {
+            return 0;
+        }
+        testStats.boundary = geou.boundary;
+    } else {
+        boost::geometry::read_wkt("MULTIPOLYGON(((-180 90,180 90, 180 -90, -180 -90,-180 90)))", testStats.boundary);
+    }
+    if (vm.count("timestamp")) {
+        testStats.startTime = from_iso_extended_string(vm["timestamp"].as<std::string>());
+    }
+    if (vm.count("statsconfigfile")) {
+        testStats.statsConfigFile = vm["statsconfigfile"].as<std::string>();
+    }
+    if (vm.count("verbose")) {
+        testStats.verbose = true;
+    }
+    if (vm.count("increment")) {
+        const auto str_increment = vm["increment"].as<std::string>();
+        testStats.increment = std::stoi(str_increment) + 1;
+    }
+
     if (vm.count("mode")) {
         // Collect stats
         if (vm["mode"].as<std::string>() == "collect-stats") {
-            collectStats(vm);
+            testStats.collectStats(vm);
         }
     } else if (vm.count("file")) {
-        TestStats testStats(vm.count("verbose"));
         auto files = vm["file"].as<std::vector<std::string>>();
 
         if (files.size() == 2) {
@@ -286,14 +307,13 @@ main(int argc, char *argv[]) {
             std::string statsFile(DATADIR);
             statsFile += "/testsuite/testdata/" + files.at(0);
             auto stats = testStats.getStatsFromFile(statsFile);
-            std::string jsonstr = statsToJSON(stats, statsFile);
+            std::string jsonstr = testStats.statsToJSON(stats, statsFile);
             jsonstr.erase(jsonstr.size() - 2);
             std::cout << jsonstr << std::endl;
         }
     } else {
         // Default OsmChange + validation file
-        TestStats testStats(vm.count("verbose"));
-        std::vector<std::string> files = {"test_stats.osc", "test_stats.yaml"};
+        std::vector<std::string> files = {"stats/test_stats.osc", "stats/test_stats.yaml"};
         testStats.validateStatsFromFile(files);
     }
 

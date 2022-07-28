@@ -87,7 +87,7 @@ namespace statsconfig {
         for (auto tag_it = std::begin(tags); tag_it != std::end(tags); ++tag_it) {
             if (tag == tag_it->first) {
                 for (auto value_it = std::begin(tag_it->second); value_it != std::end(tag_it->second); ++value_it) {
-                    if (*value_it == "*" || value == *value_it) {
+                    if (!value.empty() && (*value_it == "*" || value == *value_it)) {
                         return *value_it;
                     }
                 }

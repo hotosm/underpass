@@ -1,0 +1,25 @@
+hospital:
+  node:
+    - building:
+      - hospital
+    - emergency:
+      - hospital
+
+fire_station:
+  node:
+    - building:
+      - fire_station
+    - emergency:
+      - fire_station
+
+police:
+  node:
+    - emergency:
+      - police_station
+
+building:
+  node:
+    - building:
+      - *
+
+
