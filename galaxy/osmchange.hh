@@ -235,8 +235,8 @@ class OsmChangeFile
   public:
 
     OsmChangeFile(void){};
-    OsmChangeFile(const std::string &osc) { 
-        readChanges(osc); 
+    OsmChangeFile(const std::string &osc) {
+        readChanges(osc);
     };
 
     std::string statsConfigFilename = "/validate/statistics.yaml";

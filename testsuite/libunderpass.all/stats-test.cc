@@ -42,7 +42,7 @@ using namespace logger;
 /// Using this test you can collect statistics from osmchange
 /// files and assert the results against a YAML file
 /// or save them to a JSON file for other tasks
-/// 
+///
 /// For documentation see doc/stats-test.md
 
 class TestPlanet : public replication::Planet {
@@ -100,41 +100,37 @@ class TestStats {
         void
         collectStats(opts::variables_map vm) {
 
-            ReplicatorConfig config;    
+            ReplicatorConfig config;
             config.start_time = startTime;
-            config.planet_server = config.planet_servers[0].domain + "/replication";        
+            config.planet_server = config.planet_servers[0].domain + "/replication";
             planetreplicator::PlanetReplicator replicator;
             auto osmchange = replicator.findRemotePath(config, config.start_time);
-            
-            std::string jsonstr = "[";
 
+            std::string jsonstr = "[";
             while (--increment) {
                 osmchange::OsmChangeFile change;
                 change.setStatsConfigFilename(statsConfigFile);
                 if (boost::filesystem::exists(osmchange->filespec)) {
                     change.readChanges(osmchange->filespec);
-                } else { 
+                } else {
                     TestPlanet planet;
                     auto data = planet.downloadFile(osmchange->getURL());
                     auto xml = planet.processData(osmchange->filespec, *data);
                     std::istream& input(xml);
                     change.readXML(input);
                 }
-
                 change.areaFilter(boundary);
                 auto stats = change.collectStats(boundary);
                 jsonstr += statsToJSON(stats, osmchange->filespec);
-
                 osmchange->Increment();
             }
-
             jsonstr.erase(jsonstr.size() - 2);
             jsonstr += "\n]";
             std::cout << jsonstr << std::endl;
 
         }
 
-        std::shared_ptr<std::map<long, std::shared_ptr<osmchange::ChangeStats>>>    
+        std::shared_ptr<std::map<long, std::shared_ptr<osmchange::ChangeStats>>>
         getStatsFromFile(std::string filename) {
             osmchange::OsmChangeFile osmchanges;
             osmchanges.setStatsConfigFilename(statsConfigFile);
