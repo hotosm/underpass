@@ -140,8 +140,14 @@ resource "aws_security_group" "database" {
 
 resource "aws_security_group" "database-administration" {
   name        = "database-administration"
-  description = "Restricted Temporary Access to Galaxy Database"
+  description = "Ephemeral user access to Galaxy Database"
   vpc_id      = aws_vpc.galaxy.id
+
+  lifecycle {
+    ignore_changes = [
+      ingress,
+    ]
+  }
 
   ingress {
     description = "Allow from self"

@@ -65,6 +65,11 @@ resource "aws_iam_role" "ecs_execution_role" {
     policy = data.aws_iam_policy_document.access-galaxy-database-credentials.json
   }
 
+  inline_policy {
+    name   = "access-exports-bucket"
+    policy = data.aws_iam_policy_document.write-to-exports-s3-bucket.json
+  }
+
 }
 
 data "aws_kms_alias" "secretsmanager" {
@@ -108,7 +113,6 @@ data "aws_iam_policy_document" "galaxy-api-execution-role" {
     ]
 
     resources = [
-      aws_secretsmanager_secret.galaxy_database_credentials.arn,
       aws_secretsmanager_secret.quay_robot_credentials.arn,
       aws_secretsmanager_secret.configfile.arn,
     ]
@@ -309,7 +313,7 @@ resource "aws_lb" "osm-stats" {
   enable_deletion_protection = false
 
   tags = {
-    Environment = "production"
+    Environment = var.deployment_environment
   }
 }
 
@@ -348,7 +352,7 @@ resource "aws_lb" "galaxy-api" {
   ip_address_type            = "dualstack"
 
   tags = {
-    Environment = "production"
+    Environment = var.deployment_environment
   }
 }
 
@@ -361,7 +365,7 @@ resource "aws_lb_target_group" "galaxy-api" {
 
   health_check {
     enabled = true
-    path    = "/docs"
+    path    = "/v1/docs"
   }
 }
 
@@ -418,20 +422,104 @@ resource "aws_secretsmanager_secret_version" "configfile" {
     templatefile(
       "${path.module}/config.txt.tftpl",
       {
-        insights_creds        = var.insights_db_credentials
-        underpass_creds       = var.underpass_db_credentials
-        tasking_manager_creds = var.tasking_manager_db_credentials
-
-        dump_path = var.dump_path
+        galaxy_db_creds          = var.galaxy_db_credentials
+        insights_db_creds        = var.insights_db_credentials
+        underpass_db_creds       = var.underpass_db_credentials
+        tasking_manager_db_creds = var.tasking_manager_db_credentials
 
         oauth2_creds = var.oauth2_credentials
 
-        api_url  = "${var.api_url_scheme}${var.api_host}"
-        api_port = var.api_port
+        api_url             = "${var.api_url_scheme}${var.api_host}"
+        api_port            = var.api_port
+        api_export_max_area = var.api_export_max_area
+        api_log_level       = var.api_log_level
 
         sentry_dsn = var.sentry_dsn
+
+        export_upload_bucket_name = aws_s3_bucket.exports.bucket
       }
     )
   )
+}
+
+
+resource "aws_s3_bucket" "exports" {
+  bucket = "exports-${var.deployment_environment}.hotosm.org"
+
+  tags = {
+    Name        = "exports-${var.deployment_environment}.hotosm.org"
+    Environment = var.deployment_environment
+  }
+}
+
+resource "aws_s3_bucket_acl" "exports" {
+  bucket = aws_s3_bucket.exports.id
+  acl    = "public-read"
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "exports" {
+  bucket = aws_s3_bucket.exports.id
+
+  rule {
+    id = "all"
+
+    filter {}
+
+    expiration {
+      days = 90
+    }
+
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_policy" "exports" {
+  bucket = aws_s3_bucket.exports.arn
+  policy = data.aws_iam_policy_document.allow_public_access.json
+}
+
+data "aws_iam_policy_document" "allow_public_access" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:ListBucket",
+    ]
+
+    resources = [
+      aws_s3_bucket.exports.arn,
+      "${aws_s3_bucket.exports.arn}/*",
+    ]
+  }
+}
+
+data "aws_iam_policy_document" "write-to-exports-s3-bucket" {
+  statement {
+    sid = "1"
+
+    actions = [
+      "s3:ListBucket"
+    ]
+
+    resources = [
+      aws_s3_bucket.exports.arn,
+    ]
+  }
+
+  statement {
+    sid = "2"
+
+    actions = [
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:DeleteObject",
+    ]
+
+    resources = [
+      "${aws_s3_bucket.exports.arn}/*",
+    ]
+
+  }
+
 }
 

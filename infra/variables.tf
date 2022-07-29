@@ -19,6 +19,20 @@ variable "quay_robot_credentials" {
   sensitive = true
 }
 
+variable "galaxy_db_credentials" {
+  type = map(string)
+
+  default = {
+    host     = "localhost"
+    port     = "5432"
+    database = "postgres"
+    user     = "postgres_dba"
+    password = "secret123"
+  }
+
+  sensitive = true
+}
+
 variable "tasking_manager_db_credentials" {
   type = map(string)
 
@@ -178,11 +192,6 @@ variable "tasking-manager_vpc_id" {
   default = "vpc-ea28198f"
 }
 
-variable "dump_path" {
-  type    = string
-  default = "/var/log/galaxy-api"
-}
-
 variable "container_image_uri" {
   type    = string
   default = "quay.io/hotosm/galaxy-api:container"
@@ -201,6 +210,16 @@ variable "api_host" {
 variable "api_port" {
   type    = string
   default = "443"
+}
+
+variable "api_export_max_area" {
+  type    = string
+  default = "3000000"
+}
+
+variable "api_log_level" {
+  type    = string
+  default = "info"
 }
 
 variable "api_url_scheme" {
