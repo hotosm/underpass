@@ -481,6 +481,11 @@ resource "aws_s3_bucket_policy" "exports" {
 data "aws_iam_policy_document" "allow_public_access" {
   statement {
     effect = "Allow"
+
+    principals = [
+      "*",
+    ]
+
     actions = [
       "s3:GetObject",
     ]
