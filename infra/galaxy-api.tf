@@ -474,7 +474,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "exports" {
 }
 
 resource "aws_s3_bucket_policy" "exports" {
-  bucket = aws_s3_bucket.exports.arn
+  bucket = aws_s3_bucket.exports.bucket
   policy = data.aws_iam_policy_document.allow_public_access.json
 }
 

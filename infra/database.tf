@@ -147,6 +147,8 @@ resource "aws_security_group" "database-administration" {
     ignore_changes = [
       ingress,
     ]
+
+    create_before_destroy = true
   }
 
   ingress {
