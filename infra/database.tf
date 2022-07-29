@@ -109,7 +109,15 @@ resource "aws_security_group" "database" {
   vpc_id      = aws_vpc.galaxy.id
 
   ingress {
-    description     = "Allow connection to database from API"
+    description = "Allow from self"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    self        = true
+  }
+
+  ingress {
+    description     = "Allow from App and API"
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
@@ -136,7 +144,7 @@ resource "aws_security_group" "database-administration" {
   vpc_id      = aws_vpc.galaxy.id
 
   ingress {
-    description = "Allow connection to database from API"
+    description = "Allow from self"
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
@@ -246,5 +254,6 @@ resource "aws_db_proxy_endpoint" "galaxy-readonly" {
   db_proxy_name          = aws_db_proxy.galaxy.name
   db_proxy_endpoint_name = "galaxy-readonly"
   vpc_subnet_ids         = [for subnet in aws_subnet.private : subnet.id]
+  vpc_security_group_ids = [aws_security_group.database.id, aws_security_group.database-administration.id]
   target_role            = "READ_ONLY"
 }
