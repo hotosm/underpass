@@ -274,5 +274,5 @@ TaskingManager::getProjectTeams(long projectid)
 } // namespace tmdb
 // Local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

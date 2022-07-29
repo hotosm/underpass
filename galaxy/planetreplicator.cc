@@ -127,25 +127,29 @@ PlanetReplicator::PlanetReplicator(void) {
     default_minutes.push_back(state5);
 
     // Changesets
-    ptime time11 = time_from_string("2012-10-28 19:36:01");
-    StateFile state11("/000/000/000", 3000000, time11, replication::changeset);
-    default_changesets.push_back(state11);
+    ptime time6= time_from_string("2012-10-28 19:36:01");
+    StateFile state6("/000/000/000", 3000000, time6, replication::changeset);
+    default_changesets.push_back(state6);
 
-    ptime time10 = time_from_string("2014-10-07 07:58:01");
-    StateFile state10("/001/000/000", 3000000, time10, replication::changeset);
-    default_changesets.push_back(state10);
+    ptime time7 = time_from_string("2014-10-07 07:58:01");
+    StateFile state7("/001/000/000", 3000000, time7, replication::changeset);
+    default_changesets.push_back(state7);
 
-    ptime time9 = time_from_string("2016-08-01 20:43:01");
-    StateFile state9("/002/000/000", 3000000, time9, replication::changeset);
-    default_changesets.push_back(state9);
-
-    ptime time8 = time_from_string("2018-07-29 16:33:01");
-    StateFile state8("/003/000/000", 3000000, time8, replication::changeset);
+    ptime time8 = time_from_string("2016-08-01 20:43:01");
+    StateFile state8("/002/000/000", 3000000, time8, replication::changeset);
     default_changesets.push_back(state8);
 
-    ptime time7 = time_from_string("2020-06-28 23:26:01");
-    StateFile state7("/004/000/000", 3000000, time7, replication::changeset);
-    default_changesets.push_back(state7);
+    ptime time9 = time_from_string("2018-07-29 16:33:01");
+    StateFile state9("/003/000/000", 3000000, time9, replication::changeset);
+    default_changesets.push_back(state9);
+
+    ptime time10 = time_from_string("2020-06-28 23:26:01");
+    StateFile state10("/004/000/000", 3000000, time10, replication::changeset);
+    default_changesets.push_back(state10);
+
+    ptime time11 = time_from_string("2022-05-30 17:50:02");
+    StateFile state11("/005/000/000", 3000000, time11, replication::changeset);
+    default_changesets.push_back(state11);
 };
 
 /// Initialize the raw_user, raw_hashtags, and raw_changeset tables
@@ -342,5 +346,5 @@ std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const replicatorconf
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

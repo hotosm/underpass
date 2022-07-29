@@ -197,6 +197,12 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly)
     // log_debug(_("Pre filtering changeset size is %1%"), changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
         ChangeSet *change = it->get();
+        if (poly.empty()) {
+            // log_debug(_("Accepting changeset %1% as in priority area because area information is missing"),
+            // change->id);
+            change->priority = true;
+            continue;
+        }
         boost::geometry::append(change->bbox, point_t(change->max_lon, change->max_lat));
         boost::geometry::append(change->bbox, point_t(change->max_lon, change->min_lat));
         boost::geometry::append(change->bbox, point_t(change->min_lon, change->min_lat));
@@ -204,21 +210,15 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly)
         boost::geometry::append(change->bbox, point_t(change->max_lon, change->max_lat));
         // point_t pt;
         // boost::geometry::centroid(change->bbox, pt);
-        if (poly.empty()) {
-            // log_debug(_("Accepting changeset %1% as in priority area because area information is missing"),
-            // change->id);
-            change->priority = true;
+        if (!boost::geometry::intersects(change->bbox, poly)) {
+            // log_debug(_("Validating changeset %1% is not in a priority area"), change->id);
+
+            change->priority = false;
+
+            changes.erase(it--);
         } else {
-            if (!boost::geometry::overlaps(change->bbox, poly)) {
-                // log_debug(_("Validating changeset %1% is not in a priority area"), change->id);
-
-                change->priority = false;
-
-                changes.erase(it--);
-            } else {
-                // log_debug(_("Validating changeset %1% is in a priority area"), change->id);
-                change->priority = true;
-            }
+            // log_debug(_("Validating changeset %1% is in a priority area"), change->id);
+            change->priority = true;
         }
     }
     // log_debug(_("Post filtering changeset size is %1%"),
@@ -349,7 +349,12 @@ ChangeSetFile::readXML(std::istream &xml)
     // hourly or minutely changes are small, so this is better for that
     // case.
     boost::property_tree::ptree pt;
-    boost::property_tree::read_xml(xml, pt);
+    try {
+        boost::property_tree::read_xml(xml, pt);
+    } catch (exception& boost::property_tree::xml_parser::xml_parser_error) {
+        log_error(_("Error parsing XML"));
+        return false;
+    }
 
     if (pt.empty()) {
         log_error(_("ERROR: XML data is empty!"));
@@ -507,29 +512,5 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
     }
 }
 #endif // EOF LIBXML
-
-std::string
-fixString(std::string text)
-{
-    std::string newstr;
-    int i = 0;
-    while (i < text.size()) {
-        if (text[i] == '\'') {
-            newstr += "&apos;";
-        } else if (text[i] == '\"') {
-            newstr += "&quot;";
-        } else if (text[i] == ')') {
-            newstr += "&#41;";
-        } else if (text[i] == '(') {
-            newstr += "&#40;";
-        } else if (text[i] == '\\') {
-            // drop this character
-        } else {
-            newstr += text[i];
-        }
-        i++;
-    }
-    return boost::locale::conv::to_utf<char>(newstr, "Latin1");
-}
 
 } // namespace changeset

@@ -72,9 +72,6 @@ namespace changeset {
 extern bool
 IsControl(int i);
 
-extern std::string
-fixString(std::string text);
-
 /// \file changeset.hh
 /// \brief The file is used for processing changeset files
 ///
@@ -98,13 +95,19 @@ class ChangeSet {
     void dump(void);
 
     /// Add a hashtag to internal storage
-    void addHashtags(std::string text) { hashtags.push_back(fixString(text)); };
+    void addHashtags(std::string text) {
+        hashtags.push_back(text);
+    };
 
     /// Add the comment field, which is often used for hashtags
-    void addComment(std::string text) { comment = fixString(text); };
+    void addComment(std::string text) {
+        comment = text;
+    };
 
     /// Add the editor field
-    void addEditor(std::string text) { editor = fixString(text); };
+    void addEditor(std::string text) {
+        editor = text;
+    };
 
     // protected so testcases can access private data
     // protected:
@@ -129,7 +132,7 @@ class ChangeSet {
     std::string editor;  ///< The OSM editor the end user used
     std::string source;  ///< The imagery source
     polygon_t bbox;
-    bool priority;		///< Is this feature in the boundary area
+    bool priority;        ///< Is this feature in the boundary area
 };
 
 /// \class ChangeSetFile
@@ -192,5 +195,5 @@ class ChangeSetFile
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

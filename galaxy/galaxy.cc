@@ -41,6 +41,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/date_time.hpp>
+#include <boost/locale.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/time_facet.hpp>
 #include <boost/format.hpp>
@@ -188,13 +189,13 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 
     // Some old changefiles have no user information
     std::string query = "INSERT INTO users VALUES(";
-    query += std::to_string(change.uid) + ",\'" + sdb->esc(change.user);
+    query += std::to_string(change.uid) + ",\'" + fixString(change.user);
     query += "\') ON CONFLICT DO NOTHING;";
     // log_debug(_("QUERY: %1%"), query);
 
     // Serialize changes writing
     {
-	std::scoped_lock write_lock{pqxx_mutex};
+    std::scoped_lock write_lock{pqxx_mutex};
         pqxx::work worker(*sdb);
         pqxx::result result = worker.exec(query);
         worker.commit();
@@ -223,14 +224,14 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
     }
 
     query += ", bbox) VALUES(";
-    query += std::to_string(change.id) + ",\'" + changeset::fixString(change.editor) + "\',\'";
+    query += std::to_string(change.id) + ",\'" + fixString(change.editor) + "\',\'";
 
     query += std::to_string(change.uid) + "\',\'";
     query += to_simple_string(change.created_at) + "\', \'";
     if (change.closed_at != not_a_date_time) {
-	query += to_simple_string(change.closed_at) + "\', \'";
+        query += to_simple_string(change.closed_at) + "\', \'";
     } else {
-	query += to_simple_string(change.created_at) + "\', \'";
+        query += to_simple_string(change.created_at) + "\', \'";
     }
     query += to_simple_string(boost::posix_time::second_clock::universal_time()) + "\'";
 
@@ -244,7 +245,7 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
         for (const auto &hashtag: std::as_const(change.hashtags)) {
             auto ht{hashtag};
             boost::algorithm::replace_all(ht, "\"", "&quot;");
-            query += "\"" + sdb->esc(ht) + "\"" + ", ";
+            query += "\"" + fixString(ht) + "\"" + ", ";
         }
 
         // drop the last comma
@@ -329,17 +330,17 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 
     query += ")\')";
     // query += ")) ON CONFLICT DO NOTHING;";
-    query += ")) ON CONFLICT (id) DO UPDATE SET editor=\'" + changeset::fixString(change.editor);
+    query += ")) ON CONFLICT (id) DO UPDATE SET editor=\'" + fixString(change.editor);
     query += "\', created_at=\'" + to_simple_string(change.created_at);
     // if (!change.open) {
-    // 	query += "\', closed_at=\'" + to_simple_string(change.closed_at);
+    //     query += "\', closed_at=\'" + to_simple_string(change.closed_at);
     // }
     query += "\', bbox=" + bbox.substr(2) + ")'))";
     // log_debug(_("QUERY: %1%"), query);
 
     // Serialize changes writing
     {
-	std::scoped_lock write_lock{pqxx_mutex};
+    std::scoped_lock write_lock{pqxx_mutex};
         pqxx::work worker(*sdb);
         pqxx::result result = worker.exec(query);
         worker.commit();
@@ -394,19 +395,19 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     std::string format;
     std::string query;
     if (validation.values.size() > 0) {
-	query = "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, values, timestamp, location) VALUES(";
-	format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], ARRAY[%s], \'%s\', ST_GeomFromText(\'%s\', 4326)";
+        query = "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, values, timestamp, location) VALUES(";
+        format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], ARRAY[%s], \'%s\', ST_GeomFromText(\'%s\', 4326)";
     } else {
-	query = "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, timestamp, location) VALUES(";
-	format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)";
+        query = "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, timestamp, location) VALUES(";
+        format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)";
     }
     boost::format fmt(format);
     fmt % validation.osm_id;
     fmt % validation.change_id;
     if (isnan(validation.angle)) {
-	fmt % 0.0;
+        fmt % 0.0;
     } else {
-	fmt % validation.angle;
+        fmt % validation.angle;
     }
     fmt % validation.user_id;
     fmt % objtypes[validation.objtype];
@@ -419,13 +420,13 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     }
     fmt % stattmp;
     if (validation.values.size() > 0) {
-	for (const auto &tag: std::as_const(validation.values)) {
-	    valtmp += " \'" + changeset::fixString(tag) + "\',";
-	}
-	if (!valtmp.empty()) {
-	    valtmp.pop_back();
-	}
-	fmt % valtmp;
+        for (const auto &tag: std::as_const(validation.values)) {
+            valtmp += " \'" + fixString(tag) + "\',";
+        }
+        if (!valtmp.empty()) {
+            valtmp.pop_back();
+        }
+        fmt % valtmp;
     }
     fmt % to_simple_string(validation.timestamp);
     // Postgres wants the order of lat,lon reversed from how they
@@ -435,7 +436,7 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     query += ") ON CONFLICT (osm_id) DO UPDATE ";
     query += " SET status = ARRAY[" + stattmp + " ]::status[]";
     if (validation.values.size() > 0) {
-	query += ", values = ARRAY[" + valtmp + " ]";
+        query += ", values = ARRAY[" + valtmp + " ]";
     }
 //    log_debug(_("QUERY: %1%"), query);
 
@@ -655,9 +656,33 @@ QueryGalaxy::syncUsers(const std::vector<TMUser> &users, bool purge)
     return syncResult;
 };
 
+std::string
+QueryGalaxy::fixString(std::string text) const
+{
+    std::string newstr;
+    int i = 0;
+    while (i < text.size()) {
+        if (text[i] == '\'') {
+            newstr += "&apos;";
+        } else if (text[i] == '\"') {
+            newstr += "&quot;";
+        } else if (text[i] == ')') {
+            newstr += "&#41;";
+        } else if (text[i] == '(') {
+            newstr += "&#40;";
+        } else if (text[i] == '\\') {
+            // drop this character
+        } else {
+            newstr += text[i];
+        }
+        i++;
+    }
+    return sdb->esc(boost::locale::conv::to_utf<char>(newstr, "Latin1"));
+}
+
 } // namespace galaxy
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

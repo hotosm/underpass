@@ -61,19 +61,19 @@ main(int argc, char *argv[])
 #if 1
     std::string plugins;
     if (boost::filesystem::exists("../../validate/.libs")) {
-	plugins = "../../validate/.libs";
+    plugins = "../../validate/.libs";
     }
     boost::dll::fs::path lib_path(plugins);
     boost::function<plugin_t> creator;
     try {
-	creator = boost::dll::import_alias<plugin_t>(
-	    lib_path / "libhotosm", "create_plugin",
-	    boost::dll::load_mode::append_decorations
-	    );
-	log_debug(_("Loaded plugin hotosm!"));
+    creator = boost::dll::import_alias<plugin_t>(
+        lib_path / "libhotosm", "create_plugin",
+        boost::dll::load_mode::append_decorations
+        );
+    log_debug(_("Loaded plugin hotosm!"));
     } catch (std::exception& e) {
-	log_debug(_("Couldn't load plugin! %1%"), e.what());
-	exit(0);
+    log_debug(_("Couldn't load plugin! %1%"), e.what());
+    exit(0);
     }
     auto plugin = creator();
 #else
@@ -302,5 +302,5 @@ test_geom(std::shared_ptr<Validate> &plugin)
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

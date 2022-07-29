@@ -30,6 +30,8 @@ using namespace apidb;
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
+namespace hotosmtest {
+
 TestState runtest;
 
 class TestPG : public QueryStats
@@ -282,7 +284,9 @@ test_leaderboard(void)
     std::cout << "LAST: " << last << std::endl;
 }
 
+}
+
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

@@ -141,7 +141,7 @@ void test_in_new(conflate::Conflate &conf)
     way.polygon = stand;
     auto ids = conf.newDuplicatePolygon(way);
     // for (auto it = std::begin(*ids); it != std::end(*ids); ++it) {
-    // 	(*it)->dump();
+    //     (*it)->dump();
     // }
     if (ids->size() == 3 && ids->at(0)->hasStatus(overlaping)) {
         runtest.pass("Conflate::newDuplicate(overlap)");
@@ -158,7 +158,7 @@ void test_in_new(conflate::Conflate &conf)
     way.polygon = same;
     ids = conf.newDuplicatePolygon(way);
     // for (auto it = std::begin(*ids); it != std::end(*ids); ++it) {
-    // 	(*it)->dump();
+    //     (*it)->dump();
     // }
     if (ids->size() >= 1 && ids->at(0)->hasStatus(duplicate)) {
         runtest.pass("Conflate::newDuplicate(2 dups)");
@@ -174,7 +174,7 @@ void test_in_new(conflate::Conflate &conf)
     way.polygon = stand;
     ids = conf.newDuplicatePolygon(way);
     // for (auto it = std::begin(*ids); it != std::end(*ids); ++it) {
-    // 	(*it)->dump();
+    //     (*it)->dump();
     // }
     if (ids->size() == 1 && ids->at(0)->hasStatus(duplicate)) {
         runtest.pass("Conflate::newDuplicate(1 dup)");
@@ -231,7 +231,7 @@ void test_out(conflate::Conflate &conf)
     way.polygon = stand;
     ids = conf.newDuplicatePolygon(way, boundaryout);
     for (auto it = std::begin(*ids); it != std::end(*ids); ++it) {
-	(*it)->dump();
+        (*it)->dump();
     }
     if (ids->size() == 0) {
         runtest.pass("Conflate::newDuplicate(out)");
@@ -243,5 +243,5 @@ void test_out(conflate::Conflate &conf)
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

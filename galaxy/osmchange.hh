@@ -211,7 +211,7 @@ class OsmChange {
         return tmp;
     };
 
-    ptime final_entry;	///< The timestamp of the last change in the file
+    ptime final_entry;    ///< The timestamp of the last change in the file
     osmobjects::action_t action = osmobjects::none; ///< The change action
     osmtype_t type;                                 ///< The OSM object type
     std::list<std::shared_ptr<osmobjects::OsmNode>> nodes; ///< The nodes in this change
@@ -253,7 +253,7 @@ class OsmChangeFile
     std::map<long, std::shared_ptr<ChangeStats>> userstats; ///< User statistics for this file
 
     std::list<std::shared_ptr<OsmChange>> changes; ///< All the changes in this file
-    std::map<long, point_t> nodecache;		   ///< Cache nodes across multiple changesets
+    std::map<long, point_t> nodecache;           ///< Cache nodes across multiple changesets
 
     /// Collect statistics for each user
     std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>>
@@ -269,7 +269,7 @@ class OsmChangeFile
 
     /// Scan tags for the proper values
     std::shared_ptr<std::vector<std::string>>
-    scanTags(std::map<std::string, std::string> tags);
+    scanTags(std::map<std::string, std::string> tags, osmchange::osmtype_t type);
 
 //    std::map<long, bool> priority;
     /// dump internal data, for debugging only
@@ -282,5 +282,5 @@ class OsmChangeFile
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

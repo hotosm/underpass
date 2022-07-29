@@ -55,9 +55,9 @@ Conflate::createView(const std::string &wkt)
     view += "SRID=4326;" + wkt + "\')));";
     pqxx::result result = conf_db.query(view);
     if (result.size() > 0) {
-	return true;
+        return true;
     } else {
-	return false;
+        return false;
     }
 }
 
@@ -99,7 +99,7 @@ Conflate::newDuplicatePolygon(const osmobjects::OsmWay &way)
 #endif
     auto ids = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     if (!conf_db.isOpen()) {
-	log_error(_("Database is not connected!"));
+        log_error(_("Database is not connected!"));
         return ids;
     }
 
@@ -109,7 +109,7 @@ Conflate::newDuplicatePolygon(const osmobjects::OsmWay &way)
     boost::format fmt("SELECT ST_Area(ST_Transform(ST_INTERSECTION(ST_GeomFromEWKT(\'SRID=4326;%s\'),way), 2167)), ST_Area(ST_Transform(ST_GeomFromEWKT(\'SRID=4326;%s\'), 2167)),osm_id,ST_Area(ST_Transform(way, 2167)) FROM boundary WHERE ST_OVERLAPS(ST_GeomFromEWKT(\'SRID=4326;%s\'),way) AND building IS NOT NULL;");
 
     if (boost::geometry::num_points(way.polygon) == 0) {
-	log_error(_("Way polygon is empty!"));
+        log_error(_("Way polygon is empty!"));
         return ids;
     }
     fmt % boost::geometry::wkt(way.polygon);
@@ -121,7 +121,7 @@ Conflate::newDuplicatePolygon(const osmobjects::OsmWay &way)
     float tolerance = 0.001;   // tolerance for floating point comparisons
     float threshold = 10.0;
     for (auto it = std::begin(result); it != std::end(result); ++it) {
-	float intersection =  it[0].as(float(0));
+        float intersection =  it[0].as(float(0));
         bool area = false;
         bool overlap = false;
         osmobjects::OsmWay way2;
@@ -130,24 +130,24 @@ Conflate::newDuplicatePolygon(const osmobjects::OsmWay &way)
 
         float intersect = (it[1].as(float(0))/it[3].as(float(0)));
         float diff = abs(it[1].as(float(0)) - it[3].as(float(0)));
-	// std::cerr << "DiffN: " << std::fixed << std::setprecision(4)
-	// 	  << intersect
-	// 	  << " : " << diff
-	// 	  << " : " << intersection
-	// 	  << " : " << way.id << std::endl;
+        // std::cerr << "DiffN: " << std::fixed << std::setprecision(4)
+        //       << intersect
+        //       << " : " << diff
+        //       << " : " << intersection
+        //       << " : " << way.id << std::endl;
         if (intersect < 2.0) {
-	    // std::cerr << "similar area!" << std::endl;
+        // std::cerr << "similar area!" << std::endl;
             area = true;
         }
         if (intersection > 30.0 && area) {
             log_debug(_("Duplicates: %1%, %2%, intersection: %3%, diff: %4%"), way.id, way2.id, intersection,diff);
-	    status1->status.insert(duplicate);
+            status1->status.insert(duplicate);
         } else {
             overlap = true;
             log_debug(_("Overlapping: %1%, %2%"), way.id, way2.id);
-	    status1->status.insert(overlaping);
-	}
-	ids->push_back(status1);
+            status1->status.insert(overlaping);
+        }
+        ids->push_back(status1);
     }
     return ids;
 }
@@ -160,7 +160,7 @@ Conflate::existingDuplicatePolygon(void)
 #endif
     auto ids = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
     if (!conf_db.isOpen()) {
-	log_error(_("Database is not connected!"));
+        log_error(_("Database is not connected!"));
         return ids;
     }
 
@@ -171,7 +171,7 @@ Conflate::existingDuplicatePolygon(void)
     float tolerance = 0.001;   // tolerance for floating point comparisons
     float threshold = 10.0;
     for (auto it = std::begin(result); it != std::end(result); ++it) {
-	float intersection =  it[0].as(float(0));
+        float intersection =  it[0].as(float(0));
         bool area = false;
         bool overlap = false;
         osmobjects::OsmWay way1;
@@ -179,29 +179,30 @@ Conflate::existingDuplicatePolygon(void)
         osmobjects::OsmWay way2;
         way2.id = it[3].as(long(0));
         auto status1 = std::make_shared<ValidateStatus>(way1);
-	status1->osm_id =it[1].as(long(0));
+        status1->osm_id =it[1].as(long(0));
         auto status2 = std::make_shared<ValidateStatus>(way2);
-	status1->osm_id = it[3].as(long(0));
+        status1->osm_id = it[3].as(long(0));
 
         float intersect = it[0].as(float(0))/it[2].as(float(0));
         float diff = abs(it[2].as(float(0)) - it[4].as(float(0)));
         std::cerr << "DiffE: " << std::fixed << std::setprecision(12) << intersect << " : " << diff << " : " << std::endl;
         // similar size, so more likely to be a duplicate
         if (intersect < 2.0) {
-	    // std::cerr << "similar area!" << std::endl;
+        // std::cerr << "similar area!" << std::endl;
             area = true;
         }
         if (intersection > 30.0 && area) {
             log_debug(_("Duplicates: %1%, %2%, intersection: %3%, diff: %4%"), way1.id, way2.id, intersection,diff);
-	    status1->status.insert(duplicate);
-	    status2->status.insert(duplicate);
+            status1->status.insert(duplicate);
+            status2->status.insert(duplicate);
         } else {
             overlap = true;
             log_debug(_("Overlapping: %1%, %2%"), way1.id, way2.id);
-	    status1->status.insert(overlaping);
-	    status2->status.insert(overlaping);
-	}
-        ++it;                   // skip the duplicate entries
+            status1->status.insert(overlaping);
+            status2->status.insert(overlaping);
+        }
+        ++it;
+        // skip the duplicate entries
         ids->push_back(status1);
         ids->push_back(status2);
     }
@@ -226,7 +227,7 @@ Conflate::existingDuplicateLineString(void)
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:
 
 

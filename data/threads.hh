@@ -84,45 +84,52 @@ typedef std::shared_ptr<Validate>(plugin_t)();
 /// \namespace threads
 namespace threads {
 
-// std::pair<ptime, std::string>
-// getClosestProcessedChange(std::shared_ptr<std::vector<std::pair<ptime, std::string>>> processed, ptime now);
+struct ReplicationTask {
+    std::string url;
+    ptime timestamp;
+    bool processed;
+};
 
 /// This monitors the planet server for new changesets files.
 /// It does a bulk download to catch up the database, then checks for the
 /// minutely change files and processes them.
 extern void
 startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
-		       const multipolygon_t &poly,
-                       const replicatorconfig::ReplicatorConfig &config);
+    const multipolygon_t &poly,
+    const replicatorconfig::ReplicatorConfig &config
+);
 
 /// This monitors the planet server for new OSM changes files.
 /// It does a bulk download to catch up the database, then checks for the
 /// minutely change files and processes them.
 extern void
 startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
-		    const multipolygon_t &poly,
-                    const replicatorconfig::ReplicatorConfig &config);
+    const multipolygon_t &poly,
+    const replicatorconfig::ReplicatorConfig &config
+);
 
 /// Updates the raw_hashtags, raw_users, and raw_changesets_countries tables
 /// from a changeset file
 void threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
-		std::shared_ptr<replication::Planet> &planet,
-		const multipolygon_t &poly,
-		std::shared_ptr<galaxy::QueryGalaxy> &galaxy,
-		std::shared_ptr<osm2pgsql::Osm2Pgsql> &rawosm,
-		std::shared_ptr<Validate> &plugin,
-		std::shared_ptr<std::vector<long>> removals,
-		std::shared_ptr<std::vector<std::pair<std::string, ptime>>> tasks);
+    std::shared_ptr<replication::Planet> &planet,
+    const multipolygon_t &poly,
+    std::shared_ptr<galaxy::QueryGalaxy> &galaxy,
+    std::shared_ptr<osm2pgsql::Osm2Pgsql> &rawosm,
+    std::shared_ptr<Validate> &plugin,
+    std::shared_ptr<std::vector<long>> removals,
+    std::shared_ptr<std::vector<ReplicationTask>> tasks
+);
 
 /// This updates several fields in the raw_changesets table, which are part of
 /// the changeset file, and don't need to be calculated.
 // extern bool threadChangeSet(const std::string &file);
 void
 threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
-		std::shared_ptr<replication::Planet> &planet,
-                const multipolygon_t &poly,
-		std::shared_ptr<galaxy::QueryGalaxy> galaxy,
-		std::shared_ptr<std::vector<std::pair<std::string, ptime>>> tasks);
+    std::shared_ptr<replication::Planet> &planet,
+    const multipolygon_t &poly,
+    std::shared_ptr<galaxy::QueryGalaxy> galaxy,
+    std::shared_ptr<std::vector<ReplicationTask>> tasks
+);
 
 // extern bool threadChangeSet(const std::string &file, std::promise<bool> && result);
 
@@ -143,11 +150,11 @@ threadOSM(const std::string &database, ptime &timestamp);
 /// \param tmUserSyncIsActive reference to an atomic flag that will exit the loop when FALSE,
 ///        this allows to abort the function fro client code.
 /// \param tmDbUrl the TM database connection string in the form HOST or
-///           USER:PASSSWORD@HOST/DATABASENAME
+///        USER:PASSSWORD@HOST/DATABASENAME
 /// \param galaxyDbUrlthe Galaxy database connection string in the form HOST or
-///          USER:PASSSWORD@HOST/DATABASENAME
+///        USER:PASSSWORD@HOST/DATABASENAME
 /// \param tmusersfrequency TM user sync frequency in seconds (-1 -> disabled, 0 ->
-///          single shot, > 0 -> interval)
+///        single shot, > 0 -> interval)
 extern void
 threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive, const replicatorconfig::ReplicatorConfig &config);
 
@@ -157,5 +164,5 @@ threadTMUsersSync(std::atomic<bool> &tmUserSyncIsActive, const replicatorconfig:
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

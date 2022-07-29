@@ -80,6 +80,7 @@ libunderpass_la_SOURCES = \
 	data/osm2pgsql.cc data/osm2pgsql.hh \
 	data/threads.cc data/threads.hh \
 	data/yaml.hh data/yaml.cc \
+	data/statsconfig.hh data/statsconfig.cc \
 	data/pq.hh data/pq.cc \
 	data/setupdb.sh \
 	validate/conflate.cc validate/conflate.hh

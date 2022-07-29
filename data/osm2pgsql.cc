@@ -627,10 +627,10 @@ Osm2Pgsql::upsertNode(const std::shared_ptr<osmobjects::OsmNode> &node) const
 
                 // Now add column tags, we don't know at this point if the way was stored as road, line or polygon
                 auto tags_from_stored{worker.exec_params(str(format(R"sql(
-              SELECT * FROM %1%.planet_osm_polygon WHERE osm_id = $1
-              UNION SELECT * FROM %1%.planet_osm_line WHERE osm_id = $1
-              UNION SELECT * FROM %1%.planet_osm_polygon WHERE osm_id = $1  LIMIT 1
-              )sql") % schema),
+                SELECT * FROM %1%.planet_osm_polygon WHERE osm_id = $1
+                UNION SELECT * FROM %1%.planet_osm_line WHERE osm_id = $1
+                UNION SELECT * FROM %1%.planet_osm_polygon WHERE osm_id = $1  LIMIT 1
+                )sql") % schema),
                                                          way["id"].as(long()))};
 
                 if (!tags_from_stored.empty()) {
@@ -949,23 +949,23 @@ Osm2Pgsql::removeWay(const std::shared_ptr<osmobjects::OsmWay> &way) const
 
     // delete from middle table
     const std::string middle_sql{str(format(R"sql(
-  DELETE FROM %1%.planet_osm_ways WHERE id = $1
-  )sql") % schema)};
+    DELETE FROM %1%.planet_osm_ways WHERE id = $1
+    )sql") % schema)};
 
     // Delete from roads
     const std::string roads_sql{str(format(R"sql(
-  DELETE FROM %1%.planet_osm_roads WHERE osm_id = $1
-  )sql") % schema)};
+    DELETE FROM %1%.planet_osm_roads WHERE osm_id = $1
+    )sql") % schema)};
 
     // Delete from lines
     const std::string line_sql{str(format(R"sql(
-  DELETE FROM %1%.planet_osm_line WHERE osm_id = $1
-  )sql") % schema)};
+    DELETE FROM %1%.planet_osm_line WHERE osm_id = $1
+    )sql") % schema)};
 
     // Delete from polygons
     const std::string polygon_sql{str(format(R"sql(
-  DELETE FROM %1%.planet_osm_polygon WHERE osm_id = $1
-  )sql") % schema)};
+    DELETE FROM %1%.planet_osm_polygon WHERE osm_id = $1
+    )sql") % schema)};
 
     try {
         pqxx::work worker(*sdb);
@@ -989,12 +989,12 @@ Osm2Pgsql::removeNode(const std::shared_ptr<osmobjects::OsmNode> &node) const
 
     // delete from middle nodes table
     const std::string middle_sql{str(format(R"sql(
-  DELETE FROM %1%.planet_osm_nodes WHERE id = $1
-  )sql") % schema)};
+    DELETE FROM %1%.planet_osm_nodes WHERE id = $1
+    )sql") % schema)};
     // delete from point table
     const std::string sql{str(format(R"sql(
-  DELETE FROM %1%.planet_osm_point WHERE osm_id = $1
-  )sql") % schema)};
+    DELETE FROM %1%.planet_osm_point WHERE osm_id = $1
+    )sql") % schema)};
     try {
         pqxx::work worker(*sdb);
         worker.exec_params0(middle_sql, node->id);
@@ -1015,13 +1015,13 @@ Osm2Pgsql::removeRelation(const std::shared_ptr<osmobjects::OsmRelation> &relati
 
     // delete from middle table
     const std::string middle_sql{str(format(R"sql(
-  DELETE FROM %1%.planet_osm_rels WHERE id = $1
-  )sql") % schema)};
+    DELETE FROM %1%.planet_osm_rels WHERE id = $1
+    )sql") % schema)};
 
     // Delete from multi polygons
     const std::string polygon_sql{str(format(R"sql(
-  DELETE FROM %1%.planet_osm_polygon WHERE osm_id = -%2%
-  )sql") % schema % relation->id)};
+    DELETE FROM %1%.planet_osm_polygon WHERE osm_id = -%2%
+    )sql") % schema % relation->id)};
 
     try {
         pqxx::work worker(*sdb);
@@ -1095,8 +1095,8 @@ Osm2Pgsql::notClosedWays(const std::list<long> line_ids, pqxx::nontransaction &w
         }
 
         const auto sql{str(format(R"sql(
-       SELECT id, nodes[1] node_a, nodes[CARDINALITY(nodes)] node_b FROM %1%.planet_osm_ways
-         WHERE id IN (%2%) AND nodes[1] != nodes[CARDINALITY(nodes)])sql") %
+        SELECT id, nodes[1] node_a, nodes[CARDINALITY(nodes)] node_b FROM %1%.planet_osm_ways
+        WHERE id IN (%2%) AND nodes[1] != nodes[CARDINALITY(nodes)])sql") %
                            schema % boost::algorithm::join(line_str_ids, ", "))};
 
         const auto ways{worker.exec(sql)};
@@ -1176,5 +1176,5 @@ Osm2Pgsql::TagParser::parse(const std::map<std::string, std::string> &tags, cons
 
 // local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

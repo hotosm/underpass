@@ -1,15 +1,14 @@
-config:
-  - change_id:
-      - 1
-  - modified_highway:
-      - 2
-  - added_highway:
-      - 3
-  - modified_building:
-      - 1
-  - added_building:
-      - 1
-  - modified_waterway:
-      - 1
-  - added_waterway:
-      - 1
+- change_id:
+  - 1
+- modified_highway:
+  - 2
+- added_highway:
+  - 3
+- modified_building:
+  - 1
+- added_building:
+  - 1
+- modified_waterway:
+  - 1
+- added_waterway:
+  - 1

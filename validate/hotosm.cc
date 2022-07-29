@@ -105,7 +105,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     }
 
     yaml::Yaml tests = yamls[type];
-    int count = 0;
+
     std::string key;
     int keyexists = 0;
     int valexists = 0;
@@ -115,7 +115,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     bool values = false;
     // This enables/disables writing features flagged for not being tag complete
     // from being written to the database to reduce the size of the results.
-    if (tests.getConfig("complete") == "yes") {
+    if (tests.get("config").contains_value("complete", "yes")) {
         minimal = false;
     } else {
         minimal = true;
@@ -123,17 +123,17 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     // This enables/disables writing features flagged for not having values
     // in range as defined in the YAML config file. This prevents those
     // from being written to the database to reduce the size of the results.
-    if (tests.getConfig("values") == "yes") {
+    if (tests.get("config").contains_value("values", "yes")) {
         values = true;
     } else {
         values = false;
     }
 
     for (auto vit = std::begin(node.tags); vit != std::end(node.tags); ++vit) {
-	if (node.action == osmobjects::remove) {
-	    continue;
-	}
-        if (tests.containsKey(vit->first)) {
+        if (node.action == osmobjects::remove) {
+            continue;
+        }
+        if (tests.contains_key(vit->first)) {
             // std::cerr << "Matched key " << vit->first << "!" << std::endl;
             keyexists++;
         } else {
@@ -141,20 +141,20 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
                 status->status.insert(incomplete);
             }
         }
-        if (tests.containsValue(vit->first, vit->second)) {
+        if (tests.contains_value(vit->first, vit->second)) {
             // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
             valexists++;
             // status->status.insert(correct);
         } else {
             status->status.insert(badvalue);
-	    log_debug(_("Bad value: %1% for %2%"), vit->second, vit->first);
-	    status->values.insert(vit->first + "=" +  vit->second);
+            log_debug(_("Bad value: %1% for %2%"), vit->second, vit->first);
+            status->values.insert(vit->first + "=" +  vit->second);
         }
         status->center = node.point;
     }
     // std::cerr << keyexists << " : " << valexists << " : " << tests.config.size() << std::endl;
 
-    if (keyexists == tests.tags.size() && valexists == tests.tags.size()) {
+    if (keyexists == tests.get("tags").children.size() && valexists == tests.get("tags").children.size()) {
         status->status.clear();
         if (!minimal) {
             status->status.insert(complete);
@@ -165,7 +165,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
         }
     }
     if (status->status.size() == 0) {
-	status->status.insert(correct);
+        status->status.insert(correct);
     }
     return status;
 }
@@ -194,7 +194,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     }
 
     yaml::Yaml tests = yamls[type];
-    int count = 0;
+
     std::string key;
     int keyexists = 0;
     int valexists = 0;
@@ -204,17 +204,22 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     double minangle = 85;
     bool minimal = false;
     bool values = false;
+    auto config = tests.get("config");
+
     // This is the minimum angle used to determine rectangular buildings
-    if (!tests.getConfig("minangle").empty()) {
-        minangle = std::stod(tests.getConfig("minangle"));
+    auto configMinAngle = config.get("minangle").children;
+    if (configMinAngle.size() > 0) {
+        minangle =  std::stod(configMinAngle[0].value);
     }
     // This is the maximum angle used to determine rectangular buildings
-    if (!tests.getConfig("maxangle").empty()) {
-        maxangle = std::stod(tests.getConfig("maxangle"));
+    auto configMaxAngle = config.get("maxangle").children;
+    if (configMaxAngle.size() > 0) {
+        maxangle = std::stod(configMaxAngle[0].value);
     }
     // This enables/disables writing features flagged for not being tag complete
     // from being written to the database to reduce the size of the results.
-    if (tests.getConfig("complete") == "yes") {
+    auto configComplete = config.get("complete");
+    if (configComplete.children.size() > 0 && configComplete.children[0].value == "yes") {
         minimal = false;
     } else {
         minimal = true;
@@ -222,36 +227,37 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     // This enables/disables writing features flagged for not having values
     // in range as defined in the YAML config file. This prevents those
     // from being written to the database to reduce the size of the results.
-    if (tests.getConfig("values") == "yes") {
+    auto configValues = config.get("values");
+    if (configValues.children.size() > 0 && configValues.children[0].value == "yes") {
         values = true;
     } else {
         values = false;
     }
     for (auto vit = std::begin(way.tags); vit != std::end(way.tags); ++vit) {
-	if (way.action == osmobjects::remove) {
-	    continue;
-	}
-        if (tests.containsKey(vit->first)) {
+        if (way.action == osmobjects::remove) {
+            continue;
+        }
+        if (tests.contains_key(vit->first)) {
             // std::cerr << "Matched key " << vit->first << "!" << std::endl;
             keyexists++;
         } else {
             if (!minimal) {
                 status->status.insert(incomplete);
             }
-	    continue;
+            continue;
         }
-        if (tests.containsValue(vit->first, vit->second)) {
+        if (tests.contains_value(vit->first, vit->second)) {
             // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
             valexists++;
             // status->status.insert(correct);
         } else {
             if (!values) {
-		status->status.insert(badvalue);
+                status->status.insert(badvalue);
             }
         }
         if (!values) {
             if ((vit->first == "building" && vit->second == "commercial") && !way.tags.count("name")) {
-		status->status.insert(badvalue);
+                status->status.insert(badvalue);
             }
         }
 
@@ -266,10 +272,10 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     if (way.refs.front() == way.refs.back()) {
         // If it's a building, check for square corners
         if (way.tags.count("building") || way.tags.count("amenity")) {
-	    if (boost::geometry::num_points(way.linestring) < 3 && way.action == osmobjects::modify) {
-		log_debug(_("Not enough nodes in modified linestring to calculate the angle!"));
-		return status;
-	    }
+            if (boost::geometry::num_points(way.linestring) < 3 && way.action == osmobjects::modify) {
+                log_debug(_("Not enough nodes in modified linestring to calculate the angle!"));
+                return status;
+            }
             double angle = cornerAngle(way.linestring);
             status->angle = std::abs(angle);
             // std::cerr << "Angle for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
@@ -287,18 +293,18 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
         }
         return status;
     }
-    if (keyexists == tests.tags.size() && valexists == tests.tags.size()) {
+    if (keyexists == tests.get("tags").children.size() && valexists == tests.get("tags").children.size()) {
         status->status.clear();
         if (!minimal) {
-	    status->status.insert(complete);
-	}
+            status->status.insert(complete);
+        }
     } else {
         if (!minimal) {
             status->status.insert(incomplete);
         }
     }
     if (status->status.size() == 0) {
-	// status->status.insert(correct);
+        // status->status.insert(correct);
     }
     return status;
 }
@@ -333,7 +339,7 @@ Hotosm::checkTag(const std::string &key, const std::string &value)
     }
 
     if (status->status.size() == 0) {
-	// status->status.insert(correct);
+        // status->status.insert(correct);
     }
     return status;
 }
@@ -344,5 +350,5 @@ Hotosm::checkTag(const std::string &key, const std::string &value)
 
 // Local Variables:
 // mode: C++
-// indent-tabs-mode: t
+// indent-tabs-mode: nil
 // End:

@@ -28,8 +28,11 @@ check_PROGRAMS = \
 	osm2pgsql-test \
 	yaml-test \
 	stats-test \
+    statsconfig-test \
 	planetreplicator-test \
-	geo-test
+	geo-test \
+	areafilter-test \
+	test-playground
 
 TOPSRC := $(shell cd $(top_srcdir) && pwd)
 AM_CPPFLAGS = -I$(TOPSRC) -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)/hottm
@@ -102,6 +105,11 @@ stats_test_SOURCES = stats-test.cc
 stats_test_LDFLAGS = -L../..
 stats_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
+# Test the OSM StatsConfig
+statsconfig_test_SOURCES = statsconfig-test.cc
+statsconfig_test_LDFLAGS = -L../..
+statsconfig_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+
 # Test the PlanetReplicator class
 planetreplicator_test_SOURCES = planetreplicator-test.cc
 planetreplicator_test_LDFLAGS = -L../..
@@ -125,6 +133,16 @@ osm2pgsql_test_CPPFLAGS = -DDATADIR=\"$(srcdir)\" -I$(TOPSRC)
 osm2pgsql_test_LDFLAGS = -L../..
 osm2pgsql_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
+# Test areaFilter
+areafilter_test_SOURCES = areafilter-test.cc
+areafilter_test_LDFLAGS = -L../..
+areafilter_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+
+# Test playground
+test_playground_SOURCES = test-playground.cc
+test_playground_LDFLAGS = -L../..
+test_playground_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+
 
 CLEANFILES = \
 	underpass.log \
@@ -135,7 +153,9 @@ CLEANFILES = \
 	geo-test.log \
 	osm2pgsql-test.log \
 	stats-test.log \
+    statsconfig-test.log \
 	planetreplicator-test.log \
+	areafilter-test.log \
 	replication-test.log
 
 RUNTESTFLAGS = -xml
