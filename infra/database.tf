@@ -143,6 +143,8 @@ resource "aws_security_group" "database-administration" {
   description = "Ephemeral user access to Galaxy Database"
   vpc_id      = aws_vpc.galaxy.id
 
+  revoke_rules_on_delete = true
+
   lifecycle {
     ignore_changes = [
       ingress,
