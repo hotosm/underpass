@@ -502,7 +502,8 @@ data "aws_iam_policy_document" "write-to-exports-s3-bucket" {
     sid = "1"
 
     actions = [
-      "s3:ListBucket"
+      "s3:ListBucket",
+      "s3:GetBucketLocation",
     ]
 
     resources = [
