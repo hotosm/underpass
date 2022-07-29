@@ -483,11 +483,9 @@ data "aws_iam_policy_document" "allow_public_access" {
     effect = "Allow"
     actions = [
       "s3:GetObject",
-      "s3:ListBucket",
     ]
 
     resources = [
-      aws_s3_bucket.exports.arn,
       "${aws_s3_bucket.exports.arn}/*",
     ]
   }
