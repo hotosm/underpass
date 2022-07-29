@@ -482,9 +482,10 @@ data "aws_iam_policy_document" "allow_public_access" {
   statement {
     effect = "Allow"
 
-    principals = [
-      "*",
-    ]
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
 
     actions = [
       "s3:GetObject",
