@@ -142,8 +142,8 @@ resource "aws_ecs_task_definition" "galaxy-api" {
   family                   = "galaxy-api"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = 256
-  memory                   = 512
+  cpu                      = 1024
+  memory                   = 2048
 
   runtime_platform {
     operating_system_family = "LINUX"
@@ -357,6 +357,8 @@ resource "aws_lb" "galaxy-api" {
 
   enable_deletion_protection = false
   ip_address_type            = "dualstack"
+
+  idle_timeout = 300
 
   tags = {
     Environment = var.deployment_environment
