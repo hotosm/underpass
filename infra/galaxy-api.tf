@@ -153,7 +153,7 @@ resource "aws_ecs_task_definition" "galaxy-api" {
   container_definitions = jsonencode([
     {
       name  = "galaxy-api"
-      image = var.container_image_uri
+      image = "${var.container_image_uri}:${var.container_image_tag}"
 
       repositoryCredentials = {
         credentialsParameter = aws_secretsmanager_secret.quay_robot_credentials.arn
