@@ -49,8 +49,8 @@ resource "aws_ecs_cluster_capacity_providers" "galaxy" {
  * Secrets Manager access
  * Container Registry access
 **/
-resource "aws_iam_role" "ecs_execution_role" {
-  name_prefix = "galaxy-api-exec"
+resource "aws_iam_role" "ecs_agent_role" {
+  name_prefix = "galaxy-ecs-agent-"
   path        = "/galaxy/"
 
   assume_role_policy = data.aws_iam_policy_document.ecs-assume-role.json
@@ -64,12 +64,18 @@ resource "aws_iam_role" "ecs_execution_role" {
     name   = "access-database-credentials"
     policy = data.aws_iam_policy_document.access-galaxy-database-credentials.json
   }
+}
+
+resource "aws_iam_role" "ecs_guest_role" {
+  name_prefix = "galaxy-api-"
+  path        = "/galaxy/"
+
+  assume_role_policy = data.aws_iam_policy_document.ecs-assume-role.json
 
   inline_policy {
     name   = "access-exports-bucket"
     policy = data.aws_iam_policy_document.write-to-exports-s3-bucket.json
   }
-
 }
 
 data "aws_kms_alias" "secretsmanager" {
@@ -148,7 +154,8 @@ resource "aws_ecs_task_definition" "galaxy-api" {
     size_in_gib = 200
   }
 
-  execution_role_arn = aws_iam_role.ecs_execution_role.arn
+  execution_role_arn = aws_iam_role.ecs_agent_role.arn
+  task_role_arn      = aws_iam_role.ecs_guest_role.arn
 
   container_definitions = jsonencode([
     {
