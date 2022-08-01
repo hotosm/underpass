@@ -190,16 +190,33 @@ variable "libpqxx_version" {
 variable "tasking-manager_vpc_id" {
   type    = string
   default = "vpc-ea28198f"
+
+  validation {
+    condition     = length(var.tasking-manager_vpc_id) > 11 && substr(var.tasking-manager_vpc_id, 0, 4) == "vpc-"
+    error_message = "The VPC ID invalid"
+  }
 }
 
 variable "container_image_uri" {
   type    = string
-  default = "quay.io/hotosm/galaxy-api:container"
+  default = "quay.io/hotosm/galaxy-api"
+}
+
+variable "container_image_tag" {
+  type    = string
+  default = "container"
+
+  description = "Git commit / release tag of the API that needs to be deployed"
 }
 
 variable "alb_tls_policy" {
   type    = string
   default = "ELBSecurityPolicy-FS-1-2-Res-2020-10"
+
+  validation {
+    condition     = length(var.alb_tls_policy) > 18 && substr(var.alb_tls_policy, 0, 18) == "ELBSecurityPolicy-"
+    error_message = "The SecurityPolicy identifier is invalid"
+  }
 }
 
 variable "api_host" {
@@ -220,6 +237,11 @@ variable "api_export_max_area" {
 variable "api_log_level" {
   type    = string
   default = "info"
+
+  validation {
+    condition     = contains(["info", "warning", "error", "debug"], var.api_log_level)
+    error_message = "Invalid API Log Level"
+  }
 }
 
 variable "api_url_scheme" {
