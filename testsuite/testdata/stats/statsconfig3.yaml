@@ -1,0 +1,17 @@
+humanitarian_building:
+  node:
+    - emergency:
+      - hospital
+      - fire_station
+    - building:
+      - hospital
+      - fire_station
+
+building:
+  node:
+    - emergency:
+      - police_station
+    - building:
+      - *
+
+

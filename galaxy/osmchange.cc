@@ -450,6 +450,7 @@ OsmChangeFile::dump(void)
 #endif
 }
 
+
 void
 OsmChangeFile::areaFilter(const multipolygon_t &poly)
 {
@@ -541,35 +542,22 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("OsmChangeFile::collectStats: took %w seconds\n");
 #endif
-    // FIXME: stuff to extract for MERL
-    // names added to villages, neigborhood, or citys
-    // facilities added (aggregated by schools, clinics, water points, bridges,
-    // airports and administrative boundaries)
+
     auto mstats =
         std::make_shared<std::map<long, std::shared_ptr<ChangeStats>>>();
         std::shared_ptr<ChangeStats> ostats;
 
-    // log_debug(_("Collecting Statistics for: %1%"), changes.size());
-
+    nodecache.clear();
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
-        // nodecache.clear();
         OsmChange *change = it->get();
-        // change->dump();
+
+        // Stats for Nodes
         for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
             OsmNode *node = it->get();
-            auto wkt = boost::geometry::wkt(node->point);
             // If there are no tags, assume it's part of a way
             if (node->tags.size() == 0) {
-                // nodecache[node->id] = node->point;
+                nodecache[node->id] = node->point;
                 continue;
-            }
-            // Filter data by polygon
-            //if (!boost::geometry::within(node->point, poly)) {
-            if (!node->priority) {
-                // log_debug(_("Changeset with node %1% is not in a priority area"), node->change_id);
-                continue;
-            } else {
-                // log_debug(_("Changeset with node %1% is in a priority area"), node->change_id);
             }
             // Some older nodes in a way wound up with this one tag, which nobody noticed,
             // so ignore it.
@@ -577,20 +565,17 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                 node->tags.find("created_at") != node->tags.end()) {
                 continue;
             }
-            // node->dump();
             ostats = (*mstats)[node->change_id];
             if (ostats.get() == 0) {
                 ostats = std::make_shared<ChangeStats>();
                 ostats->change_id = node->change_id;
                 ostats->user_id = node->uid;
                 ostats->username = node->user;
-                //ostats->created_at = change->created_at;
                 ostats->closed_at = node->timestamp;
                 (*mstats)[node->change_id] = ostats;
             }
             auto hits = scanTags(node->tags, osmchange::node);
             for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
-                // log_debug(_("FIXME node: " << *hit << " : " << (int)node->action);
                 if (node->action == osmobjects::create) {
                     ostats->added[*hit]++;
                 } else if (node->action == osmobjects::modify) {
@@ -598,30 +583,18 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                 }
             }
         }
+
+        // Stats for Ways
         for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
             OsmWay *way = it->get();
             // If there are no tags, assume it's part of a relation
             if (way->tags.size() == 0 && way->action != osmobjects::remove) {
-                // log_debug(_("Way %1% has no tags!"), way->id);
                 continue;
             }
             if (way->action == osmobjects::remove) {
                 continue;
             }
-            // if (way->polygon.outer().size() == 0) {
-            //     log_error(_("Way %1% has no points"), way->change_id);
-            //     continue;
-            // }
-#if 0
-        // FIXME: Since this now handled by areaFilter(), this is just
-        // a debugging test to make sure nothing snuck through.
-            if (way->priority) {
-                log_debug(_("Changeset with way %1% is in a priority area"), way->id);
-                continue;
-            } else {
-                log_debug(_("Changeset with way %1% is not  priority area"), way->id);
-            }
-#endif
+
             // Some older ways in a way wound up with this one tag, which nobody noticed,
             // so ignore it.
             if (way->tags.size() == 1 && way->tags.find("created_at") != way->tags.end()) {
@@ -633,15 +606,21 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                 ostats->change_id = way->change_id;
                 ostats->user_id = way->uid;
                 ostats->username = way->user;
-                //ostats->created_at = change->created_at;
                 ostats->closed_at = way->timestamp;
                 (*mstats)[way->change_id] = ostats;
             }
+
             auto hits = scanTags(way->tags, osmchange::way);
             for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
-                // log_debug("FIXME way: ", *hit, (int)way->action);
-                // way->dump();
-                if (*hit == "highway" || *hit == "waterway") {
+
+                if (way->action == osmobjects::create) {
+                    ostats->added[*hit]++;
+                } else if (way->action == osmobjects::modify) {
+                    ostats->modified[*hit]++;
+                }
+
+                // Calculate length
+                if ( (*hit == "highway" || *hit == "waterway") && way->action == osmobjects::create) {
                     // Get the geometry behind each reference
                     boost::geometry::model::linestring<sphere_t> globe;
                     for (auto lit = std::begin(way->refs); lit != std::end(way->refs); ++lit) {
@@ -649,18 +628,6 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                                                  nodecache[*lit].get<1>()));
                         boost::geometry::append(way->linestring, nodecache[*lit]);
                     }
-#if 0
-                    // Get the middle point of the linestring on the sphere
-                    point_t pt;
-                    boost::geometry::centroid(way->linestring, pt);
-                    way->center = pt;
-                    if (!boost::geometry::within(pt, poly)) {
-                        log_debug(_("Changeset with way %1% is not in a priority area"), way->id);
-                        continue;
-                    } else {
-                        log_debug(_("Changeset with way %1% is in a priority area"), way->id);
-                    }
-#endif
                     std::string tag;
                     if (*hit == "highway") {
                         tag = "highway_km";
@@ -671,32 +638,33 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                     double length = boost::geometry::length(globe,
                             boost::geometry::strategy::distance::haversine<float>(6371.0)) * 1000;
                     // log_debug("LENGTH: %1% %2%", std::to_string(length), way->change_id);
-                    if (way->action == osmobjects::create) {
-                        ostats->added[tag] += length;
-                        ostats->added[*hit]++;
-                    } else if (way->action == osmobjects::modify) {
-                        if (length > 0) {
-                            ostats->modified[tag] += length;
-                        }
-                        ostats->modified[*hit]++;
-                    }
-                } else if (*hit == "building" || *hit == "amenity") {
-                    for (auto lit = std::begin(way->refs); lit != std::end(way->refs); ++lit) {
-                        boost::geometry::append(way->polygon, nodecache[*lit]);
-                    }
-                    // Get the middle point of the linestring on the sphere
-                    boost::geometry::centroid(way->polygon, way->center);
-                    if (!boost::geometry::within(way->center, poly)) {
-                        // log_debug(_("Changeset with way %1% is not in a priority area"), way->change_id);
-                        continue;
-                    } else {
-                        //log_debug(_("Changeset with way %1% is in a priority area"),way->change_id);
-                        if (way->action == osmobjects::create) {
-                            ostats->added[*hit]++;
-                        } else if (way->action == osmobjects::modify) {
-                            ostats->modified[*hit]++;
-                        }
-                    }
+                    ostats->added[tag] += length;
+                }
+            }
+        }
+
+        // Stats for Relations
+        for (auto it = std::begin(change->relations); it != std::end(change->relations); ++it) {
+            OsmRelation *relation = it->get();
+            // If there are no tags, ignore it
+            if (relation->tags.size() == 0) {
+                continue;
+            }
+            ostats = (*mstats)[relation->change_id];
+            if (ostats.get() == 0) {
+                ostats = std::make_shared<ChangeStats>();
+                ostats->change_id = relation->change_id;
+                ostats->user_id = relation->uid;
+                ostats->username = relation->user;
+                ostats->closed_at = relation->timestamp;
+                (*mstats)[relation->change_id] = ostats;
+            }
+            auto hits = scanTags(relation->tags, osmchange::relation);
+            for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
+                if (relation->action == osmobjects::create) {
+                    ostats->added[*hit]++;
+                } else if (relation->action == osmobjects::modify) {
+                    ostats->modified[*hit]++;
                 }
             }
         }
@@ -709,9 +677,10 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags, osmchange::osmt
 {
 
     statsconfig::StatsConfigFile statsconfigfile;
-    std::string filename = SRCDIR;
-    filename += "/validate/statistics.yaml";
-    std::shared_ptr<std::vector<statsconfig::StatsConfig>> statsconfig = statsconfigfile.read_yaml(filename);
+    std::string path = SRCDIR;
+    path += statsConfigFilename;
+
+    std::shared_ptr<std::vector<statsconfig::StatsConfig>> statsconfig = statsconfigfile.read_yaml(path);
     auto hits = std::make_shared<std::vector<std::string>>();
 
     // Some older nodes in a way wound up with this one tag, which nobody noticed,
@@ -728,6 +697,8 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags, osmchange::osmt
             hit = search.tag_value(it->first, it->second, node, statsconfig);
         } else if (type == way) {
             hit = search.tag_value(it->first, it->second, way, statsconfig);
+        } else if (type == relation) {
+            hit = search.tag_value(it->first, it->second, relation, statsconfig);
         }
         if (!hit.empty()) {
             hits->push_back(hit);
@@ -757,6 +728,11 @@ ChangeStats::dump(void)
     //     std::cerr << "\t\t" << it->first << " = " << it->second << std::endl;
     // }
 };
+
+void
+OsmChangeFile::setStatsConfigFilename(std::string filename) {
+    statsConfigFilename = filename;
+}
 
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin)

@@ -44,12 +44,14 @@ namespace statsconfig {
             std::string name;
             std::map<std::string, std::vector<std::string>> way;
             std::map<std::string, std::vector<std::string>> node;
+            std::map<std::string, std::vector<std::string>> relation;
             StatsConfig(std::string name);
             StatsConfig
             (
                 std::string name,
                 std::map<std::string, std::vector<std::string>> way,
-                std::map<std::string, std::vector<std::string>> node
+                std::map<std::string, std::vector<std::string>> node,
+                std::map<std::string, std::vector<std::string>> relation
             );
     };
 

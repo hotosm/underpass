@@ -233,8 +233,13 @@ class OsmChangeFile
 #endif
 {
   public:
+
     OsmChangeFile(void){};
-    OsmChangeFile(const std::string &osc) { readChanges(osc); };
+    OsmChangeFile(const std::string &osc) {
+        readChanges(osc);
+    };
+
+    std::string statsConfigFilename = "/validate/statistics.yaml";
 
     /// Read a changeset file from disk or memory into internal storage
     bool readChanges(const std::string &osc);
@@ -247,8 +252,11 @@ class OsmChangeFile
     void on_start_element(const Glib::ustring &name,
                           const AttributeList &properties) override;
 #endif
+
     /// Read an istream of the data and parse the XML
     bool readXML(std::istream &xml);
+
+    void setStatsConfigFilename(std::string filename);
 
     std::map<long, std::shared_ptr<ChangeStats>> userstats; ///< User statistics for this file
 
@@ -274,6 +282,7 @@ class OsmChangeFile
 //    std::map<long, bool> priority;
     /// dump internal data, for debugging only
     void dump(void);
+
 };
 
 } // namespace osmchange

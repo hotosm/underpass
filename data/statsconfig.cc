@@ -43,12 +43,14 @@ namespace statsconfig {
     StatsConfig::StatsConfig (
         std::string name,
         std::map<std::string, std::vector<std::string>> way,
-        std::map<std::string, std::vector<std::string>> node
+        std::map<std::string, std::vector<std::string>> node,
+        std::map<std::string, std::vector<std::string>> relation
     )
     {
         this->name = name;
         this->way = way;
         this->node = node;
+        this->relation = relation;
     };
 
     std::shared_ptr<std::vector<statsconfig::StatsConfig>> StatsConfigFile::read_yaml(std::string filename) {
@@ -59,6 +61,7 @@ namespace statsconfig {
             for (auto it = std::begin(yaml.root.children); it != std::end(yaml.root.children); ++it) {
                 std::map<std::string, std::vector<std::string>> way_tags;
                 std::map<std::string, std::vector<std::string>> node_tags;
+                std::map<std::string, std::vector<std::string>> relation_tags;
                 for (auto type_it = std::begin(it->children); type_it != std::end(it->children); ++type_it) {
                     for (auto value_it = std::begin(type_it->children); value_it != std::end(type_it->children); ++value_it) {
                         for (auto tag_it = std::begin(value_it->children); tag_it != std::end(value_it->children); ++tag_it) {
@@ -66,12 +69,14 @@ namespace statsconfig {
                                 way_tags[value_it->value].push_back(tag_it->value);
                             } else if (type_it->value == "node") {
                                 node_tags[value_it->value].push_back(tag_it->value);
+                            } else if (type_it->value == "relation") {
+                                relation_tags[value_it->value].push_back(tag_it->value);
                             }
                         }
                     }
                 }
                 statsconfig->push_back(
-                    StatsConfig(it->value, way_tags, node_tags)
+                    StatsConfig(it->value, way_tags, node_tags, relation_tags)
                 );
             }
             statsconfig::statsconfigs.insert(
@@ -87,7 +92,7 @@ namespace statsconfig {
         for (auto tag_it = std::begin(tags); tag_it != std::end(tags); ++tag_it) {
             if (tag == tag_it->first) {
                 for (auto value_it = std::begin(tag_it->second); value_it != std::end(tag_it->second); ++value_it) {
-                    if (*value_it == "*" || value == *value_it) {
+                    if (!value.empty() && (*value_it == "*" || value == *value_it)) {
                         return *value_it;
                     }
                 }
@@ -102,6 +107,8 @@ namespace statsconfig {
                 category = StatsConfigSearch::category(tag, value, statsconfig->at(i).way);
             } else if (type == osmchange::node) {
                 category = StatsConfigSearch::category(tag, value, statsconfig->at(i).node);
+            } else if (type == osmchange::relation) {
+                category = StatsConfigSearch::category(tag, value, statsconfig->at(i).relation);
             }
             if (!category.empty()) {
                 return statsconfig->at(i).name;
