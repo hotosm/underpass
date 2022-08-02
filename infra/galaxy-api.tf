@@ -358,7 +358,7 @@ resource "aws_lb" "galaxy-api" {
   enable_deletion_protection = false
   ip_address_type            = "dualstack"
 
-  idle_timeout = 300
+  idle_timeout = 1800
 
   tags = {
     Environment = var.deployment_environment
