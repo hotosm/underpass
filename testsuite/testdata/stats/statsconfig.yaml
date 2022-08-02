@@ -1,0 +1,33 @@
+buildings:
+  way:
+    - underpass_tag:
+      - underpass_test
+    - building:
+      - yes
+      - school
+    - amenity:
+      - hospital
+      - emergency
+  node:
+    - amenity:
+      - school
+    - underpass_tag:
+      - underpass_test
+
+amenities:
+  node:
+    - amenity:
+      - emergency
+
+highways:
+  way:
+    - highway:
+      - yes
+
+underpass_category:
+  way:
+    - underpass_tag2:
+      - underpass_test
+  node:
+    - underpass_tag2:
+      - underpass_test

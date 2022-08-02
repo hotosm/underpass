@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osmChange version="1" generator="manually_generated">
+    <create>
+        <node id="0" changeset="1">
+            <tag k="building" v="hospital"/>
+        </node>
+    </create>
+    <create>
+        <node id="0" changeset="1">
+            <tag k="building" v="fire_station"/>
+        </node>
+    </create>
+    <create>
+        <node id="0" changeset="1">
+            <tag k="building" v="yes"/>
+        </node>
+    </create>
+    <create>
+        <node id="0" changeset="1">
+            <tag k="emergency" v="hospital"/>
+        </node>
+    </create>
+    <create>
+        <node id="0" changeset="1">
+            <tag k="emergency" v="fire_station"/>
+        </node>
+    </create>
+    <create>
+        <node id="0" changeset="1">
+            <tag k="emergency" v="police_station"/>
+        </node>
+    </create>
+    <!-- This change will be ignored as it have value=null-->
+    <create>
+        <node id="0" changeset="1">
+            <tag k="building" v=""/>
+        </node>
+    </create>
+</osmChange>
