@@ -272,7 +272,7 @@ resource "aws_appautoscaling_policy" "galaxy-api-cpu" {
 
   target_tracking_scaling_policy_configuration {
     scale_in_cooldown  = 60
-    scale_out_cooldown = 40
+    scale_out_cooldown = 30
 
     predefined_metric_specification {
       predefined_metric_type = "ECSServiceAverageCPUUtilization"
@@ -299,14 +299,14 @@ resource "aws_appautoscaling_policy" "galaxy-api-alb-requests" {
 
   target_tracking_scaling_policy_configuration {
     scale_in_cooldown  = 120
-    scale_out_cooldown = 120
+    scale_out_cooldown = 30
 
     predefined_metric_specification {
       predefined_metric_type = "ALBRequestCountPerTarget"
       resource_label         = join("/", [trimprefix(data.aws_arn.api-alb.resource, "loadbalancer/"), data.aws_arn.api-targetgroup.resource])
     }
 
-    target_value = "100"
+    target_value = "5"
   }
 }
 
