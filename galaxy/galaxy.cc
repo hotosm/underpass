@@ -85,86 +85,70 @@ QueryGalaxy::applyChange(const osmchange::ChangeStats &change) const
     }
 #endif
     std::string ahstore;
+    std::string mhstore;
 
     if (change.added.size() > 0) {
         ahstore = "HSTORE(ARRAY[";
-
         for (const auto &added: std::as_const(change.added)) {
-            if (added.first.empty()) {
-                return true;
-            }
-
             if (added.second > 0) {
                 ahstore += " ARRAY[\'" + added.first + "\',\'" +
                            std::to_string(added.second) + "\'],";
             }
         }
-
         ahstore.erase(ahstore.size() - 1);
         ahstore += "])";
-    } else {
-        ahstore.clear();
     }
 
     if (change.modified.size() > 0) {
-        ahstore = "HSTORE(ARRAY[";
-
+        mhstore = "HSTORE(ARRAY[";
         for (const auto &modified: std::as_const(change.modified)) {
-            if (modified.first.empty()) {
-                return true;
-            }
-
             if (modified.second > 0) {
-                ahstore += " ARRAY[\'" + modified.first + "\',\'" +
+                mhstore += " ARRAY[\'" + modified.first + "\',\'" +
                            std::to_string(modified.second) + "\'],";
             }
         }
-
-        ahstore.erase(ahstore.size() - 1);
-        ahstore += "])";
+        mhstore.erase(mhstore.size() - 1);
+        mhstore += "])";
     }
 
     // Some of the data field in the changset come from a different file,
     // which may not be downloaded yet.
     ptime now = boost::posix_time::microsec_clock::universal_time();
-    std::string aquery;
+    std::string aquery = "INSERT INTO changesets (id, user_id, closed_at, updated_at, ";
 
-    if (ahstore.size() > 0) {
-        if (change.added.size() > 0) {
-            aquery = "INSERT INTO changesets (id, user_id, closed_at, "
-                     "updated_at, added)";
-        } else if (change.modified.size() > 0) {
-            aquery =
-                "INSERT INTO changesets (id, user_id, closed_at, updated_at, "
-                "modified)";
-        }
-    } else {
-        aquery = "INSERT INTO changesets (id, user_id, updated_at)";
+    if (change.added.size() > 0) {
+        aquery += "added, ";
     }
+    if (change.modified.size() > 0) {
+        aquery += "modified, ";
+    }
+    aquery.erase(aquery.size() - 2);
+    aquery += ")";
 
     aquery += " VALUES(" + std::to_string(change.change_id) + ", ";
     aquery += std::to_string(change.user_id) + ", ";
     aquery += "\'" + to_simple_string(change.closed_at) + "\', ";
     aquery += "\'" + to_simple_string(now) + "\', ";
 
-    if (ahstore.size() > 0) {
-        if (change.added.size() > 0) {
-            aquery += ahstore +
-                      ") ON CONFLICT (id) DO UPDATE SET added = " + ahstore +
-                      ",";
-        } else {
-            aquery += ahstore +
-                      ") ON CONFLICT (id) DO UPDATE SET modified = " + ahstore +
-                      ",";
-        }
-    } else {
-        aquery.erase(aquery.size() - 2);
-        aquery += ") ON CONFLICT (id) DO UPDATE SET";
+    if (change.added.size() > 0) {
+        aquery += ahstore + ", ";
+    }
+    if (change.modified.size() > 0) {
+        aquery += mhstore + ", ";
     }
 
-    aquery += " closed_at = \'" + to_simple_string(change.closed_at) + "\',";
-    aquery += " updated_at = \'" + to_simple_string(now) + "\'";
-    // aquery += " WHERE changesets.id=" + std::to_string(change.change_id); //Fix me : we are not sure whether the changefile comes first or changeset comes first in planet , we are dependent on planet and planet doesnot always provide changefile and changeset file parallely sometimes there is delay , hence decided to store it for now , when we will be removing changeset from area filter those rows coming from changefile should be removed
+    aquery.erase(aquery.size() - 2);
+    aquery += ") ON CONFLICT (id) DO UPDATE SET";
+
+    aquery += " closed_at = \'" + to_simple_string(change.closed_at) + "\', ";
+    aquery += " updated_at = \'" + to_simple_string(now) + "\', ";
+    if (change.added.size() > 0) {
+        aquery += "added = " + ahstore + ", ";
+    }
+    if (change.modified.size() > 0) {
+        aquery += "modified = " + mhstore + ", ";
+    }
+    aquery.erase(aquery.size() - 2);
 
     // _debug(_("QUERY stats: %1%"), aquery);
     // Serialize changes writing
