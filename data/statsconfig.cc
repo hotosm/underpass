@@ -88,33 +88,37 @@ namespace statsconfig {
         return statsconfig::statsconfigs.at(filename);
     }
 
-    std::string StatsConfigSearch::category(std::string tag, std::string value, std::map<std::string, std::vector<std::string>> tags) {
+    bool StatsConfigSearch::category(std::string tag, std::string value, std::map<std::string, std::vector<std::string>> tags) {
         for (auto tag_it = std::begin(tags); tag_it != std::end(tags); ++tag_it) {
             if (tag == tag_it->first) {
+                if (tag_it->second.front() == "*") {
+                    return true;
+                }
                 for (auto value_it = std::begin(tag_it->second); value_it != std::end(tag_it->second); ++value_it) {
-                    if (!value.empty() && (*value_it == "*" || value == *value_it)) {
-                        return *value_it;
+                    if (value == *value_it) {
+                        return true;
                     }
                 }
             }
         }
-        return "";
+        return false;
     };
+
     std::string StatsConfigSearch::tag_value(std::string tag, std::string value, osmchange::osmtype_t type, std::shared_ptr<std::vector<StatsConfig>> statsconfig) {
-        std::string category = "";
+        bool category = false;
         for (int i = 0; i < statsconfig->size(); ++i) {
-            if (type == osmchange::way) {
-                category = StatsConfigSearch::category(tag, value, statsconfig->at(i).way);
-            } else if (type == osmchange::node) {
+            if (type == osmchange::node) {
                 category = StatsConfigSearch::category(tag, value, statsconfig->at(i).node);
+            } else if (type == osmchange::way) {
+                category = StatsConfigSearch::category(tag, value, statsconfig->at(i).way);
             } else if (type == osmchange::relation) {
                 category = StatsConfigSearch::category(tag, value, statsconfig->at(i).relation);
             }
-            if (!category.empty()) {
+            if (category) {
                 return statsconfig->at(i).name;
             }
         }
-        return category;
+        return "";
     }
 
 
