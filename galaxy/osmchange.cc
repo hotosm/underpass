@@ -679,29 +679,24 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags, osmchange::osmt
     statsconfig::StatsConfigFile statsconfigfile;
     std::string path = SRCDIR;
     path += statsConfigFilename;
-
     std::shared_ptr<std::vector<statsconfig::StatsConfig>> statsconfig = statsconfigfile.read_yaml(path);
     auto hits = std::make_shared<std::vector<std::string>>();
-
-    // Some older nodes in a way wound up with this one tag, which nobody noticed,
-    // so ignore it.
-    if (tags.size() == 1 && tags.find("created_at") != tags.end()) {
-        return hits;
-    }
 
     std::map<std::string, bool> cache;
     statsconfig::StatsConfigSearch search;
     for (auto it = std::begin(tags); it != std::end(tags); ++it) {
-        std::string hit = "";
-        if (type == node) {
-            hit = search.tag_value(it->first, it->second, node, statsconfig);
-        } else if (type == way) {
-            hit = search.tag_value(it->first, it->second, way, statsconfig);
-        } else if (type == relation) {
-            hit = search.tag_value(it->first, it->second, relation, statsconfig);
-        }
-        if (!hit.empty()) {
-            hits->push_back(hit);
+        if (!it->second.empty()) {
+            std::string hit = "";
+            if (type == node) {
+                hit = search.tag_value(it->first, it->second, node, statsconfig);
+            } else if (type == way) {
+                hit = search.tag_value(it->first, it->second, way, statsconfig);
+            } else if (type == relation) {
+                hit = search.tag_value(it->first, it->second, relation, statsconfig);
+            }
+            if (!hit.empty()) {
+                hits->push_back(hit);
+            }
         }
     }
 

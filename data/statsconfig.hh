@@ -63,7 +63,7 @@ namespace statsconfig {
     class StatsConfigSearch {
         public:
             static std::string tag_value(std::string tag, std::string value, osmchange::osmtype_t type, std::shared_ptr<std::vector<StatsConfig>> statsconfig);
-            static std::string category(std::string tag, std::string value, std::map<std::string, std::vector<std::string>> tags);
+            static bool category(std::string tag, std::string value, std::map<std::string, std::vector<std::string>> tags);
     };
 
 } // EOF statsconfig namespace
