@@ -84,6 +84,9 @@ typedef std::shared_ptr<Validate>(plugin_t)();
 /// \namespace threads
 namespace threads {
 
+
+/// \class ReplicationTask
+/// \brief Represents a replication task
 struct ReplicationTask {
     std::string url;
     ptime timestamp;

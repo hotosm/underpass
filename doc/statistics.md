@@ -21,15 +21,23 @@ method to do the calculations. While currently part of the core code,
 in the future this will be a plugin, allowing others to create
 different statistics calculations without modifying the code.
 
+## Priority boundary
+
+Currently, changes to be proccessed are filtered by [ChangeSetFile::areaFilter()](https://hotosm.github.io/underpass/classchangeset_1_1ChangeSetFile.html)
+and [OsmChangeFile::areaFilter()](https://hotosm.github.io/underpass/classosmchange_1_1OsmChangeFile.html), using a boundary polygon.
+In some cases is not possible to say if a OsmChange is inside
+the priority boundary. To disable the filtering in the replication
+process, you can add the argument `--osmnoboundary` for OsmChanges
+or `--oscnoboundary` for Changesets.
+
 ## What Is Collected
 
 The original statistics counted buildings, waterways, and POIs. The
 new statistics break this down into two categories, accumulates
 statistics for things like *buildings*, as well as the more detailed
 representation, like what type of building it is. The list of values
-for buildings is configurable. Currently it's a simple list, but in
-the future will be populated by a config file in
-[YAML](https://yaml.org/) format.
+is configurable, as it uses a [YAML](https://github.com/hotosm/underpass/blob/master/validate/statistics.yaml) file
+
 
 OpenStreetMap features support a *keyword* and *value* pair. The
 keywords are [loosely defined](https://taginfo.openstreetmap.org/),
@@ -67,7 +75,7 @@ ignored to avoid performance impacts, and data bloat.
 Most buildings added by remote tracing of satellite imagery lack any
 metadata tags beyond *building=yes*. When local mappers import more
 detailed data, or update the existing metadata, those values get
-added. This is the current set of building values being accumulated.
+added. This is a common set of building values.
 
 - yes
 - house
@@ -153,8 +161,8 @@ statistics are also kept allowing more detail when needed.
 
 ### School Types
 
-Wen *school* is a keyword, there are several values for the type of
-school. An aggregate total of schools is calculated, as well as detail
+When *school* is a keyword, there are several values for the type of
+school. An aggregate total of schools can be calculated, as well as detail
 for the type of school.
 
 - primary
@@ -173,18 +181,16 @@ data is parsed from the respective data formats, it gets passed to the
 method. That method loops through the data structure containing the
 changes to the map data. Within that method, it calls
 [ChangeSetFile::scanTags()](https://hotosm.github.io/underpass/classosmchange_1_1OsmChangeFile.html),
-which does all the real work. The *scanTags()* method uses the above
-lists of keywords and values. ScanTags() returns an array of
-statistics for the desired features. That array is then converted by
-collectStats() into the [statistics data
+    which does all the real work. The *scanTags()* method uses [StatsConfigSearch::tag_value()](https://hotosm.github.io/underpass/classstatsconfig_1_1StatsConfigSearch.html) to
+    search the lists of keywords and values configured at the stats configuration file.
+ScanTags() returns an array of statistics for the desired features.
+That array is then converted by collectStats() into the [statistics data
 structure](https://hotosm.github.io/underpass/classosmchange_1_1ChangeStats.html),
 and control returns to the processing thread.
 
 The processing thread then passes the statistics data to
 [osmstats::applyChange()](https://hotosm.github.io/underpass/classosmstats_1_1QueryOSMStats.html#aa0aeffb3bb77e4891553ca1883f11a10),
-to insert it into the database. *ApplyChange()* checks the statistics
-data for it's location, and currently if it's not in a priority
-country, it's not added to the database.
+to insert them into the database.
 
 # Statistics Database
 

@@ -1,44 +1,78 @@
 # Tests for statistics collection
 
+As statistics are a key feature for Underpass, there are several ways to test
+results and configurations.
+
 ## Default
 
-Run the default test, using testsuite/testdata/test_stats.osc for OsmChange file and 
-testsuite/testdata/test_stats.yaml for validation.
+The default test will use two files:
 
-./stats-test
+* OsmChange (testsuite/testdata/test_stats.osc)
+* Stats results validation (testsuite/testdata/test_stats.yaml)
+
+`./stats-test`
+
+## More testing
+
+You can run other existing tests or create your own custom ones.
+
+### Stats extraction from a single file
+
+Extract stats from file and print the JSON result:
+
+`./testsuite/libunderpass.all/stats-test -f stats/107235440.xml`
+
+```xml
+{
+    "added":[
+        {"highway":8},
+        {"highway_km":64917794}
+    ],
+    "modified":[
+        {"highway":8}
+    ]
+}
+```
 
 ## Stats validation from files
 
-Extract stats from the first -f value and validate them against the second -f parameter.
+If you want to assert the results agains a YAML file, add second `-f` argument: 
 
-./stats-test -f /stats/104497858.xml -f /stats/104497858.yaml
+`./testsuite/libunderpass.all/stats-test -f /stats/107235440.xml -f /stats/107235440.yaml`
 
-## Stats extraction from a single file
+```
+    PASSED: Calculating added highway
+    PASSED: Calculating modified highway
+```
 
-Extract stats from file and print the JSON result.
+The YAML file contain the expected results:
 
-./stats-test -f /stats/104497858.xml
+```yaml
+- modified_highway:
+  - 8
+- added_highway:
+  - 8
+```
 
-## Collect stats
+### Collect stats
 
-Run a replicator process from timestamp, incrementing the path and collecting stats from 
-OsmChange files. This is useful for doing a comparison with other sources (Insights). 
-For more information about this feature, check this link.
+Run a replicator process from timestamp, incrementing the path and collecting stats from
+OsmChange files. This is useful for doing a comparison with other sources (ex: Insights DB).
 
-./stats-test -m collect-stats -t 2021-05-11T17:00:00 -i 100
+`./testsuite/libunderpass.all/stats-test -m collect-stats -t 2021-05-11T17:00:00 -i 10 > result.json`
 
-## Stats configuration file
+### Stats configuration file
 
-Stats collection can be customized using a YAML configuration file. 
+Stats collection can be customized using a YAML configuration file.
 
-In the following example, we have a OsmChange file with several nodes created, using 
+In the following example, we have an OsmChange file with several nodes created, using
 _building_ and _emergency_ keys for tags.
 
-There are two different configurations for collecting stats from that file. 
-On `statsconfig2.yaml` , _building_, _fire_station_, _hospital_ and _police_ 
-are different categories of stats. 
+There are two different configurations for collecting stats from that file.
+On `statsconfig2.yaml` , _building_, _fire_station_, _hospital_ and _police_
+are different categories of stats.
 
-`./testsuite/libunderpass.all/stats-test -f stats/test_statsconfig.osc \ 
+`./testsuite/libunderpass.all/stats-test -f stats/test_statsconfig.osc \
     --statsconfigfile /testsuite/testdata/stats/statsconfig2.yaml`
 
 Running the command above, you'll see this results:
@@ -50,7 +84,7 @@ Running the command above, you'll see this results:
         {"fire_station":2},
         {"hospital":2},
         {"police":1}
-    ], 
+    ],
     "modified": []
 }
 ```
@@ -75,7 +109,7 @@ You'll see a different result:
     "added":[
         {"building":2},
         {"humanitarian_building":4}
-    ], 
+    ],
     "modified": []
 }
 ```

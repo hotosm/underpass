@@ -2,11 +2,9 @@
 
 The easiest way to start using Underpass is with [Docker](https://docs.docker.com/get-docker/) and [docker-compose](https://docs.docker.com/compose/install/).
 
-
 ## Build
 
-_If you don't want to use Docker, see https://github.com/hotosm/underpass/blob/master/doc/install.md and
-skip this section._
+_If you don't want to use Docker, see https://github.com/hotosm/underpass/blob/master/doc/install.md and skip this section._
 
 After cloning the project from https://github.com/hotosm/underpass , run:
 
@@ -19,14 +17,15 @@ Now you can login into the container:
 And once inside the container's `/code` directory, build Underpass:
 
     ./autogen.sh && mkdir build && cd build
-    ../configure CXX="ccache g++" CXXFLAGS="-std=c++17 -g -O0" CPPFLAGS="-DTIMING_DEBUG" && make -j2
+    ../configure CXX="ccache g++" CXXFLAGS="-std=c++17 -g -O0" CPPFLAGS="-DTIMING_DEBUG" && make -j4
 
-The last parameter `-j2` is for speeding up the building process (is the number of jobs run in parallel). This value depends on your hardware, you can try using the value shown at `echo $(nproc)` and add 1 to it,  but this is not a guarantee. If you see errors during the build process
+The last parameter `-j4` is for speeding up the building process (is the number of jobs run in parallel). This value depends on your hardware, you can try using the value shown at `echo $(nproc)` and add 1 to it,  but this is not a guarantee. If you see errors during the build process
 you can try with a smaller number.
 
-## Setting up a replicator + validation process
+## Setting up a replicator + stats collection + validation process
 
-The replicator will download data from OSM planet servers and save the validation results in a database.
+The replicator will download data from OSM planet servers and save validation and
+statistics results in a database.
 
 ### 1. Install PostgreSQL, create a database and tables for data output
 
@@ -55,7 +54,7 @@ For more options:
 
     ./replicator --help
 
-## Validation
+## Validation & stats
 
 Connect to the database you've created before:
 
@@ -64,6 +63,7 @@ Connect to the database you've created before:
 And query the validation table to see what things Underpass is finding out:
 
 `select * from validation limit 50;`
+`select * from changesets limit 50;`
 
 If you want to connect to the DB from your host computer, use this configuration:
 
