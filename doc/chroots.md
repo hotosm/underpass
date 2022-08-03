@@ -1,10 +1,10 @@
 # Building Packages  in a Chroot
 
-To distribute binary packages for a variety of potforms of varying
+To distribute binary packages for a variety of platforms of varying
 versions, it's common to use a *chroot* to build in. This is to make
 sure that a the package binary is linked against the right libraries,
 which is required so the user doesn't have to build anything from
-source. Unlike docker or Virtualbox, a chroot uses the base running
+source. Unlike Docker or Virtualbox, a chroot uses the base running
 kernel on host machine, but provides a different set of runtime
 libraries and tools.
 

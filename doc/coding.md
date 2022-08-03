@@ -61,7 +61,7 @@ but braces should be used to make it clearer.
 ## Naming Convention
 
 Underpass uses [Camel Case](https://en.wikipedia.org/wiki/Camel_case),
-which uses capatialization instead of underbars for class definitions,
+which uses capitalization instead of underbars for class definitions,
 function or C++ methods, and variable. For example *RawChange* instead
 of *raw_change*. Class names capitalize the first letter as well,
 where the methods in the class start with a lower case letter.

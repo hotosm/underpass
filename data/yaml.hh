@@ -37,6 +37,8 @@
 /// \namespace yaml
 namespace yaml {
 
+/// \class Node
+/// \brief Represents a Node inside a nested structure
 class Node {
     public:
         std::string value;
