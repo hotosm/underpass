@@ -131,7 +131,7 @@ class QueryGalaxy : public pq::Pq {
     /// Applu data validation to the database
     bool applyChange(const ValidateStatus &validation) const;
     /// Update the validation table, delete any feature that has been fixed.
-    bool updateValidation(long id);
+    bool updateValidation(std::shared_ptr<std::vector<long>> removals);
 
     /// Get the timestamp of the last update in the database
     ptime getLastUpdate(void);

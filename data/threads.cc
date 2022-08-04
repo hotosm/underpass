@@ -155,6 +155,7 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     auto delay = std::chrono::seconds{0};
     ReplicationTask closest;
     auto last_task = std::make_shared<ReplicationTask>();
+    last_task->processed = true;
     while (mainloop) {
         auto tasks = std::make_shared<std::vector<ReplicationTask>>();
         i = cores*2;
@@ -263,6 +264,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     auto delay = std::chrono::seconds{0};
     ReplicationTask closest;
     auto last_task = std::make_shared<ReplicationTask>();
+    last_task->processed = true;
     while (mainloop) {
         auto tasks = std::make_shared<std::vector<ReplicationTask>>();
         i = cores*2;
@@ -290,11 +292,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
         pool.join();
 
         std::cout << "Removals: " << removals->size() << std::endl;
-        for (auto it = std::begin(*removals); it != std::end(*removals); ++it) {
-            std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
-            long osm_id = *it;
-            galaxies.front()->updateValidation(osm_id);
-        }
+        galaxies.front()->updateValidation(removals);
         removals->clear();
 
         ptime now  = boost::posix_time::second_clock::universal_time();
@@ -314,7 +312,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
                     std::stoi(closest.url.substr(8, 3))
                 );
                 cores = 1;
-                delay = std::chrono::seconds{45};        
+                delay = std::chrono::seconds{45};
             }
         }
     }
@@ -412,7 +410,6 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
                 const std::lock_guard<std::mutex> lock(remove_mutex);
                 removals->push_back(way->id);
             }
-            // galaxy->updateValidation(way->id);
         }
         for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
             osmobjects::OsmNode *node = nit->get();
@@ -420,7 +417,6 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
                 const std::lock_guard<std::mutex> lock(remove_mutex);
                 removals->push_back(node->id);
             }
-            // galaxy->updateValidation(node->id);
         }
     }
 #endif
