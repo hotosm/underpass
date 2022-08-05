@@ -339,18 +339,18 @@ QueryGalaxy::updateValidation(std::shared_ptr<std::vector<long>> removals)
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("updateValidation: took %w seconds\n");
 #endif
-
-    std::string query = "DELETE FROM validation WHERE osm_id IN(";
-    for (const auto &osm_id : *removals) {
-        query += std::to_string(osm_id) + ",";
-    };
-    query.erase(query.size() - 1);
-    query += ");";
-    std::scoped_lock write_lock{pqxx_mutex};
-    pqxx::work worker(*sdb);
-    pqxx::result result = worker.exec(query);
-    worker.commit();
-
+    if (removals->size() > 0) {
+        std::string query = "DELETE FROM validation WHERE osm_id IN(";
+        for (const auto &osm_id : *removals) {
+            query += std::to_string(osm_id) + ",";
+        };
+        query.erase(query.size() - 1);
+        query += ");";
+        std::scoped_lock write_lock{pqxx_mutex};
+        pqxx::work worker(*sdb);
+        pqxx::result result = worker.exec(query);
+        worker.commit();
+    }
     return true;
 }
 
