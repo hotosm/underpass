@@ -249,7 +249,12 @@ variable "api_url_scheme" {
   default = "https://"
 }
 
-variable "sentry_dsn" {
-  type    = string
-  default = ""
+variable "sentry" {
+  type = map(string)
+  default = {
+    dsn             = ""
+    app_release_tag = "galaxy-api@v1.0.0"
+  }
+
+  description = "Data-source Name and app release tag to be displayed in Sentry.io dashboard"
 }

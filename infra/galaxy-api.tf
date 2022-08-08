@@ -201,6 +201,14 @@ resource "aws_ecs_task_definition" "galaxy-api" {
         {
           name  = "FORWARDED_ALLOW_IPS"
           value = "*"
+        },
+        {
+          name  = "SENTRY_ENVIRONMENT"
+          value = var.deployment_environment
+        },
+        {
+          name  = "SENTRY_RELEASE"
+          value = lookup(var.sentry, "app_release", "galaxy-api@vDEFAULT")
         }
 
       ]
@@ -443,7 +451,9 @@ resource "aws_secretsmanager_secret_version" "configfile" {
         api_export_max_area = var.api_export_max_area
         api_log_level       = var.api_log_level
 
-        sentry_dsn = var.sentry_dsn
+        sentry_dsn             = lookup(var.sentry, "dsn")
+        sentry_app_environment = var.deployment_environment
+        sentry_app_release_tag = lookup(var.sentry, "app_release_tag", "galaxy-api@v1.0.0")
 
         export_upload_bucket_name = aws_s3_bucket.exports.bucket
       }
