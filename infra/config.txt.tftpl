@@ -39,8 +39,11 @@ ${k}=${v}
 ${k}=${v}
 %{ endfor ~}
 
+; Currently disregards environment and release; Set using envvars SENTRY_ENVIRONMENT and SENTRY_RELEASE
 [SENTRY]
 url=${sentry_dsn}
+environment=${sentry_app_environment}
+release=${sentry_app_release_tag}
 rate=1.0
 
 ; ACCESS KEY AND SECRET KEY implicit
