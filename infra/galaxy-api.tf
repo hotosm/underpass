@@ -1,5 +1,5 @@
 resource "aws_cloudwatch_log_group" "galaxy" {
-  name              = var.project_name
+  name              = "/${var.deployment_environment}/${var.project_name}"
   retention_in_days = 7
 }
 
@@ -298,6 +298,12 @@ data "aws_arn" "api-targetgroup" {
   arn = aws_lb_target_group.galaxy-api.id
 }
 
+data "aws_acm_certificate" "wildcard" {
+  domain      = "hotosm.org"
+  statuses    = ["ISSUED"]
+  most_recent = true
+}
+
 resource "aws_appautoscaling_policy" "galaxy-api-alb-requests" {
   name               = "scale-by-requests-to-alb"
   policy_type        = "TargetTrackingScaling"
@@ -315,44 +321,6 @@ resource "aws_appautoscaling_policy" "galaxy-api-alb-requests" {
     }
 
     target_value = "5"
-  }
-}
-
-resource "aws_lb" "osm-stats" {
-  name               = "osm-stats"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.api.id]
-  subnets            = [for subnet in aws_subnet.public : subnet.id]
-
-  enable_deletion_protection = false
-
-  tags = {
-    Environment = var.deployment_environment
-  }
-}
-
-resource "aws_lb_target_group" "osm-stats" {
-  name     = "osm-stats"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.galaxy.id
-  health_check {
-    enabled = true
-    path    = "/"
-  }
-}
-
-resource "aws_lb_listener" "osm-stats-secure" {
-  load_balancer_arn = aws_lb.osm-stats.arn
-  port              = "443"
-  protocol          = "HTTPS"
-  ssl_policy        = var.alb_tls_policy
-  certificate_arn   = data.aws_acm_certificate.wildcard.arn
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.osm-stats.arn
   }
 }
 
@@ -413,20 +381,6 @@ resource "aws_lb_listener" "galaxy-api-insecure" {
       status_code = "HTTP_301"
     }
   }
-}
-
-data "aws_acm_certificate" "wildcard" {
-  domain      = "hotosm.org"
-  statuses    = ["ISSUED"]
-  most_recent = true
-}
-
-/** TODO: Change to include all instances
-**/
-resource "aws_lb_target_group_attachment" "underpass-instance" {
-  target_group_arn = aws_lb_target_group.osm-stats.arn
-  target_id        = aws_instance.file-processor[0].id
-  port             = 80
 }
 
 resource "aws_secretsmanager_secret" "configfile" {
