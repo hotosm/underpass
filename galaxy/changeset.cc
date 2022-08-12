@@ -74,6 +74,7 @@ using namespace boost::gregorian;
 #include <boost/tokenizer.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/timer/timer.hpp>
+#include <regex>
 
 #include "galaxy/changeset.hh"
 #include "galaxy/galaxy.hh"
@@ -178,13 +179,6 @@ ChangeSetFile::readChanges(const std::string &file)
         readXML(change);
     }
 
-#if 0
-    // magic number: 0x8b1f or 0x1f8b for gzipped
-    // <?xml for text
-    std::string foo = "Hello World";
-    boost::iostreams::array_source(foo.c_str(), foo.size());
-    // boost::iostreams::filtering_streambuf<boost::iostreams::input> fooby(foo, 10);
-#endif
     change.close();
 }
 
@@ -486,22 +480,18 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
             if (comhit && attr_pair.name == "v") {
                 comhit = false;
                 changes.back()->addComment(attr_pair.value);
-                if (attr_pair.value.find('#') != std::string::npos) {
-                    std::vector<std::string> result;
-                    boost::split(result, attr_pair.value,
-                                 boost::is_any_of(" "));
-                    for (auto it = std::begin(result); it != std::end(result); ++it) {
-                        int i = 0;
-                        while (++i < it->size()) {
-                            // if (std::isalpha(it->at(i))) {
-                            //     break;
-                            // }
-                            if (it->at(i) == '#') {
-                                changes.back()->addHashtags(it->substr(i));
-                                break;
-                            }
-                        }
+                std::string value = attr_pair.value;
+                // Treat most punctuation (except -, _, +, &) as hashtag delimiters
+                // https://github.com/openstreetmap/iD/blob/develop/modules/ui/commit.js
+                std::regex subjectRx("(#[^\u2000-\u206F\u2E00-\u2E7F\\s\\'!\"#$%()*,.\\/:;<=>?@\\[\\]^`{|}~]+)", std::regex_constants::icase);
+                std::regex_iterator<std::string::iterator> it (value.begin(), value.end(), subjectRx);
+                std::regex_iterator<std::string::iterator> end;
+                while (it != end) {
+                    std::string hashtag = it->str(1).substr(1,it->str(1).size());
+                    if (hashtag.size() > 2) {
+                        changes.back()->addHashtags(hashtag);
                     }
+                    ++it;
                 }
             }
             if (cbyhit && attr_pair.name == "v") {

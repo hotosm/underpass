@@ -96,7 +96,7 @@ class ChangeSet {
 
     /// Add a hashtag to internal storage
     void addHashtags(std::string text) {
-        hashtags.push_back(text);
+        hashtags.insert(text);
     };
 
     /// Add the comment field, which is often used for hashtags
@@ -127,7 +127,7 @@ class ChangeSet {
                           ///< older changesets)
     int comments_count = 0; ///< The number of comments in this changeset, which
                             ///< appears to be unused
-    std::vector<std::string> hashtags; ///< Internal aray of hashtags in this changeset
+    std::set<std::string> hashtags; ///< Internal dictionary of hashtags in this changeset
     std::string comment; ///< The comment for this changeset
     std::string editor;  ///< The OSM editor the end user used
     std::string source;  ///< The imagery source

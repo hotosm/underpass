@@ -32,6 +32,7 @@ check_PROGRAMS = \
 	planetreplicator-test \
 	geo-test \
 	areafilter-test \
+	hashtags-test \
 	test-playground
 
 TOPSRC := $(shell cd $(top_srcdir) && pwd)
@@ -138,6 +139,11 @@ areafilter_test_SOURCES = areafilter-test.cc
 areafilter_test_LDFLAGS = -L../..
 areafilter_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
+# Hashtags test
+hashtags_test_SOURCES = hashtags-test.cc
+hashtags_test_LDFLAGS = -L../..
+hashtags_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
+
 # Test playground
 test_playground_SOURCES = test-playground.cc
 test_playground_LDFLAGS = -L../..
@@ -156,6 +162,7 @@ CLEANFILES = \
     statsconfig-test.log \
 	planetreplicator-test.log \
 	areafilter-test.log \
+	hashtags-test.log \
 	replication-test.log
 
 RUNTESTFLAGS = -xml
