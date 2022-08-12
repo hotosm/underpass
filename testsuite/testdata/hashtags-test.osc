@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osm version="0.6" generator="CGImap 0.8.8 (1042616 spike-06.openstreetmap.org)" copyright="OpenStreetMap and contributors" attribution="http://www.openstreetmap.org/copyright" license="http://opendatacommons.org/licenses/odbl/1-0/">
+ <changeset id="61497177" created_at="2018-08-09T11:11:18Z" closed_at="2018-08-09T11:11:18Z" open="false" user="salesforcemapping11" uid="8650852" min_lat="-5.6897951" min_lon="36.8454665" max_lat="-5.6897631" max_lon="36.8454960" comments_count="0" changes_count="5">
+  <tag k="changesets_count" v="12"/>
+  <tag k="comment" v="#hotosm-project-4892;#missingmaps;#sh;#sho;#short;#salesforce;#salesforceleads;#salesforcelsUK"/>
+  <tag k="imagery_used" v="Custom (https://{switch:a,b,c,d}.tiles.mapbox.com/v4/digitalglobe.0a8e44ba/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZGlnaXRhbGdsb2JlIiwiYSI6ImNqZGFrZ3pjczNpaHYycXFyMGo0djY3N2IifQ.90uebT4-ow1uqZKTUrf6RQ);data file"/>
+  <tag k="locale" v="en-GB"/>
+  <tag k="host" v="https://www.openstreetmap.org/edit"/>
+  <tag k="created_by" v="iD 2.10.0"/>
+  <tag k="comment" v="#hotosm-project-4892;#missingmaps #sh #sho    #short  #salesforce #salesforceleads #salesforcelsUK"/>
+ </changeset>
+</osm>
