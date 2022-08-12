@@ -48,7 +48,7 @@ main(int argc, char *argv[])
     //     std::cout << *it << std::endl;
     // }
 
-    if (change->hashtags.size() == 5) {
+    if (change->hashtags.size() == 7) {
         runtest.pass("ChangeSet hashtags");
     } else {
         runtest.fail("ChangeSet hashtags");
