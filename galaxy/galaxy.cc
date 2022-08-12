@@ -168,14 +168,11 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("applyChange(changeset): took %w seconds\n");
 #endif
-    // log_debug(_("Applying ChangeSet data"));
-    // change.dump();
 
     // Some old changefiles have no user information
     std::string query = "INSERT INTO users VALUES(";
     query += std::to_string(change.uid) + ",\'" + fixString(change.user);
     query += "\') ON CONFLICT DO NOTHING;";
-    // log_debug(_("QUERY: %1%"), query);
 
     // Serialize changes writing
     {
@@ -185,17 +182,7 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
         worker.commit();
     }
 
-    // Add changeset data
-    // road_km_added | road_km_modified | waterway_km_added |
-    // waterway_km_modified | roads_added | roads_modified | waterways_added |
-    // waterways_modified | buildings_added | buildings_modified | pois_added |
-    // pois_modified | updated_at the updated_at timestamp is set after the
-    // change data has been processed
-
-    // galaxy=# UPDATE raw_changesets SET road_km_added = (SELECT
-    // road_km_added
-    // + 10.0 FROM raw_changesets WHERE road_km_added>0 AND user_id=649260 LIMIT
-    // 1) WHERE user_id=649260;
+    ptime now = boost::posix_time::microsec_clock::universal_time();
 
     query = "INSERT INTO changesets (id, editor, user_id, created_at, closed_at, updated_at";
 
@@ -217,22 +204,17 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
     } else {
         query += to_simple_string(change.created_at) + "\', \'";
     }
-    query += to_simple_string(boost::posix_time::second_clock::universal_time()) + "\'";
+    query += to_simple_string(now) + "\'";
 
-    // if (!change.open) {
-    //     query += ",\'" + to_simple_string(change.closed_at) + "\'";
-    // }
-    // Hashtags are only used in mapping campaigns using Tasking Manager
+
+    // Hashtags
     if (change.hashtags.size() > 0) {
         query += ", \'{ ";
-
         for (const auto &hashtag: std::as_const(change.hashtags)) {
             auto ht{hashtag};
             boost::algorithm::replace_all(ht, "\"", "&quot;");
             query += "\"" + fixString(ht) + "\"" + ", ";
         }
-
-        // drop the last comma
         query.erase(query.size() - 2);
         query += " }\'";
     }
@@ -242,56 +224,40 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
         query += ",\'" + change.source += "\'";
     }
 
-    // Store the current values as they may get changed to expand very short
-    // lines or POIs so they have a bounding box big enough for postgis to use.
+    // Store the current values as they can get changed to expand very short
+    // lines or POIs so they have a bounding box big enough for Postgis to use.
     double min_lat = change.min_lat;
     double max_lat = change.max_lat;
     double min_lon = change.min_lon;
     double max_lon = change.max_lon;
-    // FIXME: There are bugs in the bounding box coordinates in some of the
-    // older changeset files, but for now ignore these.
-  
+
     const double fudge{0.0001};
 
-    // a changeset with a single node in it doesn't draw a line
+    // A changeset with a single node in it doesn't draw a line
     if (change.max_lon < 0 && change.min_lat < 0) {
-        // log_error(_("WARNING: single point! %1%"), change.id);
         min_lat = change.min_lat + (fudge / 2);
         max_lat = change.max_lat + (fudge / 2);
         min_lon = change.min_lon - (fudge / 2);
         max_lon = change.max_lon - (fudge / 2);
-        // return false;
     }
 
+    // Not a line
     if (max_lon == min_lon || max_lat == min_lat) {
-        // log_error(_("WARNING: not a line! %1%"), change.id);
         min_lat = change.min_lat + (fudge / 2);
         max_lat = change.max_lat + (fudge / 2);
         min_lon = change.min_lon - (fudge / 2);
         max_lon = change.max_lon - (fudge / 2);
-        // return false;
     }
 
+    // Single point
     if (max_lon < 0 && min_lat < 0) {
-        // log_error(_("WARNING: single point! "), change.id);
         min_lat = change.min_lat + (fudge / 2);
         max_lat = change.max_lat + (fudge / 2);
         min_lon = change.min_lon - (fudge / 2);
         max_lon = change.max_lon - (fudge / 2);
-        // return false;
     }
 
-    // if (change.num_changes == 0) {
-    //     log_debug(_("WARNING: no changes!"), change.id);
-    //     return false;
-    // }
-
-    // Add the bounding box of the changeset here next
-    // long_high,lat_high,
-    // long_low,lat_high,
-    // long_low,lat_low,
-    // long_high,lat_low,
-    // long_high,lat_high
+    // Changeset bounding box
     std::string bbox;
     bbox += ", ST_MULTI(ST_GeomFromEWKT(\'SRID=4326;POLYGON((";
     // Upper left
@@ -309,18 +275,26 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
     // Close the polygon
     bbox += std::to_string(max_lon) + "  ";
     bbox += std::to_string(max_lat) + ")";
-
     query += bbox;
 
     query += ")\')";
-    // query += ")) ON CONFLICT DO NOTHING;";
     query += ")) ON CONFLICT (id) DO UPDATE SET editor=\'" + fixString(change.editor);
     query += "\', created_at=\'" + to_simple_string(change.created_at);
-    // if (!change.open) {
-    //     query += "\', closed_at=\'" + to_simple_string(change.closed_at);
-    // }
-    query += "\', bbox=" + bbox.substr(2) + ")'))";
-    // log_debug(_("QUERY: %1%"), query);
+    query += "\', updated_at=\'" + to_simple_string(now) + "\'";
+
+    if (change.hashtags.size() > 0) {
+        query += ", hashtags=";
+        query += "\'{ ";
+        for (const auto &hashtag: std::as_const(change.hashtags)) {
+            auto ht{hashtag};
+            boost::algorithm::replace_all(ht, "\"", "&quot;");
+            query += "\"" + fixString(ht) + "\"" + ", ";
+        }
+        query.erase(query.size() - 2);
+        query += " }\'";
+    }
+
+    query += ", bbox=" + bbox.substr(2) + ")'))";
 
     // Serialize changes writing
     {
