@@ -34,7 +34,7 @@ int
 main(int argc, char *argv[])
 {
 
-    // Changeset with 5 hashtags
+    // Changeset with 8 hashtags
     std::string changesetFile(DATADIR);
     changesetFile += "/testsuite/testdata/hashtags-test.osc";
     TestChangeset changeset;
@@ -48,7 +48,7 @@ main(int argc, char *argv[])
     //     std::cout << *it << std::endl;
     // }
 
-    if (change->hashtags.size() == 7) {
+    if (change->hashtags.size() == 8) {
         runtest.pass("ChangeSet hashtags");
     } else {
         runtest.fail("ChangeSet hashtags");
