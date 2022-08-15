@@ -410,16 +410,12 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
     } else if (name == "tag") {
         // We ignore most of the attributes, as they're not used for OSM stats.
         // Processing a tag requires multiple passes through the loop. The
-        // tho tags to look for are 'k' (keyword) and 'v' (value). So when
+        // two tags to look for are 'k' (keyword) and 'v' (value). So when
         // we see a key we want, we have to wait for the next iteration of
         // the loop to get the value.
         bool hashit = false;
         bool comhit = false;
         bool cbyhit = false;
-        bool min_lathit = false;
-        bool min_lonhit = false;
-        bool max_lathit = false;
-        bool max_lonhit = false;
         double min_lat = 0.0;
         double min_lon = 0.0;
         double max_lat = 0.0;
@@ -430,17 +426,6 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
             // attr_pair.value << std::endl;
             if (attr_pair.name == "k" && attr_pair.value == "max_lat") {
                 max_lat = std::stod(attr_pair.value);
-                max_lathit = true;
-            } else if (attr_pair.name == "k" && attr_pair.value == "min_lat") {
-                min_lathit = true;
-            } else if (attr_pair.name == "k" && attr_pair.value == "lat") {
-                min_lathit = true;
-            } else if (attr_pair.name == "k" && attr_pair.value == "max_lon") {
-                max_lonhit = true;
-            } else if (attr_pair.name == "k" && attr_pair.value == "min_lon") {
-                min_lonhit = true;
-            } else if (attr_pair.name == "k" && attr_pair.value == "lon") {
-                min_lonhit = true;
             } else if (attr_pair.name == "k" && attr_pair.value == "hashtags") {
                 hashit = true;
             } else if (attr_pair.name == "k" && attr_pair.value == "comment") {
@@ -487,7 +472,7 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
                 std::regex_iterator<std::string::iterator> it (value.begin(), value.end(), subjectRx);
                 std::regex_iterator<std::string::iterator> end;
                 while (it != end) {
-                    std::string hashtag = it->str(1).substr(1,it->str(1).size());
+                    std::string hashtag = it->str(1).erase(0,1);
                     if (hashtag.size() > 2) {
                         changes.back()->addHashtags(hashtag);
                     }
