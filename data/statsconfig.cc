@@ -37,9 +37,9 @@ namespace statsconfig {
     }
     StatsConfig::StatsConfig (
         std::string name,
-        std::map<std::string, std::vector<std::string>> way,
-        std::map<std::string, std::vector<std::string>> node,
-        std::map<std::string, std::vector<std::string>> relation
+        std::map<std::string, std::set<std::string>> way,
+        std::map<std::string, std::set<std::string>> node,
+        std::map<std::string, std::set<std::string>> relation
     )
     {
         this->name = name;
@@ -54,18 +54,18 @@ namespace statsconfig {
             yaml::Yaml yaml;
             yaml.read(filename);
             for (auto it = std::begin(yaml.root.children); it != std::end(yaml.root.children); ++it) {
-                std::map<std::string, std::vector<std::string>> way_tags;
-                std::map<std::string, std::vector<std::string>> node_tags;
-                std::map<std::string, std::vector<std::string>> relation_tags;
+                std::map<std::string, std::set<std::string>> way_tags;
+                std::map<std::string, std::set<std::string>> node_tags;
+                std::map<std::string, std::set<std::string>> relation_tags;
                 for (auto type_it = std::begin(it->children); type_it != std::end(it->children); ++type_it) {
                     for (auto value_it = std::begin(type_it->children); value_it != std::end(type_it->children); ++value_it) {
                         for (auto tag_it = std::begin(value_it->children); tag_it != std::end(value_it->children); ++tag_it) {
                             if (type_it->value == "way") {
-                                way_tags[value_it->value].push_back(tag_it->value);
+                                way_tags[value_it->value].insert(tag_it->value);
                             } else if (type_it->value == "node") {
-                                node_tags[value_it->value].push_back(tag_it->value);
+                                node_tags[value_it->value].insert(tag_it->value);
                             } else if (type_it->value == "relation") {
-                                relation_tags[value_it->value].push_back(tag_it->value);
+                                relation_tags[value_it->value].insert(tag_it->value);
                             }
                         }
                     }
@@ -83,17 +83,14 @@ namespace statsconfig {
         return statsconfig::statsconfigs.at(filename);
     }
 
-    bool StatsConfigSearch::category(std::string tag, std::string value, std::map<std::string, std::vector<std::string>> tags) {
+    bool StatsConfigSearch::category(std::string tag, std::string value, std::map<std::string, std::set<std::string>> tags) {
         for (auto tag_it = std::begin(tags); tag_it != std::end(tags); ++tag_it) {
-            if (tag == tag_it->first) {
-                if (tag_it->second.front() == "*") {
-                    return true;
-                }
-                for (auto value_it = std::begin(tag_it->second); value_it != std::end(tag_it->second); ++value_it) {
-                    if (value == *value_it) {
-                        return true;
-                    }
-                }
+            if (tag == tag_it->first && (
+                    *(tag_it->second.begin()) == "*" ||
+                    tag_it->second.find(value) != tag_it->second.end()
+                )
+            ) {
+                return true;
             }
         }
         return false;
