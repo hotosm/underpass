@@ -50,9 +50,9 @@ main(int argc, char *argv[])
     std::shared_ptr<std::vector<statsconfig::StatsConfig>> statsconfig = statsconfigfile.read_yaml(filename);
 
     if (
-        statsconfig->at(0).way.count("building") && statsconfig->at(0).way.at("building")[1] == "school" &&
-        statsconfig->at(1).node.count("amenity") && statsconfig->at(1).node.at("amenity")[0] == "emergency" &&
-        statsconfig->at(2).way.count("highway") && statsconfig->at(2).way.at("highway")[0] == "yes"
+        statsconfig->at(0).way.count("building") && statsconfig->at(0).way.at("building").count("school") != 0 &&
+        statsconfig->at(1).node.count("amenity") && statsconfig->at(1).node.at("amenity").count("emergency") != 0 &&
+        statsconfig->at(2).way.count("highway") && statsconfig->at(2).way.at("highway").count("yes") != 0
     ) {
         runtest.pass("StatsConfigFile::read_yaml()");
     } else {

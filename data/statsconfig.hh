@@ -44,16 +44,16 @@ namespace statsconfig {
     class StatsConfig {
         public:
             std::string name;
-            std::map<std::string, std::vector<std::string>> way;
-            std::map<std::string, std::vector<std::string>> node;
-            std::map<std::string, std::vector<std::string>> relation;
+            std::map<std::string, std::set<std::string>> way;
+            std::map<std::string, std::set<std::string>> node;
+            std::map<std::string, std::set<std::string>> relation;
             StatsConfig(std::string name);
             StatsConfig
             (
                 std::string name,
-                std::map<std::string, std::vector<std::string>> way,
-                std::map<std::string, std::vector<std::string>> node,
-                std::map<std::string, std::vector<std::string>> relation
+                std::map<std::string, std::set<std::string>> way,
+                std::map<std::string, std::set<std::string>> node,
+                std::map<std::string, std::set<std::string>> relation
             );
     };
 
@@ -69,7 +69,7 @@ namespace statsconfig {
    class StatsConfigSearch {
         public:
             static std::string tag_value(std::string tag, std::string value, osmchange::osmtype_t type, std::shared_ptr<std::vector<StatsConfig>> statsconfig);
-            static bool category(std::string tag, std::string value, std::map<std::string, std::vector<std::string>> tags);
+            static bool category(std::string tag, std::string value, std::map<std::string, std::set<std::string>> tags);
     };
 
 } // EOF statsconfig namespace
