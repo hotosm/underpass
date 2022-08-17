@@ -1,0 +1,10 @@
+[key]:
+  way:
+    - building
+      - *
+  node:
+    - building
+      - *
+  relation:
+    - building
+      - *

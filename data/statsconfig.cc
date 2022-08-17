@@ -39,8 +39,7 @@ namespace statsconfig {
         std::string name,
         std::map<std::string, std::set<std::string>> way,
         std::map<std::string, std::set<std::string>> node,
-        std::map<std::string, std::set<std::string>> relation
-    )
+        std::map<std::string, std::set<std::string>> relation )
     {
         this->name = name;
         this->way = way;
@@ -59,13 +58,23 @@ namespace statsconfig {
                 std::map<std::string, std::set<std::string>> relation_tags;
                 for (auto type_it = std::begin(it->children); type_it != std::end(it->children); ++type_it) {
                     for (auto value_it = std::begin(type_it->children); value_it != std::end(type_it->children); ++value_it) {
-                        for (auto tag_it = std::begin(value_it->children); tag_it != std::end(value_it->children); ++tag_it) {
-                            if (type_it->value == "way") {
-                                way_tags[value_it->value].insert(tag_it->value);
+                        if (value_it->value != "*") {
+                            for (auto tag_it = std::begin(value_it->children); tag_it != std::end(value_it->children); ++tag_it) {
+                                if (type_it->value == "way") {
+                                    way_tags[value_it->value].insert(tag_it->value);
+                                } else if (type_it->value == "node") {
+                                    node_tags[value_it->value].insert(tag_it->value);
+                                } else if (type_it->value == "relation") {
+                                    relation_tags[value_it->value].insert(tag_it->value);
+                                }
+                            }
+                        } else {
+                            if (value_it->value == "way") {
+                                way_tags["*"].insert("*");
                             } else if (type_it->value == "node") {
-                                node_tags[value_it->value].insert(tag_it->value);
+                                node_tags["*"].insert("*");
                             } else if (type_it->value == "relation") {
-                                relation_tags[value_it->value].insert(tag_it->value);
+                                relation_tags["*"].insert("*");
                             }
                         }
                     }
@@ -85,9 +94,11 @@ namespace statsconfig {
 
     bool StatsConfigSearch::category(std::string tag, std::string value, std::map<std::string, std::set<std::string>> tags) {
         for (auto tag_it = std::begin(tags); tag_it != std::end(tags); ++tag_it) {
-            if (tag == tag_it->first && (
-                    *(tag_it->second.begin()) == "*" ||
-                    tag_it->second.find(value) != tag_it->second.end()
+            if (tag_it->first == "*" || (
+                    tag == tag_it->first && (
+                        *(tag_it->second.begin()) == "*" ||
+                        tag_it->second.find(value) != tag_it->second.end()
+                    )
                 )
             ) {
                 return true;
@@ -98,16 +109,21 @@ namespace statsconfig {
 
     std::string StatsConfigSearch::tag_value(std::string tag, std::string value, osmchange::osmtype_t type, std::shared_ptr<std::vector<StatsConfig>> statsconfig) {
         bool category = false;
-        for (int i = 0; i < statsconfig->size(); ++i) {
+        for (auto it = std::begin(*statsconfig); it != std::end(*statsconfig); ++it) {
             if (type == osmchange::node) {
-                category = StatsConfigSearch::category(tag, value, statsconfig->at(i).node);
+                category = StatsConfigSearch::category(tag, value, it->node);
             } else if (type == osmchange::way) {
-                category = StatsConfigSearch::category(tag, value, statsconfig->at(i).way);
+                category = StatsConfigSearch::category(tag, value, it->way);
             } else if (type == osmchange::relation) {
-                category = StatsConfigSearch::category(tag, value, statsconfig->at(i).relation);
+                category = StatsConfigSearch::category(tag, value, it->relation);
             }
             if (category) {
-                return statsconfig->at(i).name;
+                if (it->name == "[key]") {
+                    return tag;
+                } else if (it->name == "[key:value]") {
+                    return tag + ":" + value;
+                }
+                return it->name;
             }
         }
         return "";
