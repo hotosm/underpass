@@ -161,7 +161,7 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     bool caughtUpWithNow = false;
     while (true) {
         auto tasks = std::make_shared<std::vector<ReplicationTask>>();
-        i = cores;
+        i = cores*2;
         boost::asio::thread_pool pool(i);
         while (--i) {
             std::this_thread::sleep_for(delay);
@@ -340,9 +340,9 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
     boost::timer::auto_cpu_timer timer("threadOsmChange: took %w seconds\n");
 #endif
     log_debug(_("Processing OsmChange: %1%"), remote->filespec);
-    auto file = planet->downloadFile(*remote.get());
     ReplicationTask task;
     task.url = remote->subpath;
+    auto file = planet->downloadFile(*remote.get());
     task.status = file.status;
     if (file.status == replication::success) {
         try {
