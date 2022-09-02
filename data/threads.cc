@@ -99,13 +99,16 @@ std::mutex tasks_changeset_mutex;
 // Get closest change from a list of tasks
 std::shared_ptr<ReplicationTask>
 getClosest(std::shared_ptr<std::vector<ReplicationTask>> tasks, ptime now) {
-    auto closest = tasks->at(0);
-    for (auto it = tasks->begin(); it != tasks->end(); ++it) {
-        if (it->timestamp != not_a_date_time) {
-            boost::posix_time::time_duration delta = now - it->timestamp;
-            boost::posix_time::time_duration delta_oldest = now - closest.timestamp;
-            if (delta.hours() * 60 + delta.minutes() < delta_oldest.hours() * 60 + delta_oldest.minutes()) {
-                closest = *it;
+    ReplicationTask closest;
+    if (tasks->size() > 0) {
+        closest = tasks->at(0);
+        for (auto it = tasks->begin(); it != tasks->end(); ++it) {
+            if (it->timestamp != not_a_date_time) {
+                boost::posix_time::time_duration delta = now - it->timestamp;
+                boost::posix_time::time_duration delta_oldest = now - closest.timestamp;
+                if (delta.hours() * 60 + delta.minutes() < delta_oldest.hours() * 60 + delta_oldest.minutes()) {
+                    closest = *it;
+                }
             }
         }
     }
