@@ -85,12 +85,12 @@ typedef std::shared_ptr<Validate>(plugin_t)();
 namespace threads {
 
 
-/// \class ReplicationTask
+/// \struct ReplicationTask
 /// \brief Represents a replication task
 struct ReplicationTask {
     std::string url;
-    ptime timestamp;
-    bool processed;
+    ptime timestamp = not_a_date_time;
+    replication::reqfile_t status = replication::reqfile_t::none;
 };
 
 /// This monitors the planet server for new changesets files.

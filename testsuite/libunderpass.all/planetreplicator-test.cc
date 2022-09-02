@@ -53,7 +53,7 @@ void testPath(ReplicatorConfig config) {
         change.readChanges(osmchange->filespec);
     } else { 
         TestPlanet planet;
-        auto data = planet.downloadFile(osmchange->getURL());
+        auto data = planet.downloadFile(osmchange->getURL()).data;
         auto xml = planet.processData(osmchange->filespec, *data);
         std::istream& input(xml);
         change.readXML(input);

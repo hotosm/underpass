@@ -236,6 +236,24 @@ class RemoteURL {
     long sequence() const;    ///< The sequence number of this path
 };
 
+/// \enum reqfile_t
+/// \brief Status for a requested file
+typedef enum {
+    none,
+    localError,
+    remoteNotFound,
+    corrupted,
+    systemError,
+    success
+} reqfile_t;
+
+/// \class RequestedFile
+/// \brief Represents a requested file that could be downloaded or read from cache
+struct RequestedFile {
+    std::shared_ptr<std::vector<unsigned char>> data;
+    reqfile_t status = reqfile_t::none;
+};
+
 /// \class Planet
 /// \brief This stores file paths and timestamps from planet.
 class Planet {
@@ -265,12 +283,23 @@ class Planet {
     /// \brief downloadFile downloads a file from planet
     /// \param file the full URL or the path part of the URL (such as:
     /// "/replication/changesets/000/001/633.osm.gz"), the host part is taken from remote.domain.
-    /// \return file data (possibly empty in case of errors)
-    std::shared_ptr<std::vector<unsigned char>>downloadFile(const std::string &file);
-    std::shared_ptr<std::vector<unsigned char>>downloadFile(const RemoteURL &remote) {
+    /// \return RequestedFile object, which includes data and status
+    RequestedFile downloadFile(const std::string &file);
+    RequestedFile downloadFile(const RemoteURL &remote) {
         std::string str = "https://" + remote.domain + "/" + remote.filespec;
         return downloadFile(str);
     };
+
+    /// \brief readFile read a file from disk cache
+    /// \param filespec the full path (such as: "/replication/changesets/000/001/633.osm.gz")
+    /// \return RequestedFile object, which includes data and status
+    RequestedFile readFile(std::string &filespec);
+
+    /// \brief writeFile save a remote file to disk cache
+    /// \param remote RemoteURL object, which has destination directory and filename
+    /// \param data File data
+    /// \return void
+    void writeFile(RemoteURL &remote, std::shared_ptr<std::vector<unsigned char>> data);
 
     /// Dump internal data to the terminal, used only for debugging
     void dump(void);

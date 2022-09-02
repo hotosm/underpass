@@ -263,7 +263,7 @@ std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const replicatorconf
     if (config.frequency != replication::changeset) {
         if (!boost::filesystem::exists(cached)) {
             // remote->dump();
-            auto data = downloadFile(*remote);
+            auto data = downloadFile(*remote).data;
             // remote file doesn't exist, this is a 'Bad Request HTTP response
             while (data->size() == 0) {
                 if (minor > drift) {
@@ -272,7 +272,7 @@ std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const replicatorconf
                 }
                 remote->updatePath(major, minor, 0);
                 // remote->dump();
-                data = downloadFile(*remote);
+                data = downloadFile(*remote).data;
                 if (data->size() == 0) {
                     minor--;
                 }
@@ -292,7 +292,7 @@ std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const replicatorconf
         if (boost::filesystem::exists(remote->filespec)) {
             change.readChanges(remote->filespec);
         } else {
-            auto data = downloadFile(*remote);
+            auto data = downloadFile(*remote).data;
             auto xml = processData(remote->filespec, *data);
             std::istream& input(xml);
             change.readXML(input);
