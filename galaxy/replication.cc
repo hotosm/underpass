@@ -56,7 +56,6 @@
 #include <boost/format.hpp>
 using namespace boost::posix_time;
 using namespace boost::gregorian;
-//#include <boost/tokenizer.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/error.hpp>
@@ -284,39 +283,23 @@ Planet::processData(const std::string &dest, std::vector<unsigned char> &data)
 }
 
 // Download a file from planet
-std::shared_ptr<std::vector<unsigned char>>
+RequestedFile
 Planet::downloadFile(const std::string &url)
 {
+
     RemoteURL remote(url);
-    auto data = std::make_shared<std::vector<unsigned char>>();
+    RequestedFile file;
 
     if (std::filesystem::exists(remote.filespec)) {
-        log_debug(_("Reading cached file: %1%"), remote.filespec);
-        // Since we want to read in the entire file so it can be
-        // decompressed, blow off C++ streaming and just load the
-        // entire thing.
-        int size = 0;
-        try {
-            if (std::filesystem::exists(remote.filespec)) {
-                size = boost::filesystem::file_size(remote.filespec);
-            }
-        } catch (const std::exception &ex) {
-            log_error(_("File %1% doesn't exist but should!: %2%"), remote.filespec, ex.what());
-            return data;
+        file = readFile(remote.filespec);
+        // If local file doesn't work, remove it
+        if (file.status == reqfile_t::localError) {
+            boost::filesystem::remove(remote.filespec);
         }
-
-        data->reserve(size);
-        data->resize(size);
-        int fd = open(remote.filespec.c_str(), O_RDONLY);
-        char *buf = new char[size];
-        //memset(buf, 0, size);
-        read(fd, buf, size);
-        // FIXME: it would be nice to avoid this copy
-        std::copy(buf, buf + size, data->begin());
-        delete buf;
-        close(fd);
-        return data;
+        return file;
     }
+
+    file.data = std::make_shared<std::vector<unsigned char>>();
 
     // The io_context is required for all I/O
     boost::asio::io_context ioc;
@@ -340,7 +323,8 @@ Planet::downloadFile(const std::string &url)
         stream.handshake(ssl::stream_base::client);
     } catch (boost::system::system_error ex) {
         log_error(_("stream write failed: %1%"), ex.what());
-        return data;
+        file.status = reqfile_t::systemError;
+        return file;
     }
 
     // Set up an HTTP GET request message
@@ -361,7 +345,8 @@ Planet::downloadFile(const std::string &url)
         // log_debug(_("Downloading %1% ... "), url);
     } catch (boost::system::system_error ex) {
         log_error(_("stream write failed: %1%"), ex.what());
-        return data;
+        file.status = reqfile_t::systemError;
+        return file;
     }
 
     // This buffer is used for reading and must be persistant
@@ -373,27 +358,22 @@ Planet::downloadFile(const std::string &url)
     try {
         read(stream, buffer, parser);
 
-        if (parser.get().result() == boost::beast::http::status::not_found) {
+        if (parser.get().result() == boost::beast::http::status::not_found ||
+            parser.get().result() == boost::beast::http::status::gateway_timeout) {
             log_error(_("Remote file not found: %1%"), url);
-            return data;
+            file.status = reqfile_t::remoteNotFound;
+            return file;
         } else {
             // Check the magic number of the file
             const auto is_gzipped{parser.get().body()[0] == 0x1f};
-            if (is_gzipped) {
-                //log_debug(_("Downloaded body is gzipped"));
-            } else {
-                if (parser.get().body()[0] == '<') {
-                    //log_debug(_("Downloaded body is XML/HTML"));
-                }
-            }
-
+            std::shared_ptr<std::vector<unsigned char>> data;
             for (auto body = std::begin(parser.get().body()); body != std::end(parser.get().body()); ++body) {
-                data->push_back(static_cast<unsigned char>(*body));
+                file.data->push_back(static_cast<unsigned char>(*body));
             }
 
             // Add the last newline back if not gzipped (or we'll get decompression error: unexpected end of file)
             if (!is_gzipped) {
-                data->push_back('\n');
+                file.data->push_back('\n');
             }
         }
 
@@ -410,28 +390,63 @@ Planet::downloadFile(const std::string &url)
         ec = {};
     }
 
-#ifdef USE_CACHE        // FIXME: should write to disk here
-    if (data->size() > 0) {
-        std::filesystem::path path(url);
-        try {
-            if (!boost::filesystem::exists(remote.destdir)) {
-            boost::filesystem::create_directories(remote.destdir);
-            }
-        } catch (boost::system::system_error ex) {
-            log_error(_("Destdir corrupted!: %1%, %2%"), remote.destdir, ex.what());
-        }
-        std::ofstream myfile;
-        myfile.open(remote.filespec, std::ofstream::out | std::ios::binary);
-        myfile.write(reinterpret_cast<char *>(data.get()->data()), data.get()->size());
-        myfile.flush();
-        myfile.close();
-        log_debug(_("Wrote downloaded file %1% to disk from %2%"), remote.filespec, remote.domain);
+#ifdef USE_CACHE
+    if (file.data->size() > 0) {
+        writeFile(remote, file.data);
     } else {
         log_error(_("%1% does not exist!"), remote.filespec);
     }
 #endif
+    file.status = reqfile_t::success;
+    return file;
+}
 
-    return data;
+
+RequestedFile
+Planet::readFile(std::string &filespec) {
+    log_debug(_("Reading cached file: %1%"), filespec);
+    // Since we want to read in the entire file so it can be
+    // decompressed, blow off C++ streaming and just load the
+    // entire thing.
+    int size = 0;
+    RequestedFile file;
+    file.data = std::make_shared<std::vector<unsigned char>>();
+    try {
+        size = boost::filesystem::file_size(filespec);
+    } catch (const std::exception &ex) {
+        log_error(_("File %1% doesn't exist but should!: %2%"), filespec, ex.what());
+        file.status = reqfile_t::localError;
+        return file;
+    }
+
+    file.data->reserve(size);
+    file.data->resize(size);
+    int fd = open(filespec.c_str(), O_RDONLY);
+    char *buf = new char[size];
+    //memset(buf, 0, size);
+    read(fd, buf, size);
+    // FIXME: it would be nice to avoid this copy
+    std::copy(buf, buf + size, file.data->begin());
+    delete buf;
+    close(fd);
+    file.status = reqfile_t::success;
+    return file;
+}
+
+void Planet::writeFile(RemoteURL &remote, std::shared_ptr<std::vector<unsigned char>> data) {
+    try {
+        if (!boost::filesystem::exists(remote.destdir)) {
+            boost::filesystem::create_directories(remote.destdir);
+        }
+    } catch (boost::system::system_error ex) {
+        log_error(_("Destdir corrupted!: %1%, %2%"), remote.destdir, ex.what());
+    }
+    std::ofstream myfile;
+    myfile.open(remote.filespec, std::ofstream::out | std::ios::binary);
+    myfile.write(reinterpret_cast<char *>(data.get()->data()), data.get()->size());
+    myfile.flush();
+    myfile.close();
+    log_debug(_("Wrote downloaded file %1% to disk from %2%"), remote.filespec, remote.domain);
 }
 
 Planet::~Planet(void)

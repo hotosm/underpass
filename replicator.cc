@@ -343,7 +343,7 @@ main(int argc, char *argv[])
             // fullurl += "/" + vm["url"].as<std::string>() + "/" + parts[2] + ".state.txt";
             fullurl += "/" + vm["url"].as<std::string>() + ".state.txt";
             osmchange->parse(fullurl);
-            auto data = replicator.downloadFile(*osmchange);
+            auto data = replicator.downloadFile(*osmchange).data;
             StateFile start(osmchange->filespec, false);
             //start.dump();
             config.start_time = start.timestamp;
