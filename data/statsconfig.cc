@@ -69,7 +69,7 @@ namespace statsconfig {
                                 }
                             }
                         } else {
-                            if (value_it->value == "way") {
+                            if (type_it->value == "way") {
                                 way_tags["*"].insert("*");
                             } else if (type_it->value == "node") {
                                 node_tags["*"].insert("*");
