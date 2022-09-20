@@ -39,16 +39,16 @@
 /// \namespace statsconfig
 namespace statsconfig {
 
-    /// \class StatsConfig
+    /// \class StatsConfigCategory
     /// \brief This class manages configurations for stats collection
-    class StatsConfig {
+    class StatsConfigCategory {
         public:
             std::string name;
             std::map<std::string, std::set<std::string>> way;
             std::map<std::string, std::set<std::string>> node;
             std::map<std::string, std::set<std::string>> relation;
-            StatsConfig(std::string name);
-            StatsConfig
+            StatsConfigCategory(std::string name);
+            StatsConfigCategory
             (
                 std::string name,
                 std::map<std::string, std::set<std::string>> way,
@@ -57,19 +57,19 @@ namespace statsconfig {
             );
     };
 
-    /// \class StatsConfigFile
-    /// \brief This class loads stats configuration files
-    class StatsConfigFile {
+   /// \class StatsConfig
+   /// \brief Stats configuration manager
+   class StatsConfig {
         public:
-            static std::shared_ptr<std::vector<statsconfig::StatsConfig>> read_yaml(std::string filename);
-    };
+            StatsConfig();
+            std::string search(std::string tag, std::string value, osmchange::osmtype_t type);
+            static void setConfigurationFile(std::string statsConfigFilename);
+        private:
+            static std::map<std::string, std::shared_ptr<std::vector<StatsConfigCategory>>> cache;
+            static std::string path;
+            bool searchCategory(std::string tag, std::string value, std::map<std::string, std::set<std::string>> tags);
+            std::shared_ptr<std::vector<statsconfig::StatsConfigCategory>> read_yaml(std::string filename);
 
-   /// \class StatsConfigSearch
-   /// \brief Stats category matching
-   class StatsConfigSearch {
-        public:
-            static std::string tag_value(std::string tag, std::string value, osmchange::osmtype_t type, std::shared_ptr<std::vector<StatsConfig>> statsconfig);
-            static bool category(std::string tag, std::string value, std::map<std::string, std::set<std::string>> tags);
     };
 
 } // EOF statsconfig namespace
