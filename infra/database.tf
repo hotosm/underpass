@@ -35,7 +35,7 @@ resource "aws_secretsmanager_secret_version" "galaxy_database_credentials" {
     ],
     [
       aws_db_instance.galaxy.id,
-      aws_db_instance.galaxy.name,
+      aws_db_instance.galaxy.db_name,
       aws_db_instance.galaxy.engine,
       aws_db_instance.galaxy.address,
       aws_db_instance.galaxy.port,
