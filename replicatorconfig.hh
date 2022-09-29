@@ -30,6 +30,7 @@
 
 #include "galaxy/replication.hh"
 #include <boost/format.hpp>
+#include "data/yaml.hh"
 #include <string>
 using namespace replication;
 
@@ -101,6 +102,29 @@ struct ReplicatorConfig {
     ///
     ReplicatorConfig()
     {
+
+        std::string homedir = getenv("HOME");
+        if (std::filesystem::exists(homedir + "/.underpass")) {
+            yaml::Yaml yaml;
+            yaml.read(homedir + "/.underpass");
+            auto yamlConfig = yaml.get("config");
+            if (yaml.contains_key("galaxy_db_url")) {
+                galaxy_db_url = yamlConfig.get_value("galaxy_db_url");
+            }
+            if (yaml.contains_key("taskingmanager_db_url")) {
+                taskingmanager_db_url = yamlConfig.get_value("taskingmanager_db_url");
+            }
+            if (yaml.contains_key("planet_server")) {
+                planet_server = yamlConfig.get_value("planet_server");
+            }
+            if (yaml.contains_key("underpass_db_url")) {
+                underpass_db_url = yamlConfig.get_value("underpass_db_url");
+            }
+            if (yaml.contains_key("osm2pgsql_db_url")) {
+                osm2pgsql_db_url = yamlConfig.get_value("osm2pgsql_db_url");
+            }
+        }
+
         if (getenv("REPLICATOR_GALAXY_DB_URL")) {
             galaxy_db_url = getenv("REPLICATOR_GALAXY_DB_URL");
         }

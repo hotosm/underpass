@@ -44,6 +44,8 @@ class Node {
         std::string value;
         std::vector<struct Node> children;
         Node get(std::string key);
+        std::string get_value(std::string key);
+        std::vector<std::string> get_values(std::string key);
         bool contains_key(std::string key);
         bool contains_value(std::string key, std::string value);
         void dump();

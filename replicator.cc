@@ -65,7 +65,6 @@ namespace opts = boost::program_options;
 #include "data/threads.hh"
 #include "log.hh"
 #include "replicatorconfig.hh"
-#include "data/yaml.hh"
 
 using namespace galaxy;
 using namespace replicatorconfig;
@@ -100,13 +99,6 @@ main(int argc, char *argv[])
 
     opts::positional_options_description p;
     opts::variables_map vm;
-
-    std::string homedir = getenv("HOME");
-    if (std::filesystem::exists(homedir + "/.underpass")) {
-        yaml::Yaml yaml;
-        yaml.read(homedir + "/.underpass");
-        config.galaxy_db_url = yaml.get("config").get("galaxy_db_url").children.front().value;
-    }
 
     try {
         opts::options_description desc("Allowed options");
