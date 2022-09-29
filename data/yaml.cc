@@ -151,7 +151,7 @@ std::vector<std::string> Node::get_values(std::string key) {
     auto result = Node();
     this->get(key, result);
     std::vector<std::string> values;
-    if (result.children.size() == 0) {
+    if (result.children.size() > 0) {
         for (auto it = result.children.begin(); it != result.children.end(); ++it) {
             values.push_back(it->value);
         }
