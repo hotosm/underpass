@@ -99,58 +99,7 @@ operator<<(std::ostream &os, const std::vector<T> &v)
 /// Replication files are available from the OSM planet server.
 
 /// Create a new instance, and read in the geoboundaries file.
-PlanetReplicator::PlanetReplicator(void) {
-    auto hashes = std::make_shared<std::map<std::string, int>>();
-    // These initialize default for finding replication files
-    //ptime time0 = time_from_string("2012-09-12 09:26:06 ");
-    //StateFile state0("/000/000/000", 1000000, time0, replication::minutely);
-    //default_minutes.push_back(state0);
-
-    ptime time1 = time_from_string("2014-08-12 06:02:02");
-    StateFile state1("/001/000/000", 1000000, time1, replication::minutely);
-    default_minutes.push_back(state1);
-
-    ptime time2 = time_from_string("2016-07-08 21:53:00");
-    StateFile state2("/002/000/000", 2000000, time2, replication::minutely);
-    default_minutes.push_back(state2);
-
-    ptime time3 = time_from_string("2018-06-04 06:45:02");
-    StateFile state3("/003/000/000", 3000000, time3, replication::minutely);
-    default_minutes.push_back(state3);
-
-    ptime time4 = time_from_string("2020-04-30 06:41:02");
-    StateFile state4("/004/000/000", 4000000, time4, replication::minutely);
-    default_minutes.push_back(state4);
-
-    ptime time5 = time_from_string("2022-04-03 16:25:35");
-    StateFile state5("/005/000/000", 5000000, time5, replication::minutely);
-    default_minutes.push_back(state5);
-
-    // Changesets
-    ptime time6= time_from_string("2012-10-28 19:36:01");
-    StateFile state6("/000/000/000", 3000000, time6, replication::changeset);
-    default_changesets.push_back(state6);
-
-    ptime time7 = time_from_string("2014-10-07 07:58:01");
-    StateFile state7("/001/000/000", 3000000, time7, replication::changeset);
-    default_changesets.push_back(state7);
-
-    ptime time8 = time_from_string("2016-08-01 20:43:01");
-    StateFile state8("/002/000/000", 3000000, time8, replication::changeset);
-    default_changesets.push_back(state8);
-
-    ptime time9 = time_from_string("2018-07-29 16:33:01");
-    StateFile state9("/003/000/000", 3000000, time9, replication::changeset);
-    default_changesets.push_back(state9);
-
-    ptime time10 = time_from_string("2020-06-28 23:26:01");
-    StateFile state10("/004/000/000", 3000000, time10, replication::changeset);
-    default_changesets.push_back(state10);
-
-    ptime time11 = time_from_string("2022-05-30 17:50:02");
-    StateFile state11("/005/000/000", 3000000, time11, replication::changeset);
-    default_changesets.push_back(state11);
-};
+PlanetReplicator::PlanetReplicator(void) {};
 
 /// Initialize the raw_user, raw_hashtags, and raw_changeset tables
 /// in the OSM stats database from a changeset file
@@ -164,181 +113,90 @@ bool PlanetReplicator::initializeRaw(std::vector<std::string> &rawfile, const st
 };
 
 std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const replicatorconfig::ReplicatorConfig &config, ptime time) {
-    std::vector<StateFile> default_states;
-    std::string suffix;
-    std::string fullurl;
+    yaml::Yaml yaml;
+
+    std::string rep_file = SRCDIR;
+    rep_file += "/galaxy/planetreplicator.yaml";
+    yaml.read(rep_file);
+    std::map<int, ptime> hashes;
+
+    yaml::Node hashes_config;
 
     if (config.frequency == replication::minutely) {
-        default_states = default_minutes;
-        suffix = ".state.txt";
+        hashes_config = yaml.get("minute");
     } else {
-        suffix = ".osm.gz";
-        default_states = default_changesets;
+        hashes_config = yaml.get("changeset");
     }
-    connectServer("https://" + config.planet_server);
-    auto remote = std::make_shared<RemoteURL>();
-    ptime now = boost::posix_time::microsec_clock::universal_time();
+    for (auto it = hashes_config.children.begin(); it != hashes_config.children.end(); ++it) {
+        hashes.insert(
+            std::make_pair(
+                    stoi(it->value),
+                    time_from_string(it->children[0].value)
+            )
+        );
+    }
+
+    boost::posix_time::time_duration delta;
+    std::pair<int, ptime> closest_prev;
+    std::pair<int, ptime> closest_next;
+    auto it = hashes.begin();
+    for (; it != hashes.end(); ++it) {
+        delta = config.start_time - it->second;
+        if (delta.total_seconds() < 0) {
+            break;
+        }
+    }
+
+    closest_next = *it;
+    closest_prev = *(--it);
+    delta = closest_next.second - closest_prev.second;
+
+    if (delta.total_seconds() < 0) {
+        closest_next = closest_prev;
+        closest_prev = *(std::prev(hashes.end(), 2));
+        delta = closest_next.second - closest_prev.second;
+    }
+
+    double ratio = (delta.total_seconds() / 60.0) / (closest_next.first - closest_prev.first);
+
+    boost::posix_time::time_duration delta_target = config.start_time - closest_prev.second;
+    int target_int = closest_prev.first + (delta_target.total_seconds() / 60.0 / ratio);
+
+    double n = target_int/1000000.0;
+    double major = floor(n);
+    double decimal = n - major;
+
+    double n2 = decimal * 1000;
+    double minor = floor(n2);
+    double index = (n2 - minor) * 1000;
 
     boost::format majorfmt("%03d");
     boost::format minorfmt("%03d");
     boost::format indexfmt("%03d");
-    int major=0, minor=0, index=0, span=0;
-    int currentdiff=0, lowerdiff=0, upperdiff=0, drift=0;
-    ptime timestamp;
-    int i = default_states.size() - 1;
-    while (i >= 0) {
-        time_duration delta = default_states[i].timestamp - time;
-        if ((delta.hours()*60) + delta.minutes() < 0) {
-            delta = now - time;
-        }
-        currentdiff =  (delta.hours()*60) + delta.minutes();
-
-        delta = time - default_states[i].timestamp;
-        upperdiff =  (delta.hours()*60) + delta.minutes();
-
-        delta = time - default_states[i-1].timestamp;
-        lowerdiff =  (delta.hours()*60) + delta.minutes();
-
-        delta = default_states[i].timestamp - default_states[i-1].timestamp;
-        span =  ((delta.hours()*60) + delta.minutes());
-        drift = span/1000;
-        // int drift =  ((delta.hours()*60) + delta.minutes()) / 1000;
-        if (drift < 0) {
-            delta = default_states[i].timestamp - time;
-        }
-        // std::cerr << "Times: " << i << ": " << currentdiff << ", " << lowerdiff  << ", " << upperdiff << ", " << drift << ", " << to_simple_string( default_states[i].timestamp) << std::endl;
-        // It's in this sub directory
-        if (currentdiff < span && upperdiff > 0) {
-            major = default_states[i].getMajor();
-            // go back a few directories
-            minor = (upperdiff/drift) * 0.96;
-            break;
-        } else if (upperdiff > 0) {
-            delta = default_states[i].timestamp - time;
-            major = default_states[i].getMajor() + 1;
-            minor = abs((drift*lowerdiff)/933)/1000;
-            // default_states[i].dump();
-            break;
-        } else if (upperdiff < 0) {
-            major = default_states[i-1].getMajor();
-            if (currentdiff > span) {
-                int j = default_states.size();
-                while (j <= 0) {
-                    if (((currentdiff - span*j) * j)>span*j) {
-                        major = j;
-                        break;
-                    }
-                    j--;
-                }
-                int diff = abs(lowerdiff) - span;
-                if (diff < 0) {
-                    major--;
-                    minor = (span - abs(lowerdiff))/drift;
-                } else {
-                    minor = span - diff;
-                    minor = (minor/drift) * 0.96;
-                }
-                if (minor < 0) {
-                    major--;
-                    minor = drift-abs(minor) * 1.06;
-                }
-            } else {
-                minor = (lowerdiff/drift) * 0.96;
-            }
-            break;
-        }
-        i--;
-    }
 
     majorfmt % (major);
     minorfmt % (minor);
-    index = 0;
     indexfmt % (index);
+
     std::string path = majorfmt.str() + "/" + minorfmt.str() + "/" + indexfmt.str();
 
+    std::string suffix;
+    std::string fullurl;
     std::string cached = config.datadir + StateFile::freq_to_string(config.frequency);
+
+    if (config.frequency == replication::minutely) {
+        suffix = ".osc.gz";
+    } else {
+        suffix = ".osm.gz";
+    }
+
+    connectServer("https://" + config.planet_server);
+    auto remote = std::make_shared<RemoteURL>();
     cached += "/" + path + suffix;
     fullurl = "https://" + config.planet_server + "/" + cached;
     remote->parse(fullurl);
-    if (config.frequency != replication::changeset) {
-        if (!boost::filesystem::exists(cached)) {
-            // remote->dump();
-            auto data = downloadFile(*remote).data;
-            // remote file doesn't exist, this is a 'Bad Request HTTP response
-            while (data->size() == 0) {
-                if (minor > drift) {
-                    major++;
-                    minor -= drift;
-                }
-                remote->updatePath(major, minor, 0);
-                // remote->dump();
-                data = downloadFile(*remote).data;
-                if (data->size() == 0) {
-                    minor--;
-                }
-            }
-        }
-        StateFile start(remote->filespec, false);
-        // start.dump();
-        if (start.timestamp == not_a_date_time) {
-            // break;
-        }
-        // state.txt files aren't compressed
-        timestamp = start.timestamp;
-    } else {
-        changeset::ChangeSetFile change;
-        remote->updatePath(major, minor, index);
-        // remote->dump();
-        if (boost::filesystem::exists(remote->filespec)) {
-            change.readChanges(remote->filespec);
-        } else {
-            auto data = downloadFile(*remote).data;
-            auto xml = processData(remote->filespec, *data);
-            std::istream& input(xml);
-            change.readXML(input);
-        }
-        // change.dump();
-        if (change.changes.size() > 0) {
-            timestamp = change.changes.back()->created_at;
-        }
-    }
-
-    // remote->dump();
-    time_duration delta4 = time - timestamp;
-    index = abs((delta4.hours()*60) + delta4.minutes());
-    if (index > drift) {
-        int diff = index/1000;
-        minor += diff;
-        index -= (index/1000)*1000;
-    }
-    // std::cerr << "Timestamp: " << to_simple_string(timestamp) << std::endl;
-    // std::cerr << "Time: " << to_simple_string(time) << std::endl;
-    // std::cerr << "Major: " << major << std::endl;
-    minor -= 1;
-    // std::cerr << "Minor: " << minor << std::endl;
-    // std::cerr << "Index: " << index << std::endl;
-    if (minor > 1000) {
-        minor -= 1000;
-    }
-
-    boost::format newfmt("%03d");
-    if (index > 1000) {
-        newfmt % ((minor)/1000);
-        index -= 1000;
-    } else {
-        newfmt = minorfmt;
-    }
-    indexfmt % (index);
-    // path = majorfmt.str() + "/" + newfmt.str() + "/" + indexfmt.str();
-    // std::cerr << "Path: " << path << std::endl;
     remote->updatePath(major, minor, index);
 
-    if (suffix == ".state.txt") {
-        std::size_t pos = remote->filespec.find(suffix);
-        remote->filespec = remote->filespec.replace(pos, suffix.size(), ".osc.gz");
-    }
-
-    remote->dump();
     return remote;
 };
 
