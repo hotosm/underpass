@@ -181,7 +181,7 @@ data is parsed from the respective data formats, it gets passed to the
 method. That method loops through the data structure containing the
 changes to the map data. Within that method, it calls
 [ChangeSetFile::scanTags()](https://hotosm.github.io/underpass/classosmchange_1_1OsmChangeFile.html),
-    which does all the real work. The *scanTags()* method uses [StatsConfigSearch::tag_value()](https://hotosm.github.io/underpass/classstatsconfig_1_1StatsConfigSearch.html) to
+    which does all the real work. The *scanTags()* method uses [StatsConfigSearch::search()](https://hotosm.github.io/underpass/classstatsconfig_1_1StatsConfigSearch.html) to
     search the lists of keywords and values configured at the stats configuration file.
 ScanTags() returns an array of statistics for the desired features.
 That array is then converted by collectStats() into the [statistics data

@@ -91,8 +91,8 @@ QueryGalaxy::applyChange(const osmchange::ChangeStats &change) const
         ahstore = "HSTORE(ARRAY[";
         for (const auto &added: std::as_const(change.added)) {
             if (added.second > 0) {
-                ahstore += " ARRAY[\'" + added.first + "\',\'" +
-                           std::to_string(added.second) + "\'],";
+                ahstore += " ARRAY[\'" + fixString(added.first) + "\',\'" +
+                           fixString(std::to_string(added.second)) + "\'],";
             }
         }
         ahstore.erase(ahstore.size() - 1);
@@ -103,8 +103,8 @@ QueryGalaxy::applyChange(const osmchange::ChangeStats &change) const
         mhstore = "HSTORE(ARRAY[";
         for (const auto &modified: std::as_const(change.modified)) {
             if (modified.second > 0) {
-                mhstore += " ARRAY[\'" + modified.first + "\',\'" +
-                           std::to_string(modified.second) + "\'],";
+                mhstore += " ARRAY[\'" + fixString(modified.first) + "\',\'" +
+                           fixString(std::to_string(modified.second)) + "\'],";
             }
         }
         mhstore.erase(mhstore.size() - 1);

@@ -43,51 +43,37 @@ main(int argc, char *argv[])
     dbglogfile.setWriteDisk(true);
     dbglogfile.setLogFilename("statsconfig-test.log");
     dbglogfile.setVerbosity(3);
+    statsconfig::StatsConfig::setConfigurationFile("../testsuite/testdata/stats/statsconfig.yaml");
+    auto statsconfig = statsconfig::StatsConfig();
 
-    statsconfig::StatsConfigFile statsconfigfile;
-    std::string filename = DATADIR;
-    filename += "/testsuite/testdata/stats/statsconfig.yaml";
-    std::shared_ptr<std::vector<statsconfig::StatsConfig>> statsconfig = statsconfigfile.read_yaml(filename);
-
-    if (
-        statsconfig->at(0).way.count("building") && statsconfig->at(0).way.at("building").count("school") != 0 &&
-        statsconfig->at(1).node.count("amenity") && statsconfig->at(1).node.at("amenity").count("emergency") != 0 &&
-        statsconfig->at(2).way.count("highway") && statsconfig->at(2).way.at("highway").count("yes") != 0
-    ) {
-        runtest.pass("StatsConfigFile::read_yaml()");
+    if (statsconfig.search("building", "school", osmchange::way) == "buildings") {
+        runtest.pass("StatsConfigSearch::search()");
     } else {
-        runtest.fail("StatsConfigFile::read_yaml()");
+        runtest.fail("StatsConfigSearch::search()");
     }
 
-    statsconfig::StatsConfigSearch search;
-    if (search.tag_value("building", "school", osmchange::way, statsconfig) == "buildings") {
-        runtest.pass("StatsConfigSearch::tag_value()");
+    if (statsconfig.search("underpass_tag", "underpass_test", osmchange::way) == "buildings") {
+        runtest.pass("StatsConfigSearch::search() - way custom tags");
     } else {
-        runtest.fail("StatsConfigSearch::tag_value()");
+        runtest.fail("StatsConfigSearch::search() - way custom tags");
     }
 
-    if (search.tag_value("underpass_tag", "underpass_test", osmchange::way, statsconfig) == "buildings") {
-        runtest.pass("StatsConfigSearch::tag_value() - way custom tags");
+    if (statsconfig.search("underpass_tag", "underpass_test", osmchange::node) == "buildings") {
+        runtest.pass("StatsConfigSearch::search() - node custom tags");
     } else {
-        runtest.fail("StatsConfigSearch::tag_value() - way custom tags");
+        runtest.fail("StatsConfigSearch::search() - node custom tags");
     }
 
-    if (search.tag_value("underpass_tag", "underpass_test", osmchange::node, statsconfig) == "buildings") {
-        runtest.pass("StatsConfigSearch::tag_value() - node custom tags");
+    if (statsconfig.search("underpass_tag2", "underpass_test", osmchange::node) == "underpass_category") {
+        runtest.pass("StatsConfigSearch::search() - node custom tags and custom category");
     } else {
-        runtest.fail("StatsConfigSearch::tag_value() - node custom tags");
+        runtest.fail("StatsConfigSearch::search() - node custom tags and custom category");
     }
 
-    if (search.tag_value("underpass_tag2", "underpass_test", osmchange::node, statsconfig) == "underpass_category") {
-        runtest.pass("StatsConfigSearch::tag_value() - node custom tags and custom category");
+    if (statsconfig.search("underpass_tag2", "underpass_test", osmchange::way) == "underpass_category") {
+        runtest.pass("StatsConfigSearch::search() - way custom tags and custom category");
     } else {
-        runtest.fail("StatsConfigSearch::tag_value() - node custom tags and custom category");
-    }
-
-    if (search.tag_value("underpass_tag2", "underpass_test", osmchange::way, statsconfig) == "underpass_category") {
-        runtest.pass("StatsConfigSearch::tag_value() - way custom tags and custom category");
-    } else {
-        runtest.fail("StatsConfigSearch::tag_value() - way custom tags and custom category");
+        runtest.fail("StatsConfigSearch::search() - way custom tags and custom category");
     }
 
 }

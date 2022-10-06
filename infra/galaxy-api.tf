@@ -453,7 +453,8 @@ resource "aws_secretsmanager_secret_version" "configfile" {
 
         sentry_dsn             = lookup(var.sentry, "dsn")
         sentry_app_environment = var.deployment_environment
-        sentry_app_release_tag = lookup(var.sentry, "app_release_tag", "galaxy-api@v1.0.0")
+        // sentry_app_release_tag = lookup(var.sentry, "app_release_tag", "galaxy-api@v1.0.0")
+        sentry_app_release_tag = "galaxy-api@${var.container_image_tag}"
 
         export_upload_bucket_name = aws_s3_bucket.exports.bucket
       }

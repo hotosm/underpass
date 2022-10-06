@@ -159,7 +159,8 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     ReplicationTask closest;
     auto last_task = std::make_shared<ReplicationTask>();
     bool caughtUpWithNow = false;
-    while (true) {
+    bool monitoring = true;
+    while (monitoring) {
         auto tasks = std::make_shared<std::vector<ReplicationTask>>();
         i = cores*2;
         boost::asio::thread_pool pool(i);
@@ -185,12 +186,15 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
 
         ptime now  = boost::posix_time::second_clock::universal_time();
         last_task = getClosest(tasks, now);
+        if (last_task->timestamp != not_a_date_time) {
+            closest.url = std::string(last_task->url);
+            closest.timestamp = ptime(last_task->timestamp);
+            if (last_task->timestamp >= config.end_time) {
+                monitoring = false;
+            }
+        }
         if (!caughtUpWithNow) {
             // Check if caught up with now
-            if (last_task->timestamp != not_a_date_time) {
-                closest.url = std::string(last_task->url);
-                closest.timestamp = ptime(last_task->timestamp);
-            }
             boost::posix_time::time_duration delta_closest = now - closest.timestamp;
             if (delta_closest.hours() * 60 + delta_closest.minutes() <= 2) {
                 caughtUpWithNow = true;
@@ -269,7 +273,8 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     ReplicationTask closest;
     auto last_task = std::make_shared<ReplicationTask>();
     bool caughtUpWithNow = false;
-    while (true) {
+    bool monitoring = true;
+    while (monitoring) {
         auto tasks = std::make_shared<std::vector<ReplicationTask>>();
         i = cores*2;
         boost::asio::thread_pool pool(i);
@@ -302,12 +307,15 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
 
         ptime now  = boost::posix_time::second_clock::universal_time();
         last_task = getClosest(tasks, now);
+        if (last_task->timestamp != not_a_date_time) {
+            closest.url = std::string(last_task->url);
+            closest.timestamp = ptime(last_task->timestamp);
+            if (last_task->timestamp >= config.end_time) {
+                monitoring = false;
+            }
+        }
         // Check if caught up with now
         if (!caughtUpWithNow) {
-            if (last_task->timestamp != not_a_date_time) {
-                closest.url = std::string(last_task->url);
-                closest.timestamp = ptime(last_task->timestamp);
-            }
             boost::posix_time::time_duration delta_closest = now - closest.timestamp;
             if (delta_closest.hours() * 60 + delta_closest.minutes() <= 2) {
                 caughtUpWithNow = true;
