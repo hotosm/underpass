@@ -23,11 +23,15 @@
 #include "log.hh"
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/program_options.hpp>
+#include "boost/format.hpp"
 #include "galaxy/osmchange.hh"
 #include "replicatorconfig.hh"
 #include "galaxy/planetreplicator.hh"
 #include "galaxy/changeset.hh"
 #include "galaxy/replication.hh"
+#include <string>
+#include "data/yaml.hh"
+#include <iterator>
 
 using namespace logger;
 using namespace replicatorconfig;
@@ -65,9 +69,9 @@ void testPath(ReplicatorConfig config) {
 
     time_duration delta = timestamp - config.start_time;
     if (delta.hours() > -24 && delta.hours() < 24) {
-        runtest.pass("Find remote path from timestamp +/- 1 day (" + start_time_string_debug + ") (" + timestamp_string_debug + ")");
+        runtest.pass("Find remote path from timestamp +/- 24 hours (" + start_time_string_debug + ") (" + timestamp_string_debug + ")");
     } else {
-        runtest.fail("Find remote path from timestamp +/- 1 day (" + start_time_string_debug + ") (" + timestamp_string_debug + ")");
+        runtest.fail("Find remote path from timestamp +/- 24 hours (" + start_time_string_debug + ") (" + timestamp_string_debug + ")");
     }
 }
 
@@ -94,27 +98,27 @@ main(int argc, char *argv[]) {
 
     if (vm.count("timestamp")) {
         auto timestamps = vm["timestamp"].as<std::vector<std::string>>();
-        config.start_time = from_iso_extended_string(timestamps[0]);
+        config.start_time = time_from_string(timestamps[0]);
         testPath(config);
     } else {
         std::vector<std::string> dates = {
-            "-01-01T00:00:00",
-            "-03-07T00:00:00",
-            "-06-12T00:00:00",
-            "-08-17T00:00:00",
-            "-10-22T00:00:00",
-            "-12-28T00:00:00",
+            "-01-01 00:00:00",
+            "-03-07 00:00:00",
+            "-06-12 00:00:00",
+            "-08-17 00:00:00",
+            "-10-22 00:00:00",
+            "-12-28 00:00:00",
         };
 
         ptime now = boost::posix_time::microsec_clock::universal_time();
-        int next_year = now.date().year() + 1;
+        int next_year = now.date().year();
 
-        for (int i = 2017; i != next_year; ++i) {
+        for (int i = 2013; i != next_year + 1; ++i) {
             for (auto it = std::begin(dates); it != std::end(dates); ++it) {
 
                 std::string year_string = std::to_string(i);
                 std::string ts(year_string + *it);
-                config.start_time = from_iso_extended_string(ts);
+                config.start_time = time_from_string(ts);
 
                 time_duration diffWithNow = now - config.start_time;
 
