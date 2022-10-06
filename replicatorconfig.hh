@@ -30,6 +30,7 @@
 
 #include "galaxy/replication.hh"
 #include <boost/format.hpp>
+#include "data/yaml.hh"
 #include <string>
 using namespace replication;
 
@@ -101,6 +102,34 @@ struct ReplicatorConfig {
     ///
     ReplicatorConfig()
     {
+
+        std::string homedir = getenv("HOME");
+        if (std::filesystem::exists(homedir + "/.underpass")) {
+            yaml::Yaml yaml;
+            yaml.read(homedir + "/.underpass");
+            auto yamlConfig = yaml.get("config");
+            if (yaml.contains_key("galaxy_db_url")) {
+                galaxy_db_url = yamlConfig.get_value("galaxy_db_url");
+            }
+            if (yaml.contains_key("taskingmanager_db_url")) {
+                taskingmanager_db_url = yamlConfig.get_value("taskingmanager_db_url");
+            }
+            if (yaml.contains_key("planet_servers")) {
+                std::vector<std::string> planet_servers_config = yamlConfig.get_values("planet_servers");
+                for (auto it = planet_servers_config.begin(); it != planet_servers_config.end(); ++it) {
+                    planet_servers.push_back(
+                        {*it, "replication", true, true, true, true}
+                    );
+                }
+            };
+            if (yaml.contains_key("underpass_db_url")) {
+                underpass_db_url = yamlConfig.get_value("underpass_db_url");
+            }
+            if (yaml.contains_key("osm2pgsql_db_url")) {
+                osm2pgsql_db_url = yamlConfig.get_value("osm2pgsql_db_url");
+            }
+        }
+
         if (getenv("REPLICATOR_GALAXY_DB_URL")) {
             galaxy_db_url = getenv("REPLICATOR_GALAXY_DB_URL");
         }
@@ -134,15 +163,13 @@ struct ReplicatorConfig {
             }
         }
 
-        // Initialize servers
-        planet_servers = {
-            {"planet.maps.mail.ru", "replication", true, true, true, true},
-            // {"download.openstreetmap.fr", "replication", false, false, true, false},
-            // This may be too slow
-            {"planet.openstreetmap.org", "replication", true, true, true, true},
-            // This is not up to date (one day late, I'm keeping here for debugging purposes because it fails on updates):
-            // {"free.nchc.org.tw", "osm.planet/replication", true, true, true, true},
-        };
+        // Initialize default servers
+        if (planet_servers.size() == 0) {
+            planet_servers = {
+                {"planet.maps.mail.ru", "replication", true, true, true, true},
+                {"planet.openstreetmap.org", "replication", true, true, true, true}
+            };
+        }
     };
 
     std::string underpass_db_url = "localhost/underpass";

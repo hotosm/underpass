@@ -99,6 +99,7 @@ main(int argc, char *argv[])
 
     opts::positional_options_description p;
     opts::variables_map vm;
+
     try {
         opts::options_description desc("Allowed options");
         // clang-format off

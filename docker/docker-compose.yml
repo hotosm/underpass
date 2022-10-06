@@ -8,9 +8,9 @@ services:
     ports:
       - "5439:5432"
     environment:
-      - POSTGRES_DB=underpass_test
-      - POSTGRES_USER=underpass_test
-      - POSTGRES_PASSWORD=underpass_test
+      - POSTGRES_DB=underpass
+      - POSTGRES_USER=underpass
+      - POSTGRES_PASSWORD=underpass
     volumes:
       - ../:/code/
     restart: on-failure
@@ -26,15 +26,15 @@ services:
   underpass-build-deps:
     # Pre-built for speed:
     image: quay.io/hotosm/underpass-build-deps:focal
-    container_name: "underpass_build"
+    container_name: "underpass"
     # Build recipe:
     #build:
     #  context: .
     #  dockerfile: underpass-build-deps.dockerfile
     environment:
       - PGHOST=postgis
-      - PGUSER=underpass_test
-      - PGPASSWORD=underpass_test
+      - PGUSER=underpass
+      - PGPASSWORD=underpass
       - UNDERPASS_SOURCE_TREE_ROOT=/code
     command: tail -f /dev/null
     volumes:

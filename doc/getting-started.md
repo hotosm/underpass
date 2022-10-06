@@ -1,73 +1,84 @@
-# Getting started with Underpass
+# Underpass
+
+Underpass is a **data analysis engine** that process OpenStreetMap data and provides customizable **statistics and validation** reports in **near real time**.
+
+Is light, fast, easy to install and it can run on small systems.
+
+## Quick start: install with Docker
 
 The easiest way to start using Underpass is with [Docker](https://docs.docker.com/get-docker/) and [docker-compose](https://docs.docker.com/compose/install/).
 
-## Build
+_If you don't want to use Docker, you can install dependencies and build Underpass yourself. See  https://github.com/hotosm/underpass/blob/master/doc/install.md_
 
-_If you don't want to use Docker, see https://github.com/hotosm/underpass/blob/master/doc/install.md and skip this section._
+```
+    git clone https://github.com/hotosm/underpass.git
+    cd underpass/docker && sh install-with-docker.sh
+```
 
-After cloning the project from https://github.com/hotosm/underpass , run:
+## Process OsmChanges
 
-    cd docker && docker-compose up -d
+Just run the Underpass replicator program with a date range:
 
-Now you can login into the container:
+```
+docker exec -t underpass ./replicator -t 2022-01-01 -t 2022-01-02
+```
 
-    docker exec -w /code -ti underpass_build  /bin/bash 
+A start date:
 
-And once inside the container's `/code` directory, build Underpass:
+```
+docker exec -t underpass ./replicator -t 2022-01-01 -t 2022-01-02
+```
 
-    ./autogen.sh && mkdir build && cd build
-    ../configure CXX="ccache g++" CXXFLAGS="-std=c++17 -g -O0" CPPFLAGS="-DTIMING_DEBUG" && make -j4
+Or pass the value `now`:
 
-The last parameter `-j4` is for speeding up the building process (is the number of jobs run in parallel). This value depends on your hardware, you can try using the value shown at `echo $(nproc)` and add 1 to it,  but this is not a guarantee. If you see errors during the build process
-you can try with a smaller number.
+```
+docker exec -t underpass ./replicator -t now
+```
 
-## Setting up a replicator + stats collection + validation process
+## Get results
 
-The replicator will download data from OSM planet servers and save validation and
-statistics results in a database.
+### Stats
 
-### 1. Install PostgreSQL, create a database and tables for data output
+Get stats for added, modified and hashtags and export them to a CSV file in `underpass/build/stats.csv`.
 
-    apt update && apt-get -y install postgresql postgresql-contrib
-    psql -U underpass_test -c 'create database galaxy_test'
-    cd /code/data && psql -U underpass_test galaxy_test < galaxy.sql
+```
+docker exec -t underpass psql --csv -t -d postgresql://underpass@postgis/galaxy -c '\copy (SELECT id,added,modified,hashtags FROM changesets) to /code/build/stats.csv'
+```
 
-_Galaxy is a work in progress project focused on bringing together all of the OSM data outputs under one umbrella (https://galaxy.hotosm.org/)_
+### Validation
 
-### 1. Create directories and copy configuration files for validation:
+Get ChangeSet ids and validation results and export them to a the CSV file in `underpass/build/validation.csv`.
 
-    cd /code/build && mkdir replication 
-    mkdir /usr/local/lib/underpass/ && cp ../validate/*.yaml /usr/local/lib/underpass/
+```
+docker exec -t underpass psql --csv -t -d postgresql://underpass@postgis/galaxy -c '\copy (SELECT change_id, status FROM validation WHERE 'correct' != ANY (status);) to /code/build/validation.csv'
+```
 
-### 3. Run replicator
-    
-    ./replicator -v -l -m -f minute -t 2022-01-01T00:00:00  --server underpass_test@postgis/galaxy_test
+### Database
 
-Once replicator start running, it will save cache files in the `replication` directory and save the validation results into the database. 
+You can also use the connection string `postgresql://underpass@postgis/galaxy` to connect to the DB with any PostregSQL client.
 
-For running the replicator using a changeset URL instead of a timestamp, use the `-u` option:
-    
-    ./replicator -v -l -m -f minute -u 004/911/945 --server underpass_test@postgis/galaxy_test
+## Customization
 
-For more options:
+### Stats
 
-    ./replicator --help
+Collected stats can customized to your needs, changing the stats configuration YAML in [validate/statistics](https://github.com/hotosm/underpass/blob/master/validate/statistics.yaml).
 
-## Validation & stats
+You can find more information about stats [here](docs/statistics.md)
 
-Connect to the database you've created before:
+### Validation
 
-`psql -U underpass_test galaxy_test`
+Similar to stats, you can edit the YAML files inside the `validate` directory.
 
-And query the validation table to see what things Underpass is finding out:
+You can find more information about validation [here](docs/validation.md)
 
-`select * from validation limit 50;`
-`select * from changesets limit 50;`
+### Filter by area
 
-If you want to connect to the DB from your host computer, use this configuration:
+To collect data for an specific area, create a GeoJSON file with the area you want. This file must contain a single MultiPolygon, like [this one](https://github.com/hotosm/underpass/blob/master/data/priority.geojson).
 
-    host: localhost
-    database: galaxy_test
-    user: underpass_test
-    password: underpass_test
+Then, just copy the file to `underpass/build` and pass the `--boundary` option:
+
+```
+replicator -u 2022-01-01 2022-01-02 --boundary=map.geojson
+```
+
+

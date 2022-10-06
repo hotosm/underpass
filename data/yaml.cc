@@ -138,6 +138,27 @@ Node Node::get(std::string key) {
     return result;
 }
 
+std::string Node::get_value(std::string key) {
+    auto result = Node();
+    this->get(key, result);
+    if (result.children.size() > 0) {
+        return result.children.front().value;
+    }
+    return "";
+}
+
+std::vector<std::string> Node::get_values(std::string key) {
+    auto result = Node();
+    this->get(key, result);
+    std::vector<std::string> values;
+    if (result.children.size() > 0) {
+        for (auto it = result.children.begin(); it != result.children.end(); ++it) {
+            values.push_back(it->value);
+        }
+    }
+    return values;
+}
+
 void Node::get(std::string key, Node &result) {
     for (auto it = std::begin(this->children); it != std::end(this->children); ++it) {
         if (it->value == key) {
