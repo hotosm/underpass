@@ -115,7 +115,6 @@ main(int argc, char *argv[])
             ("planet,p", opts::value<std::string>(), "Replication server (defaults to planet.maps.mail.ru)")
             ("url,u", opts::value<std::string>(), "Starting URL path (ex. 000/075/000), takes precedence over 'timestamp' option")
             ("changeseturl", opts::value<std::string>(), "Starting URL path for ChangeSet (ex. 000/075/000), takes precedence over 'timestamp' option")
-            ("monitor,m", "Start monitoring")
             ("frequency,f", opts::value<std::string>(), "Update frequency (hourly, daily), default minutely)")
             ("timestamp,t", opts::value<std::vector<std::string>>(), "Starting timestamp (can be used 2 times to set a range)")
             ("import,i", opts::value<std::string>(), "Initialize OSM database with datafile")
@@ -313,9 +312,9 @@ main(int argc, char *argv[])
         }
     }
 
-    if (vm.count("monitor")) {
+    if (!vm.count("initialize") && !vm.count("osm") && !tmUserSyncMonitorThread) {
         auto osmchange = std::make_shared<RemoteURL>();
-    // Specify a timestamp used by other options
+        // Specify a timestamp used by other options
         if (vm.count("timestamp")) {
             try {
                 auto timestamps = vm["timestamp"].as<std::vector<std::string>>();
