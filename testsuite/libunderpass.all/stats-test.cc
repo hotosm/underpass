@@ -29,6 +29,7 @@
 #include "data/yaml.hh"
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/date_time.hpp>
+#include "data/statsconfig.hh"
 namespace opts = boost::program_options;
 
 using namespace boost::posix_time;
@@ -110,7 +111,6 @@ class TestStats {
 
             while (--increment) {
                 osmchange::OsmChangeFile change;
-                change.setStatsConfigFilename(statsConfigFile);
                 if (boost::filesystem::exists(osmchange->filespec)) {
                     change.readChanges(osmchange->filespec);
                 } else {
@@ -137,7 +137,6 @@ class TestStats {
         std::shared_ptr<std::map<long, std::shared_ptr<osmchange::ChangeStats>>>
         getStatsFromFile(std::string filename) {
             osmchange::OsmChangeFile osmchanges;
-            osmchanges.setStatsConfigFilename(statsConfigFile);
             osmchanges.readChanges(filename);
             osmchanges.areaFilter(boundary);
             if (this->verbose) {
@@ -282,7 +281,8 @@ main(int argc, char *argv[]) {
         testStats.startTime = from_iso_extended_string(vm["timestamp"].as<std::string>());
     }
     if (vm.count("statsconfigfile")) {
-        testStats.statsConfigFile = vm["statsconfigfile"].as<std::string>();
+        statsconfig::StatsConfig::setConfigurationFile(vm["statsconfigfile"].as<std::string>());
+
     }
     if (vm.count("verbose")) {
         testStats.verbose = true;

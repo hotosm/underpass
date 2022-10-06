@@ -675,24 +675,17 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 std::shared_ptr<std::vector<std::string>>
 OsmChangeFile::scanTags(std::map<std::string, std::string> tags, osmchange::osmtype_t type)
 {
-
-    statsconfig::StatsConfigFile statsconfigfile;
-    std::string path = SRCDIR;
-    path += statsConfigFilename;
-    std::shared_ptr<std::vector<statsconfig::StatsConfig>> statsconfig = statsconfigfile.read_yaml(path);
+    auto statsconfig = statsconfig::StatsConfig();
     auto hits = std::make_shared<std::vector<std::string>>();
-
-    std::map<std::string, bool> cache;
-    statsconfig::StatsConfigSearch search;
     for (auto it = std::begin(tags); it != std::end(tags); ++it) {
         if (!it->second.empty()) {
             std::string hit = "";
             if (type == node) {
-                hit = search.tag_value(it->first, it->second, node, statsconfig);
+                hit = statsconfig.search(it->first, it->second, node);
             } else if (type == way) {
-                hit = search.tag_value(it->first, it->second, way, statsconfig);
+                hit = statsconfig.search(it->first, it->second, way);
             } else if (type == relation) {
-                hit = search.tag_value(it->first, it->second, relation, statsconfig);
+                hit = statsconfig.search(it->first, it->second, relation);
             }
             if (!hit.empty()) {
                 hits->push_back(hit);
@@ -723,11 +716,6 @@ ChangeStats::dump(void)
     //     std::cerr << "\t\t" << it->first << " = " << it->second << std::endl;
     // }
 };
-
-void
-OsmChangeFile::setStatsConfigFilename(std::string filename) {
-    statsConfigFilename = filename;
-}
 
 std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>>
 OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Validate> &plugin)

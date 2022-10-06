@@ -30,12 +30,13 @@
 /// \namespace statsconfig
 namespace statsconfig {
 
-    std::map<std::string, std::shared_ptr<std::vector<StatsConfig>>> statsconfigs;
+    std::map<std::string, std::shared_ptr<std::vector<StatsConfigCategory>>> StatsConfig::cache;
+    std::string StatsConfig::path;
 
-    StatsConfig::StatsConfig(std::string name) {
+    StatsConfigCategory::StatsConfigCategory(std::string name) {
         this->name = name;
     }
-    StatsConfig::StatsConfig (
+    StatsConfigCategory::StatsConfigCategory (
         std::string name,
         std::map<std::string, std::set<std::string>> way,
         std::map<std::string, std::set<std::string>> node,
@@ -47,11 +48,30 @@ namespace statsconfig {
         this->relation = relation;
     };
 
-    std::shared_ptr<std::vector<statsconfig::StatsConfig>> StatsConfigFile::read_yaml(std::string filename) {
-        if (!statsconfig::statsconfigs.count(filename)) {
-            auto statsconfig = std::make_shared<std::vector<statsconfig::StatsConfig>>();
+
+    StatsConfig::StatsConfig() {
+        if (path.empty()) {
+            std::string statsConfigFilename = "statistics.yaml";
+            path = SRCDIR;
+            path += "/validate/" + statsConfigFilename;
+            if (!boost::filesystem::exists(path)) {
+                path = PKGLIBDIR;
+                path += "/" + statsConfigFilename;
+            }
+        }
+        read_yaml(path);
+    }
+
+    void StatsConfig::setConfigurationFile(std::string statsConfigFilename) {
+        path = statsConfigFilename;
+    }
+
+    std::shared_ptr<std::vector<StatsConfigCategory>> StatsConfig::read_yaml(std::string filename) {
+        if (!cache.count(filename)) {
             yaml::Yaml yaml;
             yaml.read(filename);
+
+            auto statscategories = std::make_shared<std::vector<StatsConfigCategory>>();
             for (auto it = std::begin(yaml.root.children); it != std::end(yaml.root.children); ++it) {
                 std::map<std::string, std::set<std::string>> way_tags;
                 std::map<std::string, std::set<std::string>> node_tags;
@@ -79,20 +99,20 @@ namespace statsconfig {
                         }
                     }
                 }
-                statsconfig->push_back(
-                    StatsConfig(it->value, way_tags, node_tags, relation_tags)
+                statscategories->push_back(
+                    StatsConfigCategory(it->value, way_tags, node_tags, relation_tags)
                 );
             }
-            statsconfig::statsconfigs.insert(
-                std::pair<std::string, std::shared_ptr<std::vector<statsconfig::StatsConfig>>>(
-                    filename, statsconfig
+            cache.insert(
+                std::pair<std::string, std::shared_ptr<std::vector<StatsConfigCategory>>>(
+                    filename, statscategories
                 )
             );
         }
-        return statsconfig::statsconfigs.at(filename);
+        return cache.at(filename);
     }
 
-    bool StatsConfigSearch::category(std::string tag, std::string value, std::map<std::string, std::set<std::string>> tags) {
+    bool StatsConfig::searchCategory(std::string tag, std::string value, std::map<std::string, std::set<std::string>> tags) {
         for (auto tag_it = std::begin(tags); tag_it != std::end(tags); ++tag_it) {
             if (tag_it->first == "*" || (
                     tag == tag_it->first && (
@@ -107,15 +127,16 @@ namespace statsconfig {
         return false;
     };
 
-    std::string StatsConfigSearch::tag_value(std::string tag, std::string value, osmchange::osmtype_t type, std::shared_ptr<std::vector<StatsConfig>> statsconfig) {
+    std::string StatsConfig::search(std::string tag, std::string value, osmchange::osmtype_t type) {
         bool category = false;
-        for (auto it = std::begin(*statsconfig); it != std::end(*statsconfig); ++it) {
+        std::vector<StatsConfigCategory> statscategories = *cache.begin()->second.get();
+        for (auto it = std::begin(statscategories); it != std::end(statscategories); ++it) {
             if (type == osmchange::node) {
-                category = StatsConfigSearch::category(tag, value, it->node);
+                category = searchCategory(tag, value, it->node);
             } else if (type == osmchange::way) {
-                category = StatsConfigSearch::category(tag, value, it->way);
+                category = searchCategory(tag, value, it->way);
             } else if (type == osmchange::relation) {
-                category = StatsConfigSearch::category(tag, value, it->relation);
+                category = searchCategory(tag, value, it->relation);
             }
             if (category) {
                 if (it->name == "[key]") {

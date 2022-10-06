@@ -239,8 +239,6 @@ class OsmChangeFile
         readChanges(osc);
     };
 
-    std::string statsConfigFilename = "/validate/statistics.yaml";
-
     /// Read a changeset file from disk or memory into internal storage
     bool readChanges(const std::string &osc);
 
@@ -255,8 +253,6 @@ class OsmChangeFile
 
     /// Read an istream of the data and parse the XML
     bool readXML(std::istream &xml);
-
-    void setStatsConfigFilename(std::string filename);
 
     std::map<long, std::shared_ptr<ChangeStats>> userstats; ///< User statistics for this file
 
