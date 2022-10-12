@@ -5,7 +5,7 @@ config:
   - maxangle:
     - 91
   - complete:
-    - no
+    - yes
   - values:
     - yes
 

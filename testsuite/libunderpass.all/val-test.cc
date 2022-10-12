@@ -59,7 +59,6 @@ main(int argc, char *argv[])
     dbglogfile.setVerbosity(3);
 
 #if 1
-    std::cout << "Loading validation plugin ..." << std::endl;
     std::string plugins;
     if (boost::filesystem::exists("../../validate/.libs")) {
         plugins = "../../validate/.libs";
@@ -83,6 +82,9 @@ main(int argc, char *argv[])
     auto plugin = std::make_shared<hotosm::Hotosm>();
 #endif
 
+    // checkTag()
+
+    // Existence of key=value
     auto status = plugin->checkTag("building", "yes");
     if (!status->hasStatus(badvalue)) {
         runtest.pass("Validate::checkTag(good tag)");
@@ -90,6 +92,7 @@ main(int argc, char *argv[])
         runtest.fail("Validate::checkTag(good tag)");
     }
 
+    // Empty value
     status = plugin->checkTag("building", "");
     if (status->hasStatus(badvalue)) {
         runtest.pass("Validate::checkTag(empty value)");
@@ -97,6 +100,7 @@ main(int argc, char *argv[])
         runtest.fail("Validate::checkTag(empty value)");
     }
 
+    // Invalid tag, not listed into the config file (ex: foo bar=bar)
     status = plugin->checkTag("foo bar", "bar");
     if (status->hasStatus(badvalue)) {
         runtest.pass("Validate::checkTag(space in key)");
@@ -104,9 +108,13 @@ main(int argc, char *argv[])
         runtest.fail("Validate::checkTag(space in key)");
     }
 
+    // Node - checkPOI()
+
     osmobjects::OsmNode node;
     node.id = 11111;
     node.change_id = 22222;
+
+    // Node with no tags
     status = plugin->checkPOI(node, "building");
     if (status->osm_id == 11111 && status->hasStatus(notags)) {
         runtest.pass("Validate::checkPOI(no tags)");
@@ -114,6 +122,7 @@ main(int argc, char *argv[])
         runtest.fail("Validate::checkPOI(no tags)");
     }
 
+    // Has valid tags, but it's incomplete
     node.addTag("building", "yes");
     status = plugin->checkPOI(node, "building");
     if (status->osm_id == 11111 && !status->hasStatus(badvalue) && status->hasStatus(incomplete)) {
@@ -122,6 +131,7 @@ main(int argc, char *argv[])
         runtest.fail("Validate::checkPOI(incomplete but correct tagging)");
     }
 
+    // Has an invalid key=value
     node.addTag("building:material", "sponge");
     status = plugin->checkPOI(node, "building");
     if (status->hasStatus(badvalue)) {
@@ -134,12 +144,15 @@ main(int argc, char *argv[])
     node.addTag("building:levels", "3");
     node.addTag("building:roof", "tile");
 
+    // Has all valid tags
     status = plugin->checkPOI(node, "building");
     if (!status->hasStatus(badvalue)) {
         runtest.pass("Validate::checkPOI(no bad values)");
     } else {
         runtest.fail("Validate::checkPOI(no bad values)");
     }
+
+    // Way - checkWay()
 
     osmobjects::OsmWay way;
     way.id = 333333;
@@ -149,6 +162,8 @@ main(int argc, char *argv[])
     way.addRef(456);
     way.addRef(1234);
     status = plugin->checkWay(way, "building");
+
+    // Way with no tags
     if (status->hasStatus(notags)) {
         runtest.pass("Validate::checkWay(no tags)");
     } else {
@@ -156,17 +171,18 @@ main(int argc, char *argv[])
         way.dump();
     }
 
+    // Existence of key=value
     way.addTag("building", "yes");
     status = plugin->checkWay(way, "building");
-    if (!status->hasStatus(badvalue)) {
+    if (!status->hasStatus(badvalue) && status->hasStatus(incomplete)) {
         runtest.pass("Validate::checkWay(incomplete but correct tagging)");
     } else {
-        runtest.fail("Validate::checkWay(incomplete but incorrect tagging)");
+        runtest.fail("Validate::checkWay(incomplete but correct tagging)");
     }
 
+    // Has an invalid key=value
     way.addTag("building:material", "sponge");
     status = plugin->checkWay(way, "building");
-    // status->dump();
     if (!status->hasStatus(badvalue)) {
         runtest.pass("Validate::checkWay(bad value)");
     } else {
@@ -175,14 +191,14 @@ main(int argc, char *argv[])
 
     way.addTag("building:material", "wood");
     way.addTag("building:levels", "3");
-    way.addTag("building:roof", "tiles");
+    way.addTag("building:roof", "tile");
 
+    // Has all valid tags
     status = plugin->checkWay(way, "building");
-    // status->dump();
-    if (!status->hasStatus(incomplete)) {
-        runtest.pass("Validate::checkWay(complete)");
+    if (!status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkWay(no bad values)");
     } else {
-        runtest.fail("Validate::checkWay(complete)");
+        runtest.fail("Validate::checkWay(no bad values)");
     }
 
     test_geom(plugin);
