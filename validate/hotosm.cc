@@ -141,7 +141,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
                 status->status.insert(incomplete);
             }
         }
-        if (tests.contains_value(vit->first, vit->second)) {
+        if (tests.get(vit->first).children.size() == 0 || tests.contains_value(vit->first, vit->second)) {
             // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
             valexists++;
             // status->status.insert(correct);

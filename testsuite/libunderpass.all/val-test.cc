@@ -59,33 +59,37 @@ main(int argc, char *argv[])
     dbglogfile.setVerbosity(3);
 
 #if 1
+    std::cout << "Loading validation plugin ..." << std::endl;
     std::string plugins;
     if (boost::filesystem::exists("../../validate/.libs")) {
-    plugins = "../../validate/.libs";
+        plugins = "../../validate/.libs";
+    } else if (boost::filesystem::exists("./validate/.libs")) {
+        plugins = "./validate/.libs";
     }
     boost::dll::fs::path lib_path(plugins);
     boost::function<plugin_t> creator;
     try {
-    creator = boost::dll::import_alias<plugin_t>(
-        lib_path / "libhotosm", "create_plugin",
-        boost::dll::load_mode::append_decorations
+        creator = boost::dll::import_alias<plugin_t>(
+            lib_path / "libhotosm", "create_plugin",
+            boost::dll::load_mode::append_decorations
         );
-    log_debug(_("Loaded plugin hotosm!"));
+        log_debug(_("Loaded plugin hotosm!"));
     } catch (std::exception& e) {
-    log_debug(_("Couldn't load plugin! %1%"), e.what());
-    exit(0);
+        log_debug(_("Couldn't load plugin! %1%"), e.what());
+        exit(0);
     }
     auto plugin = creator();
 #else
     auto plugin = std::make_shared<hotosm::Hotosm>();
 #endif
-    // plugin->dump();
+
     auto status = plugin->checkTag("building", "yes");
     if (!status->hasStatus(badvalue)) {
         runtest.pass("Validate::checkTag(good tag)");
     } else {
         runtest.fail("Validate::checkTag(good tag)");
     }
+
     status = plugin->checkTag("building", "");
     if (status->hasStatus(badvalue)) {
         runtest.pass("Validate::checkTag(empty value)");
@@ -112,8 +116,7 @@ main(int argc, char *argv[])
 
     node.addTag("building", "yes");
     status = plugin->checkPOI(node, "building");
-    // status->dump();
-    if (status->osm_id == 11111 && !status->hasStatus(badvalue)) {
+    if (status->osm_id == 11111 && !status->hasStatus(badvalue) && status->hasStatus(incomplete)) {
         runtest.pass("Validate::checkPOI(incomplete but correct tagging)");
     } else {
         runtest.fail("Validate::checkPOI(incomplete but correct tagging)");
@@ -121,7 +124,6 @@ main(int argc, char *argv[])
 
     node.addTag("building:material", "sponge");
     status = plugin->checkPOI(node, "building");
-    // status->dump();
     if (status->hasStatus(badvalue)) {
         runtest.pass("Validate::checkPOI(bad value)");
     } else {
@@ -130,10 +132,9 @@ main(int argc, char *argv[])
 
     node.addTag("building:material", "wood");
     node.addTag("building:levels", "3");
-    node.addTag("building:roof", "tiles");
+    node.addTag("building:roof", "tile");
 
     status = plugin->checkPOI(node, "building");
-    // status->dump();
     if (!status->hasStatus(badvalue)) {
         runtest.pass("Validate::checkPOI(no bad values)");
     } else {
