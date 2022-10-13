@@ -41,13 +41,49 @@ namespace yaml {
 /// \brief Represents a Node inside a nested structure
 class Node {
     public:
+        ///
+        /// \brief value is a string value for the Node
+        ///
         std::string value;
+        ///
+        /// \brief children the Node can contain several children
+        ///
         std::vector<struct Node> children;
+        ///
+        /// \brief get returns a Node identified by a key
+        /// \param key is the value that must to match with the Node
+        /// \return the Node
+        ///
         Node get(std::string key);
+        ///
+        /// \brief get_value returns the value for a Node that has only one children
+        /// \param key is the value that must to match with the parent Node
+        /// \return the string value of the children Node
+        ///
         std::string get_value(std::string key);
+        ///
+        /// \brief get_values returns all values of children Nodes
+        /// \param key is the value that must to match with the parent Node
+        /// \return a vector of strings with the values of all the Node's children
+        ///
         std::vector<std::string> get_values(std::string key);
+        ///
+        /// \brief contains_key check if a key is present in some Node
+        /// \param key is the value that must to match with the Node
+        /// \return TRUE if key is present or FALSE if not
+        ///
         bool contains_key(std::string key);
+        ///
+        /// \brief contains_value check if a combination of key:value is present in some Node
+        ///        and one of its children
+        /// \param key is the value that must to match with the Node
+        /// \param value is the value that must to match with one of the Node's children
+        /// \return TRUE if the key:value combination is present or FALSE if not
+        ///
         bool contains_value(std::string key, std::string value);
+        ///
+        /// \brief dump prints values for all Node's children (all values if Node is root)
+        ///
         void dump();
         Node();
         ~Node();
@@ -63,10 +99,34 @@ class Node {
 class Yaml {
     public:
         Node root;
+        ///
+        /// \brief read reads a YAML file and parse it to a nested data structure
+        /// \param fspec is the filename
+        ///
         void read(const std::string &fspec);
+        ///
+        /// \brief get returns a Node identified by a key, starting from the root Node
+        /// \param key is the value that must to match with the Node
+        /// \return the Node
+        ///
         Node get(std::string key);
+        ///
+        /// \brief dump prints all values for all Nodes
+        ///
         void dump();
+        ///
+        /// \brief contains_key check if a key is present in some Node, , starting from the root Node
+        /// \param key is the value that must to match with the Node
+        /// \return TRUE if key is present or FALSE if not
+        ///
         bool contains_key(std::string key);
+        ///
+        /// \brief contains_value check if a combination of key:value is present in some Node
+        ///        and one of its children, starting from the root Node
+        /// \param key is the value that must to match with the Node
+        /// \param value is the value that must to match with one of the Node's children
+        /// \return TRUE if the key:value combination is present or FALSE if not
+        ///
         bool contains_value(std::string key, std::string value);
     private:
         void add_node(Node &node, int index, Node &parent, int depth = 0);
