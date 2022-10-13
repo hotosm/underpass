@@ -215,6 +215,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     bool values = tests.get("config").contains_value("values", "yes");
 
     for (auto vit = std::begin(way.tags); vit != std::end(way.tags); ++vit) {
+
         if (way.action == osmobjects::remove) {
             continue;
         }
@@ -231,16 +232,21 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
             valexists++;
             // status->status.insert(correct);
+            log_debug(_("Good value! %1%=%2%"), vit->first, vit->second);
         } else {
+            log_debug(_("Bad value! %1%=%2%"), vit->first, vit->second);
             if (!values) {
                 status->status.insert(badvalue);
             }
         }
+
+        // FIXME: move out special cases to the config file
         if (!values) {
             if ((vit->first == "building" && vit->second == "commercial") && !way.tags.count("name")) {
                 status->status.insert(badvalue);
             }
         }
+
         if (keyexists == tests.get("tags").children.size() && valexists == tests.get("tags").children.size()) {
             status->status.clear();
             if (!minimal) {
@@ -255,15 +261,17 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             status->status.insert(correct);
         }
         if (way.linestring.size() == 0) {
-            return status;
+            continue;
         }
         boost::geometry::centroid(way.linestring, status->center);
         // std::cerr << "Way ID: " << way.id << " " << boost::geometry::wkt(status->center) << std::endl;
     }
     // boost::geometry::correct(way.polygon);
     // See if the way is a closed polygon
-    if (way.refs.front() == way.refs.back()) {
+    if (way.linestring.size() > 0 && way.refs.front() == way.refs.back()) {
+
         // If it's a building, check for square corners
+        // FIXME: move out special cases to the config file
         if (way.tags.count("building") || way.tags.count("amenity")) {
             if (boost::geometry::num_points(way.linestring) < 3 && way.action == osmobjects::modify) {
                 log_debug(_("Not enough nodes in modified linestring to calculate the angle!"));
@@ -282,6 +290,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             }
         } else if (way.refs.size() == 5 && way.tags.size() == 0) {
             // See if it's closed, has 4 corners, but no tags
+            // FIXME: move out special cases to the config file
             log_error(_("WARNING: %1% might be a building!"), way.id);
         }
         return status;
