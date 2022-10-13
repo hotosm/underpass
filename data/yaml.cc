@@ -44,7 +44,6 @@ void Yaml::read(const std::string &fspec) {
         return;
     }
     yaml.open(filespec,  std::ifstream::in);
-    std::cout << "Opened " << filespec << std::endl;
 
     this->root = Node();
     while (getline(yaml, line)) {
