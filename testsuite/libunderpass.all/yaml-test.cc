@@ -54,7 +54,12 @@ main(int argc, char *argv[])
         runtest.fail("Yaml::get().children");
     }
 
-    if (yaml.get("config").contains_value("complete", "yes")) {
+    if (yaml.contains_value("complete", "yes")) {
+        runtest.pass("Yaml::get().contains_value()");
+    } else {
+        runtest.fail("Yaml::get().contains_value()");
+    }
+    if (!yaml.contains_value("complete", "foo")) {
         runtest.pass("Yaml::get().contains_value()");
     } else {
         runtest.fail("Yaml::get().contains_value()");

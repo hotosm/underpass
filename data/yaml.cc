@@ -198,7 +198,12 @@ bool Node::contains_value(std::string key, std::string value) {
 void Node::contains_value(std::string key, std::string value, bool &result) {
     for (auto it = std::begin(this->children); it != std::end(this->children); ++it) {
         if (it->value == key) {
-            this->contains_key(value, result);
+            for (auto itk = std::begin(it->children); itk != std::end(it->children); ++itk) {
+                if (itk->value == value) {
+                    result = true;
+                    return;
+                }
+            }
             return;
         }
         if (it->children.size() > 0) {

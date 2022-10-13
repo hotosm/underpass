@@ -168,7 +168,9 @@ class BOOST_SYMBOL_VISIBLE Validate {
   public:
     Validate(void) {
         std::string dir = SRCDIR;
-        if (!boost::filesystem::exists(dir)) {
+        if (boost::filesystem::exists("../validate")) {
+            dir = "../validate";
+        } else if (!boost::filesystem::exists("../validate") && !boost::filesystem::exists(dir)) {
             dir = PKGLIBDIR;
             if (!boost::filesystem::exists(dir)) {
                 log_error(_("No validation config files in %1%!"), dir);
@@ -190,7 +192,7 @@ class BOOST_SYMBOL_VISIBLE Validate {
         yaml::Yaml yaml;
         yaml.read(filespec);
         if (!config.stem().empty()) {
-        yamls[config.stem()] = yaml;
+            yamls[config.stem()] = yaml;
         }
     }
 #endif
