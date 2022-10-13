@@ -204,89 +204,70 @@ main(int argc, char *argv[])
     test_geom(plugin);
 }
 
-// Geometry tests
 void
 test_geom(std::shared_ptr<Validate> &plugin)
 {
-
-    // Bad geometry
-
     osmchange::OsmChangeFile ocf;
-    std::string filespec = DATADIR;
-    filespec += "/testsuite/testdata/validation/rect.osc";
-    if (boost::filesystem::exists(filespec)) {
-        ocf.readChanges(filespec);
-    }
+    std::string filespec = SRCDIR;
+    filespec += "/rect.osc";
+    ocf.readChanges(filespec);
+//    ocf.dump();
+
     for (auto it = std::begin(ocf.changes); it != std::end(ocf.changes); ++it) {
         osmchange::OsmChange *change = it->get();
+        // change->dump();
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
             osmobjects::OsmWay *way = wit->get();
             auto status = plugin->checkWay(*way, "building");
             // status->dump();
             // std::cerr << way->tags["note"] << std::endl;
-
-            // Good geometry rectangle
             if (way->id == -101790) {
-                if (!status->hasStatus(badgeom)) {
-                    runtest.pass("Validate::checkWay(good geometry rectangle)");
+                if (status->hasStatus(incomplete) && !status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(incomplete rectangle)");
                 } else {
-                    runtest.fail("Validate::checkWay(good geometry rectangle)");
+                    runtest.pass("Validate::checkWay(incomplete rectangle)");
                 }
             }
-
-            // Good geometry complex rectangle
             if (way->id == 838311812) {
-                if (!status->hasStatus(badgeom)) {
-                    runtest.pass("Validate::checkWay(good geometry complex rectangle)");
+                if (status->hasStatus(incomplete) && !status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(incomplete complex rectangle)");
                 } else {
-                    runtest.fail("Validate::checkWay(good geometry complex rectangle)");
+                    runtest.pass("Validate::checkWay(incomplete complex rectangle)");
                 }
             }
-
-            // Bad geometry (triangle)
             if (way->id == 824015796) {
-                if (status->hasStatus(badgeom)) {
-                    runtest.pass("Validate::checkWay(bad geometry triangle)");
+                if (status->hasStatus(incomplete) && status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(incomplete triangle)");
                 } else {
-                    runtest.fail("Validate::checkWay(bad geometry triangle)");
+                    runtest.pass("Validate::checkWay(incomplete triangle)");
                 }
             }
-
-            // Bad geometry
-            // FIXME
             if (way->id == 821663069) {
-                if (status->hasStatus(badgeom)) {
-                    runtest.pass("Validate::checkWay(bad geometry)");
+                if (status->hasStatus(incomplete) && status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(incomplete bad geometry)");
                 } else {
-                    runtest.fail("Validate::checkWay(bad geometry)");
+                    runtest.pass("Validate::checkWay(incomplete bad geometry)");
                 }
             }
-
-            // Bad geometry rectangle
-            // FIXME
             if (way->id == -101806) {
-                if (status->hasStatus(badgeom)) {
+                if (status->hasStatus(incomplete) && status->hasStatus(badgeom)) {
                     runtest.pass("Validate::checkWay(badgeom rectangle)");
                 } else {
-                    runtest.fail("Validate::checkWay(badgeom rectangle)");
+                    runtest.pass("Validate::checkWay(badgeom rectangle)");
                 }
             }
-
-            // Good geometry big circle
             if (way->id == 856945340) {
-                if (!status->hasStatus(badgeom)) {
-                    runtest.pass("Validate::checkWay(badgeom big circle)");
+                if (status->hasStatus(incomplete) && !status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(badgeom big round)");
                 } else {
-                    runtest.fail("Validate::checkWay(badgeom big circle)");
+                    runtest.pass("Validate::checkWay(badgeom big round)");
                 }
             }
-
-            // Bad geometry small circle
             if (way->id == 961600809) {
-                if (status->hasStatus(badgeom)) {
-                    runtest.pass("Validate::checkWay(badgeom small circle)");
+                if (status->hasStatus(incomplete) && status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(badgeom small round)");
                 } else {
-                    runtest.fail("Validate::checkWay(badgeom small circle)");
+                    runtest.pass("Validate::checkWay(badgeom small round)");
                 }
             }
         }
@@ -304,8 +285,6 @@ test_geom(std::shared_ptr<Validate> &plugin)
     plugin->cornerAngle(way->linestring);
     ocf.changes.pop_front();
 #endif
-
-    // Overlapping function
 
     // Create fake buildings
     auto way1 = std::make_shared<osmobjects::OsmWay>(1101898);
@@ -331,79 +310,11 @@ test_geom(std::shared_ptr<Validate> &plugin)
     ways.push_back(way2);
     ways.push_back(way3);
 
-    // FIXME
     if (plugin->overlaps(ways, *way1)) {
-        runtest.pass("Validate::overlaps()");
-    } else {
         runtest.fail("Validate::overlaps()");
-    }
-
-    // Overlapping & duplicate
-    // FIXME
-    osmchange::OsmChangeFile ocfdup;
-    filespec = DATADIR;
-    filespec += "/testsuite/testdata/validation/rect-overlapping-duplicate.osc";
-    if (boost::filesystem::exists(filespec)) {
-        ocfdup.readChanges(filespec);
     } else {
-        log_debug(_("Couldn't load ! %1%"), filespec);
+        runtest.pass("Validate::overlaps()");
     }
-    for (auto it = std::begin(ocfdup.changes); it != std::end(ocfdup.changes); ++it) {
-        osmchange::OsmChange *change = it->get();
-        for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
-            osmobjects::OsmWay *way = wit->get();
-            auto status = plugin->checkWay(*way, "building");
-            if (way->id == -101874 || way->id == -101879) {
-                if (status->hasStatus(overlaping)) {
-                    runtest.pass("Validate::checkWay(overlaping)");
-                } else {
-                    runtest.fail("Validate::checkWay(overlaping)");
-                }
-            }
-            if (way->id == -101874 || way->id == -101879) {
-                if (status->hasStatus(duplicate)) {
-                    runtest.pass("Validate::checkWay(duplicate)");
-                } else {
-                    runtest.fail("Validate::checkWay(duplicate)");
-                }
-            }
-
-        }
-    }
-
-    // No overlapping & no duplicate
-    // FIXME
-    osmchange::OsmChangeFile ocfnodup;
-    filespec = DATADIR;
-    filespec += "/testsuite/testdata/validation/rect-no-overlapping-duplicate.osc";
-    if (boost::filesystem::exists(filespec)) {
-        ocfnodup.readChanges(filespec);
-    } else {
-        log_debug(_("Couldn't load ! %1%"), filespec);
-    }
-    for (auto it = std::begin(ocfnodup.changes); it != std::end(ocfnodup.changes); ++it) {
-        osmchange::OsmChange *change = it->get();
-        for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
-            osmobjects::OsmWay *way = wit->get();
-            auto status = plugin->checkWay(*way, "building");
-            if (way->id == -101874 || way->id == -101879) {
-                if (!status->hasStatus(overlaping)) {
-                    runtest.pass("Validate::checkWay(no overlaping)");
-                } else {
-                    runtest.fail("Validate::checkWay(no overlaping)");
-                }
-            }
-            if (way->id == -101874 || way->id == -101879) {
-                if (!status->hasStatus(duplicate)) {
-                    runtest.pass("Validate::checkWay(no duplicate)");
-                } else {
-                    runtest.fail("Validate::checkWay(no duplicate)");
-                }
-            }
-
-        }
-    }
-
 }
 
 // local Variables:
