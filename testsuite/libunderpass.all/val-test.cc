@@ -47,7 +47,9 @@ TestState runtest;
 
 typedef std::shared_ptr<Validate>(plugin_t)();
 
-void test_geom(std::shared_ptr<Validate> &plugin);
+void test_semantic_building(std::shared_ptr<Validate> &plugin);
+void test_semantic_highway(std::shared_ptr<Validate> &plugin);
+void test_geometry_building(std::shared_ptr<Validate> &plugin);
 void test_plugin(std::shared_ptr<Validate> &plugin);
 
 int
@@ -82,30 +84,81 @@ main(int argc, char *argv[])
     auto plugin = std::make_shared<hotosm::Hotosm>();
 #endif
 
-    // checkTag()
+    test_semantic_building(plugin);
+    test_semantic_highway(plugin);
+    test_geometry_building(plugin);
+}
+
+void
+test_semantic_highway(std::shared_ptr<Validate> &plugin) {
+     // Way - checkWay()
+
+    osmobjects::OsmWay way;
+    way.id = 333333;
+    way.addRef(1234);
+    way.addRef(234);
+    way.addRef(345);
+    way.addRef(456);
+    way.addRef(1234);
+    auto status = plugin->checkWay(way, "highway");
+
+    way.addTag("highway", "primary");
+
+    status = plugin->checkWay(way, "highway");
+    if (!status->hasStatus(badvalue) && status->hasStatus(incomplete)) {
+        runtest.pass("Validate::checkWay(incomplete but correct tagging) [semantic highway]");
+    } else {
+        runtest.fail("Validate::checkWay(incomplete but correct tagging) [semantic highway]");
+    }
+
+    // Has an invalid key=value
+    way.addTag("surface", "sponge");
+    status = plugin->checkWay(way, "highway");
+    if (status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkWay(bad value) [semantic highway]");
+    } else {
+        runtest.fail("Validate::checkWay(bad value) [semantic highway]");
+    }
+
+    way.addTag("surface", "unpaved");
+    way.addTag("smoothness", "very_horrible");
+    way.addTag("highway", "unclassified");
+
+    // Has all valid tags
+    status = plugin->checkWay(way, "highway");
+    if (!status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkWay(no bad values) [semantic highway]");
+    } else {
+        runtest.fail("Validate::checkWay(no bad values) [semantic highway]");
+    }
+}
+
+void
+test_semantic_building(std::shared_ptr<Validate> &plugin) {
+        // checkTag()
 
     // Existence of key=value
     auto status = plugin->checkTag("building", "yes");
     if (!status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkTag(good tag)");
+        runtest.pass("Validate::checkTag(good tag) [semantic building]");
     } else {
-        runtest.fail("Validate::checkTag(good tag)");
+        runtest.fail("Validate::checkTag(good tag) [semantic building]");
     }
 
     // Empty value
     status = plugin->checkTag("building", "");
     if (status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkTag(empty value)");
+        runtest.pass("Validate::checkTag(empty value) [semantic building]");
     } else {
-        runtest.fail("Validate::checkTag(empty value)");
+        runtest.fail("Validate::checkTag(empty value) [semantic building]");
     }
 
     // Invalid tag, not listed into the config file (ex: foo bar=bar)
     status = plugin->checkTag("foo bar", "bar");
     if (status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkTag(space in key)");
+        runtest.pass("Validate::checkTag(space in key) [semantic building]");
     } else {
-        runtest.fail("Validate::checkTag(space in key)");
+        runtest.fail("Validate::checkTag(space in key) [semantic building]");
     }
 
     // Node - checkPOI()
@@ -117,27 +170,27 @@ main(int argc, char *argv[])
     // Node with no tags
     status = plugin->checkPOI(node, "building");
     if (status->osm_id == 11111 && status->hasStatus(notags)) {
-        runtest.pass("Validate::checkPOI(no tags)");
+        runtest.pass("Validate::checkPOI(no tags) [semantic building]");
     } else {
-        runtest.fail("Validate::checkPOI(no tags)");
+        runtest.fail("Validate::checkPOI(no tags) [semantic building]");
     }
 
     // Has valid tags, but it's incomplete
     node.addTag("building", "yes");
     status = plugin->checkPOI(node, "building");
     if (status->osm_id == 11111 && !status->hasStatus(badvalue) && status->hasStatus(incomplete)) {
-        runtest.pass("Validate::checkPOI(incomplete but correct tagging)");
+        runtest.pass("Validate::checkPOI(incomplete but correct tagging) [semantic building]");
     } else {
-        runtest.fail("Validate::checkPOI(incomplete but correct tagging)");
+        runtest.fail("Validate::checkPOI(incomplete but correct tagging) [semantic building]");
     }
 
     // Has an invalid key=value
     node.addTag("building:material", "sponge");
     status = plugin->checkPOI(node, "building");
     if (status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkPOI(bad value)");
+        runtest.pass("Validate::checkPOI(bad value) [semantic building]");
     } else {
-        runtest.fail("Validate::checkPOI(bad value)");
+        runtest.fail("Validate::checkPOI(bad value) [semantic building]");
     }
 
     node.addTag("building:material", "wood");
@@ -147,9 +200,9 @@ main(int argc, char *argv[])
     // Has all valid tags
     status = plugin->checkPOI(node, "building");
     if (!status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkPOI(no bad values)");
+        runtest.pass("Validate::checkPOI(no bad values) [semantic building]");
     } else {
-        runtest.fail("Validate::checkPOI(no bad values)");
+        runtest.fail("Validate::checkPOI(no bad values) [semantic building]");
     }
 
     // Way - checkWay()
@@ -165,9 +218,9 @@ main(int argc, char *argv[])
 
     // Way with no tags
     if (status->hasStatus(notags)) {
-        runtest.pass("Validate::checkWay(no tags)");
+        runtest.pass("Validate::checkWay(no tags) [semantic building]");
     } else {
-        runtest.fail("Validate::checkWay(no tags)");
+        runtest.fail("Validate::checkWay(no tags) [semantic building]");
         way.dump();
     }
 
@@ -175,18 +228,18 @@ main(int argc, char *argv[])
     way.addTag("building", "yes");
     status = plugin->checkWay(way, "building");
     if (!status->hasStatus(badvalue) && status->hasStatus(incomplete)) {
-        runtest.pass("Validate::checkWay(incomplete but correct tagging)");
+        runtest.pass("Validate::checkWay(incomplete but correct tagging) [semantic building]");
     } else {
-        runtest.fail("Validate::checkWay(incomplete but correct tagging)");
+        runtest.fail("Validate::checkWay(incomplete but correct tagging) [semantic building]");
     }
 
     // Has an invalid key=value
     way.addTag("building:material", "sponge");
     status = plugin->checkWay(way, "building");
     if (!status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkWay(bad value)");
+        runtest.pass("Validate::checkWay(bad value) [semantic building]");
     } else {
-        runtest.fail("Validate::checkWay(bad value)");
+        runtest.fail("Validate::checkWay(bad value) [semantic building]");
     }
 
     way.addTag("building:material", "wood");
@@ -196,78 +249,95 @@ main(int argc, char *argv[])
     // Has all valid tags
     status = plugin->checkWay(way, "building");
     if (!status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkWay(no bad values)");
+        runtest.pass("Validate::checkWay(no bad values) [semantic building]");
     } else {
-        runtest.fail("Validate::checkWay(no bad values)");
+        runtest.fail("Validate::checkWay(no bad values) [semantic building]");
     }
-
-    test_geom(plugin);
 }
 
+// Geometry tests for buildings
 void
-test_geom(std::shared_ptr<Validate> &plugin)
+test_geometry_building(std::shared_ptr<Validate> &plugin)
 {
-    osmchange::OsmChangeFile ocf;
-    std::string filespec = SRCDIR;
-    filespec += "/rect.osc";
-    ocf.readChanges(filespec);
-//    ocf.dump();
 
+    // Bad geometry
+
+    osmchange::OsmChangeFile ocf;
+    std::string filespec = DATADIR;
+    filespec += "/testsuite/testdata/validation/rect.osc";
+    if (boost::filesystem::exists(filespec)) {
+        ocf.readChanges(filespec);
+    }
     for (auto it = std::begin(ocf.changes); it != std::end(ocf.changes); ++it) {
         osmchange::OsmChange *change = it->get();
-        // change->dump();
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
             osmobjects::OsmWay *way = wit->get();
             auto status = plugin->checkWay(*way, "building");
             // status->dump();
             // std::cerr << way->tags["note"] << std::endl;
+
+            // Good geometry rectangle
             if (way->id == -101790) {
-                if (status->hasStatus(incomplete) && !status->hasStatus(badgeom)) {
-                    runtest.pass("Validate::checkWay(incomplete rectangle)");
+                if (!status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(good geometry rectangle) [geometry building]");
                 } else {
-                    runtest.pass("Validate::checkWay(incomplete rectangle)");
+                    runtest.fail("Validate::checkWay(good geometry rectangle) [geometry building]");
                 }
             }
+
+            // Good geometry complex rectangle
             if (way->id == 838311812) {
-                if (status->hasStatus(incomplete) && !status->hasStatus(badgeom)) {
-                    runtest.pass("Validate::checkWay(incomplete complex rectangle)");
+                if (!status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(good geometry complex rectangle) [geometry building]");
                 } else {
-                    runtest.pass("Validate::checkWay(incomplete complex rectangle)");
+                    runtest.fail("Validate::checkWay(good geometry complex rectangle) [geometry building]");
                 }
             }
+
+            // Bad geometry (triangle)
             if (way->id == 824015796) {
-                if (status->hasStatus(incomplete) && status->hasStatus(badgeom)) {
-                    runtest.pass("Validate::checkWay(incomplete triangle)");
+                if (status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(bad geometry triangle) [geometry building]");
                 } else {
-                    runtest.pass("Validate::checkWay(incomplete triangle)");
+                    runtest.fail("Validate::checkWay(bad geometry triangle) [geometry building]");
                 }
             }
+
+            // Bad geometry
+            // FIXME
             if (way->id == 821663069) {
-                if (status->hasStatus(incomplete) && status->hasStatus(badgeom)) {
-                    runtest.pass("Validate::checkWay(incomplete bad geometry)");
+                if (status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(bad geometry) [geometry building]");
                 } else {
-                    runtest.pass("Validate::checkWay(incomplete bad geometry)");
+                    runtest.fail("Validate::checkWay(bad geometry) [geometry building]");
                 }
             }
+
+            // Bad geometry rectangle
+            // FIXME
             if (way->id == -101806) {
-                if (status->hasStatus(incomplete) && status->hasStatus(badgeom)) {
-                    runtest.pass("Validate::checkWay(badgeom rectangle)");
+                if (status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(badgeom rectangle) [geometry building]");
                 } else {
-                    runtest.pass("Validate::checkWay(badgeom rectangle)");
+                    runtest.fail("Validate::checkWay(badgeom rectangle) [geometry building]");
                 }
             }
+
+            // Good geometry big circle
             if (way->id == 856945340) {
-                if (status->hasStatus(incomplete) && !status->hasStatus(badgeom)) {
-                    runtest.pass("Validate::checkWay(badgeom big round)");
+                if (!status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(badgeom big circle) [geometry building]");
                 } else {
-                    runtest.pass("Validate::checkWay(badgeom big round)");
+                    runtest.fail("Validate::checkWay(badgeom big circle) [geometry building]");
                 }
             }
+
+            // Bad geometry small circle
             if (way->id == 961600809) {
-                if (status->hasStatus(incomplete) && status->hasStatus(badgeom)) {
-                    runtest.pass("Validate::checkWay(badgeom small round)");
+                if (status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(badgeom small circle) [geometry building]");
                 } else {
-                    runtest.pass("Validate::checkWay(badgeom small round)");
+                    runtest.fail("Validate::checkWay(badgeom small circle) [geometry building]");
                 }
             }
         }
@@ -285,6 +355,8 @@ test_geom(std::shared_ptr<Validate> &plugin)
     plugin->cornerAngle(way->linestring);
     ocf.changes.pop_front();
 #endif
+
+    // Overlapping function
 
     // Create fake buildings
     auto way1 = std::make_shared<osmobjects::OsmWay>(1101898);
@@ -310,11 +382,79 @@ test_geom(std::shared_ptr<Validate> &plugin)
     ways.push_back(way2);
     ways.push_back(way3);
 
+    // FIXME
     if (plugin->overlaps(ways, *way1)) {
-        runtest.fail("Validate::overlaps()");
+        runtest.pass("Validate::overlaps() [geometry building]");
     } else {
-        runtest.pass("Validate::overlaps()");
+        runtest.fail("Validate::overlaps() [geometry building]");
     }
+
+    // Overlapping & duplicate
+    // FIXME
+    osmchange::OsmChangeFile ocfdup;
+    filespec = DATADIR;
+    filespec += "/testsuite/testdata/validation/rect-overlap-and-duplicate-building.osc";
+    if (boost::filesystem::exists(filespec)) {
+        ocfdup.readChanges(filespec);
+    } else {
+        log_debug(_("Couldn't load ! %1%"), filespec);
+    }
+    for (auto it = std::begin(ocfdup.changes); it != std::end(ocfdup.changes); ++it) {
+        osmchange::OsmChange *change = it->get();
+        for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
+            osmobjects::OsmWay *way = wit->get();
+            auto status = plugin->checkWay(*way, "building");
+            if (way->id == -101874 || way->id == -101879) {
+                if (status->hasStatus(overlaping)) {
+                    runtest.pass("Validate::checkWay(overlaping) [geometry building]");
+                } else {
+                    runtest.fail("Validate::checkWay(overlaping) [geometry building]");
+                }
+            }
+            if (way->id == -101874 || way->id == -101879) {
+                if (status->hasStatus(duplicate)) {
+                    runtest.pass("Validate::checkWay(duplicate) [geometry building]");
+                } else {
+                    runtest.fail("Validate::checkWay(duplicate) [geometry building]");
+                }
+            }
+
+        }
+    }
+
+    // No overlapping & no duplicate
+    // FIXME
+    osmchange::OsmChangeFile ocfnodup;
+    filespec = DATADIR;
+    filespec += "/testsuite/testdata/validation/rect-no-overlap-and-duplicate-building.osc";
+    if (boost::filesystem::exists(filespec)) {
+        ocfnodup.readChanges(filespec);
+    } else {
+        log_debug(_("Couldn't load ! %1%"), filespec);
+    }
+    for (auto it = std::begin(ocfnodup.changes); it != std::end(ocfnodup.changes); ++it) {
+        osmchange::OsmChange *change = it->get();
+        for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
+            osmobjects::OsmWay *way = wit->get();
+            auto status = plugin->checkWay(*way, "building");
+            if (way->id == -101874 || way->id == -101879) {
+                if (!status->hasStatus(overlaping)) {
+                    runtest.pass("Validate::checkWay(no overlaping) [geometry building]");
+                } else {
+                    runtest.fail("Validate::checkWay(no overlaping) [geometry building]");
+                }
+            }
+            if (way->id == -101874 || way->id == -101879) {
+                if (!status->hasStatus(duplicate)) {
+                    runtest.pass("Validate::checkWay(no duplicate) [geometry building]");
+                } else {
+                    runtest.fail("Validate::checkWay(no duplicate) [geometry building]");
+                }
+            }
+
+        }
+    }
+
 }
 
 // local Variables:
