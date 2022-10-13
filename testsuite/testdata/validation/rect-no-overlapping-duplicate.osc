@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version="0.6" generator="Osmosis 0.47.4">
+  <create>
+    <node id='-111766' action='modify' visible='true' lat='4.62034117793' lon='21.72589025677' />
+    <node id='-111767' action='modify' visible='true' lat='4.62033907793' lon='21.72597535677' />
+    <node id='-111768' action='modify' visible='true' lat='4.62027657791' lon='21.72597375677' />
+    <node id='-111769' action='modify' visible='true' lat='4.62027867791' lon='21.72588865677' />
+    <way id='-101874' visible='true'>
+      <nd ref='-111766' />
+      <nd ref='-111767' />
+      <nd ref='-111768' />
+      <nd ref='-111769' />
+      <nd ref='-111766' />
+      <tag k='building' v='yes' />
+      <tag k='note' v='Good rectangular building' />
+      <tag k='source' v='Bing' />
+    </way>
+  </create>
+  <create>
+    <node id='-111775' action='modify' visible='true' lat='4.62042203109' lon='21.72599515193' />
+    <node id='-111776' action='modify' visible='true' lat='4.62041993109' lon='21.72608025193' />
+    <node id='-111777' action='modify' visible='true' lat='4.62035743108' lon='21.72607865193' />
+    <node id='-111778' action='modify' visible='true' lat='4.62035953108' lon='21.72599355193' />
+    <way id='-101879' action='modify' visible='true'>
+      <nd ref='-111775' />
+      <nd ref='-111776' />
+      <nd ref='-111777' />
+      <nd ref='-111778' />
+      <nd ref='-111775' />
+      <tag k='building' v='yes' />
+      <tag k='note' v='Good rectangular building' />
+      <tag k='source' v='Bing' />
+    </way>
+  </create>
+</osmChange>
