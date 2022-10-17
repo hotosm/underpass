@@ -1,3 +1,6 @@
+required_tags:
+    - name
+
 tags:
     - place
     - village

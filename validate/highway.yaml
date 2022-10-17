@@ -1,8 +1,6 @@
-config:
-  - complete:
-    - no
-  - values:
-    - no
+required_tags:
+  - highway
+  - surface
 
 tags:
   - highway:

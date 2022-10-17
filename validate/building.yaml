@@ -3,12 +3,12 @@ config:
     - 84
   - maxangle:
     - 91
-  - complete:
-    - no
-  - values:
-    - yes
   - overlaps:
     - yes
+
+required_tags:
+  - building
+  - building:material
 
 tags:
   - building:levels

@@ -104,6 +104,7 @@ test_semantic_highway(std::shared_ptr<Validate> &plugin) {
 
     way.addTag("highway", "primary");
 
+    // Has valid tags, but it's incomplete
     status = plugin->checkWay(way, "highway");
     if (!status->hasStatus(badvalue) && status->hasStatus(incomplete)) {
         runtest.pass("Validate::checkWay(incomplete but correct tagging) [semantic highway]");
@@ -184,13 +185,21 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.fail("Validate::checkPOI(incomplete but correct tagging) [semantic building]");
     }
 
-    // Has an invalid key=value
+    // Has an invalid key=value ...
     node.addTag("building:material", "sponge");
     status = plugin->checkPOI(node, "building");
     if (status->hasStatus(badvalue)) {
         runtest.pass("Validate::checkPOI(bad value) [semantic building]");
     } else {
         runtest.fail("Validate::checkPOI(bad value) [semantic building]");
+    }
+
+    // But it's complete
+    status = plugin->checkPOI(node, "building");
+    if (status->hasStatus(complete)) {
+        runtest.pass("Validate::checkPOI(complete) [semantic building]");
+    } else {
+        runtest.fail("Validate::checkPOI(complete) [semantic building]");
     }
 
     node.addTag("building:material", "wood");
@@ -224,7 +233,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         way.dump();
     }
 
-    // Existence of key=value
+    // Has valid tags, but it's incomplete
     way.addTag("building", "yes");
     status = plugin->checkWay(way, "building");
     if (!status->hasStatus(badvalue) && status->hasStatus(incomplete)) {
@@ -233,10 +242,19 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.fail("Validate::checkWay(incomplete but correct tagging) [semantic building]");
     }
 
-    // Has an invalid key=value
+    // Has an invalid key=value ...
     way.addTag("building:material", "sponge");
     status = plugin->checkWay(way, "building");
-    if (!status->hasStatus(badvalue)) {
+    if (status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkWay(bad value) [semantic building]");
+    } else {
+        runtest.fail("Validate::checkWay(bad value) [semantic building]");
+    }
+
+    // But it's complete
+    way.addTag("building:material", "sponge");
+    status = plugin->checkWay(way, "building");
+    if (status->hasStatus(complete)) {
         runtest.pass("Validate::checkWay(bad value) [semantic building]");
     } else {
         runtest.fail("Validate::checkWay(bad value) [semantic building]");

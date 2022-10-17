@@ -86,6 +86,23 @@ Hotosm::Hotosm(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
 }
 #endif
 
+bool Hotosm::isValidTag(const std::string &key, const std::string &value, yaml::Node tags) {
+    if (tags.contains_value(key, value) ||
+        (tags.get(key).children.size() == 0 && tags.contains_key(key))) {
+            return true;
+    }
+    log_debug(_("Bad tag: %1%=%2%"), key, value);
+    return false;
+}
+
+bool Hotosm::isRequiredTag(const std::string &key, yaml::Node required_tags) {
+    if (required_tags.children.size() > 0 && required_tags.contains_key(key)) {
+        log_debug(_("Required tag: %1%"), key);
+        return true;
+    }
+    return false;
+}
+
 // Check a POI for tags. A node that is part of a way shouldn't have any
 // tags, this is to check actual POIs, like a school.
 std::shared_ptr<ValidateStatus>
@@ -104,57 +121,35 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
         return status;
     }
 
+    // Configuration for validation
     yaml::Yaml tests = yamls[type];
+    // List of valid tags to be validated
+    auto tags = tests.get("tags");
+    // Not using required_tags disables writing features flagged for not being tag complete
+    // from being written to the database thus reducing the size of the results.
+    auto required_tags = tests.get("required_tags");
 
     std::string key;
-    int keyexists = 0;
-    int valexists = 0;
-
-    // These values are in the config section of the YAML file
-
-    // This enables/disables writing features flagged for not being tag complete
-    // from being written to the database to reduce the size of the results.
-    bool minimal = tests.get("config").contains_value("complete", "yes");
-    // This enables/disables writing features flagged for not having values
-    // in range as defined in the YAML config file. This prevents those
-    // from being written to the database to reduce the size of the results.
-    bool values = tests.get("config").contains_value("values", "yes");
+    int tagexists = 0;
 
     for (auto vit = std::begin(node.tags); vit != std::end(node.tags); ++vit) {
         if (node.action == osmobjects::remove) {
             continue;
         }
-        if (tests.contains_key(vit->first)) {
-            // std::cerr << "Matched key " << vit->first << "!" << std::endl;
-            keyexists++;
-        } else {
-            if (!minimal) {
-                status->status.insert(incomplete);
-            }
-        }
-
-        if (tests.contains_value(vit->first, vit->second) || (tests.contains_key(vit->first) && tests.get(vit->first).children.size() == 0)) {
-            // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
-            valexists++;
-            // status->status.insert(correct);
-        } else {
+        if (!isValidTag(vit->first, vit->second, tags)) {
             status->status.insert(badvalue);
-            log_debug(_("Bad value: %1% for %2%"), vit->second, vit->first);
             status->values.insert(vit->first + "=" +  vit->second);
+        }
+        if (isRequiredTag(vit->first, required_tags)) {
+            tagexists++;
         }
         status->center = node.point;
     }
-    // std::cerr << keyexists << " : " << valexists << " : " << tests.config.size() << std::endl;
 
-    if (keyexists == tests.get("tags").children.size() && valexists == tests.get("tags").children.size()) {
-        status->status.clear();
-        if (!minimal) {
-            status->status.insert(complete);
-        }
+    if (tagexists == required_tags.children.size()) {
+        status->status.insert(complete);
     } else {
-        if (!minimal) {
-            status->status.insert(incomplete);
-        }
+        status->status.insert(incomplete);
     }
     if (status->status.size() == 0) {
         status->status.insert(correct);
@@ -188,8 +183,12 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     yaml::Yaml tests = yamls[type];
 
     std::string key;
-    int keyexists = 0;
-    int valexists = 0;
+    int tagexists = 0;
+    // List of valid tags to be validated
+    auto tags = tests.get("tags");
+    // Not using required_tags disables writing features flagged for not being tag complete
+    // from being written to the database thus reducing the size of the results.
+    auto required_tags = tests.get("required_tags");
 
     // These values are in the config section of the YAML file
     double maxangle = 91;
@@ -206,9 +205,6 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     if (configMaxAngle.size() > 0) {
         maxangle = std::stod(configMaxAngle[0].value);
     }
-    // This enables/disables writing features flagged for not being tag complete
-    // from being written to the database to reduce the size of the results.
-    bool minimal = tests.get("config").contains_value("complete", "yes");
     // This enables/disables writing features flagged for not having values
     // in range as defined in the YAML config file. This prevents those
     // from being written to the database to reduce the size of the results.
@@ -219,25 +215,22 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
         if (way.action == osmobjects::remove) {
             continue;
         }
-        if (tests.contains_key(vit->first)) {
-            // std::cerr << "Matched key " << vit->first << "!" << std::endl;
-            keyexists++;
-        } else {
-            if (!minimal) {
-                status->status.insert(incomplete);
-            }
-            continue;
+
+        if (!isValidTag(vit->first, vit->second, tags)) {
+            status->status.insert(badvalue);
+            status->values.insert(vit->first + "=" +  vit->second);
         }
-        if (tests.contains_value(vit->first, vit->second) || (tests.contains_key(vit->first) && tests.get(vit->first).children.size() == 0)) {
-            // std::cerr << "Matched value: " << vit->second << "\t" << "!" << std::endl;
-            valexists++;
-            // status->status.insert(correct);
-            log_debug(_("Good value! %1%=%2%"), vit->first, vit->second);
+        if (isRequiredTag(vit->first, required_tags)) {
+            tagexists++;
+        }
+
+        if (tagexists == required_tags.children.size()) {
+            status->status.insert(complete);
         } else {
-            log_debug(_("Bad value! %1%=%2%"), vit->first, vit->second);
-            if (!values) {
-                status->status.insert(badvalue);
-            }
+            status->status.insert(incomplete);
+        }
+        if (status->status.size() == 0) {
+            status->status.insert(correct);
         }
 
         // FIXME: move out special cases to the config file
@@ -247,19 +240,6 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             }
         }
 
-        if (keyexists == tests.get("tags").children.size() && valexists == tests.get("tags").children.size()) {
-            status->status.clear();
-            if (!minimal) {
-                status->status.insert(complete);
-            }
-        } else {
-            if (!minimal) {
-                status->status.insert(incomplete);
-            }
-        }
-        if (status->status.size() == 0) {
-            status->status.insert(correct);
-        }
         if (way.linestring.size() == 0) {
             continue;
         }
