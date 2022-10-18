@@ -120,6 +120,9 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
         status->status.insert(notags);
         return status;
     }
+    if (node.action == osmobjects::remove) {
+        return status;
+    }
 
     // Configuration for validation
     yaml::Yaml tests = yamls[type];
@@ -131,11 +134,9 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
 
     std::string key;
     int tagexists = 0;
+    status->center = node.point;
 
     for (auto vit = std::begin(node.tags); vit != std::end(node.tags); ++vit) {
-        if (node.action == osmobjects::remove) {
-            continue;
-        }
         if (!isValidTag(vit->first, vit->second, tags)) {
             status->status.insert(badvalue);
             status->values.insert(vit->first + "=" +  vit->second);
@@ -143,7 +144,6 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
         if (isRequiredTag(vit->first, required_tags)) {
             tagexists++;
         }
-        status->center = node.point;
     }
 
     if (tagexists == required_tags.children.size()) {
@@ -179,6 +179,12 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
         status->status.insert(notags);
         return status;
     }
+    if (way.action == osmobjects::remove) {
+        return status;
+    }
+    if (way.linestring.size() == 0) {
+        return status;
+    }
 
     yaml::Yaml tests = yamls[type];
 
@@ -212,10 +218,6 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 
     for (auto vit = std::begin(way.tags); vit != std::end(way.tags); ++vit) {
 
-        if (way.action == osmobjects::remove) {
-            continue;
-        }
-
         if (!isValidTag(vit->first, vit->second, tags)) {
             status->status.insert(badvalue);
             status->values.insert(vit->first + "=" +  vit->second);
@@ -224,31 +226,24 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             tagexists++;
         }
 
-        if (tagexists == required_tags.children.size()) {
-            status->status.insert(complete);
-        } else {
-            status->status.insert(incomplete);
-        }
-        if (status->status.size() == 0) {
-            status->status.insert(correct);
-        }
-
         // FIXME: move out special cases to the config file
         if (!values) {
             if ((vit->first == "building" && vit->second == "commercial") && !way.tags.count("name")) {
                 status->status.insert(badvalue);
             }
         }
-
-        if (way.linestring.size() == 0) {
-            continue;
-        }
-        boost::geometry::centroid(way.linestring, status->center);
-        // std::cerr << "Way ID: " << way.id << " " << boost::geometry::wkt(status->center) << std::endl;
     }
+
+    if (tagexists == required_tags.children.size()) {
+        status->status.insert(complete);
+    } else {
+        status->status.insert(incomplete);
+    }
+
+    boost::geometry::centroid(way.linestring, status->center);
     // boost::geometry::correct(way.polygon);
     // See if the way is a closed polygon
-    if (way.linestring.size() > 0 && way.refs.front() == way.refs.back()) {
+    if (way.refs.front() == way.refs.back()) {
 
         // If it's a building, check for square corners
         // FIXME: move out special cases to the config file
@@ -273,9 +268,10 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             // FIXME: move out special cases to the config file
             log_error(_("WARNING: %1% might be a building!"), way.id);
         }
-        return status;
     }
-
+    if (status->status.size() == 0) {
+        status->status.insert(correct);
+    }
     return status;
 }
 
