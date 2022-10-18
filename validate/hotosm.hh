@@ -82,6 +82,8 @@ private:
     std::vector<long> way_errors;      ///< 
     std::vector<long> relation_errors; ///<
     std::map<std::string, std::vector<std::string>> tests;
+    bool isValidTag(const std::string &key, const std::string &value, yaml::Node tags);
+    bool isRequiredTag(const std::string &key, yaml::Node required_tags);
 };
 
 BOOST_DLL_ALIAS(Hotosm::create, create_plugin)
