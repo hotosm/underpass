@@ -139,9 +139,9 @@ namespace statsconfig {
                 category = searchCategory(tag, value, it->relation);
             }
             if (category) {
-                if (it->name == "[key]") {
+                if (it->name == "\"[key]\"") {
                     return tag;
-                } else if (it->name == "[key:value]") {
+                } else if (it->name == "\"[key:value]\"") {
                     return tag + ":" + value;
                 }
                 return it->name;
