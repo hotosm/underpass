@@ -1,4 +1,4 @@
-[key:value]:
+"[key:value]":
   way:
     - building
       - *
