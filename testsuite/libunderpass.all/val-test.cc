@@ -44,6 +44,7 @@ using namespace boost::gregorian;
 using namespace galaxy;
 
 TestState runtest;
+class TestOsmChange : public osmchange::OsmChangeFile {};
 
 typedef std::shared_ptr<Validate>(plugin_t)();
 
@@ -89,23 +90,29 @@ main(int argc, char *argv[])
     test_geometry_building(plugin);
 }
 
+osmobjects::OsmWay readOsmWayFromFile(std::string filename) {
+    TestOsmChange osmchange;
+    std::string filespec = DATADIR;
+    filespec = DATADIR;
+    filespec += filename;
+    if (boost::filesystem::exists(filespec)) {
+        osmchange.readChanges(filespec);
+    } else {
+        log_debug(_("Couldn't load ! %1%"), filespec);
+    };
+    return *osmchange.changes.front().get()->ways.front().get();
+}
+
 void
 test_semantic_highway(std::shared_ptr<Validate> &plugin) {
      // Way - checkWay()
 
-    osmobjects::OsmWay way;
-    way.id = 333333;
-    way.addRef(1234);
-    way.addRef(234);
-    way.addRef(345);
-    way.addRef(456);
-    way.addRef(1234);
-    auto status = plugin->checkWay(way, "highway");
+    auto way = readOsmWayFromFile("/testsuite/testdata/validation/highway.osc");
 
     way.addTag("highway", "primary");
 
     // Has valid tags, but it's incomplete
-    status = plugin->checkWay(way, "highway");
+    auto status = plugin->checkWay(way, "highway");
     if (!status->hasStatus(badvalue) && status->hasStatus(incomplete)) {
         runtest.pass("Validate::checkWay(incomplete but correct tagging) [semantic highway]");
     } else {
@@ -136,7 +143,7 @@ test_semantic_highway(std::shared_ptr<Validate> &plugin) {
 
 void
 test_semantic_building(std::shared_ptr<Validate> &plugin) {
-        // checkTag()
+    // checkTag()
 
     // Existence of key=value
     auto status = plugin->checkTag("building", "yes");
@@ -179,7 +186,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
     // Has valid tags, but it's incomplete
     node.addTag("building", "yes");
     status = plugin->checkPOI(node, "building");
-    if (status->osm_id == 11111 && !status->hasStatus(badvalue) && status->hasStatus(incomplete)) {
+    if (!status->hasStatus(badvalue) && status->hasStatus(incomplete)) {
         runtest.pass("Validate::checkPOI(incomplete but correct tagging) [semantic building]");
     } else {
         runtest.fail("Validate::checkPOI(incomplete but correct tagging) [semantic building]");
@@ -214,17 +221,11 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.fail("Validate::checkPOI(no bad values) [semantic building]");
     }
 
-    // Way - checkWay()
+    // // Way - checkWay()
 
-    osmobjects::OsmWay way;
-    way.id = 333333;
-    way.addRef(1234);
-    way.addRef(234);
-    way.addRef(345);
-    way.addRef(456);
-    way.addRef(1234);
+    auto way = readOsmWayFromFile("/testsuite/testdata/validation/building.osc");
+
     status = plugin->checkWay(way, "building");
-
     // Way with no tags
     if (status->hasStatus(notags)) {
         runtest.pass("Validate::checkWay(no tags) [semantic building]");
@@ -242,7 +243,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.fail("Validate::checkWay(incomplete but correct tagging) [semantic building]");
     }
 
-    // Has an invalid key=value ...
+    // // Has an invalid key=value ...
     way.addTag("building:material", "sponge");
     status = plugin->checkWay(way, "building");
     if (status->hasStatus(badvalue)) {
