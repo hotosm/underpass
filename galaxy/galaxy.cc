@@ -144,9 +144,11 @@ QueryGalaxy::applyChange(const osmchange::ChangeStats &change) const
     aquery += " updated_at = \'" + to_simple_string(now) + "\', ";
     if (change.added.size() > 0) {
         aquery += "added = " + ahstore + ", ";
+    } else {
+        aquery += "added = null, ";
     }
     if (change.modified.size() > 0) {
-        aquery += "modified = " + mhstore + ", ";
+        aquery += "modified = null, ";
     }
     aquery.erase(aquery.size() - 2);
 
@@ -292,6 +294,8 @@ QueryGalaxy::applyChange(const changeset::ChangeSet &change) const
         }
         query.erase(query.size() - 2);
         query += " }\'";
+    } else {
+        query += ", hashtags=null";
     }
 
     query += ", bbox=" + bbox.substr(2) + ")'))";
