@@ -6,10 +6,6 @@ config:
   - overlaps:
     - yes
 
-required_tags:
-  - building
-  - building:material
-
 tags:
   - building:levels
 
