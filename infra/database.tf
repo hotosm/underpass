@@ -2,7 +2,7 @@
 resource "random_password" "galaxy_database_admin_password" {
   length  = 32
   special = false
-  number  = true
+  numeric = true
   lower   = true
   upper   = true
 
