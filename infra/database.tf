@@ -2,7 +2,7 @@
 resource "random_password" "galaxy_database_admin_password" {
   length  = 32
   special = false
-  number  = true
+  numeric = true
   lower   = true
   upper   = true
 
@@ -195,7 +195,16 @@ resource "aws_db_instance" "galaxy" {
     ]
   }
 
-  identifier = trim(join("-", ["galaxy", lookup(var.name_suffix, var.deployment_environment, "0")]), "-")
+  identifier = trim(
+    join(
+      "-",
+      [
+        "galaxy",
+        lookup(var.name_suffix, var.deployment_environment, "0")
+      ]
+    ),
+    "-"
+  )
 
   allocated_storage = lookup(var.disk_sizes, "db_min", 100)
 
@@ -215,8 +224,11 @@ resource "aws_db_instance" "galaxy" {
 
   iam_database_authentication_enabled = true
 
-  vpc_security_group_ids = [aws_security_group.database.id, aws_security_group.database-administration.id]
-  db_subnet_group_name   = aws_db_subnet_group.galaxy.name
+  vpc_security_group_ids = [
+    aws_security_group.database.id,
+    aws_security_group.database-administration.id
+  ]
+  db_subnet_group_name = aws_db_subnet_group.galaxy.name
 
   tags = {
     Name = "galaxy-db"
@@ -226,13 +238,16 @@ resource "aws_db_instance" "galaxy" {
 }
 
 resource "aws_db_proxy" "galaxy" {
-  name                   = "galaxy"
-  engine_family          = "POSTGRESQL"
-  idle_client_timeout    = 1800
-  require_tls            = true
-  role_arn               = aws_iam_role.access-galaxy-database-credentials.arn
-  vpc_security_group_ids = [aws_security_group.database.id, aws_security_group.database-administration.id]
-  vpc_subnet_ids         = [for subnet in aws_subnet.private : subnet.id]
+  name                = "galaxy"
+  engine_family       = "POSTGRESQL"
+  idle_client_timeout = 1800
+  require_tls         = true
+  role_arn            = aws_iam_role.access-galaxy-database-credentials.arn
+  vpc_security_group_ids = [
+    aws_security_group.database.id,
+    aws_security_group.database-administration.id
+  ]
+  vpc_subnet_ids = [for subnet in aws_subnet.private : subnet.id]
 
   auth {
     auth_scheme = "SECRETS"
@@ -264,6 +279,9 @@ resource "aws_db_proxy_endpoint" "galaxy-readonly" {
   db_proxy_name          = aws_db_proxy.galaxy.name
   db_proxy_endpoint_name = "galaxy-readonly"
   vpc_subnet_ids         = [for subnet in aws_subnet.private : subnet.id]
-  vpc_security_group_ids = [aws_security_group.database.id, aws_security_group.database-administration.id]
-  target_role            = "READ_ONLY"
+  vpc_security_group_ids = [
+    aws_security_group.database.id,
+    aws_security_group.database-administration.id
+  ]
+  target_role = "READ_ONLY"
 }
