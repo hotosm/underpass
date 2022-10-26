@@ -291,6 +291,7 @@ resource "aws_eip" "jumphost" {
   vpc      = true
 }
 
+//
 data "aws_route53_zone" "hotosm-org" {
   name = "hotosm.org."
 }
@@ -310,6 +311,14 @@ resource "aws_route53_record" "galaxy-api-lb" {
 resource "aws_route53_record" "jumphost" {
   zone_id = data.aws_route53_zone.hotosm-org.zone_id
   name    = "galaxy-bastion.${data.aws_route53_zone.hotosm-org.name}"
+  type    = "A"
+  ttl     = "300"
+  records = [aws_eip.jumphost.public_ip]
+}
+
+resource "aws_route53_record" "galaxy-homepage" {
+  zone_id = data.aws_route53_zone.hotosm-org.zone_id
+  name    = "galaxy1.${data.aws_route53_zone.hotosm-org.name}"
   type    = "A"
   ttl     = "300"
   records = [aws_eip.jumphost.public_ip]
