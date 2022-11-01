@@ -15,8 +15,6 @@
       <tag k='note' v='Good rectangular building' />
       <tag k='source' v='Bing' />
     </way>
-  </create>
-  <create>
     <node id='-111775' action='modify' visible='true' lat='4.62042203109' lon='21.72599515193' />
     <node id='-111776' action='modify' visible='true' lat='4.62041993109' lon='21.72608025193' />
     <node id='-111777' action='modify' visible='true' lat='4.62035743108' lon='21.72607865193' />

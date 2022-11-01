@@ -184,13 +184,15 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
     }
 
     // Has valid tags, but it's incomplete
-    node.addTag("building", "yes");
+    node.addTag("building:material", "concrete");
     status = plugin->checkPOI(node, "building");
-    if (!status->hasStatus(badvalue) && status->hasStatus(incomplete)) {
-        runtest.pass("Validate::checkPOI(incomplete but correct tagging) [semantic building]");
+    if (!status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkPOI(correct tagging) [semantic building]");
     } else {
-        runtest.fail("Validate::checkPOI(incomplete but correct tagging) [semantic building]");
+        runtest.fail("Validate::checkPOI(correct tagging) [semantic building]");
     }
+
+    node.addTag("building", "yes");
 
     // Has an invalid key=value ...
     node.addTag("building:material", "sponge");
@@ -235,13 +237,15 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
     }
 
     // Has valid tags, but it's incomplete
-    way.addTag("building", "yes");
+    way.addTag("building:material", "concrete");
     status = plugin->checkWay(way, "building");
     if (!status->hasStatus(badvalue) && status->hasStatus(incomplete)) {
         runtest.pass("Validate::checkWay(incomplete but correct tagging) [semantic building]");
     } else {
         runtest.fail("Validate::checkWay(incomplete but correct tagging) [semantic building]");
     }
+
+    way.addTag("building", "yes");
 
     // // Has an invalid key=value ...
     way.addTag("building:material", "sponge");
@@ -362,55 +366,24 @@ test_geometry_building(std::shared_ptr<Validate> &plugin)
         }
     }
     
-#if 0
-    auto change = ocf.changes.front();
-    auto way = change->ways.front();
-    plugin->checkWay(*way, "building");
-    plugin->cornerAngle(way->linestring);
-    ocf.changes.pop_front();
-
-    way = change->ways.front();
-    plugin->checkWay(*way, "building");
-    plugin->cornerAngle(way->linestring);
-    ocf.changes.pop_front();
-#endif
-
     // Overlapping function
+    auto way = readOsmWayFromFile("/testsuite/testdata/validation/building.osc");
+    auto way2 = readOsmWayFromFile("/testsuite/testdata/validation/building2.osc");
 
-    // Create fake buildings
-    auto way1 = std::make_shared<osmobjects::OsmWay>(1101898);
-    std::string p1 = "POLYGON((29.3858834 -1.9609767,29.3858954 -1.9610071,29.3859234 -1.9609961,29.3859114 -1.9609657,29.3858834 -1.9609767))";
-    boost::geometry::read_wkt(p1, way1->polygon);
-    way1->addTag("layer", "1");
-    way1->addTag("building", "yes");
-
-    std::string p2 = "POLYGON((29.3858553 -1.9609767,29.3858673 -1.9610071,29.3858953 -1.9609961,29.3858833 -1.9609657,29.3858553 -1.9609767))";
-    auto way2 = std::make_shared<osmobjects::OsmWay>(1101898);
-    boost::geometry::read_wkt(p2, way2->polygon);
-    way2->addTag("layer", "2");
-    way2->addTag("building", "yes");
-
-    std::string p3 = "POLYGON((29.385826 -1.9609716,29.385838 -1.961002,29.385866 -1.960991,29.385854 -1.9609606,29.385826 -1.9609716))";
-    auto way3 = std::make_shared<osmobjects::OsmWay>(1101899);
-    boost::geometry::read_wkt(p3, way3->polygon);
-    way3->addTag("layer", "3");
-    way3->addTag("building", "yes");
-
-    std::list<std::shared_ptr<osmobjects::OsmWay>> ways;
-    ways.push_back(way1);
-    ways.push_back(way2);
-    ways.push_back(way3);
+    std::list<std::shared_ptr<osmobjects::OsmWay>> allways;
+    allways.push_back(std::make_shared<osmobjects::OsmWay>(way2));
 
     // FIXME
-    if (plugin->overlaps(ways, *way1)) {
+    if (plugin->overlaps(allways, way)) {
         runtest.pass("Validate::overlaps() [geometry building]");
     } else {
         runtest.fail("Validate::overlaps() [geometry building]");
     }
 
-    // Overlapping & duplicate
-    // FIXME
+    // Overlapping
     osmchange::OsmChangeFile ocfdup;
+    const multipolygon_t poly;
+
     filespec = DATADIR;
     filespec += "/testsuite/testdata/validation/rect-overlap-and-duplicate-building.osc";
     if (boost::filesystem::exists(filespec)) {
@@ -420,59 +393,31 @@ test_geometry_building(std::shared_ptr<Validate> &plugin)
     }
     for (auto it = std::begin(ocfdup.changes); it != std::end(ocfdup.changes); ++it) {
         osmchange::OsmChange *change = it->get();
-        for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
-            osmobjects::OsmWay *way = wit->get();
-            auto status = plugin->checkWay(*way, "building");
-            if (way->id == -101874 || way->id == -101879) {
-                if (status->hasStatus(overlaping)) {
-                    runtest.pass("Validate::checkWay(overlaping) [geometry building]");
-                } else {
-                    runtest.fail("Validate::checkWay(overlaping) [geometry building]");
-                }
-            }
-            if (way->id == -101874 || way->id == -101879) {
-                if (status->hasStatus(duplicate)) {
-                    runtest.pass("Validate::checkWay(duplicate) [geometry building]");
-                } else {
-                    runtest.fail("Validate::checkWay(duplicate) [geometry building]");
-                }
-            }
-
+        for (auto nit = std::begin(change->ways); nit != std::end(change->ways); ++nit) {
+            osmobjects::OsmWay *way = nit->get();
+            way->priority = true;
         }
     }
 
-    // No overlapping & no duplicate
-    // FIXME
-    osmchange::OsmChangeFile ocfnodup;
-    filespec = DATADIR;
-    filespec += "/testsuite/testdata/validation/rect-no-overlap-and-duplicate-building.osc";
-    if (boost::filesystem::exists(filespec)) {
-        ocfnodup.readChanges(filespec);
-    } else {
-        log_debug(_("Couldn't load ! %1%"), filespec);
-    }
-    for (auto it = std::begin(ocfnodup.changes); it != std::end(ocfnodup.changes); ++it) {
-        osmchange::OsmChange *change = it->get();
-        for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
-            osmobjects::OsmWay *way = wit->get();
-            auto status = plugin->checkWay(*way, "building");
-            if (way->id == -101874 || way->id == -101879) {
-                if (!status->hasStatus(overlaping)) {
-                    runtest.pass("Validate::checkWay(no overlaping) [geometry building]");
-                } else {
-                    runtest.fail("Validate::checkWay(no overlaping) [geometry building]");
-                }
-            }
-            if (way->id == -101874 || way->id == -101879) {
-                if (!status->hasStatus(duplicate)) {
-                    runtest.pass("Validate::checkWay(no duplicate) [geometry building]");
-                } else {
-                    runtest.fail("Validate::checkWay(no duplicate) [geometry building]");
-                }
-            }
+    auto wayval = ocfdup.validateWays(poly, plugin);
 
+    for (auto sit = wayval->begin(); sit != wayval->end(); ++sit) {
+        auto status = *sit->get();
+        if (status.hasStatus(overlaping)) {
+            runtest.pass("Validate::validateWays(overlaping) [geometry building]");
+        } else {
+            runtest.fail("Validate::validateWays(overlaping) [geometry building]");
         }
     }
+
+    // TODO: No overlapping
+    // ...
+
+    // TODO: Duplicate
+    // ...
+
+    // TODO: No duplicate
+    // ...
 
 }
 

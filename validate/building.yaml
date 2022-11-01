@@ -6,6 +6,9 @@ config:
   - overlaps:
     - yes
 
+required_tags:
+  - building
+
 tags:
   - building:levels
 
