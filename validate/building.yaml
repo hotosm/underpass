@@ -5,6 +5,8 @@ config:
     - 91
   - overlaps:
     - yes
+  - duplicate:
+    - yes
 
 required_tags:
   - building

@@ -791,6 +791,9 @@ OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate
                     if (plugin->overlaps(change->ways, *way)) {
                         status->status.insert(overlaping);
                     }
+                    if (plugin->duplicate(change->ways, *way)) {
+                        status->status.insert(duplicate);
+                    }
                 }
                 if (status->status.size() > 0) {
                     totals->push_back(status);
