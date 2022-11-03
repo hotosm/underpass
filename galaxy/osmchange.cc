@@ -325,6 +325,9 @@ OsmChangeFile::on_start_element(const Glib::ustring &name,
         if (nodecache.count(ref)) {
             auto way = reinterpret_cast<OsmWay *>(change->obj.get());
             boost::geometry::append(way->linestring, nodecache[ref]);
+            if (way->isClosed()) {
+                way->polygon = { {std::begin(way->linestring), std::end(way->linestring)} };
+            }
         }
     }
 
@@ -775,31 +778,21 @@ OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate
         for (auto nit = std::begin(change->ways); nit != std::end(change->ways); ++nit) {
             OsmWay *way = nit->get();
             if (!way->priority) {
-                // log_debug(_("Validating Way %1% is not in a priority area"), way->id);
                 continue;
-            } else {
-                // log_debug(_("Validating Way %1% is in a priority area"), way->id);
             }
-
             std::vector<std::string> way_tests = {"building", "highway", "waterway" "place"};
-            // FIXME: place
-
             for (auto wit = way_tests.begin(); wit != way_tests.end(); ++wit) {
                 if (!way->containsKey(*wit)) {
                     continue;
                 }
                 auto status = plugin->checkWay(*way, *wit);
-                if (status->hasStatus(correct) && status->hasStatus(incomplete)) {
-                    //std::cerr << *wit << " Way " << way->id << " is correct but incomplete!" << std::endl;
-                } else if (status->hasStatus(complete)) {
-                    //std::cerr << *wit << " Way " << way->id << " is complete" << std::endl;
-                } else {
-                    //std::cerr << *wit << " Way " << way->id << " is not complete" << std::endl;
-                    // way->dump();
-                }
+                // TODO: move to config files
                 if (way->containsKey("building")) {
                     if (plugin->overlaps(change->ways, *way)) {
                         status->status.insert(overlaping);
+                    }
+                    if (plugin->duplicate(change->ways, *way)) {
+                        status->status.insert(duplicate);
                     }
                 }
                 if (status->status.size() > 0) {
