@@ -199,6 +199,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     // These values are in the config section of the YAML file
     double maxangle = 91;
     double minangle = 85;
+    int circleMinPoints = 0;
     auto config = tests.get("config");
 
     // This is the minimum angle used to determine rectangular buildings
@@ -210,6 +211,11 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     auto configMaxAngle = config.get("maxangle").children;
     if (configMaxAngle.size() > 0) {
         maxangle = std::stod(configMaxAngle[0].value);
+    }
+    // This is the maximum angle used to determine rectangular buildings
+    auto configCircleMinPoints = config.get("circleminpoints").children;
+    if (configCircleMinPoints.size() > 0) {
+        circleMinPoints = std::stoi(configCircleMinPoints[0].value);
     }
     // This enables/disables writing features flagged for not having values
     // in range as defined in the YAML config file. This prevents those
@@ -252,16 +258,17 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
                 log_debug(_("Not enough nodes in modified linestring to calculate the angle!"));
                 return status;
             }
-            double angle = cornerAngle(way.linestring);
-            status->angle = std::abs(angle);
-            // std::cerr << "Angle for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
-            if ((std::abs(angle) >= maxangle || std::abs(angle) <= minangle) &&
-                std::abs(angle) >= 40) {
-                // std::cerr << "Bad Geometry for ID " << way.id <<  " is: " << std::abs(angle) << std::endl;
-                // It's probably round
-                if (std::abs(angle) >= 40) {
+
+            // minangle, maxangle, circle
+            std::tuple<double, double, bool> angles = cornerAngle(way.linestring);
+
+            status->angle = std::get<0>(angles);
+            if (std::get<2>(angles)) {
+                if (way.linestring.size() - 1 < circleMinPoints) {
                     status->status.insert(badgeom);
                 }
+            } else if (std::get<0>(angles) > maxangle || std::get<1>(angles) < minangle) {
+                status->status.insert(badgeom);
             }
         } else if (way.refs.size() == 5 && way.tags.size() == 0) {
             // See if it's closed, has 4 corners, but no tags

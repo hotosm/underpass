@@ -327,9 +327,8 @@ test_geometry_building(std::shared_ptr<Validate> &plugin)
             }
 
             // Bad geometry
-            // FIXME
             if (way->id == 821663069) {
-                if (status->hasStatus(badgeom)) {
+                if (!status->hasStatus(badgeom)) {
                     runtest.pass("Validate::checkWay(bad geometry) [geometry building]");
                 } else {
                     runtest.fail("Validate::checkWay(bad geometry) [geometry building]");
@@ -337,7 +336,6 @@ test_geometry_building(std::shared_ptr<Validate> &plugin)
             }
 
             // Bad geometry rectangle
-            // FIXME
             if (way->id == -101806) {
                 if (status->hasStatus(badgeom)) {
                     runtest.pass("Validate::checkWay(badgeom rectangle) [geometry building]");
@@ -349,9 +347,9 @@ test_geometry_building(std::shared_ptr<Validate> &plugin)
             // Good geometry big circle
             if (way->id == 856945340) {
                 if (!status->hasStatus(badgeom)) {
-                    runtest.pass("Validate::checkWay(badgeom big circle) [geometry building]");
+                    runtest.pass("Validate::checkWay(good geometry big circle) [geometry building]");
                 } else {
-                    runtest.fail("Validate::checkWay(badgeom big circle) [geometry building]");
+                    runtest.fail("Validate::checkWay(good geometry big circle) [geometry building]");
                 }
             }
 
