@@ -7,6 +7,8 @@ config:
     - yes
   - duplicate:
     - yes
+  - circleminpoints:
+    - 10
 
 required_tags:
   - building

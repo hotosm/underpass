@@ -284,30 +284,60 @@ class BOOST_SYMBOL_VISIBLE Validate {
         return false;
     }
 
-    double cornerAngle(const linestring_t &way) {
-        if (boost::geometry::num_points(way) <= 3) {
+    std::tuple<double, double, bool> cornerAngle(const linestring_t &way) {
+        const int num_points =  boost::geometry::num_points(way) - 1;
+        double max = 0;
+        double min = 180;
+        bool circle = false;
+        double angleSum = 0;
+        if (num_points < 3) {
             log_error(_("way has no line segments!"));
-            return -1;
+            return std::tuple<double, double, bool>(-1,  -1, false);
         }
-            // first segment
-        try {
-            double x1 = boost::geometry::get<0>(way[0]);
-            double y1 = boost::geometry::get<1>(way[0]);
-            double x2 = boost::geometry::get<0>(way[1]);
-            double y2 = boost::geometry::get<1>(way[1]);
+        for(int i = 0; i < num_points; i++) {
+            try {
+                // Three points
+                int a,b,c;
+                if (i == num_points - 2) {
+                    a = i;
+                    b = i + 1;
+                    c = 0;
+                } else if (i == num_points - 1) {
+                    a = i;
+                    b = 0;
+                    c = 1;
+                } else {
+                    a = i;
+                    b = i+1;
+                    c = i+2;
+                }
+                double x1 = boost::geometry::get<0>(way[a]);
+                double y1 = boost::geometry::get<1>(way[a]);
+                double x2 = boost::geometry::get<0>(way[b]);
+                double y2 = boost::geometry::get<1>(way[b]);
+                double x3 = boost::geometry::get<0>(way[c]);
+                double y3 = boost::geometry::get<1>(way[c]);
 
-            // Next segment that intersects
-            double x3 = boost::geometry::get<0>(way[2]);
-            double y3 = boost::geometry::get<1>(way[2]);
+                double s1 = (y2 - y1) / (x2 - x1);
+                double s2 = (y3 - y2) / (x3 - x2);
+                double angle = std::abs(std::atan((s2 - s1) / (1 + (s2 * s1))) * 180 / M_PI);
 
-            double s1 = (y2 - y1) / (x2 - x1);
-            double s2 = (y3 - y2) / (x3 - x2);
-            double angle = std::atan((s2 - s1) / (1 + (s2 * s1))) * 180 / M_PI;
-            return angle;
-        } catch (const std::exception &ex) {
-            log_error(_("way doesn't have enough points"));
-            return -1;
+                if (angle > max) {
+                    max = angle;
+                }
+                if (angle < min) {
+                    min = angle;
+                }
+                angleSum += angle;
+            } catch (const std::exception &ex) {
+                log_error(_("way doesn't have enough points"));
+                return std::tuple<double, double, bool>(-1,  -1, false);
+            }
         }
+        if (num_points > 7 && angleSum > 358 && angleSum < 362 && (max - min) < 10) {
+            circle = true;
+        }
+        return std::tuple<double, double, bool>(max,  min, circle);
     };
 
   protected:
