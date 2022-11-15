@@ -627,10 +627,12 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                     // Get the geometry behind each reference
                     boost::geometry::model::linestring<sphere_t> globe;
                     for (auto lit = std::begin(way->refs); lit != std::end(way->refs); ++lit) {
-                        globe.push_back(sphere_t(nodecache[*lit].get<0>(),
-                                                 nodecache[*lit].get<1>()));
-                        boost::geometry::append(way->linestring, nodecache[*lit]);
-                    }
+                        double x = nodecache[*lit].get<0>();
+                        double y = nodecache[*lit].get<1>();
+                        if (x != 0 && y != 0) {
+                            globe.push_back(sphere_t(x,y));
+                            boost::geometry::append(way->linestring, nodecache[*lit]);
+                        }                    }
                     std::string tag;
                     if (*hit == "highway") {
                         tag = "highway_km";
@@ -639,7 +641,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                         tag = "waterway_km";
                     }
                     double length = boost::geometry::length(globe,
-                            boost::geometry::strategy::distance::haversine<float>(6371.0)) * 1000;
+                            boost::geometry::strategy::distance::haversine<float>(6371.0));
                     // log_debug("LENGTH: %1% %2%", std::to_string(length), way->change_id);
                     ostats->added[tag] += length;
                 }
