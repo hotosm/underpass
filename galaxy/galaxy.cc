@@ -148,6 +148,8 @@ QueryGalaxy::applyChange(const osmchange::ChangeStats &change) const
         aquery += "added = null, ";
     }
     if (change.modified.size() > 0) {
+        aquery += "modified = " + mhstore + ", ";
+    } else {
         aquery += "modified = null, ";
     }
     aquery.erase(aquery.size() - 2);
