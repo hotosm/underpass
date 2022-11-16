@@ -6,4 +6,12 @@ We run this query every 24 hours for cleaning the database
 when running the replicator process with areaFilter disabled 
 for osmchanges (--osmnoboundary).
 */
-DELETE FROM changesets WHERE bbox is null and closed_at < NOW() - INTERVAL '24 HOURS' RETURNING id;
+DELETE FROM validation v where v.change_id in (
+	SELECT id from changesets
+	WHERE bbox is NULL
+	AND closed_at < NOW() - INTERVAL '24 HOURS'
+);
+
+DELETE FROM changesets WHERE
+    bbox is NULL
+    AND closed_at < NOW() - INTERVAL '24 HOURS';
