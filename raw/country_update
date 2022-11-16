@@ -167,7 +167,7 @@ class Underpass:
             {source_table} b
         where
             ST_Intersects( w.geom ,
-            ST_SetSRID(b.boundary,4326))
+            b.boundary)
         	))
     where {target_column} is null
     and "timestamp" >= '{start}'
