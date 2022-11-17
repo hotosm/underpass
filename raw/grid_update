@@ -157,20 +157,20 @@ class Underpass:
     def update_field(self, start, end,target_table,target_column,source_table, source_column):
         """Function that updates grid column of table"""
         query = f"""update
-            {target_table} as w
-            set
-                {target_column} = (
-                select
-                    b.{source_column}
-                from
-                    {source_table} b
-                where
-                    ST_Intersects( w.geom ,
-                    b.geom)
-                limit 1	)::int
-            where {target_column} is null
-            and "timestamp" >= '{start}'
-            and "timestamp" < '{end}'"""
+	{target_table} as w
+    set
+        {target_column} = (
+        select
+            b.{source_column}
+        from
+            {source_table} b
+        where
+            ST_Intersects( w.geom ,
+            b.geom)
+        limit 1	)::int
+    where {target_column} is null
+    and "timestamp" >= '{start}'
+    and "timestamp" < '{end}'"""
         result = self.database.executequery(query)
         logging.debug(f"""Changed Row : {result}""")
 
