@@ -364,8 +364,8 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     std::string format;
     std::string query;
     if (validation.values.size() > 0) {
-        query = "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, values, timestamp, location) VALUES(";
-        format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], ARRAY[%s], \'%s\', ST_GeomFromText(\'%s\', 4326)";
+        query = "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, values, timestamp, location, source) VALUES(";
+        format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], ARRAY[%s], \'%s\', ST_GeomFromText(\'%s\', 4326), \'%s\'";
     } else {
         query = "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, timestamp, location) VALUES(";
         format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)";
@@ -401,11 +401,14 @@ QueryGalaxy::applyChange(const ValidateStatus &validation) const
     // Postgres wants the order of lat,lon reversed from how they
     // are stored in the WKT.
     fmt % boost::geometry::wkt(validation.center);
+    if (validation.values.size() > 0) {
+        fmt % validation.source;
+    }
     query += fmt.str();
     query += ") ON CONFLICT (osm_id) DO UPDATE ";
     query += " SET status = ARRAY[" + stattmp + " ]::status[]";
     if (validation.values.size() > 0) {
-        query += ", values = ARRAY[" + valtmp + " ]";
+        query += ", values = ARRAY[" + valtmp + " ], source = \'" + validation.source + "\'";
     }
 //    log_debug(_("QUERY: %1%"), query);
 

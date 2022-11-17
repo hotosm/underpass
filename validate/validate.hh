@@ -163,6 +163,7 @@ class ValidateStatus {
     point_t center;        ///< The centroid of the building polygon
     double angle = 0;        ///< The calculated angle of a corner
     std::unordered_set<std::string> values; ///< The found bad tag values
+    std::string source; //< The source of the validation status
 };
 
 
