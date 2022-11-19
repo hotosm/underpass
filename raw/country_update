@@ -156,7 +156,7 @@ class Underpass:
 
     def update_field(self, start, end,target_table,target_column,source_table, source_column):
         """Function that updates grid column of table"""
-        if target_table == 'ways_poly' or target_column == 'nodes':
+        if target_table == 'ways_poly' or 'nodes': # for ways_poly and nodes its rare to have two countries intersection
             query = f"""update
         {target_table} as w
         set
@@ -172,7 +172,7 @@ class Underpass:
         where {target_column} is null and (
         "timestamp" >= '{start}'
         and "timestamp" < '{end}' )"""
-        else:
+        else: # lines and relations may have two countries intersection
 
             query = f"""update
                 {target_table} as w
