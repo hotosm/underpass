@@ -206,7 +206,7 @@ class Underpass:
             raise TypeError('Batch Frequency Invalid')
         # Considering date is in yyyy-mm-dd H:M:S format
         logging.debug(
-            f"""----------Update Field Function has been started for {target_table}:{target_column} From {start_batch_date} to {end_batch_date} with frequency {batch_frequency.value} with source as {source_table}:{source_column}----------""")
+            f"""----------Update Field Function has been started for {target_table}:{target_column} From {start_batch_date} to {end_batch_date} : Frequency {batch_frequency.value} , Source = {source_table}:{source_column}----------""")
         looping_date = start_batch_date
         loop_count = 1
         while looping_date >= end_batch_date:
@@ -215,14 +215,14 @@ class Underpass:
             end_date = assign_end_wrt_frequency(start_date, batch_frequency)
             self.update_field(end_date,start_date,target_table,target_column,source_table,source_column)
             logging.debug(
-                f"""Batch {loop_count} Field Update from {end_date} to {start_date} , Completed in {(time.time() - start_time)} Seconds""")
+                f"""Batch {loop_count} Update from {end_date} to {start_date} , Completed in {str(datetime.timedelta(seconds=(time.time() - start_time)))} : \n Total time elapsed : {str(datetime.timedelta(seconds=(time.time() - batch_start_time)))}""")
             loop_count += 1
             looping_date = end_date
 
         # closing connection
         self.database.close_conn()
         logging.debug(
-            f"""-----Updating Field Took-- {(time.time() - batch_start_time)} seconds for {start_batch_date} to {end_batch_date} with batch frequency {batch_frequency.value} -----""")
+            f"""-----Total Operation Took-- {str(datetime.timedelta(seconds=(time.time() - batch_start_time)))} for {start_batch_date} to {end_batch_date} with batch frequency {batch_frequency.value} -----""")
 
 
 # The parser is only called if this script is called as a script/executable (via command line) but not when imported by another script
