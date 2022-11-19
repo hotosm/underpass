@@ -205,7 +205,7 @@ class Underpass:
             raise TypeError('Batch Frequency Invalid')
         # Considering date is in yyyy-mm-dd H:M:S format
         logging.debug(
-            f"""----------Update Field Function has been started for {target_table}:{target_column} From {start_batch_date} to {end_batch_date} : Frequency {batch_frequency.value} , Source = {source_table}:{source_column}----------""")
+            f"""----------Update Field Function has been started for target = {target_table}:{target_column} from source = {source_table}:{source_column} , Range {start_batch_date} - {end_batch_date} , frequency {batch_frequency.value}----------""")
         looping_date = start_batch_date
         loop_count = 1
         while looping_date >= end_batch_date:
@@ -214,7 +214,7 @@ class Underpass:
             end_date = assign_end_wrt_frequency(start_date, batch_frequency)
             self.update_field(end_date,start_date,target_table,target_column,source_table,source_column)
             logging.debug(
-                f"""Batch {loop_count} Update from {end_date} to {start_date} , Completed in {str(datetime.timedelta(seconds=(time.time() - start_time)))} : \n Total time elapsed : {str(datetime.timedelta(seconds=(time.time() - batch_start_time)))}""")
+                f"""Batch {loop_count} Update from {end_date} to {start_date} , Completed in {str(datetime.timedelta(seconds=(time.time() - start_time)))}\nTotal time elapsed : {str(datetime.timedelta(seconds=(time.time() - batch_start_time)))}""")
             loop_count += 1
             looping_date = end_date
 
