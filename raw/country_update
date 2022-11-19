@@ -169,9 +169,9 @@ class Underpass:
                 ST_Intersects( w.geom ,
                 b.boundary)
             limit 1	)::int
-        where
+        where {target_column} is null and (
         "timestamp" >= '{start}'
-        and "timestamp" < '{end}'"""
+        and "timestamp" < '{end}' )"""
         else:
 
             query = f"""update
@@ -186,9 +186,9 @@ class Underpass:
                         ST_Intersects( w.geom ,
                         b.boundary)
                         ))
-                where
+                where {target_column} is null and (
                 "timestamp" >= '{start}'
-                and "timestamp" < '{end}'"""
+                and "timestamp" < '{end}' )"""
         result = self.database.executequery(query)
         logging.debug(f"""Changed Row : {result}""")
 
