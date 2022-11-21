@@ -221,7 +221,7 @@ class Underpass:
         # closing connection
         self.database.close_conn()
         logging.debug(
-            f"""-----Total Operation Took-- {str(datetime.timedelta(seconds=(time.time() - batch_start_time)))} for {start_batch_date} to {end_batch_date} with batch frequency {batch_frequency.value} -----""")
+            f"""-----Total Operation Took for {target_table}:{target_column}-- {str(datetime.timedelta(seconds=(time.time() - batch_start_time)))} for {start_batch_date} to {end_batch_date} with batch frequency {batch_frequency.value} -----""")
 
 
 # The parser is only called if this script is called as a script/executable (via command line) but not when imported by another script
