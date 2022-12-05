@@ -4,7 +4,7 @@ Prepare your osm.pbf for loading before start. You can download it from differen
 - Install [osm2pgsql > v1.6.0](https://github.com/openstreetmap/osm2pgsql/releases/tag/1.6.0)
 - Download and clone underpass
 - Navigate to raw Directory 
-- Download Planet pbf file[Here](https://planet.osm.org/pbf/) or Use Geofabrik Pbf file [Here](https://osm-internal.download.geofabrik.de/index.html) with full metadata (Tested with .pbf file)
+- Download Planet pbf file[Here](https://planet.osm.org/pbf/) or Use Geofabrik Pbf file [Here](https://osm-internal.download.geofabrik.de/index.html) with full metadata (Tested with .pbf file) , you can pass this link to script itself when you run ```run.py```
 - Run Following command  with your db credentials to terminal, ***--slim** mode will be important if you want to do replication later ( if you don't need to update your database remove --slim option ( this will consume more ram during loading) )*  You can read manual of osm2pgsql more [here](https://osm2pgsql.org/doc/manual.html#)
 
 >    <font size="2">
