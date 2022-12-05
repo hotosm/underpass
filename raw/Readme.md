@@ -1,7 +1,7 @@
 ## Initialize Rawdata Loading
 
 Prepare your osm.pbf for loading before start. You can download it from different sources such as Geofabrik , Planet.
-- Install [osm2pgsql v1.6.0](https://github.com/openstreetmap/osm2pgsql/releases/tag/1.6.0)
+- Install [osm2pgsql > v1.6.0](https://github.com/openstreetmap/osm2pgsql/releases/tag/1.6.0)
 - Download and clone underpass
 - Navigate to raw Directory 
 - Download Planet pbf file[Here](https://planet.osm.org/pbf/) or Use Geofabrik Pbf file [Here](https://osm-internal.download.geofabrik.de/index.html) with full metadata (Tested with .pbf file)
@@ -26,20 +26,11 @@ export PGPASSWORD=admin
 export PGDATABASE=postgres
 ```
 
-##### Command 
-```osm2pgsql --create -H localhost -U admin -P 5432 -d postgres -W --extra-attributes --slim --output=flex --style ./raw.lua yourdownloaded.osm.pbf ```
-
-with exported DB Param : 
-
-```osm2pgsql --create --extra-attributes --slim --output=flex --style ./raw.lua yourdownloaded.osm.pbf ```
-
-> **Note:** It is tested with osm2pgsql 1.6.0 version only , If data is loaded without --slim mode you will have query ready tables nodes,ways_line,ways_poly and relations . When you use --slim mode it will store meta data to database itself . It will create three additional tables : planet_osm_nodes,planet_osm_ways, planet_osm_relations which will be used during update only , Rather than that you will be querying nodes,ways_line,ways_poly and relations table to get data !
-
 ## Prepare Your Tables
 
-Install [psycopg2](https://pypi.org/project/psycopg2/), [osmium](https://pypi.org/project/osmium/) and [dateutil](https://pypi.org/project/python-dateutil/) in your python env
+Install [psycopg2](https://pypi.org/project/psycopg2/), [osmium](https://pypi.org/project/osmium/) and [dateutil](https://pypi.org/project/python-dateutil/) , wget in your python env . You can install using ```requirements.txt``` too 
 
-Create ***config.txt*** file in the directory and Put your credentials inside it like this
+Create ***db_config.txt*** file in the directory and Put your credentials inside it like this
 
 ```
 
@@ -57,51 +48,25 @@ port=
 
 ```
 
-- **Create Basic Indexes** : 
-
-    ```
-    psql -h localhost -U admin -d postgres -a -f ./basic_indexes.sql
-    ```
-
-- **Create Grid Table** : 
-
-    ```
-    psql -h localhost -U admin -d postgres -a -f ./grid.sql
-    ```
-
-- **Apply Grid Update Script** :
-    There is grid_update script , Which is responsible for the Grid Column update on the tables which will be null intially when you import 
+- **Start Application** :
 
     **Run Script**
 
     ```
-    python grid_update
+    python run.py
     ```
 
-
-    >Script will take optional parameters if required , Default it will populate ways_poly from latest row date available on table to earliest row date with frequency of Daily
+    >Script will ask you few question about how you want to do it , it will ask for source , you can either pass download link or pass filepath where you have downloaded file 
     
-    Find More details with **help** 
-
-    ```
-    python grid_update -h
-    ```
-
-- **Create Geo Indexes & Cluster** :
-    ```
-    psql -h localhost -U admin -d postgres -a -f ./geo_indexes.sql
-    ```
-
-
 
 ##  Initialize Update Script
   
 
-Now run init , This will create replication status table in db
+By default ```run.py``` will take care of replication but if you want to run it by yourself you can run this 
 
 >Export database password or keep it inside systemd service or pass W after command   -- -W
 
-```python rawdata-replication init ```
+```python replication init ```
 
 Replication script will use 'https://planet.openstreetmap.org/replication/minute'.
 
@@ -109,13 +74,13 @@ Now Run update with lua script file location : *-s* parameter like this (Conside
 
 
 ```
-python rawdata-replication update -s raw.lua
+python replication update -s raw.lua
 ```
 
 with force password prompt (Only if you wish to supply pass from command) :
 
 ```
-python rawdata-replication update -s raw.lua -- -W
+python replication update -s raw.lua -- -W
 ```
 
 Read more documentation [here](https://osm2pgsql.org/doc/manual.html#advanced-topics) 

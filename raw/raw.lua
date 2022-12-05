@@ -37,7 +37,8 @@ tables.nodes = osm2pgsql.define_table{
         { column = 'timestamp', sql_type = 'timestamp' },
         { column = 'tags', type = 'jsonb' },
         { column = 'geom', type = 'point', projection = srid },
-        { column = 'grid', type = 'int', create_only = true },
+        { column = 'country', sql_type= 'int[]', create_only = true },
+        
     }
 
 }
@@ -54,7 +55,7 @@ tables.ways_line = osm2pgsql.define_table{
         { column = 'timestamp', sql_type = 'timestamp' },
         { column = 'tags', type = 'jsonb' },
         { column = 'geom', type = 'linestring', projection = srid },
-        { column = 'grid', type = 'int', create_only = true },
+        { column = 'country', sql_type= 'int[]', create_only = true },
 
     }
 
@@ -74,6 +75,8 @@ tables.ways_poly = osm2pgsql.define_table{
         { column = 'tags', type = 'jsonb' },
         { column = 'geom', type = 'polygon', projection = srid },
         { column = 'grid', type = 'int', create_only = true },
+        { column = 'country', sql_type= 'int[]', create_only = true },
+
 
     }
 
@@ -93,7 +96,8 @@ tables.rels = osm2pgsql.define_table{
         { column = 'timestamp', sql_type = 'timestamp' },
         { column = 'tags', type = 'jsonb' },
         { column = 'geom', type = 'geometry', projection = srid },
-        { column = 'grid', type = 'int', create_only = true },
+        { column = 'country',sql_type= 'int[]', create_only = true },
+        
 
     }
 }

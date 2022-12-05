@@ -1,0 +1,26 @@
+{
+    "source": "https://download.geofabrik.de/asia/nepal-latest.osm.pbf",
+    "pbf2db_insert": true,
+    "pre_index":true,
+    "db_operation":{
+        "create":{
+            "grid":true,
+            "country":true
+        },
+        "update":{
+            "nodes":true,
+            "ways_line":true,
+            "ways_poly":{
+                "country":true,
+                "grid":true
+            },
+            "relations":true
+        }
+    },
+    "post_index":true,
+    "replication_init":true,
+    "replication":{
+        "country": [61]
+    }
+
+}

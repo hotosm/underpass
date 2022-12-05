@@ -36,9 +36,10 @@ depcomp
 install-sh
 missing
 unconfig.h.in
-raw/data
-raw/env
-raw/config.txt
 m4/libtool.m4
 unconfig.h.in
 .ipynb_checkpoints
+raw/data
+raw/env
+raw/db_config.txt
+raw/app_config.json
