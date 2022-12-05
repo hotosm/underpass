@@ -174,7 +174,7 @@ class Underpass:
             query = f"""update
                 {target_table} as w
                 set
-                    {target_column} = array((
+                    {target_column} = array(
                     select
                         b.{source_column}
                     from
@@ -182,7 +182,7 @@ class Underpass:
                     where
                         ST_Intersects( w.{target_geom} ,
                         b.{source_geom})
-                        ))
+                        )
                 where {target_column} is null and (
                 "timestamp" >= '{start}'
                 and "timestamp" < '{end}' )"""

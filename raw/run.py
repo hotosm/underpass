@@ -48,6 +48,13 @@ def run_subprocess_cmd(cmd):
         subprocess.check_output(cmd, env=os.environ)
     except subprocess.CalledProcessError as e:
         print(e.output)
+        raise e.output
+
+
+def save_config(config):
+    # save my config
+    with open("app_config.json", "w") as f:
+        f.write(json.dumps(config))
 
 
 if not exists("app_config.json"):
@@ -65,7 +72,9 @@ if not exists("app_config.json"):
             },
         },
         "post_index": False,
+        "run_replication": False,
         "replication_init": False,
+        "replication": {},
     }
 
     source_url = input(
@@ -76,11 +85,10 @@ if not exists("app_config.json"):
         "Do you want to run replication later on ? Default : NO . Type y/yes for yes : \n"
     )
     if do_replciation.lower() == "y" or do_replciation.lower() == "yes":
-        config["replication_init"] = True
+        config["run_replication"] = True
         print("Will Run Replication later on")
 
-    with open("app_config.json", "w") as outfile:
-        json.dump(config, outfile)
+    save_config(config)
 
 with open("app_config.json", "r") as openfile:
     # Reading from json file
@@ -110,7 +118,7 @@ if not config["pbf2db_insert"]:
         "./raw.lua",
         source_path,
     ]
-    if config["replication_init"]:
+    if config["run_replication"]:
         osm2pgsql = [
             "osm2pgsql",
             "--create",
@@ -123,6 +131,10 @@ if not config["pbf2db_insert"]:
         ]
     run_subprocess_cmd(osm2pgsql)
     config["pbf2db_insert"] = True
+
+# check point
+save_config(config)
+
 
 if not config["pre_index"]:
     ## build pre indexes
@@ -271,25 +283,32 @@ if not config["post_index"]:
     run_subprocess_cmd(basic_index_cmd)
     config["post_index"] = True
 
-if not config["replication_init"]:
-    ## db is ready now intit replication
+# checkpoint
+save_config(config)
 
-    replication_init = ["python", "replication", "init"]
-    run_subprocess_cmd(replication_init)
-    config["replication_init"] = True
 
-if "replication" not in config:
-    replication_answer = input("Do you want to Run Replication ? , y/yes for yes")
-    if replication_answer.lower() == "y" or replication_answer.lower() == "yes":
-        config["replication"] = {}
+if config["run_replication"]:
+
+    if not config["replication_init"]:
+        ## db is ready now intit replication
+        print("\nRunning Replication init .. \n")
+
+        replication_init = ["python", "replication", "init"]
+        run_subprocess_cmd(replication_init)
+        config["replication_init"] = True
+
+    if "country" not in config["replication"]:
         country_filter = input(
-            "By default replication will cover whole world , If you have loaded country do you want to keep only your country data ?"
+            "\nBy default replication will cover whole world , If you have loaded country do you want to keep only your country data ? y/yes to yes :\n"
         )
         if country_filter.lower() == "y" or country_filter.lower() == "yes":
             coutry_list = input(
-                "Enter your country ogc_fid from countries_un table in database ( If multiple countries split by ,): "
+                "Enter your country ogc_fid from countries_un table in database ( If multiple countries split by ,): \n"
             )
-            config["replication"]["country"] = list(coutry_list)
+            config["replication"]["country"] = [int(x) for x in coutry_list.split(",")]
+
+# checkpoint
+save_config(config)
 
 
 if "replication" in config:
