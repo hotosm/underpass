@@ -50,13 +50,16 @@ if not exists("app_config.json"):
         "replication_init": False,
     }
 
-    source_url = input("Source to Download ( .pbf file ) ")
+    source_url = input(
+        "Data Source ? Paste link to Download or Downloaded file path ( .pbf file ) : \n"
+    )
     config["source"] = source_url
     do_replciation = input(
-        "Do you want to run replication later on ? Default : no . Type y/yes for yes "
+        "Do you want to run replication later on ? Default : NO . Type y/yes for yes : \n"
     )
-    if do_replciation.lower() == "y" or "yes":
+    if do_replciation.lower() == "y" or do_replciation.lower() == "yes":
         config["replication_init"] = True
+        print("Will Run Replication later on")
 
     with open("app_config.json", "w") as outfile:
         json.dump(config, outfile)
@@ -67,11 +70,17 @@ with open("app_config.json", "r") as openfile:
 
 source_path = config["source"]
 if not is_local(config["source"]):
+    if not exists("data"):
+        os.mkdir("data")
     source_path = "data/source.osm.pbf"
     if not exists(source_path):
-        response = wget.download(config["source"], "source.osm.pbf")
+        print(f"Starting download for : {source_path}")
+
+        response = wget.download(config["source"], source_path)
 
 if not config["pbf2db_insert"]:
+    print(f"Starting Import Process (1/10)... \n")
+
     osm2pgsql = [
         "osm2pgsql",
         "--create",
@@ -81,7 +90,7 @@ if not config["pbf2db_insert"]:
         "--output=flex",
         "--style",
         "./raw.lua",
-        "./source.osm.pbf",
+        source_path,
     ]
     if config["replication_init"]:
         osm2pgsql = [
@@ -92,23 +101,28 @@ if not config["pbf2db_insert"]:
             "--output=flex",
             "--style",
             "./raw.lua",
-            "./source.osm.pbf",
+            source_path,
         ]
     run_subprocess_cmd(osm2pgsql)
     config["pbf2db_insert"] = True
 
 if not config["pre_index"]:
     ## build pre indexes
+    print(f"Building Pre Indexes(2/10) ... \n")
+
     basic_index_cmd = ["psql", "-a", "-f", "sql/pre_indexes.sql"]
     run_subprocess_cmd(basic_index_cmd)
     config["pre_index"] = True
 
 ## create grid table
 if not config["db_operation"]["create"]["grid"]:
+    print(f"Creating  Grid Table (3/10) ... \n")
+
     grid_insert = ["psql", "-a", "-f", "sql/grid.sql"]
     run_subprocess_cmd(grid_insert)
     config["db_operation"]["create"]["grid"] = True
 if not config["db_operation"]["create"]["country"]:
+    print(f"Creating  Country Table (4/10) ... \n")
 
     ## create country table
     country_table = ["psql", "-a", "-f", "sql/countries_un.sql"]
@@ -116,7 +130,7 @@ if not config["db_operation"]["create"]["country"]:
     config["db_operation"]["create"]["country"] = True
 
 if not config["db_operation"]["update"]["nodes"]:
-
+    print(f"Updating  Nodes:Country Table (5/10) ... \n")
     ## initiate country update for nodes
     field_update_cmd = [
         "python",
@@ -134,10 +148,12 @@ if not config["db_operation"]["update"]["nodes"]:
         "--source_geom",
         "wkb_geometry",
     ]
-    run_subprocess_cmd(field_update_cmd, check=True)
+    run_subprocess_cmd(field_update_cmd)
     config["db_operation"]["update"]["nodes"] = True
 
 if not config["db_operation"]["update"]["ways_poly"]["country"]:
+    print(f"Updating  ways_poly:Country Table (6/10) ... \n")
+
     ## initiate country update for ways_poly
     field_update_cmd = [
         "python",
@@ -159,6 +175,7 @@ if not config["db_operation"]["update"]["ways_poly"]["country"]:
     config["db_operation"]["update"]["ways_poly"]["country"] = True
 
 if not config["db_operation"]["update"]["ways_poly"]["grid"]:
+    print(f"Updating  ways_poly:grid Table (7/10) ... \n")
 
     # grid update for ways_poly
     field_update_cmd = [
@@ -183,6 +200,7 @@ if not config["db_operation"]["update"]["ways_poly"]["grid"]:
     config["db_operation"]["update"]["ways_poly"]["grid"] = True
 
 if not config["db_operation"]["update"]["ways_line"]:
+    print(f"Updating  ways_line:country Table (8/10) ... \n")
 
     ## initiate country update for ways_line
     field_update_cmd = [
@@ -205,6 +223,7 @@ if not config["db_operation"]["update"]["ways_line"]:
     config["db_operation"]["update"]["ways_line"] = True
 
 if not config["db_operation"]["update"]["relations"]:
+    print(f"Updating  relations:country Table (9/10) ... \n")
 
     ## initiate country update for relations
     field_update_cmd = [
@@ -227,6 +246,7 @@ if not config["db_operation"]["update"]["relations"]:
     config["db_operation"]["update"]["relations"] = True
 
 if not config["post_index"]:
+    print(f"Building  Post Indexes (10/10) ... \n")
 
     ## build post indexes
     basic_index_cmd = ["psql", "-a", "-f", "sql/post_indexes.sql"]
@@ -242,12 +262,12 @@ if not config["replication_init"]:
 
 if "replication" not in config:
     replication_answer = input("Do you want to Run Replication ? , y/yes for yes")
-    if replication_answer.lower() == "y" or "yes":
+    if replication_answer.lower() == "y" or replication_answer.lower() == "yes":
         config["replication"] = {}
         country_filter = input(
             "By default replication will cover whole world , If you have loaded country do you want to keep only your country data ?"
         )
-        if country_filter.lower() == "y" or "yes":
+        if country_filter.lower() == "y" or country_filter.lower() == "yes":
             coutry_list = input(
                 "Enter your country ogc_fid from countries_un table in database ( If multiple countries split by ,): "
             )
@@ -255,6 +275,8 @@ if "replication" not in config:
 
 
 if "replication" in config:
+    print(f"Starting  Replication ... \n")
+
     while True:  # run replication forever
         # --max-diff-size 10 mb as default
         start = time.time()
