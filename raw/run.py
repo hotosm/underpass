@@ -87,6 +87,15 @@ if not exists("app_config.json"):
     if do_replciation.lower() == "y" or do_replciation.lower() == "yes":
         config["run_replication"] = True
         print("Will Run Replication later on")
+    if "country" not in config["replication"]:
+        country_filter = input(
+            "\nBy default replication will cover whole world , If you have loaded country do you want to keep only your country data ? y/yes to yes :\n"
+        )
+        if country_filter.lower() == "y" or country_filter.lower() == "yes":
+            coutry_list = input(
+                "Enter your country ogc_fid from countries_un table in database : \n"
+            )
+            config["replication"]["country"] = int(coutry_list)
 
     save_config(config)
 
@@ -301,15 +310,6 @@ if config["run_replication"]:
         run_subprocess_cmd(replication_init)
         config["replication_init"] = True
 
-    if "country" not in config["replication"]:
-        country_filter = input(
-            "\nBy default replication will cover whole world , If you have loaded country do you want to keep only your country data ? y/yes to yes :\n"
-        )
-        if country_filter.lower() == "y" or country_filter.lower() == "yes":
-            coutry_list = input(
-                "Enter your country ogc_fid from countries_un table in database : \n"
-            )
-            config["replication"]["country"] = int(coutry_list)
 
 # checkpoint
 save_config(config)

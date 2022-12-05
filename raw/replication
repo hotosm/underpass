@@ -581,11 +581,20 @@ def update_country(conn, timestamp, table_name, c_id=None):
     if c_id:
         # delete data outside country
         with conn.cursor() as cur:
-            delete_query = f"""delete from 
-            {table_name} 
-            where
-                not ({c_id} = ANY(country))
-                and "timestamp" >= '{timestamp}'"""
+            if table_name.lower() == "ways_poly" or table_name.lower() == "nodes":
+                delete_query = f"""delete from 
+                {table_name} 
+                where
+                    "timestamp" >= '{timestamp}'
+                    and NOT (country = {c_id})
+                    """
+            else:
+                delete_query = f"""delete from 
+                {table_name} 
+                where
+                    "timestamp" >= '{timestamp}'
+                    and NOT ({c_id} = ANY (country) )
+                    """
             cur.execute(delete_query)
             LOG.info(
                 f"""Data cleanup for {table_name} Complete >= {timestamp} : {cur.statusmessage} """
