@@ -177,6 +177,8 @@ if not config["db_operation"]["update"]["nodes"]:
         "ogc_fid",
         "--source_geom",
         "wkb_geometry",
+        "--type",
+        "int",
     ]
     run_subprocess_cmd(field_update_cmd)
     config["db_operation"]["update"]["nodes"] = True
@@ -200,6 +202,8 @@ if not config["db_operation"]["update"]["ways_poly"]["country"]:
         "ogc_fid",
         "--source_geom",
         "wkb_geometry",
+        "--type",
+        "int",
     ]
     run_subprocess_cmd(field_update_cmd)
     config["db_operation"]["update"]["ways_poly"]["country"] = True
@@ -303,9 +307,9 @@ if config["run_replication"]:
         )
         if country_filter.lower() == "y" or country_filter.lower() == "yes":
             coutry_list = input(
-                "Enter your country ogc_fid from countries_un table in database ( If multiple countries split by ,): \n"
+                "Enter your country ogc_fid from countries_un table in database : \n"
             )
-            config["replication"]["country"] = [int(x) for x in coutry_list.split(",")]
+            config["replication"]["country"] = int(coutry_list)
 
 # checkpoint
 save_config(config)
