@@ -47,10 +47,16 @@ if not exists("app_config.json"):
             },
         },
         "post_index": False,
+        "replication_init": False,
     }
 
     source_url = input("Source to Download ( .pbf file ) ")
     config["source"] = source_url
+    do_replciation = input(
+        "Do you want to run replication later on ? Default : no . Type y/yes for yes "
+    )
+    if do_replciation.lower() == "y" or "yes":
+        config["replication_init"] = True
 
     with open("app_config.json", "w") as outfile:
         json.dump(config, outfile)
@@ -70,12 +76,24 @@ if not config["pbf2db_insert"]:
         "osm2pgsql",
         "--create",
         "--slim",
+        "--drop",
         "--extra-attributes",
         "--output=flex",
         "--style",
         "./raw.lua",
         "./source.osm.pbf",
     ]
+    if config["replication_init"]:
+        osm2pgsql = [
+            "osm2pgsql",
+            "--create",
+            "--slim",
+            "--extra-attributes",
+            "--output=flex",
+            "--style",
+            "./raw.lua",
+            "./source.osm.pbf",
+        ]
     run_subprocess_cmd(osm2pgsql)
     config["pbf2db_insert"] = True
 
