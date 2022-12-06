@@ -35,6 +35,8 @@ from configparser import ConfigParser
 from pathlib import Path
 from textwrap import dedent
 
+import pytz
+
 config = ConfigParser()
 config.read("db_config.txt")
 
@@ -442,7 +444,10 @@ def update(conn, args):
     osm2pgsql.append(str(outfile))
     LOG.debug("Calling osm2pgsql with: %s", " ".join(osm2pgsql))
     # return 1
-    grid_timestamp = ts
+    try:
+        grid_timestamp = ts.astimezone(pytz.UTC)
+    except ValueError:
+        LOG.fatal("Cannot parse timestamp '%s'", ts)
     while seq < current.sequence:
         LOG.debug("Importing from sequence %d", seq)
         if outfile.exists():
@@ -513,8 +518,8 @@ def update(conn, args):
                 else None,
             )
             update_grid(conn, grid_timestamp, args.grid)
-            LOG.info(f"Update field complete in {time.time()-start_time}s")
-            grid_timestamp = timestamp
+            LOG.info(f"Updating field  took {round(time.time()-start_time)}s overall.")
+            grid_timestamp = nextstate.timestamp
         if args.once:
             break
 
@@ -538,7 +543,7 @@ def update_grid(conn, timestamp, table_name):
             limit 1	)::int
         where "timestamp" >= '{timestamp}'"""
         cur.execute(update_query)
-        LOG.info(f"""Grid Update Complete >= {timestamp} : {cur.statusmessage} """)
+        LOG.info(f"""Grid Update >= {timestamp} : {cur.statusmessage} """)
     conn.commit()
 
 
@@ -575,7 +580,7 @@ def update_country(conn, timestamp, table_name, c_id=None):
                 where "timestamp" >= '{timestamp}'"""
         cur.execute(update_query)
         LOG.info(
-            f"""Country Update {table_name} Complete >= {timestamp} : {cur.statusmessage} """
+            f"""Country {table_name} Complete >= {timestamp} : {cur.statusmessage} """
         )
     conn.commit()
     if c_id:
@@ -597,7 +602,7 @@ def update_country(conn, timestamp, table_name, c_id=None):
                     """
             cur.execute(delete_query)
             LOG.info(
-                f"""Data cleanup for {table_name} Complete >= {timestamp} : {cur.statusmessage} """
+                f"""Cleanup {table_name} Complete >= {timestamp} : {cur.statusmessage} """
             )
         conn.commit()
 
