@@ -114,7 +114,7 @@ if not is_local(config["source"]):
         response = wget.download(config["source"], source_path)
 
 if not config["pbf2db_insert"]:
-    print(f"Starting Import Process (1/10)... \n")
+    print(f"\nStarting Import Process (1/10)... \n")
 
     osm2pgsql = [
         "osm2pgsql",
@@ -147,7 +147,7 @@ save_config(config)
 
 if not config["pre_index"]:
     ## build pre indexes
-    print(f"Building Pre Indexes(2/10) ... \n")
+    print(f"\nBuilding Pre Indexes(2/10) ... \n")
 
     basic_index_cmd = ["psql", "-a", "-f", "sql/pre_indexes.sql"]
     run_subprocess_cmd(basic_index_cmd)
@@ -289,7 +289,7 @@ if not config["db_operation"]["update"]["relations"]:
     config["db_operation"]["update"]["relations"] = True
 
 if not config["post_index"]:
-    print(f"Building  Post Indexes (10/10) ... \n")
+    print(f"\nBuilding  Post Indexes (10/10) ... \n")
 
     ## build post indexes
     basic_index_cmd = ["psql", "-a", "-f", "sql/post_indexes.sql"]
@@ -316,7 +316,7 @@ save_config(config)
 
 
 if "replication" in config:
-    print(f"Starting  Replication ... \n")
+    print(f"\nStarting  Replication ... \n")
 
     while True:  # run replication forever
         # --max-diff-size 10 mb as default
