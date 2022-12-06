@@ -591,14 +591,14 @@ def update_country(conn, timestamp, table_name, c_id=None):
                 {table_name} 
                 where
                     "timestamp" >= '{timestamp}'
-                    and NOT (country = {c_id})
+                    and (NOT (country = {c_id}) or country is null)
                     """
             else:
                 delete_query = f"""delete from 
                 {table_name} 
                 where
                     "timestamp" >= '{timestamp}'
-                    and NOT ({c_id} = ANY (country) )
+                    and (NOT ({c_id} = ANY (country) ) or country is null )
                     """
             cur.execute(delete_query)
             LOG.info(
