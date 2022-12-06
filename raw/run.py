@@ -57,7 +57,7 @@ def run_subprocess_cmd_parallel(cmds):
     for p in procs:
         err = p.communicate()
         if err:
-            raise err
+            raise err.decode()
 
 
 def save_config(config):
