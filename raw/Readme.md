@@ -27,7 +27,7 @@
     host=localhost
     user=
     password=
-    dbname=
+    database=
     port=
     ```
  - Start the Process

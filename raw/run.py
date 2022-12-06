@@ -35,7 +35,7 @@ os.environ["PGHOST"] = db_config.get("RAW_DATA", "host", fallback="localhost")
 os.environ["PGPORT"] = db_config.get("RAW_DATA", "port", fallback="5432")
 os.environ["PGUSER"] = db_config.get("RAW_DATA", "user", fallback="postgres")
 os.environ["PGPASSWORD"] = db_config.get("RAW_DATA", "password", fallback="postgres")
-os.environ["PGDATABASE"] = db_config.get("RAW_DATA", "dbname", fallback="postgres")
+os.environ["PGDATABASE"] = db_config.get("RAW_DATA", "database", fallback="postgres")
 
 
 def is_local(url):

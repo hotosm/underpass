@@ -434,7 +434,7 @@ def update(conn, args):
 
     osm2pgsql.extend(args.extra_params)
 
-    osm2pgsql.extend(("-d", dict(config.items("RAW_DATA"))["dbname"]))
+    osm2pgsql.extend(("-d", dict(config.items("RAW_DATA"))["database"]))
 
     osm2pgsql.extend(("-U", dict(config.items("RAW_DATA"))["user"]))
 
