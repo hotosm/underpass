@@ -51,6 +51,17 @@ def run_subprocess_cmd(cmd):
         raise e.output
 
 
+def run_subprocess_cmd_parallel(cmds):
+    try:
+        procs = [subprocess.Popen(i, env=os.environ) for i in cmds]
+        for p in procs:
+            p.wait()
+        # subprocess.check_output(cmd, env=os.environ)
+    except subprocess.CalledProcessError as e:
+        print(e.output)
+        raise e.output
+
+
 def save_config(config):
     # save my config
     with open("app_config.json", "w") as f:
@@ -169,6 +180,8 @@ if not config["db_operation"]["create"]["country"]:
     run_subprocess_cmd(country_table)
     config["db_operation"]["create"]["country"] = True
 
+update_cmd_list = []
+
 if not config["db_operation"]["update"]["nodes"]:
     print(f"Updating  Nodes:Country Table (5/10) ... \n")
     ## initiate country update for nodes
@@ -190,11 +203,12 @@ if not config["db_operation"]["update"]["nodes"]:
         "--type",
         "int",
     ]
-    run_subprocess_cmd(field_update_cmd)
+    update_cmd_list.append(field_update_cmd)
+    # run_subprocess_cmd(field_update_cmd)
     config["db_operation"]["update"]["nodes"] = True
 
 if not config["db_operation"]["update"]["ways_poly"]["country"]:
-    print(f"Updating  ways_poly:Country Table (6/10) ... \n")
+    # print(f"Updating  ways_poly:Country Table (6/10) ... \n")
 
     ## initiate country update for ways_poly
     field_update_cmd = [
@@ -215,11 +229,13 @@ if not config["db_operation"]["update"]["ways_poly"]["country"]:
         "--type",
         "int",
     ]
-    run_subprocess_cmd(field_update_cmd)
+    update_cmd_list.append(field_update_cmd)
+
+    # run_subprocess_cmd(field_update_cmd)
     config["db_operation"]["update"]["ways_poly"]["country"] = True
 
 if not config["db_operation"]["update"]["ways_poly"]["grid"]:
-    print(f"Updating  ways_poly:grid Table (7/10) ... \n")
+    # print(f"Updating  ways_poly:grid Table (7/10) ... \n")
 
     # grid update for ways_poly
     field_update_cmd = [
@@ -240,11 +256,13 @@ if not config["db_operation"]["update"]["ways_poly"]["grid"]:
         "--type",
         "int",
     ]
-    run_subprocess_cmd(field_update_cmd)
+    update_cmd_list.append(field_update_cmd)
+
+    # run_subprocess_cmd(field_update_cmd)
     config["db_operation"]["update"]["ways_poly"]["grid"] = True
 
 if not config["db_operation"]["update"]["ways_line"]:
-    print(f"Updating  ways_line:country Table (8/10) ... \n")
+    # print(f"Updating  ways_line:country Table (8/10) ... \n")
 
     ## initiate country update for ways_line
     field_update_cmd = [
@@ -263,11 +281,13 @@ if not config["db_operation"]["update"]["ways_line"]:
         "--source_geom",
         "wkb_geometry",
     ]
-    run_subprocess_cmd(field_update_cmd)
+    update_cmd_list.append(field_update_cmd)
+
+    # run_subprocess_cmd(field_update_cmd)
     config["db_operation"]["update"]["ways_line"] = True
 
 if not config["db_operation"]["update"]["relations"]:
-    print(f"Updating  relations:country Table (9/10) ... \n")
+    # print(f"Updating  relations:country Table (9/10) ... \n")
 
     ## initiate country update for relations
     field_update_cmd = [
@@ -286,8 +306,14 @@ if not config["db_operation"]["update"]["relations"]:
         "--source_geom",
         "wkb_geometry",
     ]
-    run_subprocess_cmd(field_update_cmd)
+    update_cmd_list.append(field_update_cmd)
+    # run_subprocess_cmd(field_update_cmd)
     config["db_operation"]["update"]["relations"] = True
+
+if len(update_cmd_list) > 1:
+    run_subprocess_cmd_parallel(update_cmd_list)
+
+save_config(config)
 
 if not config["post_index"]:
     print(f"\nBuilding  Post Indexes (10/10) ... \n")
@@ -316,7 +342,7 @@ if config["run_replication"]:
 save_config(config)
 
 
-if "replication" in config:
+if config["replication_init"]:
     print(f"\nStarting  Replication ... \n")
 
     while True:  # run replication forever
