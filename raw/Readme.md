@@ -6,7 +6,7 @@
     ```
 - Clone underpass and navigate to raw dir
     ```
-    git clone https://github.com/hotosm/underpass.git && cd raw
+    git clone https://github.com/hotosm/underpass.git && cd underpass/raw
     ```
 
 - Install Requirements
