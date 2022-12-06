@@ -41,3 +41,7 @@
 
     If you are interested on Manual setup find Guide [here](./Manual.md) 
     
+  Example : 
+  
+  <img width="564" alt="image" src="https://user-images.githubusercontent.com/36752999/205835914-d8a0be01-f70b-4f37-b690-b5dcafdf002e.png">
+
