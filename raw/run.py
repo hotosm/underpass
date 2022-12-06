@@ -53,14 +53,11 @@ def run_subprocess_cmd(cmd):
 
 
 def run_subprocess_cmd_parallel(cmds):
-    try:
-        procs = [subprocess.Popen(i, env=os.environ) for i in cmds]
-        for p in procs:
-            p.wait()
-        # subprocess.check_output(cmd, env=os.environ)
-    except subprocess.CalledProcessError as e:
-        print(e.output)
-        raise e.output
+    procs = [subprocess.Popen(i, env=os.environ, stderr=subprocess.PIPE) for i in cmds]
+    for p in procs:
+        err = p.communicate()
+        if err:
+            raise err
 
 
 def save_config(config):
