@@ -1,5 +1,5 @@
 {
-    "source": "https://download.geofabrik.de/asia/nepal-latest.osm.pbf",
+    "source": "sample_data/pokhara_all.osm.pbf",
     "pbf2db_insert": false,
     "pre_index": false,
     "db_operation": {
@@ -18,9 +18,10 @@
         }
     },
     "post_index": false,
-    "run_replication": false,
+    "run_replication": true,
     "replication_init": false,
     "replication": {
+        "now":false,
         "country": 61
     }
 
