@@ -340,6 +340,10 @@ if config["run_replication"]:
 # checkpoint
 save_config(config)
 
+print(
+    f"\nImport and Post Process Finished.  Total time taken : {str(datetime.timedelta(seconds=(time.time() - start_time)))}"
+)
+
 
 if config["replication_init"]:
     print(f"\nStarting  Replication ... \n")
@@ -360,6 +364,3 @@ if config["replication_init"]:
         if (time.time() - start) < 60:
             time.sleep(60)
 
-print(
-    f"\nProcess Finished.  Total time taken : {str(datetime.timedelta(seconds=(time.time() - start_time)))}"
-)
