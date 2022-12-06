@@ -37,11 +37,16 @@
     python run.py
     ```
 
-    >Script will ask you few question about how you want to do it , it will ask for source , ask for whether you want to run replication or not . On source you can either pass download link or pass filepath where you have downloaded file . You can Download Planet pbf file[Here](https://planet.osm.org/pbf/) or Use Geofabrik Pbf file [Here](https://osm-internal.download.geofabrik.de/index.html) with full metadata (Tested with .pbf file) , you can pass this link to script itself . Follow example app_config json to know more
+    >Script will ask you few question about how you want to do it , it will ask for source , ask for whether you want to run replication or not . On source you can either pass download link or pass filepath where you have downloaded file . You can Download Planet pbf file[Here](https://planet.osm.org/pbf/) or Use Geofabrik Pbf file [Here](https://osm-internal.download.geofabrik.de/index.html) with full metadata (Tested with .pbf file) , you can pass download link to script itself . Follow example app_config json to know more
 
     If you are interested on Manual setup find Guide [here](./Manual.md) 
     
-  Example : 
+  Example with sample data: 
   
-  <img width="564" alt="image" src="https://user-images.githubusercontent.com/36752999/205835914-d8a0be01-f70b-4f37-b690-b5dcafdf002e.png">
-
+- Create ```app_config.json``` on root and copy content of sample.json 
+    ``` 
+    cp app_config_sample.json app_config.json
+    ```
+- Hit ```python run.py```
+    
+    Script will create replication ready tables on database . You can change replication now to true ``` "replicaton":{"now":true}``` in config and rerun the script to start replciation 
