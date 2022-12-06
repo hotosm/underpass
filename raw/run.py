@@ -56,7 +56,7 @@ def run_subprocess_cmd(cmd):
 def run_subprocess_cmd_parallel(cmds):
     procs = [subprocess.Popen(i, env=os.environ, stderr=subprocess.PIPE) for i in cmds]
     for p in procs:
-        err = p.communicate()
+        err = p.wait()
         if err:
             print(err)
             sys.exit()
