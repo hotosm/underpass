@@ -16,6 +16,7 @@
 #
 #     You should have received a copy of the GNU General Public License
 #     along with Underpass.  If not, see <https:#www.gnu.org/licenses/>.
+import datetime
 import json
 import os
 import subprocess
@@ -67,6 +68,9 @@ def save_config(config):
     with open("app_config.json", "w") as f:
         f.write(json.dumps(config))
 
+
+start_time = time.time()
+print("Script Started ... ")
 
 if not exists("app_config.json"):
 
@@ -360,3 +364,7 @@ if config["replication_init"]:
         run_subprocess_cmd(replication_cmd)
         if (time.time() - start) < 60:
             time.sleep(60)
+
+print(
+    f"\nProcess Finished.  Total time taken : {str(datetime.timedelta(seconds=(time.time() - start_time)))}"
+)
