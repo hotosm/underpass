@@ -92,21 +92,27 @@ if not exists("app_config.json"):
     )
     config["source"] = source_url
     do_replciation = input(
-        "Do you want to run replication later on ? Default : NO . Type y/yes for yes : \n"
+        "Prepare tables for replication ? Default : NO . Type y/yes for yes : \n"
     )
     if do_replciation.lower() == "y" or do_replciation.lower() == "yes":
         config["run_replication"] = True
-        print("Will Run Replication later on")
+        print("Prepare for replication : Yes")
     if config["run_replication"]:
         if "country" not in config["replication"]:
             country_filter = input(
-                "\nBy default replication will cover whole world , If you have loaded country do you want to keep only your country data ? y/yes to yes :\n"
+                "\nReplication will cover whole world data, If you have loaded country do you want to keep only your country data ? y/yes to yes :\n"
             )
             if country_filter.lower() == "y" or country_filter.lower() == "yes":
                 coutry_list = input(
                     "Enter your country ogc_fid from countries_un table in database : \n"
                 )
                 config["replication"]["country"] = int(coutry_list)
+        if "now" not in ["replication"]:
+            run_now = input(
+                "\nDo you want to run replication right after processing is finished ? \n"
+            )
+            if run_now.lower() == "y" or run_now.lower() == "yes":
+                config["replication"]["now"] = True
 
     save_config(config)
 
@@ -346,21 +352,22 @@ print(
 
 
 if config["replication_init"]:
-    print(f"\nStarting  Replication ... \n")
+    if config["replication"]["now"]:
+        print(f"\nStarting  Replication ... \n")
 
-    while True:  # run replication forever
-        # --max-diff-size 10 mb as default
-        start = time.time()
-        replication_cmd = [
-            "python",
-            "replication",
-            "update",
-            "-s",
-            "raw.lua",
-            "--max-diff-size",
-            "10",
-        ]
-        run_subprocess_cmd(replication_cmd)
-        if (time.time() - start) < 60:
-            time.sleep(60)
+        while True:  # run replication forever
+            # --max-diff-size 10 mb as default
+            start = time.time()
+            replication_cmd = [
+                "python",
+                "replication",
+                "update",
+                "-s",
+                "raw.lua",
+                "--max-diff-size",
+                "10",
+            ]
+            run_subprocess_cmd(replication_cmd)
+            if (time.time() - start) < 60:
+                time.sleep(60)
 
