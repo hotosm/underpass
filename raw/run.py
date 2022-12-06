@@ -24,6 +24,7 @@ import time
 from configparser import ConfigParser
 from os.path import exists
 from urllib.parse import urlparse
+import sys
 
 import wget
 
@@ -49,7 +50,7 @@ def run_subprocess_cmd(cmd):
         subprocess.check_output(cmd, env=os.environ)
     except subprocess.CalledProcessError as e:
         print(e.output)
-        raise e.output
+        sys.exit()
 
 
 def run_subprocess_cmd_parallel(cmds):
@@ -57,7 +58,8 @@ def run_subprocess_cmd_parallel(cmds):
     for p in procs:
         err = p.communicate()
         if err:
-            raise err.decode()
+            print(err.decode())
+            sys.exit()
 
 
 def save_config(config):
