@@ -58,7 +58,7 @@ def run_subprocess_cmd_parallel(cmds):
     for p in procs:
         err = p.communicate()
         if err:
-            print(err.decode())
+            print(err)
             sys.exit()
 
 
