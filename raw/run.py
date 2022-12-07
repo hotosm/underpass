@@ -20,16 +20,18 @@ import datetime
 import json
 import os
 import subprocess
+import sys
 import time
 from configparser import ConfigParser
 from os.path import exists
 from urllib.parse import urlparse
-import sys
 
 import wget
 
 db_config = ConfigParser()
-db_config.read("db_config.txt")
+working_dir = os.path.realpath(os.path.dirname(__file__))
+config_path = os.path.join(working_dir, "db_config.txt")
+db_config.read(config_path)
 
 os.environ["PGHOST"] = db_config.get("RAW_DATA", "host", fallback="localhost")
 os.environ["PGPORT"] = db_config.get("RAW_DATA", "port", fallback="5432")
@@ -58,16 +60,17 @@ def run_subprocess_cmd_parallel(cmds):
     for p in procs:
         p.wait()
 
+
 def save_config(config):
     # save my config
-    with open("app_config.json", "w") as f:
+    app_config_path = os.path.join(working_dir, "app_config.json")
+    with open(app_config_path, "w") as f:
         f.write(json.dumps(config))
 
 
 start_time = time.time()
 print("Script Started ... ")
-
-if not exists("app_config.json"):
+if not exists(os.path.join(working_dir, "app_config.json")):
 
     config = {
         "pbf2db_insert": False,
@@ -116,15 +119,17 @@ if not exists("app_config.json"):
 
     save_config(config)
 
-with open("app_config.json", "r") as openfile:
+with open(os.path.join(working_dir, "app_config.json"), "r") as openfile:
     # Reading from json file
     config = json.load(openfile)
-
+if config["source"] == "sample":
+    config["source"] = os.path.join(working_dir, "sample_data/pokhara_all.osm.pbf")
 source_path = config["source"]
 if not is_local(config["source"]):
-    if not exists("data"):
-        os.mkdir("data")
-    source_path = "data/source.osm.pbf"
+    data_dir = os.path.join(working_dir, "data")
+    if not exists(data_dir):
+        os.mkdir(data_dir)
+    source_path = os.path.join(working_dir, "data/source.osm.pbf")
     if not exists(source_path):
         print(f"Starting download for : {source_path}")
 
@@ -132,6 +137,7 @@ if not is_local(config["source"]):
 
 if not config["pbf2db_insert"]:
     print(f"\nStarting Import Process (1/10)... \n")
+    lua_path = os.path.join(working_dir, "raw.lua")
 
     osm2pgsql = [
         "osm2pgsql",
@@ -141,7 +147,7 @@ if not config["pbf2db_insert"]:
         "--extra-attributes",
         "--output=flex",
         "--style",
-        "./raw.lua",
+        lua_path,
         source_path,
     ]
     if config["run_replication"]:
@@ -152,7 +158,7 @@ if not config["pbf2db_insert"]:
             "--extra-attributes",
             "--output=flex",
             "--style",
-            "./raw.lua",
+            lua_path,
             source_path,
         ]
     run_subprocess_cmd(osm2pgsql)
@@ -166,7 +172,12 @@ if not config["pre_index"]:
     ## build pre indexes
     print(f"\nBuilding Pre Indexes(2/10) ... \n")
 
-    basic_index_cmd = ["psql", "-a", "-f", "sql/pre_indexes.sql"]
+    basic_index_cmd = [
+        "psql",
+        "-a",
+        "-f",
+        os.path.join(working_dir, "sql/pre_indexes.sql"),
+    ]
     run_subprocess_cmd(basic_index_cmd)
     config["pre_index"] = True
 
@@ -174,14 +185,19 @@ if not config["pre_index"]:
 if not config["db_operation"]["create"]["grid"]:
     print(f"Creating  Grid Table (3/10) ... \n")
 
-    grid_insert = ["psql", "-a", "-f", "sql/grid.sql"]
+    grid_insert = ["psql", "-a", "-f", os.path.join(working_dir, "sql/grid.sql")]
     run_subprocess_cmd(grid_insert)
     config["db_operation"]["create"]["grid"] = True
 if not config["db_operation"]["create"]["country"]:
     print(f"Creating  Country Table (4/10) ... \n")
 
     ## create country table
-    country_table = ["psql", "-a", "-f", "sql/countries_un.sql"]
+    country_table = [
+        "psql",
+        "-a",
+        "-f",
+        os.path.join(working_dir, "sql/countries_un.sql"),
+    ]
     run_subprocess_cmd(country_table)
     config["db_operation"]["create"]["country"] = True
 
@@ -192,7 +208,7 @@ if not config["db_operation"]["update"]["nodes"]:
     ## initiate country update for nodes
     field_update_cmd = [
         "python",
-        "field_update",
+        os.path.join(working_dir, "field_update"),
         "-target_table",
         "nodes",
         "--target_column",
@@ -218,7 +234,7 @@ if not config["db_operation"]["update"]["ways_poly"]["country"]:
     ## initiate country update for ways_poly
     field_update_cmd = [
         "python",
-        "field_update",
+        os.path.join(working_dir, "field_update"),
         "--target_table",
         "ways_poly",
         "--target_column",
@@ -245,7 +261,7 @@ if not config["db_operation"]["update"]["ways_poly"]["grid"]:
     # grid update for ways_poly
     field_update_cmd = [
         "python",
-        "field_update",
+        os.path.join(working_dir, "field_update"),
         "-target_table",
         "ways_poly",
         "--target_column",
@@ -272,7 +288,7 @@ if not config["db_operation"]["update"]["ways_line"]:
     ## initiate country update for ways_line
     field_update_cmd = [
         "python",
-        "field_update",
+        os.path.join(working_dir, "field_update"),
         "-target_table",
         "ways_line",
         "--target_column",
@@ -297,7 +313,7 @@ if not config["db_operation"]["update"]["relations"]:
     ## initiate country update for relations
     field_update_cmd = [
         "python",
-        "field_update",
+        os.path.join(working_dir, "field_update"),
         "-target_table",
         "relations",
         "--target_column",
@@ -324,7 +340,12 @@ if not config["post_index"]:
     print(f"\nBuilding  Post Indexes (10/10) ... \n")
 
     ## build post indexes
-    basic_index_cmd = ["psql", "-a", "-f", "sql/post_indexes.sql"]
+    basic_index_cmd = [
+        "psql",
+        "-a",
+        "-f",
+        os.path.join(working_dir, "sql/post_indexes.sql"),
+    ]
     run_subprocess_cmd(basic_index_cmd)
     config["post_index"] = True
 
@@ -338,7 +359,7 @@ if config["run_replication"]:
         ## db is ready now intit replication
         print("\nRunning Replication init .. \n")
 
-        replication_init = ["python", "replication", "init"]
+        replication_init = ["python", os.path.join(working_dir, "replication"), "init"]
         run_subprocess_cmd(replication_init)
         config["replication_init"] = True
 
@@ -360,7 +381,7 @@ if config["replication_init"]:
             start = time.time()
             replication_cmd = [
                 "python",
-                "replication",
+                os.path.join(working_dir, "replication"),
                 "update",
                 "-s",
                 "raw.lua",
@@ -370,4 +391,3 @@ if config["replication_init"]:
             run_subprocess_cmd(replication_cmd)
             if (time.time() - start) < 60:
                 time.sleep(60)
-

@@ -25,6 +25,7 @@ python replication update -s raw.lua
 import datetime as dt
 import json
 import logging
+import os
 import subprocess
 import sys
 import tempfile
@@ -38,7 +39,9 @@ from textwrap import dedent
 import pytz
 
 config = ConfigParser()
-config.read("db_config.txt")
+working_dir = os.path.realpath(os.path.dirname(__file__))
+config_path = os.path.join(working_dir, "db_config.txt")
+config.read(config_path)
 
 
 missing_modules = []
@@ -60,7 +63,7 @@ except ImportError:
 
 LOG = logging.getLogger()
 
-with open("app_config.json", "r") as openfile:
+with open(os.path.join(working_dir, "app_config.json"), "r") as openfile:
     # Reading from json file
     json_config = json.load(openfile)
 
