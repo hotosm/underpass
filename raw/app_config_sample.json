@@ -1,5 +1,5 @@
 {
-    "source": "sample_data/pokhara_all.osm.pbf",
+    "source": "sample",
     "pbf2db_insert": false,
     "pre_index": false,
     "db_operation": {

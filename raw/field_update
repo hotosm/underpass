@@ -29,6 +29,7 @@ Returns:
 import argparse
 import datetime
 import logging
+import os
 import sys
 import time
 from configparser import ConfigParser
@@ -38,7 +39,9 @@ from psycopg2 import *
 from psycopg2.extras import *
 
 config = ConfigParser()
-config.read("db_config.txt")
+working_dir = os.path.realpath(os.path.dirname(__file__))
+config_path = os.path.join(working_dir, "db_config.txt")
+config.read(config_path)
 
 from dateutil.relativedelta import relativedelta
 
