@@ -114,6 +114,7 @@ if not exists(os.path.join(working_dir, "app_config.json")):
             run_now = input(
                 "\nDo you want to run replication right after processing is finished ? \n"
             )
+            config["replication"]["now"] = False
             if run_now.lower() == "y" or run_now.lower() == "yes":
                 config["replication"]["now"] = True
 
