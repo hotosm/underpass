@@ -798,6 +798,7 @@ OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate
                     }
                 }
                 if (status->status.size() > 0) {
+                    status->source = *wit;
                     totals->push_back(status);
                 }
             }
