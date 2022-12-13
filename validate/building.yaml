@@ -135,7 +135,7 @@ tags:
     - tyres
     - userdefined
 
- - roof:material:
+  - roof:material:
     - roof_tiles
     - metal
     - concrete
@@ -165,16 +165,16 @@ tags:
 
   - building:colour
   - building:fireproof:
-      - yes
-      - no
+    - yes
+    - no
   - building:flats
   - building:levels
   - building:min_level
   - building:part
   - building:soft_storey:
-      - yes
-      - no
-      - reinforced
+    - yes
+    - no
+    - reinforced
 
   - entrance:
     - yes
