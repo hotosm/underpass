@@ -1,12 +1,46 @@
 tags:
   - waterway:
-    - stream
-    - ditch
     - river
-    - drain
-    - canal
-    - dam
     - riverbank
+    - stream
+    - tidal_channel
+    - canal
+    - pressurised
+    - drain
+    - ditch
+    - fairway
+    - fish_pass
+    - dock
+    - boatyard
+    - dam
     - weir
-    - artificial
-    - wadi
+    - waterfall
+    - rapids
+    - lock_gate
+    - sluice_gate
+    - turning_point
+    - water_point
+    - fuel
+  - intermittent:
+    - yes
+  - seasonal:
+    - yes
+    - spring
+    - summer
+    - autumn
+    - winter
+    - wet_season
+    - dry_season
+  - destination:
+    - name
+  - lock:
+    - yes
+  - mooring:
+    - yes
+    - private
+    - no
+  - tunnel:
+    - culvert
+    - flooded
+  - bridge:
+    - aqueduct
