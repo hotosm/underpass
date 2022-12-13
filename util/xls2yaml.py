@@ -36,7 +36,7 @@
 import pandas as pd
 import argparse
 
-ignored_keys = ["yes_no", "nan", "model"]
+ignored_keys = ["yes_no", "nan", "model", "category"]
 
 def read_file(path, columns):
     return pd.read_excel(
