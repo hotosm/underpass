@@ -1,15 +1,40 @@
 tags:
   - landuse:
-    - residential
-    - farmland
-    - forest
-    - grass
-    - orchard
-    - rmyard
-    - industrial
-    - cemetery
-    - reservoir
     - commercial
+    - construction
+    - education
+    - industrial
+    - residential
     - retail
+    - institutional
+    - aquaculture
+    - allotments
+    - farmland
+    - farmyard
+    - flowerbed
+    - forest
+    - greenhouse_horticulture
+    - meadow
+    - orchard
+    - plant_nursery
+    - vineyard
     - basin
+    - reservoir
+    - salt_pond
+    - brownfield
+    - cemetery
+    - conservation
+    - depot
+    - garages
+    - grass
+    - greenfield
+    - landfill
+    - military
+    - port
     - quarry
+    - railway
+    - recreation_ground
+    - religious
+    - village_green
+    - winter_sports
+    - userdefined

@@ -1,30 +1,38 @@
 required_tags:
-    place:
-        - name
+  - place:
+    - name
 
 tags:
-    place:
-        - village
-        - hamlet
-        - neighborhood
-        - isolated_dwelling
-        - suburb
-        - town
-        - quarter
-        - city
-        - county
-        - borough
-        - municipality
-        - district
-        - region
-        - state
-        - block
-        - subdistrict
-        - subdivision
-        - township
-        - department
-        - province
-        - ward
-        - camp
-        - subward
-        - civil_parish
+  - place:
+    - country
+    - state
+    - region
+    - province
+    - district
+    - county
+    - municipality
+    - city
+    - borough
+    - suburb
+    - quarter
+    - neighbourhood
+    - city_block
+    - plot
+    - town
+    - village
+    - hamlet
+    - isolated_dwelling
+    - farm
+    - allotments
+    - continent
+    - archipelago
+    - island
+    - islet
+    - square
+    - locality
+    - sea
+    - ocean
+  - population
+  - is_in
+  - admin_level
+  - name

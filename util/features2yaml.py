@@ -69,7 +69,6 @@ def features2yaml(category, default_key, url, file):
     else:
         value_index = 1
     print("tags:")
-    print("Tables: "  + str(len(tables)))
     for table in tables:
         rows = table.find_all("tr")
         for row in rows:
@@ -87,6 +86,8 @@ def features2yaml(category, default_key, url, file):
                     if value and (value_index < len(value)) and value[value_index] != "<" and value[-1] != ">":
                         if value.find("|") > -1:
                             values = value.split("|")
+                        elif value.find(",") > -1:
+                            values = value.split(",")
                         else:
                             values = [value]
                         for val in values:
