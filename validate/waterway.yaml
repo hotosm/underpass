@@ -44,3 +44,7 @@ tags:
     - flooded
   - bridge:
     - aqueduct
+  - ref:fgkz
+  - ref:gnbc
+  - ref:gnis
+  - ref:regine
