@@ -101,6 +101,23 @@ tags:
 
   - building:levels
 
+  - building:structure:
+    - confined_masonry
+    - steel_frame
+    - wood_frame
+    - bamboo_frame
+    - reinforced_masonry
+    - unreinforced_masonry
+    - plastered
+    - RCC_with_beam
+    - non_engineered_reinforced_concrete
+    - engineered_reinforced_concrete
+    - load_bearing_brick_wall_in_cement_mortar
+    - brick
+    - cement_blocks
+    - steel_frame
+    - concrete
+
   - building:material:
     - cement_block
     - brick
@@ -133,7 +150,6 @@ tags:
     - rammed_earth
     - solar_panels
     - tyres
-    - userdefined
 
   - roof:material:
     - roof_tiles
@@ -161,7 +177,25 @@ tags:
     - banana_leaves
     - solar_panels
     - titanium
-    - userdefined
+
+  - floor:material:
+    - plaster
+    - brick
+    - wood
+    - concrete
+    - glass
+    - stone
+    - asphalt
+    - metal
+    - marble
+    - mdf
+    - timber_framing
+
+  - building:condition:
+    - good
+    - average
+    - poor
+    - disused
 
   - building:colour
   - building:fireproof:
@@ -187,3 +221,198 @@ tags:
   - min_level
   - non_existent_levels
   - start_date
+
+  - shop:
+    - alcohol
+    - art
+    - bakery
+    - beauty
+    - beverages
+    - bicycle
+    - books
+    - butcher
+    - car
+    - car_parts
+    - car_repair
+    - chemist
+    - clothes
+    - convenience
+    - copyshop
+    - cosmetics
+    - charcoal
+    - electronics
+    - farm
+    - furniture
+    - general
+    - greengrocer
+    - hairdresser
+    - hardware
+    - houseware
+    - jewellery
+    - kiosk
+    - mobile_phone
+    - pastry
+    - shoes
+    - stationary
+    - supermarket
+    - tailor
+    - tea
+    - department_store
+    - general
+    - mall
+    - hardware
+  - office:
+    - company
+    - government
+    - insurance
+    - lawyer
+    - political_party
+    - charity
+    - ngo
+    - foundation
+    - union
+    - financial
+  - religious:
+    - church
+    - mosque
+    - temple
+    - shrine
+    - cathedral
+    - chapel
+    - synagogue
+  - religion:
+    - muslim
+    - hindu
+    - christian
+    - buddhist
+    - jewish
+    - bahai
+  - capacity_persons:
+    - <50
+    - 50-100
+    - 100-250
+    - 250-500
+    - >500
+
+  - denomination:
+    - protestant
+    - pentecostal
+    - catholic
+    - baptist
+    - methodist
+    - orthodox
+    - Presbyterian
+    - lutheran
+    - Mormon
+    - evangelical
+  - muslim:
+    - sunni
+    - sufi
+    - shia
+  - hindu:
+    - vaishnavism
+    - shaivism
+    - shaktism
+    - smartism
+  - water_source:
+    - water_works
+    - manual_pump
+    - powered_pump
+    - groundwater
+  - historic:
+    - archaeological_site
+    - building
+    - fort
+    - monument
+    - area
+  - housing:
+    - residential
+    - hotel
+    - camp_site
+    - camp_pitch
+    - apartments
+    - toilet
+  - service:
+    - car_repair
+    - electronics_repair
+    - pump_station
+    - copyshop
+    - beauty
+    - service
+    - tailor
+  - cuisine:
+    - pizza
+    - burger
+    - italian
+    - mexican
+    - thai
+    - sandwich
+    - indian
+    - chinese
+    - seafood
+    - steak_house
+  - amenity:
+    - fire_station
+    - refuge_site
+    - epolice
+    - ehospital
+    - eclinic
+    - etoilets
+    - coffee
+    - bar
+    - pub
+    - cafe
+    - fast_food
+    - restaurant
+    - bakery
+    - butcher
+    - courthouse
+    - library
+    - police
+    - post_office
+    - townhall
+    - social_facility
+    - clinic
+    - dentist
+    - doctors
+    - hospital
+    - pharmacy
+    - veterinary
+    - cemetery
+    - place_of_worship
+    - fuel
+    - convenience
+    - marketplace
+    - bureau_de_change
+    - atm
+    - parking
+    - toilets
+    - nursery
+    - primary
+    - secondary
+    - tertiary
+    - training
+    - university
+    - language_school
+    - music_school
+    - kindergarten
+    - childcare
+    - prep_school
+  - tourism:
+    - camp_site
+    - taxi
+    - camp pitch
+    - caravan_site
+    - artwork
+    - gallery
+    - museum
+    - zoo
+    - attraction
+    - guest_house
+    - hotel
+    - hostel
+  - generator:source:
+    - grid
+    - generator
+    - solar
+    - hydro

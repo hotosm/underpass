@@ -71,6 +71,7 @@ def main():
         xml2yaml(args.category, args.path, args.columns.split(","))
     else:
         print("Usage: python xls2yaml.py --category buildings > buildings.yaml")
+        print("       python xls2yaml.py --columns \"list name,name\" --category buildings > buildings.yaml")
 
 if __name__ == "__main__":
     main()

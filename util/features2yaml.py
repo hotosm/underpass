@@ -83,7 +83,7 @@ def features2yaml(category, default_key, url, file):
                         last_key = key
                         print("  - " + key + ":")
                     value = columns[value_index].text.replace(" ", "").replace("\n", "")
-                    if value and (value_index < len(value)) and value[value_index] != "<" and value[-1] != ">":
+                    if value and value != "userdefined" and (value_index < len(value)) and value[value_index] != "<" and value[-1] != ">":
                         if value.find("|") > -1:
                             values = value.split("|")
                         elif value.find(",") > -1:
