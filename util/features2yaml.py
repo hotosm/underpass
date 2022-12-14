@@ -46,7 +46,7 @@ import requests
 import argparse
 from bs4 import BeautifulSoup
 
-def read_source(category, default_key, url, file):
+def read_source(category = None, default_key = None, url = None, file = None):
     if category:
         url = "https://wiki.openstreetmap.org/wiki/" + category
         return requests.get(url).content
@@ -58,6 +58,19 @@ def read_source(category, default_key, url, file):
     f = open(file,"r")
     lines = f.readlines()
     return ''.join(lines)
+
+def featuresTaglist2yaml(default_key, url):
+    content = read_source(default_key=default_key, url=url)
+    soup = BeautifulSoup(content, 'html.parser')
+    tables = soup.find_all('div', class_='taglist')
+    print("tags:")
+    for table in tables:
+        attrs = table.attrs["data-taginfo-taglist-tags"].split("=")
+        print("  - " + attrs[0] + ":")
+        values = attrs[1].split(",")
+        for val in values:
+            if val != "userdefined":
+                print("    - " + val)
 
 def features2yaml(category, default_key, url, file):
     content = read_source(category, default_key, url, file)
@@ -83,7 +96,7 @@ def features2yaml(category, default_key, url, file):
                         last_key = key
                         print("  - " + key + ":")
                     value = columns[value_index].text.replace(" ", "").replace("\n", "")
-                    if value and (value_index < len(value)) and value[value_index] != "<" and value[-1] != ">":
+                    if value and value != "userdefined" and (value_index < len(value)) and value[value_index] != "<" and value[-1] != ">":
                         if value.find("|") > -1:
                             values = value.split("|")
                         elif value.find(",") > -1:
@@ -99,8 +112,11 @@ def main():
     args.add_argument("--key", "-k", help="Key", type=str, default=None)
     args.add_argument("--url", "-u", help="Url", type=str, default=None)
     args.add_argument("--file", "-f", help="File", type=str, default=None)
+    args.add_argument('--taglist',  "-t", dest="taglist", action=argparse.BooleanOptionalAction)
     args = args.parse_args()
-    if args.category or args.url or args.key or args.file:
+    if args.taglist:
+        featuresTaglist2yaml(args.key, args.url)
+    elif args.category or args.url or args.key or args.file:
         features2yaml(args.category, args.key, args.url, args.file)
     else:
         print("Usage: python features2yaml.py --category buildings > buildings.yaml")
