@@ -51,7 +51,6 @@ typedef std::shared_ptr<Validate>(plugin_t)();
 void test_semantic_building(std::shared_ptr<Validate> &plugin);
 void test_semantic_highway(std::shared_ptr<Validate> &plugin);
 void test_geometry_building(std::shared_ptr<Validate> &plugin);
-void test_plugin(std::shared_ptr<Validate> &plugin);
 
 int
 main(int argc, char *argv[])
@@ -213,7 +212,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
 
     node.addTag("building:material", "wood");
     node.addTag("building:levels", "3");
-    node.addTag("building:roof", "tile");
+    node.addTag("roof:material", "roof_tiles");
 
     // Has all valid tags
     status = plugin->checkPOI(node, "building");
@@ -223,7 +222,16 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.fail("Validate::checkPOI(no bad values) [semantic building]");
     }
 
-    // // Way - checkWay()
+    // Has valid tags, but it's incomplete
+    node.addTag("place", "city");
+    status = plugin->checkPOI(node, "place");
+    if (!status->hasStatus(badvaluestatus->hasStatus(incomplete)) {
+        runtest.pass("Validate::checkPOI(incomplete but correct tagging) [semantic building]");
+    } else {
+        runtest.fail("Validate::checkPOI(incomplete but correct tagging) [semantic building]");
+    }
+
+    // Way - checkWay()
 
     auto way = readOsmWayFromFile("/testsuite/testdata/validation/building.osc");
 
@@ -234,15 +242,6 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
     } else {
         runtest.fail("Validate::checkWay(no tags) [semantic building]");
         way.dump();
-    }
-
-    // Has valid tags, but it's incomplete
-    way.addTag("building:material", "concrete");
-    status = plugin->checkWay(way, "building");
-    if (!status->hasStatus(badvalue) && status->hasStatus(incomplete)) {
-        runtest.pass("Validate::checkWay(incomplete but correct tagging) [semantic building]");
-    } else {
-        runtest.fail("Validate::checkWay(incomplete but correct tagging) [semantic building]");
     }
 
     way.addTag("building", "yes");
@@ -353,6 +352,15 @@ test_geometry_building(std::shared_ptr<Validate> &plugin)
                 }
             }
 
+            // Good geometry really big circle
+            if (way->id == 821664154) {
+                if (!status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(good geometry really big circle) [geometry building]");
+                } else {
+                    runtest.fail("Validate::checkWay(good geometry really big circle) [geometry building]");
+                }
+            }
+
             // Bad geometry small circle
             if (way->id == 961600809) {
                 if (status->hasStatus(badgeom)) {
@@ -361,6 +369,16 @@ test_geometry_building(std::shared_ptr<Validate> &plugin)
                     runtest.fail("Validate::checkWay(badgeom small circle) [geometry building]");
                 }
             }
+
+            // Bad geometry really bad circle
+            if (way->id == 821644720) {
+                if (status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(badgeom really bad circle) [geometry building]");
+                } else {
+                    runtest.fail("Validate::checkWay(badgeom really bad circle) [geometry building]");
+                }
+            }
+            
         }
     }
     

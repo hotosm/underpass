@@ -99,8 +99,6 @@ tags:
     - tent
     - yes
 
-  - building:levels
-
   - building:material:
     - cement_block
     - brick

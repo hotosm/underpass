@@ -1,6 +1,5 @@
 required_tags:
-  - place:
-    - name
+  - name
 
 tags:
   - place:
