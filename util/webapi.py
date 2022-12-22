@@ -20,11 +20,12 @@
 '''
     Simple web API for querying the Underpass database
 
-    Available endpoints
+    Available endpoints:
 
-    Get a summary of validation results:
-    /validationSummary
-    /validationSummary?hashtag=hotosm-project
+    /tagValidationSummary
+    /tagValidationSummary?hashtag=hotosm-project
+    /geoValidationList
+    /geoValidationList?hashtag=hotosm-project
 '''
 
 import psycopg2
