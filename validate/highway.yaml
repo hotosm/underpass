@@ -26,6 +26,12 @@ tags:
     - steps
     - corridor
     - path
+    - bus_stop
+    - crossing
+    - elevator
+    - emergency_bay
+    - emergency_access_point
+    - give_way
   - footway:
     - sidewalk
     - crossing
@@ -230,13 +236,6 @@ tags:
   - width
   - winter_road:
     - yes
-  - highway:
-    - bus_stop
-    - crossing
-    - elevator
-    - emergency_bay
-    - emergency_access_point
-    - give_way
   - emergency:
     - phone
   - milestone
