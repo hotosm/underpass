@@ -26,14 +26,12 @@ tags:
     - steps
     - corridor
     - path
-
-  - bus_stop
-  - crossing
-  - elevator
-  - emergency_bay
-  - emergency_access_point
-  - give_way
-
+    - bus_stop
+    - crossing
+    - elevator
+    - emergency_bay
+    - emergency_access_point
+    - give_way
   - footway:
     - sidewalk
     - crossing
