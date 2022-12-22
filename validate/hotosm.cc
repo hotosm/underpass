@@ -259,8 +259,6 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
                 return status;
             }
 
-            // FIXME: test
-
             // minangle, maxangle, circle
             std::tuple<double, double, bool> angles = cornerAngle(way.linestring);
 
