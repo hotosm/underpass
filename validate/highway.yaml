@@ -26,14 +26,12 @@ tags:
     - steps
     - corridor
     - path
-
-  - bus_stop
-  - crossing
-  - elevator
-  - emergency_bay
-  - emergency_access_point
-  - give_way
-
+    - bus_stop
+    - crossing
+    - elevator
+    - emergency_bay
+    - emergency_access_point
+    - give_way
   - footway:
     - sidewalk
     - crossing
@@ -120,6 +118,28 @@ tags:
     - half_on_kerb
     - shoulder
     - layby
+  - shoulder
+    - yes
+    - no
+    - left
+    - right
+    - both
+  - shoulder:width
+  - shoulder:left:width
+  - shoulder:right:width
+  - shoulder:surface
+  - shoulder:left:surface
+  - shoulder:right:surface
+  - shoulder:bicycle
+  - shoulder:left:bicycle
+  - shoulder:right:bicycle
+  - shoulder:smoothness
+  - shoulder:left:smoothness
+  - shoulder:right:smoothness
+  - shoulder:line
+  - shoulder:left:line
+  - shoulder:right:line
+
   - parking:sideorientation:
     - parallel
     - diagonal
@@ -319,6 +339,8 @@ tags:
   - rcn_ref
   - reg_ref
   - route_ref
+  - noref
+    - yes
   - bridge:
     - yes
     - aqueduct
@@ -631,6 +653,7 @@ tags:
     - permissive
   - motor_vehicle
   - motorcycle
+  - mofa
   - vehicle
   - horse
   - layer
@@ -640,3 +663,4 @@ tags:
   - material
   - handrail
   - maxspeed:type
+  - note

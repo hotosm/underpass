@@ -253,7 +253,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 
         // If it's a building, check for square corners
         // FIXME: move out special cases to the config file
-        if (way.tags.count("building") || way.tags.count("amenity")) {
+        if (way.tags.count("building")) {
             if (boost::geometry::num_points(way.linestring) < 3 && way.action == osmobjects::modify) {
                 log_debug(_("Not enough nodes in modified linestring to calculate the angle!"));
                 return status;
@@ -262,12 +262,16 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             // minangle, maxangle, circle
             std::tuple<double, double, bool> angles = cornerAngle(way.linestring);
 
-            status->angle = std::get<0>(angles);
             if (std::get<2>(angles)) {
                 if (way.linestring.size() - 1 < circleMinPoints) {
+                    status->angle = std::get<0>(angles);
                     status->status.insert(badgeom);
                 }
-            } else if (std::get<0>(angles) > maxangle || std::get<1>(angles) < minangle) {
+            } else if (std::get<0>(angles) > maxangle) {
+                status->angle = std::get<1>(angles);
+                status->status.insert(badgeom);
+            } else if (std::get<1>(angles) < minangle) {
+                status->angle = std::get<0>(angles);
                 status->status.insert(badgeom);
             }
         } else if (way.refs.size() == 5 && way.tags.size() == 0) {
