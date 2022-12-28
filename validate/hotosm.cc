@@ -252,32 +252,30 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     if (way.refs.front() == way.refs.back()) {
 
         // If it's a building, check for square corners
-        // FIXME: move out special cases to the config file
-        if (way.tags.count("building")) {
-            if (boost::geometry::num_points(way.linestring) < 3 && way.action == osmobjects::modify) {
-                log_debug(_("Not enough nodes in modified linestring to calculate the angle!"));
-                return status;
+
+        if (way.tags.count("building") && way.refs.size() == 5) {
+
+            if (!polygonHasPairsOfParallelSides(way.linestring)) {
+                status->status.insert(badgeom);
             }
 
+            // FIXME: angle calculation needs a close review
             // minangle, maxangle, circle
-            std::tuple<double, double, bool> angles = cornerAngle(way.linestring);
 
-            if (std::get<2>(angles)) {
-                if (way.linestring.size() - 1 < circleMinPoints) {
-                    status->angle = std::get<0>(angles);
-                    status->status.insert(badgeom);
-                }
-            } else if (std::get<0>(angles) > maxangle) {
-                status->angle = std::get<1>(angles);
-                status->status.insert(badgeom);
-            } else if (std::get<1>(angles) < minangle) {
-                status->angle = std::get<0>(angles);
-                status->status.insert(badgeom);
-            }
-        } else if (way.refs.size() == 5 && way.tags.size() == 0) {
-            // See if it's closed, has 4 corners, but no tags
-            // FIXME: move out special cases to the config file
-            log_error(_("WARNING: %1% might be a building!"), way.id);
+            // std::tuple<double, double, bool> angles = cornerAngles(way.linestring);
+            // log_error(_("Angle max: %1% min: %2%"), std::get<0>(angles), std::get<1>(angles));
+            // if (std::get<2>(angles)) {
+            //     if (way.linestring.size() - 1 < circleMinPoints) {
+            //         status->angle = std::get<0>(angles);
+            //         status->status.insert(badgeom);
+            //     }
+            // } else if (std::get<0>(angles) > maxangle) {
+            //     status->angle = std::get<0>(angles);
+            //     status->status.insert(badgeom);
+            // } else if (std::get<1>(angles) < minangle) {
+            //     status->angle = std::get<1>(angles);
+            //     status->status.insert(badgeom);
+            // }
         }
     }
     if (status->status.size() == 0) {

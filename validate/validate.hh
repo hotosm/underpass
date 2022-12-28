@@ -285,55 +285,94 @@ class BOOST_SYMBOL_VISIBLE Validate {
         return false;
     }
 
-    std::tuple<double, double, bool> cornerAngle(const linestring_t &way) {
+    double calculateAzimuth(double x1, double y1, double x2, double y2) {
+        double azimuth = atan2(x2 - x1, y2 - y1);
+        return abs(azimuth * 180 / M_PI);
+    }
+
+    double calculateAngle(double x1, double y1, double x2, double y2, double x3, double y3) {
+        double ba0 = x1 - x2;
+        double ba1 = y1 - y2;
+        double bc0 = x3 - x2;
+        double bc1 = y3 - y2;
+
+        double dot_p = ba0 * bc0 + ba1 * bc1;
+
+        double cosine_angle = dot_p / (
+            std::pow((ba0 * ba0 + ba1 * ba1) , 0.5) *
+            std::pow((bc0 * bc0 + bc1 * bc1) , 0.5)
+        );
+
+        double angle = acos(cosine_angle);
+
+        return angle * 180 / M_PI;
+    }
+
+    // Checks if a polygon has pairs of parallel sides
+    bool polygonHasPairsOfParallelSides(const linestring_t &way) {
+
+        double x1 = boost::geometry::get<1>(way[0]);
+        double y1 = boost::geometry::get<0>(way[0]);
+        double x2 = boost::geometry::get<1>(way[1]);
+        double y2 = boost::geometry::get<0>(way[1]);
+        double x3 = boost::geometry::get<1>(way[2]);
+        double y3 = boost::geometry::get<0>(way[2]);
+        double x4 = boost::geometry::get<1>(way[3]);
+        double y4 = boost::geometry::get<0>(way[3]);
+
+        double az1 = std::round( calculateAzimuth(x1,y1, x2, y2));
+        double az2 = std::round( calculateAzimuth(x2,y2, x3, y3));
+        double az3 = std::round( calculateAzimuth(x4,y4, x3, y3));
+        double az4 = std::round( calculateAzimuth(x1,y1, x4, y4));
+
+        return(
+            az1 - 5 <= az3 + 5 &&
+            az2 - 5 <= az4 + 5
+        );
+    }
+
+    std::tuple<double, double, bool> cornerAngles(const linestring_t &way) {
         const int num_points =  boost::geometry::num_points(way) - 1;
         double max = 0;
         double min = 180;
         bool circle = false;
         double angleSum = 0;
-        if (num_points < 3) {
-            log_error(_("way has no line segments!"));
+        if (num_points <= 3) {
+            log_error(_("way is a triangle or has no line segments!"));
             return std::tuple<double, double, bool>(-1,  -1, false);
         }
         for(int i = 0; i < num_points; i++) {
-            try {
-                // Three points
-                int a,b,c;
-                if (i == num_points - 2) {
-                    a = i;
-                    b = i + 1;
-                    c = 0;
-                } else if (i == num_points - 1) {
-                    a = i;
-                    b = 0;
-                    c = 1;
-                } else {
-                    a = i;
-                    b = i+1;
-                    c = i+2;
-                }
-                double x1 = boost::geometry::get<0>(way[a]);
-                double y1 = boost::geometry::get<1>(way[a]);
-                double x2 = boost::geometry::get<0>(way[b]);
-                double y2 = boost::geometry::get<1>(way[b]);
-                double x3 = boost::geometry::get<0>(way[c]);
-                double y3 = boost::geometry::get<1>(way[c]);
-
-                double s1 = (y2 - y1) / (x2 - x1);
-                double s2 = (y3 - y2) / (x3 - x2);
-                double angle = std::abs(std::atan((s2 - s1) / (1 + (s2 * s1))) * 180 / M_PI);
-
-                if (angle > max) {
-                    max = angle;
-                }
-                if (angle < min) {
-                    min = angle;
-                }
-                angleSum += angle;
-            } catch (const std::exception &ex) {
-                log_error(_("way doesn't have enough points"));
-                return std::tuple<double, double, bool>(-1,  -1, false);
+            // Three points
+            int a,b,c;
+            if (i < num_points - 2) {
+                a = i;
+                b = i + 1;
+                c = i + 2;
+            } else if (i < num_points - 1) {
+                a = i;
+                b = i + 1;
+                c = 0;
+            } else if (i < num_points) {
+                a = i;
+                b = 0;
+                c = 1;
             }
+            double x1 = boost::geometry::get<1>(way[a]);
+            double y1 = boost::geometry::get<0>(way[a]);
+            double x2 = boost::geometry::get<1>(way[b]);
+            double y2 = boost::geometry::get<0>(way[b]);
+            double x3 = boost::geometry::get<1>(way[c]);
+            double y3 = boost::geometry::get<0>(way[c]);
+
+            double angle = calculateAngle(x1,y1,x2,y2,x3,y3);
+
+            if (angle > max) {
+                max = angle;
+            }
+            if (angle < min) {
+                min = angle;
+            }
+            angleSum += angle;
         }
         if (num_points > 7 && angleSum > 358 && angleSum < 362 && (max - min) < 10) {
             circle = true;
