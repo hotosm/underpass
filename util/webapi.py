@@ -22,10 +22,17 @@
 
     Available endpoints:
 
+    Get a summary of tag validation results (returns a CSV)
     /tagValidationSummary
     /tagValidationSummary?hashtag=hotosm-project
+
+    Get a list of geometry validation results (returns a GeoJSON)
     /geoValidationList
     /geoValidationList?hashtag=hotosm-project
+
+    Get a measure of all validation (returns a CSV)
+    /validationMeasure
+    /validationMeasure?hashtag=hotosm-project
 '''
 
 import psycopg2
@@ -54,8 +61,6 @@ class DB():
 
     def getTagValidationSummary(self, hashtag):
         """ Get latest tag validation results (optional: by hashtag) """
-        result = ""
-        cur = self.conn.cursor()
         q = 'WITH t2 AS ( \
             SELECT id \
             from changesets \
@@ -79,6 +84,7 @@ class DB():
             order by count desc \
             limit 20;'
 
+        cur = self.conn.cursor()
         result = "tag    source    count\n"
         try:
             cur.execute(q)
@@ -93,8 +99,6 @@ class DB():
 
     def getGeoValidationList(self, hashtag):
         """ Get latest geometry validation results (optional: by hashtag) """
-        result = ""
-        cur = self.conn.cursor()
         q = 'WITH t2 AS ( \
             SELECT id, closed_at \
             from changesets \
@@ -106,9 +110,10 @@ class DB():
         q += 'and updated_at > NOW() - INTERVAL \'240 HOURS\' \
         ), \
         t1 AS ( \
-            SELECT osm_id, change_id, location, angle \
+            SELECT osm_id, change_id, location, status \
             from validation \
             where \'badgeom\' = any(status) \
+            or \'overlaping\' = any(status) \
             and source = \'building\' \
         )\
         SELECT row_to_json(fc) FROM ( \
@@ -117,14 +122,15 @@ class DB():
         FROM ( SELECT \'Feature\' AS type \
             , ST_AsGeoJSON(ST_Transform(t1.location, 4326),15,0)::json As geometry \
             , ( SELECT row_to_json(t) \
-            FROM ( SELECT t1.osm_id, t1.angle, t1.change_id, t2.closed_at \
+            FROM ( SELECT t1.osm_id, t1.change_id, t2.closed_at, t1.status \
                     ) AS t ) AS properties \
             FROM t1, t2 \
-                where t1.angle != 0 \
-                and t1.change_id = t2.id \
+                where t1.change_id = t2.id \
                 order by t2.closed_at desc \
                 limit 50 \
             ) AS f ) AS fc'
+
+        cur = self.conn.cursor()
         result = ""
         try:
             cur.execute(q)
@@ -137,23 +143,75 @@ class DB():
         cur.close()
         return result
 
+    def getValidationMeasure(self, hashtag):
+        """ Get a measure of quality (optional: by hashtag) """
+        q = '\
+            with t0 as ( \
+            select id from changesets c '
+
+        if hashtag:
+            q += 'where EXISTS ( SELECT * from unnest(hashtags) as h where h ~* \'^' + hashtag + '\' )'
+
+        q += '), \
+            t1 as ( \
+                select key, sum(value) as total \
+                from ( \
+                    select key, value::numeric \
+                    from changesets c1, t0, each(added) \
+                    where c1.id = t0.id \
+                ) s \
+                group by 1 \
+                order by total desc \
+            ), t2 as ( \
+            select source, unnest(status) as un_status, count(source) as invalid \
+                from validation v, t0 \
+                where v.change_id = t0.id \
+                group by source, un_status \
+            ) select key, un_status as status, invalid, total from t1 \
+            INNER JOIN t2 \
+            ON t2.source = t1.key \
+            where un_status != \'complete\''
+
+        cur = self.conn.cursor()
+        result = "key    status    invalid    total\n"
+        try:
+            cur.execute(q)
+        except:
+            print("There was an error running the query.")
+            cur.close()
+            return result
+        for row in cur:
+            result += '    '.join((str(x)) for x in row) + '\n'
+        cur.close()
+        return result
+
 class WebApi(BaseHTTPRequestHandler):
     def do_GET(self):
         contentType = "text"
         parsed_url = parse_qs(urlparse(self.path).query)
         if db.conn:
+
             if self.path.startswith("/tagValidationSummary"):
                 contentType = "text/csv"
                 if 'hashtag' in parsed_url:
                     response = db.getTagValidationSummary(parsed_url['hashtag'][0])
                 else:
                     response = db.getTagValidationSummary(None)
+
             elif self.path.startswith("/geoValidationList"):
                 contentType = "application/json"
                 if 'hashtag' in parsed_url:
                     response = db.getGeoValidationList(parsed_url['hashtag'][0])
                 else:
                     response = db.getGeoValidationList(None)
+
+            elif self.path.startswith("/"):
+                contentType = "text/csv"
+                if 'hashtag' in parsed_url:
+                    response = db.getValidationMeasure(parsed_url['hashtag'][0])
+                else:
+                    response = db.getValidationMeasure(None)
+
             else:
                 response = "Not found."
         if response == "Not found.":
