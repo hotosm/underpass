@@ -295,22 +295,17 @@ class BOOST_SYMBOL_VISIBLE Validate {
         double ba1 = y1 - y2;
         double bc0 = x3 - x2;
         double bc1 = y3 - y2;
-
         double dot_p = ba0 * bc0 + ba1 * bc1;
-
         double cosine_angle = dot_p / (
             std::pow((ba0 * ba0 + ba1 * ba1) , 0.5) *
             std::pow((bc0 * bc0 + bc1 * bc1) , 0.5)
         );
-
         double angle = acos(cosine_angle);
-
         return angle * 180 / M_PI;
     }
 
     // Checks if a polygon has pairs of parallel sides
     bool polygonHasPairsOfParallelSides(const linestring_t &way) {
-
         double x1 = boost::geometry::get<1>(way[0]);
         double y1 = boost::geometry::get<0>(way[0]);
         double x2 = boost::geometry::get<1>(way[1]);
@@ -319,16 +314,11 @@ class BOOST_SYMBOL_VISIBLE Validate {
         double y3 = boost::geometry::get<0>(way[2]);
         double x4 = boost::geometry::get<1>(way[3]);
         double y4 = boost::geometry::get<0>(way[3]);
-
         double az1 = std::round( calculateAzimuth(x1,y1, x2, y2));
         double az2 = std::round( calculateAzimuth(x2,y2, x3, y3));
         double az3 = std::round( calculateAzimuth(x4,y4, x3, y3));
         double az4 = std::round( calculateAzimuth(x1,y1, x4, y4));
-
-        return(
-            az1 - 5 <= az3 + 5 &&
-            az2 - 5 <= az4 + 5
-        );
+        return(abs(az1 - az3) <= 10 && abs(az2 - az4) <= 10);
     }
 
     std::tuple<double, double, bool> cornerAngles(const linestring_t &way) {
