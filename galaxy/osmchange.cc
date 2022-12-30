@@ -745,7 +745,7 @@ OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Validat
                     continue;
                 }
             }
-            std::vector<std::string> node_tests = {"building", "place" "amenity" "place"};
+            std::vector<std::string> node_tests = {"building", "natural", "place", "waterway"};
             // "wastepoint";
             for (auto tit = std::begin(node_tests); tit != std::end(node_tests); ++tit) {
                 if (!node->containsKey(*tit)) {
@@ -782,7 +782,7 @@ OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate
             if (!way->priority) {
                 continue;
             }
-            std::vector<std::string> way_tests = {"building", "highway", "waterway" "place"};
+            std::vector<std::string> way_tests = {"building", "highway", "landuse", "natural", "place", "waterway"};
             for (auto wit = way_tests.begin(); wit != way_tests.end(); ++wit) {
                 if (!way->containsKey(*wit)) {
                     continue;
