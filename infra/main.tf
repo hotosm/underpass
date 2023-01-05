@@ -109,7 +109,7 @@ resource "aws_route_table" "public" {
   }
 
   route {
-    cidr_block             = "::/0"
+    ipv6_cidr_block             = "::/0"
     egress_only_gateway_id = aws_egress_only_internet_gateway.ipv6-egress.id
   }
 
@@ -132,7 +132,7 @@ resource "aws_route_table" "private" {
   }
 
   route {
-    cidr_block             = "::/0"
+    ipv6_cidr_block             = "::/0"
     egress_only_gateway_id = aws_egress_only_internet_gateway.ipv6-egress.id
   }
 
