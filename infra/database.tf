@@ -15,6 +15,8 @@ resource "random_password" "galaxy_database_admin_password" {
 resource "aws_secretsmanager_secret" "galaxy_database_credentials" {
   name = "${var.deployment_environment}/galaxy/database"
 
+  description = "Galaxy database password and connection string params"
+
   tags = {
     name = "Galaxy Database Admin Credentials"
     Role = "Database access credentials"

@@ -75,6 +75,14 @@ resource "aws_nat_gateway" "nat" {
   }
 }
 
+resource "aws_egress_only_internet_gateway" "ipv6-egress" {
+  vpc_id = aws_vpc.galaxy.id
+
+  tags = {
+    Name = "Galaxy"
+  }
+}
+
 resource "aws_vpc_peering_connection" "galaxy-tasking-manager" {
   tags = {
     Name = "galaxy-taskingmanager"
@@ -101,6 +109,11 @@ resource "aws_route_table" "public" {
   }
 
   route {
+    cidr_block             = "::/0"
+    egress_only_gateway_id = aws_egress_only_internet_gateway.ipv6-egress.id
+  }
+
+  route {
     cidr_block                = data.aws_vpc.tasking-manager.cidr_block
     vpc_peering_connection_id = aws_vpc_peering_connection.galaxy-tasking-manager.id
   }
@@ -116,6 +129,11 @@ resource "aws_route_table" "private" {
   route {
     cidr_block     = "0.0.0.0/0"
     nat_gateway_id = aws_nat_gateway.nat.id
+  }
+
+  route {
+    cidr_block             = "::/0"
+    egress_only_gateway_id = aws_egress_only_internet_gateway.ipv6-egress.id
   }
 
   route {
@@ -319,6 +337,7 @@ resource "aws_vpc_endpoint" "secretsmanager" {
 
   vpc_endpoint_type = "Interface"
   service_name      = "com.amazonaws.us-east-1.secretsmanager" // TODO: use var.aws_region
+  ip_address_type   = "dualstack"
 
   private_dns_enabled = true
   auto_accept         = true
@@ -326,6 +345,10 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   subnet_ids = [for subnet in aws_subnet.public : subnet.id]
 
   security_group_ids = [aws_security_group.vpc-endpoint.id]
+
+  dns_options {
+    dns_record_ip_type = "dualstack"
+  }
 }
 
 resource "aws_vpc_endpoint" "awslogs" {
@@ -333,6 +356,7 @@ resource "aws_vpc_endpoint" "awslogs" {
 
   vpc_endpoint_type = "Interface"
   service_name      = "com.amazonaws.us-east-1.logs" // TODO: use var.aws_region
+  ip_address_type   = "dualstack"
 
   private_dns_enabled = true
   auto_accept         = true
@@ -340,4 +364,8 @@ resource "aws_vpc_endpoint" "awslogs" {
   subnet_ids = [for subnet in aws_subnet.public : subnet.id]
 
   security_group_ids = [aws_security_group.vpc-endpoint.id]
+
+  dns_options {
+    dns_record_ip_type = "dualstack"
+  }
 }
