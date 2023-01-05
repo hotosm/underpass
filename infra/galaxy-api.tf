@@ -50,7 +50,7 @@ resource "aws_ecs_cluster_capacity_providers" "galaxy" {
  * Container Registry access
 **/
 resource "aws_iam_role" "ecs_agent_role" {
-  name_prefix = "galaxy-ecs-agent-"
+  name_prefix = "galaxy-ecs-agent-${var.deployment_environment}-"
   path        = "/galaxy/"
 
   assume_role_policy = data.aws_iam_policy_document.ecs-assume-role.json
@@ -104,9 +104,9 @@ data "aws_iam_policy_document" "galaxy-api-execution-role" {
       "logs:PutLogEvents",
     ]
 
-    resources = [ // TODO: Improve?
-      "arn:aws:logs:*:670261699094:log-group:galaxy",
-      "arn:aws:logs:*:670261699094:log-group:galaxy:log-stream:*",
+    resources = [
+      aws_cloudwatch_log_group.galaxy.arn,
+      "${aws_cloudwatch_log_group.galaxy.arn}:log-stream:*",
     ]
 
   }
