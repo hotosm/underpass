@@ -337,7 +337,6 @@ resource "aws_vpc_endpoint" "secretsmanager" {
 
   vpc_endpoint_type = "Interface"
   service_name      = "com.amazonaws.us-east-1.secretsmanager" // TODO: use var.aws_region
-  ip_address_type   = "dualstack"
 
   private_dns_enabled = true
   auto_accept         = true
@@ -345,10 +344,6 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   subnet_ids = [for subnet in aws_subnet.public : subnet.id]
 
   security_group_ids = [aws_security_group.vpc-endpoint.id]
-
-  dns_options {
-    dns_record_ip_type = "dualstack"
-  }
 }
 
 resource "aws_vpc_endpoint" "awslogs" {
@@ -356,7 +351,6 @@ resource "aws_vpc_endpoint" "awslogs" {
 
   vpc_endpoint_type = "Interface"
   service_name      = "com.amazonaws.us-east-1.logs" // TODO: use var.aws_region
-  ip_address_type   = "dualstack"
 
   private_dns_enabled = true
   auto_accept         = true
@@ -364,8 +358,4 @@ resource "aws_vpc_endpoint" "awslogs" {
   subnet_ids = [for subnet in aws_subnet.public : subnet.id]
 
   security_group_ids = [aws_security_group.vpc-endpoint.id]
-
-  dns_options {
-    dns_record_ip_type = "dualstack"
-  }
 }
