@@ -74,6 +74,7 @@ if not exists(os.path.join(working_dir, "app_config.json")):
 
     config = {
         "pbf2db_insert": False,
+        "include_ref": False,
         "pre_index": False,
         "db_operation": {
             "create": {"grid": False, "country": False},
@@ -91,19 +92,23 @@ if not exists(os.path.join(working_dir, "app_config.json")):
     }
 
     source_url = input(
-        "Data Source ? Paste link to Download or Downloaded file path ( .pbf file ) : \n"
+        "Data Source: Paste link to Download or Downloaded file path ( .pbf file ) Leave Empty to use sample data: \n"
     )
     config["source"] = source_url
-    do_replciation = input(
-        "Prepare tables for replication ? Default : NO . Type y/yes for yes : \n"
-    )
+    if len(source_url.strip()) == 0:
+        config["source"] = "sample"
+    do_replciation = input("Prepare tables for replication ? Default : NO . Y/N ? : \n")
     if do_replciation.lower() == "y" or do_replciation.lower() == "yes":
         config["run_replication"] = True
         print("Prepare for replication : Yes")
+    include_refs = input("Include ref in output tables ? Default : NO . Y/N ? : \n")
+    if include_refs.lower() == "y" or include_refs.lower() == "yes":
+        config["include_ref"] = True
+        print("include_ref : Yes")
     if config["run_replication"]:
         if "country" not in config["replication"]:
             country_filter = input(
-                "\nReplication will cover whole world data, If you have loaded country do you want to keep only your country data ? y/yes to yes :\n"
+                "\nReplication will cover whole world data, If you have loaded country do you want to keep only your country data ? Y/N :\n"
             )
             if country_filter.lower() == "y" or country_filter.lower() == "yes":
                 coutry_list = input(
@@ -112,7 +117,7 @@ if not exists(os.path.join(working_dir, "app_config.json")):
                 config["replication"]["country"] = int(coutry_list)
         if "now" not in ["replication"]:
             run_now = input(
-                "\nDo you want to run replication right after processing is finished ? \n"
+                "\nDo you want to run replication right after processing is finished ? Y/N \n"
             )
             config["replication"]["now"] = False
             if run_now.lower() == "y" or run_now.lower() == "yes":
@@ -127,18 +132,28 @@ if config["source"] == "sample":
     config["source"] = os.path.join(working_dir, "sample_data/pokhara_all.osm.pbf")
 source_path = config["source"]
 if not is_local(config["source"]):
-    data_dir = os.path.join(working_dir, "data")
+    download_dir = input(
+        "Enter full path Download Dir, Leave empty to use data/source.osm.pbf : \n"
+    )
+    if len(download_dir.stirp()) == 0:  # Empty download dir
+        download_dir = working_dir
+    data_dir = os.path.join(download_dir, "data")
     if not exists(data_dir):
         os.mkdir(data_dir)
-    source_path = os.path.join(working_dir, "data/source.osm.pbf")
+    source_path = os.path.join(download_dir, "data/source.osm.pbf")
     if not exists(source_path):
         print(f"Starting download for : {source_path}")
 
         response = wget.download(config["source"], source_path)
+        config["source"] = source_path
+# check point
+save_config(config)
 
 if not config["pbf2db_insert"]:
     print(f"\nStarting Import Process (1/10)... \n")
     lua_path = os.path.join(working_dir, "raw.lua")
+    if config["include_ref"]:
+        lua_path = os.path.join(working_dir, "raw_with_ref.lua")
 
     osm2pgsql = [
         "osm2pgsql",
