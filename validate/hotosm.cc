@@ -157,6 +157,15 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     return status;
 }
 
+ValidateStatus*
+Hotosm::_checkPOI(const osmobjects::OsmNode &node, const std::string &type)
+{
+  auto _v = this->checkPOI(node, type);
+  ValidateStatus* v = new ValidateStatus();
+  v->status = _v->status;
+  return v;
+}
+
 // This checks a way. A way should always have some tags. Often a polygon
 // with no tags is a building.
 std::shared_ptr<ValidateStatus>
