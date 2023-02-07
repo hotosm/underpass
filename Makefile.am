@@ -145,7 +145,7 @@ DIR := $(shell python3-config --configdir)
 noinst_LTLIBRARIES = underpass.la
 underpass_la_SOURCES = data/python.cc $(libunderpass_la_SOURCES)
 underpass_la_LDFADD = $(BOOST_LIBS) libunderpass.la validate/libhotosm.la 
-underpass_la_LDFLAGS = -module -avoid-version -no-undefined -rpath /usr/lib64/ validate/libhotosm.la $(BOOST_LIBS) -lboost_python38
+underpass_la_LDFLAGS = -module -avoid-version -no-undefined -rpath /usr/lib64/ validate/libhotosm.la $(BOOST_LIBS) -lboost_python
 PY_OBJECTS = $(libunderpass_la_OBJECTS:.lo=.o)
 # /usr/lib/python3.8/lib-dynload/underpass.cpython-38-x86_64-linux-gnu.so
 install-python: underpass.la
