@@ -71,7 +71,12 @@ public:
     /// is a building
     std::shared_ptr<ValidateStatus> checkWay(const osmobjects::OsmWay &way, const std::string &type);
 
+    /// Check a tag
     std::shared_ptr<ValidateStatus> checkTag(const std::string &key, const std::string &value);
+
+    /// Check a set of changes
+    std::vector<ValidateStatus> checkOsmChange(const std::string &xml, const std::string &check);
+
     // Factory method
     static std::shared_ptr<Hotosm> create(void) {
     return std::make_shared<Hotosm>();

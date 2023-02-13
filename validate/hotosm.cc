@@ -319,6 +319,24 @@ Hotosm::checkTag(const std::string &key, const std::string &value)
     return status;
 }
 
+// Check a OSM Change for typical errors
+std::vector<ValidateStatus>
+Hotosm::checkOsmChange(const std::string &xml, const std::string &check) {
+    osmchange::OsmChangeFile ocf;
+    std::stringstream _xml(xml);
+    ocf.readXML(_xml);
+    std::vector<ValidateStatus> result;
+    for (auto it = std::begin(ocf.changes); it != std::end(ocf.changes); ++it) {
+        osmchange::OsmChange *change = it->get();
+        for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
+            osmobjects::OsmWay *way = wit->get();
+            auto status = checkWay(*way, check);
+            result.push_back(*status);
+        }
+    }
+    return result;
+}
+
 }; // namespace hotosm
 
 #endif // EOF __HOTOSM_H__
