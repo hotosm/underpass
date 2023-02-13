@@ -1436,3 +1436,5 @@ tags:
     - doctor
     - pharmacy
   - source
+  - destroyed:building
+    - yes
