@@ -154,43 +154,6 @@ class ValidateStatus {
             }
         }
     }
-    /// Dump internal data in JSON format
-    std::string dumpJSON() const {
-        std::string output = "";
-        output += "{\n";
-        output += "\t\"osm_id\":" + std::to_string(osm_id) + ",\n";
-        output += "\t\"user_id\":" + std::to_string(user_id) + ",\n";
-        output += "\t\"change_id\":" + std::to_string(change_id) + ",\n";
-        output += "\t\"angle\":" + std::to_string(angle) + ",\n";
-
-        std::map<valerror_t, std::string> results;
-        results[notags] = "notags";
-        results[complete] = "complete";
-        results[incomplete] = "incomplete";
-        results[badvalue] = "badvalue";
-        results[correct] = "correct";
-        results[badgeom] = "badgeom";
-        results[orphan] = "orphan";
-        results[overlaping] = "overlaping";
-        results[duplicate] = "duplicate";
-
-        output += "\t\"results\": [";
-        for (const auto &stat: std::as_const(status)) {
-            output += "\"" + results[stat] + "\",";
-        }
-        output.erase(output.size() - 1);
-        output += "]\n";
-        if (values.size() > 0) {
-            output += ",\n\t\"values\": [";
-            for (auto it = std::begin(values); it != std::end(values); ++it ) {
-                output += *it + ",";
-            }
-            output.erase(output.size() - 1);
-            output += "]\n";
-        }
-        output += "}\n";
-        return output;
-    }
     std::unordered_set<valerror_t> status;
     osmobjects::osmtype_t objtype;
     long osm_id = 0;        ///< The OSM ID of the feature

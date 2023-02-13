@@ -66,13 +66,17 @@ public:
     /// Check a POI for tags. A node that is part of a way shouldn't have any
     /// tags, this is to check actual POIs, like a school.
     std::shared_ptr<ValidateStatus> checkPOI(const osmobjects::OsmNode &node, const std::string &type);
-    ValidateStatus* _checkPOI(const osmobjects::OsmNode &node, const std::string &type);
 
     /// This checks a way. A way should always have some tags. Often a polygon
     /// is a building
     std::shared_ptr<ValidateStatus> checkWay(const osmobjects::OsmWay &way, const std::string &type);
 
+    /// Check a tag
     std::shared_ptr<ValidateStatus> checkTag(const std::string &key, const std::string &value);
+
+    /// Check a set of changes
+    std::vector<ValidateStatus> checkOsmChange(const std::string &xml, const std::string &check);
+
     // Factory method
     static std::shared_ptr<Hotosm> create(void) {
     return std::make_shared<Hotosm>();

@@ -157,15 +157,6 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     return status;
 }
 
-ValidateStatus*
-Hotosm::_checkPOI(const osmobjects::OsmNode &node, const std::string &type)
-{
-  auto _v = this->checkPOI(node, type);
-  ValidateStatus* v = new ValidateStatus();
-  v->status = _v->status;
-  return v;
-}
-
 // This checks a way. A way should always have some tags. Often a polygon
 // with no tags is a building.
 std::shared_ptr<ValidateStatus>
@@ -326,6 +317,24 @@ Hotosm::checkTag(const std::string &key, const std::string &value)
         // status->status.insert(correct);
     }
     return status;
+}
+
+// Check a OSM Change for typical errors
+std::vector<ValidateStatus>
+Hotosm::checkOsmChange(const std::string &xml, const std::string &check) {
+    osmchange::OsmChangeFile ocf;
+    std::stringstream _xml(xml);
+    ocf.readXML(_xml);
+    std::vector<ValidateStatus> result;
+    for (auto it = std::begin(ocf.changes); it != std::end(ocf.changes); ++it) {
+        osmchange::OsmChange *change = it->get();
+        for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
+            osmobjects::OsmWay *way = wit->get();
+            auto status = checkWay(*way, check);
+            result.push_back(*status);
+        }
+    }
+    return result;
 }
 
 }; // namespace hotosm
