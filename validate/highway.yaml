@@ -32,6 +32,9 @@ tags:
     - emergency_bay
     - emergency_access_point
     - give_way
+    - construction
+
+  - construction
   - footway:
     - sidewalk
     - crossing
@@ -145,7 +148,6 @@ tags:
     - diagonal
     - perpendicular
   - proposed
-  - construction
 
   - abutters:
     - commercial
