@@ -1,59 +1,7 @@
-building:
+"[key]":
   way:
-    - building:
-      - *
+    - *
   node:
-    - building:
-      - *
+    - *
   relation:
-    - building:
-      - *
-
-shop:
-  node:
-    - shop:
-      - *
-  way:
-    - shop:
-      - *
-  relation:
-    - shop:
-      - *
-
-waterway:
-  way:
-    - waterway:
-      - river
-      - canal
-      - stream
-      - brook
-      - drain
-      - ditch
-  relation:
-    - waterway:
-      - river
-      - canal
-      - stream
-      - brook
-      - drain
-      - ditch
-
-amenity:
-  node:
-    - amenity:
-      - *
-  way:
-    - amenity:
-      - *
-  relation:
-    - amenity:
-      - *
-
-highway:
-  way:
-    - highway:
-      - *
-  relation:
-    - highway:
-      - *
-
+    - *
