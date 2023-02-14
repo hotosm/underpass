@@ -77,6 +77,11 @@ C++ 2020. Both Debian Buster and Ubuntu Groovy ship *libpqxx 6.x*,
 which has a bug which has been fixed in *libpqxx 7.x*. Fedora 33 ships
 the newer version.
 
+# Product Roadmap
+We have included below a reference to the Underpass Product Roadmap [subject to change]. We hope it is a useful reference for anyone wanting to get involved.
+![image](https://user-images.githubusercontent.com/98902727/218773383-6c56e45d-132a-43d3-9fa9-ddff94c89b7c.png)
+
+
 # More Information
 
 If you want to know more about Underpass, the [project
