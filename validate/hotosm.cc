@@ -330,7 +330,18 @@ Hotosm::checkOsmChange(const std::string &xml, const std::string &check) {
         osmchange::OsmChange *change = it->get();
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
             osmobjects::OsmWay *way = wit->get();
+            if (!way->containsKey(check)) {
+                continue;
+            }
             auto status = checkWay(*way, check);
+            result.push_back(*status);
+        }
+        for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
+            osmobjects::OsmNode *node = nit->get();
+            if (!node->containsKey(check)) {
+                continue;
+            }
+            auto status = checkPOI(*node, check);
             result.push_back(*status);
         }
     }
