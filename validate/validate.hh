@@ -172,8 +172,14 @@ class ValidateStatus {
 class BOOST_SYMBOL_VISIBLE Validate {
   public:
     Validate(void) {
-        std::string dir = SRCDIR;
-        if (boost::filesystem::exists("../validate")) {
+        std::string dir;
+
+        std::cout << "SRCDIR " << SRCDIR << std::endl;
+        std::cout << "PKGLIBDIR " << PKGLIBDIR << std::endl;
+
+        if (boost::filesystem::exists(SRCDIR)) {
+            std::string dir = SRCDIR;
+        } else if (boost::filesystem::exists("../validate")) {
             dir = "../validate";
         } else if (!boost::filesystem::exists("../validate") && !boost::filesystem::exists(dir)) {
             dir = PKGLIBDIR;
