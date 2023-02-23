@@ -186,7 +186,6 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
         return status;
     }
 
-    std::cout << "*** type: " << type << std::endl;
     yaml::Yaml tests = yamls[type];
     tests.dump();
 
@@ -327,7 +326,6 @@ Hotosm::checkOsmChange(const std::string &xml, const std::string &check) {
     osmchange::OsmChangeFile ocf;
     std::stringstream _xml(xml);
     ocf.readXML(_xml);
-    std::cout << "Changes: " << ocf.changes.size() << std::endl;
     std::vector<ValidateStatus> result;
     for (auto it = std::begin(ocf.changes); it != std::end(ocf.changes); ++it) {
         osmchange::OsmChange *change = it->get();

@@ -174,18 +174,14 @@ class BOOST_SYMBOL_VISIBLE Validate {
     Validate(void) {
         std::string dir;
 
-        std::cout << "SRCDIR " << SRCDIR << std::endl;
-        std::cout << "PKGLIBDIR " << PKGLIBDIR << std::endl;
-
-        if (boost::filesystem::exists(SRCDIR)) {
-            std::string dir = SRCDIR;
+        if (boost::filesystem::exists(PKGLIBDIR)) {
+            dir = PKGLIBDIR;
+        } else if (boost::filesystem::exists(SRCDIR)) {
+            dir = SRCDIR;
         } else if (boost::filesystem::exists("../validate")) {
             dir = "../validate";
-        } else if (!boost::filesystem::exists("../validate") && !boost::filesystem::exists(dir)) {
-            dir = PKGLIBDIR;
-            if (!boost::filesystem::exists(dir)) {
-                log_error(_("No validation config files in %1%!"), dir);
-            }
+        } else {
+            log_error(_("No validation config files in %1%!"), dir);
         }
         for (auto &file: std::filesystem::recursive_directory_iterator(dir)) {
             std::filesystem::path config = file.path();

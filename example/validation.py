@@ -1,4 +1,4 @@
-from underpass import underpass as u
+import underpass as u
 import argparse
 
 def validateOsmChange(xml: str, check: str):
@@ -14,10 +14,9 @@ def main():
     if args.file and args.check:
         with open(args.file, 'r') as file:
             data = file.read().rstrip()
-            # print(validateOsmChange(data, args.check))
-            validateOsmChange(data, args.check)
+            print(validateOsmChange(data, args.check))
     else:
         print("Usage: python validaiton.py -f mychange.osm -c building")
-        print("Example: python ../example/validation.py -f ../testsuite/testdata/stats/107235440.xml -c highway")
+        print("Example: python ../example/validation.py -f ../testsuite/testdata/validation/building-tag.osc -c building")
 if __name__ == "__main__":
     main()
