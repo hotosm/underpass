@@ -187,7 +187,6 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     }
 
     yaml::Yaml tests = yamls[type];
-    tests.dump();
 
     std::string key;
     int tagexists = 0;
