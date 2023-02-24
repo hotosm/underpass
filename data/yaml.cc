@@ -213,7 +213,6 @@ void Node::contains_value(std::string key, std::string value, bool &result) {
 
 void Node::dump() {
     for (auto it = std::begin(this->children); it != std::end(this->children); ++it) {
-        std::cout << it->value << std::endl;
         if (it->children.size() > 0) {
             it->dump();
         }
