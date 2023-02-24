@@ -16,7 +16,7 @@ def main():
             data = file.read().rstrip()
             print(validateOsmChange(data, args.check))
     else:
-        print("Usage: python validaiton.py -f mychange.osm -c building")
+        print("Usage: python validation.py -f <file> -c <check>")
         print("Example: python ../example/validation.py -f ../testsuite/testdata/validation/building-tag.osc -c building")
 if __name__ == "__main__":
     main()
