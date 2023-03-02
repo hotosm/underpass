@@ -43,3 +43,6 @@ raw/data
 raw/env
 raw/db_config.txt
 raw/app_config.json
+**/ENV
+**/.DS_Store
+**/__pycache__/
