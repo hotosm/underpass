@@ -1,0 +1,19 @@
+
+.ReportResultTable {
+    border-collapse: collapse;
+    width: 100%;
+    font-family: Roboto, Helvetica, Arial, sans-serif;
+}
+  
+.ReportResultTable th, .ReportResultTable td {
+    text-align: left;
+    padding: 8px;
+}
+
+.ReportResultTable th {
+    border-bottom: 1px solid #ccc;
+}
+  
+.ReportResultTable tr:nth-child(even) {
+    background-color: #f1f1f1;
+}

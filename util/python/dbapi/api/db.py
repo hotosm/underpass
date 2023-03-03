@@ -68,7 +68,8 @@ class UnderpassDB():
                 for row in cur:
                     results += '    '.join((str(x)) for x in row) + '\n'
                 cur.close()
-                results += '    '.join([desc[0] for desc in cur.description])  + '\n'
+                csvHeaders = '    '.join([desc[0] for desc in cur.description])  + '\n'
+                return csvHeaders + results
             else:
                 results = []
                 colnames = [desc[0] for desc in cur.description]

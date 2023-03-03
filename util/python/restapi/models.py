@@ -5,6 +5,7 @@ class DataQualityRequest(BaseModel):
     toDate: str = None
     hashtags: list = None
     area: str = None
+    responseType: str = "json"
 
 class OsmchangeValidateRequest(BaseModel):
     osmchange: str
