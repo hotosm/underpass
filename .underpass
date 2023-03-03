@@ -1,0 +1,7 @@
+# Underpass config
+# Edit and copy this file to $HOME
+config:
+  - planet_servers:
+    - planet.openstreetmap.org
+  - galaxy_db_url:
+    - underpass@postgis/galaxy
