@@ -119,10 +119,6 @@ AM_CPPFLAGS = \
 # clutter to the output. This should only be enabled when doing performance tuning.
 #	-DTIMING_DEBUG
 
-PYTHON_UTILS = \
-	util/stats2galaxy.py \
-	util/training.py
-
 pkgdata_DATA = $(SQL_FILES) data/priority.geojson data/setupdb.sh $(PYTHON_UTILS)
 
 EXTRA_DIST = \
