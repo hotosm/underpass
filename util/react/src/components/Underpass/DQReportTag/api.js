@@ -4,16 +4,19 @@ headers.append("Content-Type", "application/json");
 
 // Send request to the Underpass API
 const API = (url) => {
-    const API_URL = url || process.env.REACT_APP_UNDERPASS_API || "http://localhost:5480/v1";
+    const API_URL = url || 
+        process.env.REACT_APP_UNDERPASS_API 
+        || "http://localhost:5480";
     return {
-        dataQualityReview: async (fromDate, toDate, hashtags, options) => {
-            fetch(API_URL + "/data-quality/report/geo", {
-                method: 'GET',
+        reportDataQualityTag: async (fromDate, toDate, hashtags, responseType, options) => {
+            fetch(API_URL + "/report/dataQualityTag", {
+                method: 'POST',
                 headers: headers,
                 body: JSON.stringify({
                     fromDate: fromDate,
                     toDate: toDate,
-                    hashtags: hashtags
+                    hashtags: hashtags,
+                    responseType: responseType
                 })
             })
             .then(res => res.json())

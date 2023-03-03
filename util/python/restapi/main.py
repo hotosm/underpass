@@ -43,6 +43,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from models import * 
 from api import report
+from api import db
 import json
 
 origins = [
@@ -61,6 +62,7 @@ app.add_middleware(
 )
 
 reporter = report.Report()
+reporter.underpassDB = db.UnderpassDB("postgresql://underpass@postgis/galaxy")
 
 @app.get("/")
 def read_root():
@@ -68,7 +70,8 @@ def read_root():
 
 @app.post("/report/dataQualityGeo")
 def dataQualityGeo(request: DataQualityRequest):
-    reporter = report.Report()
+    if request.responseType:
+        reporter.responseType = request.responseType
     results = reporter.getDataQualityGeo(
         fromDate = request.fromDate,
         toDate = request.toDate,
@@ -79,7 +82,8 @@ def dataQualityGeo(request: DataQualityRequest):
 
 @app.post("/report/dataQualityTag")
 def dataQualityTag(request: DataQualityRequest):
-    reporter = report.Report()
+    if request.responseType:
+        reporter.responseType = request.responseType
     results = reporter.getDataQualityTag(
         fromDate = request.fromDate,
         toDate = request.toDate,
