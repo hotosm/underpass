@@ -40,11 +40,26 @@ import sys,os
 sys.path.append(os.path.realpath('../dbapi'))
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from models import * 
 from api import report
 import json
 
+origins = [
+    "http://localhost",
+    "http://localhost:5000",
+]
+
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 reporter = report.Report()
 
 @app.get("/")
