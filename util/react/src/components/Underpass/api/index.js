@@ -163,7 +163,7 @@ const API = (url) => {
                 (error) => {
                     options.onError && options.onError(error);
                 }
-            )    
+            )
         }
     }
 }
