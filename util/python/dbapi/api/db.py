@@ -24,20 +24,9 @@ class UnderpassDB():
 
     # Default Underpass local DB configuration
     # This might be replaced by an .ini config file
-    host = "localhost"
-    port = "5439"
-    dbname = "galaxy"
-    user = "underpass"
-    password = "underpass"
-
+    
     def __init__(self, connectionString = None):
-        self.connectionString = connectionString or "host={0} port={1} dbname={2} user={3} password={4}".format(
-            self.host,
-            self.port,
-            self.dbname,
-            self.user,
-            self.password
-        )
+        self.connectionString = connectionString or "postgresql://underpass@postgis/galaxy"
         self.connect()
 
     def connect(self):

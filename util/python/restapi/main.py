@@ -40,10 +40,12 @@ import sys,os
 sys.path.append(os.path.realpath('../dbapi'))
 
 from fastapi import FastAPI
+from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from models import * 
 from api import report
 from api import db
+import config
 import json
 
 origins = [
@@ -62,7 +64,8 @@ app.add_middleware(
 )
 
 reporter = report.Report()
-reporter.underpassDB = db.UnderpassDB("postgresql://underpass@postgis/galaxy")
+if config.UNDERPASS_DB:
+    reporter.underpassDB = db.UnderpassDB(config.UNDERPASS_DB)
 
 @app.get("/")
 def read_root():
@@ -70,20 +73,27 @@ def read_root():
 
 @app.post("/report/dataQualityGeo")
 def dataQualityGeo(request: DataQualityRequest):
-    if request.responseType:
-        reporter.responseType = request.responseType
     results = reporter.getDataQualityGeo(
         fromDate = request.fromDate,
         toDate = request.toDate,
         hashtags = request.hashtags,
-        area = request.area
+        area = request.area,
+    )
+    return results
+
+@app.post("/report/dataQualityGeo/csv", response_class=PlainTextResponse)
+def dataQualityGeo(request: DataQualityRequest):
+    results = reporter.getDataQualityGeo(
+        fromDate = request.fromDate,
+        toDate = request.toDate,
+        hashtags = request.hashtags,
+        area = request.area,
+        responseType = "csv"
     )
     return results
 
 @app.post("/report/dataQualityTag")
 def dataQualityTag(request: DataQualityRequest):
-    if request.responseType:
-        reporter.responseType = request.responseType
     results = reporter.getDataQualityTag(
         fromDate = request.fromDate,
         toDate = request.toDate,
@@ -91,7 +101,40 @@ def dataQualityTag(request: DataQualityRequest):
         area = request.area
     )
     return results
-try:
+
+@app.post("/report/dataQualityTag/csv", response_class=PlainTextResponse)
+def dataQualityTag(request: DataQualityRequest):
+    results = reporter.getDataQualityTag(
+        fromDate = request.fromDate,
+        toDate = request.toDate,
+        hashtags = request.hashtags,
+        area = request.area,
+        responseType = "csv"
+    )
+    return results
+
+@app.post("/report/dataQualityTagStats/csv", response_class=PlainTextResponse)
+def dataQualityTag(request: DataQualityRequest):
+    results = reporter.getDataQualityTagStats(
+        fromDate = request.fromDate,
+        toDate = request.toDate,
+        hashtags = request.hashtags,
+        area = request.area,
+        responseType = "csv"
+    )
+    return results
+
+@app.post("/report/dataQualityTagStats")
+def dataQualityTag(request: DataQualityRequest):
+    results = reporter.getDataQualityTagStats(
+        fromDate = request.fromDate,
+        toDate = request.toDate,
+        hashtags = request.hashtags,
+        area = request.area
+    )
+    return results
+
+if config.ENABLE_UNDERPASS_CORE:
     import underpass as u
 
     @app.post("/osmchange/validate")
@@ -101,5 +144,3 @@ try:
             request.osmchange,
             request.check)
         )
-except:
-    pass
