@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import JXON from './jxon';
-import API from './api';
+import API from '../api';
 
 // ValidateOsmChange component
 export const ValidateOsmChange = ({ osmchange, onReview, apiUrl }) => {
@@ -11,7 +11,7 @@ export const ValidateOsmChange = ({ osmchange, onReview, apiUrl }) => {
         if (typeof osmchange !== 'string') {
           osmchange = JXON.stringify(osmchange);
         }
-        await API(apiUrl).dataQualityReview(osmchange, {
+        await API(apiUrl).dataQualityReview(osmchange, "building", {
           onSuccess: (result) => {
             setReview(result);
             onReview && onReview(result);

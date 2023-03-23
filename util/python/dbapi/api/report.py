@@ -27,7 +27,6 @@ class Report:
         pass
 
     underpassDB = UnderpassDB()
-    responseType = "json"
 
     def getDataQualityGeo(
         self, 
@@ -35,7 +34,8 @@ class Report:
         toDate = None,
         hashtags  = None, 
         area = None,
-        page = 0
+        page = 0,
+        responseType = "json"
     ):
         query = "select \
             'https://osm.org/' || type || '/' || osm_id as link, \
@@ -54,7 +54,7 @@ class Report:
                 RESULTS_PER_PAGE,
                 RESULTS_PER_PAGE * page
             )
-        return self.underpassDB.run(query, self.responseType)
+        return self.underpassDB.run(query, responseType)
 
     def getDataQualityTag(
             self,
@@ -62,7 +62,8 @@ class Report:
             toDate = None,
             hashtags  = None, 
             area = None,
-            page = 0
+            page = 0,
+            responseType = "json"
         ):
         query = "WITH t2 AS ( \
             SELECT id \
@@ -89,4 +90,41 @@ class Report:
                     RESULTS_PER_PAGE,
                     RESULTS_PER_PAGE * page
                 )
-        return self.underpassDB.run(query, self.responseType)
+        return self.underpassDB.run(query, responseType)
+
+    def getDataQualityTagStats(
+            self,
+            fromDate = None,
+            toDate = None,
+            hashtags  = None,
+            area = None,
+            page = 0,
+            responseType = "json"
+        ):
+        query = "WITH t2 AS ( \
+            SELECT id \
+                from changesets \
+                where (added is not null or modified is not null) \
+                {0} {1} {2} {3} \
+            ), \
+            t1 AS ( \
+                SELECT change_id, source, \
+                unnest(values) as unnest_values \
+                from validation, t2 \
+                where change_id = t2.id \
+            ) \
+            SELECT \
+                t1.unnest_values as tag, t1.source, count(t1.unnest_values) \
+                FROM t1, t2  \
+                where t1.change_id = t2.id  \
+                group by t1.unnest_values, t1.source \
+                order by count desc  \
+                limit {4} offset {5}".format(
+                    "and closed_at >= '{0}'".format(fromDate) if fromDate else "",
+                    "and closed_at <= '{0}'".format(toDate) if toDate else "",
+                    "and " + hashtagsQueryBuilder(hashtags) if hashtags else "",
+                    "and " + bboxQueryBuilder(area) if area else "",
+                    RESULTS_PER_PAGE,
+                    RESULTS_PER_PAGE * page
+                )
+        return self.underpassDB.run(query, responseType)

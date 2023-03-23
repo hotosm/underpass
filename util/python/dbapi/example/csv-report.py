@@ -28,12 +28,12 @@ sys.path.append(os.path.realpath('..'))
 from api import report
 
 reporter = report.Report()
-reporter.responseType = "csv"
 
 results = reporter.getDataQualityTag(
     fromDate = "2022-12-28T00:00:00", 
     toDate = "2022-12-28T23:59:59", 
     hashtags = ["hotosm"],
+    responseType = "csv"
 )
 
 print(results)

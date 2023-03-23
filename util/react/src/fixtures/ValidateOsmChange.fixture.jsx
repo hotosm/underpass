@@ -22,6 +22,6 @@ const osmChange = "\
 </osmChange>";
 
 export default (
-    <ValidateOsmChange osmchange={osmChange} />
+    <ValidateOsmChange osmchange={osmChange} check="building" />
 )
 
