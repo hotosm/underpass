@@ -3,18 +3,28 @@
 
 # Underpass
 
-Underpass is a **data analysis engine** that process OpenStreetMap data and provides customizable **statistics and validation** reports in **near real time**.
+Underpass is a **data analysis engine** that process OpenStreetMap data
+and provides customizable **statistics and validation** reports in **near real time**.
 
-## Quick start using Docker
+## Quick start
 
 ```
     git clone https://github.com/hotosm/underpass.git
-    sh docker/install-with-docker.sh
+    sh docker/install.sh
 ```
 
 After installation is done, a process will start downloading and processing
 OSM data from a week ago, storing the results on the database and keep running
 for updating data every minute.
+
+You can start/stop the replication process:
+
+sh docker/services-start.sh
+sh docker/services-stop.sh
+
+If you want to avoid using Docker and build Underpass on your system, check
+the [install](https://github.com/hotosm/underpass/blob/master/doc/install.md) 
+documentation.
 
 ## Using the data
 
@@ -28,13 +38,12 @@ for OSM data analysis.
 You can request the REST API directly:
 
 ```
-curl --location 'http://127.0.0.1:8000/report/dataQualityTag' \
+curl --location 'http://127.0.0.1:8000/report/dataQualityTag/csv' \
 --header 'Content-Type: application/json' \
 --data '{
-    "fromDate": "2022-12-01T00:00:00",
-    "toDate": "2022-12-30T23:59:59",
+    "fromDate": "2023-01-01T00:00:00",
     "hashtags": []
-}
+}'
 ```
 
 ### DB API
@@ -51,15 +60,15 @@ Use the Python example for download and analyze Changeset:
 docker exec -w /code/util/python/examples -t underpass \
 python validation.py -u https://www.openstreetmap.org/api/0.6/changeset/133637588/download -c place
 
-# Product Roadmap
+# Product roadmap
 
-We have included below a reference to the Underpass Product Roadmap [subject to change]. We hope it is a useful reference for anyone wanting to get involved.
+We have included below a reference to the Underpass Product Roadmap [subject to change]. 
+We hope it is a useful reference for anyone wanting to get involved.
 
 ![image](https://user-images.githubusercontent.com/98902727/218773383-6c56e45d-132a-43d3-9fa9-ddff94c89b7c.png)
 
-# More Information
+# Core documentation
 
-If you want to know more about Underpass, the [project
-Documentation](https://hotosm.github.io/underpass/index.html) is
-here. This includes the internal documentation of all the classes. The
-source code is [available here](https://github.com/robsavoye/underpass).
+Check the [docs](https://hotosm.github.io/underpass/index.html) for
+internal documentation of all the C++ classes.
+
