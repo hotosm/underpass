@@ -56,14 +56,14 @@ See an example of how generate reports using the DB API:
 
 ### Python API
 
-Use the Python example for download and analyze Changeset:
+Use the Python example for download and analyze a Changeset:
 
 ```sh
 docker exec -w /code/util/python/examples -t underpass \
 python validation.py -u https://www.openstreetmap.org/api/0.6/changeset/133637588/download -c place
 ```
 
-## Get involved
+## Get involved!
 
 We invite software designers and developers to contribute to the project, there are several issues
 where we need help, some of them are:
