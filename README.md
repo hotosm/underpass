@@ -3,8 +3,12 @@
 
 # Underpass
 
-Underpass is a **data analysis engine** that processes **OpenStreetMap** data
-and provides customizable **statistics and validation** reports in **near real time**.
+Underpass is a **data engine** that proccesses **OpenStreetMap** data in **near real time**.
+
+It provides customizable **statistics** and **validation** reports and it can also be used to
+update a local copy of the OSM database,
+
+It's designed to be high performance on modest hardware.
 
 ## Quick start
 
