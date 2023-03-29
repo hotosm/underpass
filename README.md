@@ -5,14 +5,51 @@
 
 Underpass is a **data analysis engine** that process OpenStreetMap data and provides customizable **statistics and validation** reports in **near real time**.
 
-## Quick start
+## Quick start using Docker
 
 ```
     git clone https://github.com/hotosm/underpass.git
     sh docker/install-with-docker.sh
 ```
 
-Open http://localhost:8000 in your browser.
+After installation is done, a process will start downloading and processing
+OSM data from a week ago, storing the results on the database and keep running
+for updating data every minute.
+
+## Using the data
+
+### Reports on your browser
+
+Open http://127.0.0.1:5000 on your browser and you'll see a set of UI components
+for OSM data analysis.
+
+### REST API
+
+You can request the REST API directly:
+
+```
+curl --location 'http://127.0.0.1:8000/report/dataQualityTag' \
+--header 'Content-Type: application/json' \
+--data '{
+    "fromDate": "2022-12-01T00:00:00",
+    "toDate": "2022-12-30T23:59:59",
+    "hashtags": []
+}
+```
+
+### DB API
+
+See an example of how generate reports using the DB API:
+
+docker exec -w /code/util/python/dbapi/example -t underpass \
+> python csv-report.py
+
+### Python API
+
+Use the Python example for download and analyze Changeset:
+
+docker exec -w /code/util/python/examples -t underpass \
+python validation.py -u https://www.openstreetmap.org/api/0.6/changeset/133637588/download -c place
 
 # Product Roadmap
 

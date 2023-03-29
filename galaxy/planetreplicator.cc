@@ -115,8 +115,13 @@ bool PlanetReplicator::initializeRaw(std::vector<std::string> &rawfile, const st
 std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const replicatorconfig::ReplicatorConfig &config, ptime time) {
     yaml::Yaml yaml;
 
+    std::string statsConfigFilename = "planetreplicator.yaml";
     std::string rep_file = SRCDIR;
-    rep_file += "/galaxy/planetreplicator.yaml";
+    rep_file += "/galaxy/" + statsConfigFilename;
+    if (!boost::filesystem::exists(rep_file)) {
+        rep_file = PKGLIBDIR;
+        rep_file += "/" + statsConfigFilename;
+    }
     yaml.read(rep_file);
     std::map<int, ptime> hashes;
 

@@ -10,15 +10,13 @@ export default (
     <div style={styles.report}>
       <DQReport
         fromDate={"2022-12-01T00:00:00"}
-        toDate={"2022-12-30T23:59:59"}
-        hashtags={["hotosm"]}
+        hashtags={[]}
         report="tag"
       />
     </div>
     <div style={styles.report}>
       <DQReport
         fromDate={"2022-12-01T00:00:00"}
-        toDate={"2022-12-30T23:59:59"}
         hashtags={[]}
         report="geo"
       />
@@ -26,7 +24,6 @@ export default (
     <div style={styles.report}>
       <DQReport
         fromDate={"2022-12-01T00:00:00"}
-        toDate={"2022-12-30T23:59:59"}
         hashtags={[]}
         report="tagStats"
       />
