@@ -3,14 +3,14 @@
 
 # Underpass
 
-Underpass is a **data analysis engine** that process OpenStreetMap data
+Underpass is a **data analysis engine** that processes **OpenStreetMap** data
 and provides customizable **statistics and validation** reports in **near real time**.
 
 ## Quick start
 
 ```sh
-    git clone https://github.com/hotosm/underpass.git
-    sh docker/install.sh
+git clone https://github.com/hotosm/underpass.git
+sh docker/install.sh
 ```
 
 After installation is done, a process will start downloading and processing
@@ -20,8 +20,8 @@ for updating data every minute.
 You can start/stop the replication process:
 
 ```sh
-    sh docker/services-start.sh
-    sh docker/services-stop.sh
+sh docker/services-start.sh
+sh docker/services-stop.sh
 ```
 
 If you want to avoid using Docker and build Underpass on your system, check
@@ -40,12 +40,12 @@ for OSM data analysis.
 You can request the REST API directly:
 
 ```sh
-    curl --location 'http://127.0.0.1:8000/report/dataQualityTag/csv' \
-    --header 'Content-Type: application/json' \
-    --data '{
-        "fromDate": "2023-01-01T00:00:00",
-        "hashtags": []
-    }'
+curl --location 'http://127.0.0.1:8000/report/dataQualityTag/csv' \
+--header 'Content-Type: application/json' \
+--data '{
+    "fromDate": "2023-01-01T00:00:00",
+    "hashtags": []
+}'
 ```
 
 ### DB API
@@ -58,9 +58,9 @@ See an example of how generate reports using the DB API:
 
 Use the Python example for download and analyze Changeset:
 
-```
-    docker exec -w /code/util/python/examples -t underpass \
-    python validation.py -u https://www.openstreetmap.org/api/0.6/changeset/133637588/download -c place
+```sh
+docker exec -w /code/util/python/examples -t underpass \
+python validation.py -u https://www.openstreetmap.org/api/0.6/changeset/133637588/download -c place
 ```
 
 ## Get involved
