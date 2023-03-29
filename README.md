@@ -1,90 +1,92 @@
 ![CI Build and Testing](https://github.com/hotosm/underpass/actions/workflows/run_tests.yml/badge.svg)
 ![Doxygen](https://github.com/hotosm/underpass/actions/workflows/main.yml/badge.svg)
 
-# Mainpage
+# Underpass
 
-Underpass is a C++ API and utility programs for manipulating
-OpenStreetMap data at the database and raw data file level. It can
-download replication files from the OSM planet server and use these
-files to update a local copy of the OSM database, or analyze the
-changes to generate statistics. It is designed to be high
-performance on modest hardware.
+Underpass is a **data engine** that proccesses **OpenStreetMap** data in **near real time**.
 
-Currently this is usually done using Overpass, which can be
-self-hosted or accessed remotely. Overpass has major performance
-issues though, namely it’s single threaded, and doesn’t use a real
-database. What Overpass does is support a wide range of querying OSM
-data, and can handle rather complicated filters. Much of that
-functionality is not needed for supporting statistics collection and
-simple validation.
+It provides customizable **statistics** and **validation** reports and it can also be used to
+update a local copy of the OSM database. It is designed to be **high performance** on modest hardware.
 
-Underpass is designed to function as a replacement for a subset of
-Overpass’s functionality. It is focused on analyzing the change data
-every minute, and generating statistics or doing validation of the
-metadata. This can be used for the Missing Maps Leaderboard, and the
-Red Cross OSM Stats. It is designed to be able to process large files
-by streaming the data.
+## Quick start
 
-Rather than using disk based tempfiles, it has a self-hosted database
-centric design for better performance. It uses Postgresql with the
-Postgis extension, both commonly used for core OSM infrastructure. One
-big advantage of using postgres is it supports utilizing multi-core
-processors for faster SQL queries. It can optionally use [GPU
-support](https://heterodb.github.io/pg-strom/) for faster geospatial
-queries. 
+```sh
+git clone https://github.com/hotosm/underpass.git
+sh docker/install.sh
+```
 
-The other primary design goal of Underpass is to be maintainable for
-the long term. It uses common open source infrastructure to make it
-accessible to community developers. The primary dependencies, which
-are used by multiple other core OSM projects are these:
+After installation is done, a process will start downloading and processing
+OSM data from a week ago, storing the results in the database and keep running
+for updating data every minute.
 
-* Uses the GNU [autotools](https://www.gnu.org/software/automake/manual/html_node/Autotools-Introduction.html) for multi-platform support
-* Uses [SWIG](http://www.swig.org/) for bindings to multiple languages
-* Uses [Boost](https://www.boost.org/) for additional C++ libraries
-* Uses [GDAL](https://www.gdal.org) for reading Geospatial files
-* Uses [PQXX](http://www.pqxx.org/development/libpqxx/) for accessing Postgres
-* Uses [Libxml++](http://libxmlplusplus.sourceforge.net/) for parsing XML files
-* Uses [Doxygen](https://www.doxygen.nl/index.html) for producing code documentation
+You can start/stop the replication process:
 
-Ideally Underpass can be used by other projects needing to do similar
-tasks without Overpass. It should be able to support collecting more
-statistics than are currently used. Since much of Underpass deals with
-the low level data flow of OpenStreetMap, long-term it can be used to
-support future projects as a common infrastructure for database
-oriented mapping tasks.
+```sh
+sh docker/services-start.sh
+sh docker/services-stop.sh
+```
 
-A critical future project is conflation and validation of existing
-data and mapathons. Underpass will support the database management
-tasks those projects will need. The same database can also be used for
-data exports, and Underpass can be used to keep that data up to
-date. What the Overpass data store contains is history information,
-change information, and the actual OSM data. Underpass can access this
-same information by processing the change data itself.
+If you want to avoid using Docker and build Underpass on your system, check
+the [install](https://github.com/hotosm/underpass/blob/master/doc/install.md) 
+documentation.
 
-# Dependencies
+## Using the data
 
-Underpass requires a modern C++ compiler that supports the 2011 C++
-standard. The 2011 standard simplified the syntax by adding the *auto*
-keyword, and thread support became part of the standard C++
-library. Underpass is a heavy user of of the *boost* libraries, and
-also requires reasonably up to date C++ libraries for other
-dependencies. Underpass also uses the ranges-v3 library. This will be
-in the 2020 C++ standard, but hasn't been released yet.
+### Reports on your browser
 
-Fedora 33, Debian Buster, and Ubuntu Groovy contain a package for
-librange-v3, which is the code base for what will be in
-C++ 2020. Both Debian Buster and Ubuntu Groovy ship *libpqxx 6.x*,
-which has a bug which has been fixed in *libpqxx 7.x*. Fedora 33 ships
-the newer version.
+Open http://127.0.0.1:5000 on your browser and you'll see a set of UI components
+for OSM data analysis.
 
-# Product Roadmap
-We have included below a reference to the Underpass Product Roadmap [subject to change]. We hope it is a useful reference for anyone wanting to get involved.
+### REST API
+
+You can request the REST API directly:
+
+```sh
+curl --location 'http://127.0.0.1:8000/report/dataQualityTag/csv' \
+--header 'Content-Type: application/json' \
+--data '{
+    "fromDate": "2023-01-01T00:00:00",
+    "hashtags": []
+}'
+```
+
+### DB API
+
+See an example of how generate reports using the DB API:
+
+`docker exec -w /code/util/python/dbapi/example -t underpass python csv-report.py`
+
+### Python API
+
+Use the Python example for download and analyze a Changeset:
+
+```sh
+docker exec -w /code/util/python/examples -t underpass \
+python validation.py -u https://www.openstreetmap.org/api/0.6/changeset/133637588/download -c place
+```
+
+## Get involved!
+
+We invite software designers and developers to contribute to the project, there are several issues
+where we need help, some of them are:
+
+* Designs for data visualizations
+* React UI components
+* Data quality checks for the C++ core engine
+* PostgreSQL queries for the Python `dbapi` module
+* Endpoints for the Python `restapi` module
+* Packages for Python, React and system binaries
+* Data models for semantic validation
+* Tests for everything
+
+### Roadmap
+
+Below there's reference to the Underpass Product Roadmap (subject to change).
+
 ![image](https://user-images.githubusercontent.com/98902727/218773383-6c56e45d-132a-43d3-9fa9-ddff94c89b7c.png)
 
+### Core documentation
 
-# More Information
+Check the [docs](https://hotosm.github.io/underpass/annotated.html) for
+internal documentation of all the C++ classes.
 
-If you want to know more about Underpass, the [project
-Documentation](https://hotosm.github.io/underpass/index.html) is
-here. This includes the internal documentation of all the classes. The
-source code is [available here](https://github.com/robsavoye/underpass).

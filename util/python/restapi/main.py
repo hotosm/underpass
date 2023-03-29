@@ -64,7 +64,7 @@ app.add_middleware(
 )
 
 reporter = report.Report()
-if config.UNDERPASS_DB:
+if hasattr(config, 'UNDERPASS_DB'):
     reporter.underpassDB = db.UnderpassDB(config.UNDERPASS_DB)
 
 @app.get("/")
@@ -134,12 +134,13 @@ def dataQualityTag(request: DataQualityRequest):
     )
     return results
 
-if config.ENABLE_UNDERPASS_CORE:
+if hasattr(config, 'ENABLE_UNDERPASS_CORE'):
     import underpass as u
 
     @app.post("/osmchange/validate")
     def osmchangeValidate(request: OsmchangeValidateRequest):
         validator = u.Validate()
+        print(request.osmchange)
         return json.loads(validator.checkOsmChange(
             request.osmchange,
             request.check)
