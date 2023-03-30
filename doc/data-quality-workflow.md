@@ -2,7 +2,7 @@
 
 ## 1. Capturing changes in the iD Editor before upload changes to OSM
 
-You can see in this commit how it's possible to capture changes made to the map in an instance of the iD Editor inside HOT's Tasking Manager, just before uploading changes to the map:
+You can see in this commit how it's possible to capture changes made to the map in an instance of the iD Editor inside Tasking Manager, just before uploading changes to the map:
 
 https://github.com/hotosm/tasking-manager/compare/develop...feature/idEditorOnEnterSave
 

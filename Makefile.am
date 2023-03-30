@@ -28,8 +28,7 @@ DISTCLEANFILES = doc/html doc/latex .lastmod
 MAINTAINERCLEANFILES = revno.h .lastmod
 
 SUBDIRS = \
-	validate
-# 	po
+	src/validate
 
 lib_LTLIBRARIES = libunderpass.la
 instdir = /tmp
@@ -48,42 +47,33 @@ BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
 	$(BOOST_PYTHON_LIB)
 
 SQL_FILES = \
-	data/underpass.sql \
-	data/pgsnapshot.sql \
-	data/galaxy.sql \
-	data/geoboundaries.sql
+	data/underpass.sql
 
 YAML_FILES = \
-	validate/building.yaml \
-	validate/highway.yaml \
-	validate/place.yaml \
-	validate/statistics.yaml \
-	validate/wastepoints.yaml
+	config/validate/building.yaml \
+	config/validate/highway.yaml \
+	config/validate/place.yaml \
+	config/validate/landuse.yaml \
+	config/validate/natural.yaml \
+	config/validate/waterway.yaml \
+	config/stats/statistics.yaml
 
-# inst_HEADERS = hotosm.hh hottm.hh
 libunderpass_la_SOURCES = \
-	log.cc log.hh \
-	dsodefs.hh gettext.h \
-	hottm.cc hottm.hh \
-	replicatorconfig.hh \
-	hottm/tmdefs.hh \
-	hottm/tmusers.cc hottm/tmusers.hh \
-	hottm/tmteams.cc hottm/tmteams.hh \
-	hottm/tmprojects.cc hottm/tmprojects.hh \
-	galaxy/galaxy.cc galaxy/galaxy.hh \
-	galaxy/changeset.cc galaxy/changeset.hh \
-	galaxy/osmchange.cc galaxy/osmchange.hh \
-	galaxy/replication.cc galaxy/replication.hh \
-	galaxy/planetreplicator.cc galaxy/planetreplicator.hh \
-	data/geoutil.cc data/geoutil.hh \
-	data/osmobjects.cc data/osmobjects.hh \
-	data/osm2pgsql.cc data/osm2pgsql.hh \
-	data/threads.cc data/threads.hh \
-	data/yaml.hh data/yaml.cc \
-	data/statsconfig.hh data/statsconfig.cc \
-	data/pq.hh data/pq.cc \
-	data/setupdb.sh \
-	validate/conflate.cc validate/conflate.hh
+	src/utils/log.cc src/utils/log.hh \
+	src/dsodefs.hh src/gettext.h \
+	src/underpassconfig.hh \
+	src/stats/querystats.cc src/stats/querystats.hh \
+	src/stats/statsconfig.hh src/stats/statsconfig.cc \
+	src/osm/changeset.cc src/osm/changeset.hh \
+	src/osm/osmchange.cc src/osm/osmchange.hh \
+	src/osm/osmobjects.cc src/osm/osmobjects.hh \
+	src/replicator/replication.cc src/replicator/replication.hh \
+	src/replicator/planetreplicator.cc src/replicator/planetreplicator.hh \
+	src/replicator/threads.cc src/replicator/threads.hh \
+	src/utils/geoutil.cc src/utils/geoutil.hh \
+	src/tils/yaml.hh src/utils/yaml.cc \
+	src/data/pq.hh src/data/pq.cc \
+	setup/setupdb.sh
 
 if JEMALLOC
 libunderpass_la_LDFLAGS = -avoid-version -ljemalloc
@@ -91,9 +81,9 @@ else
 libunderpass_la_LDFLAGS = -avoid-version
 endif
 
-bin_PROGRAMS = replicator
-replicator_SOURCES = replicator.cc 
-replicator_LDADD = libunderpass.la $(BOOST_LIBS)
+bin_PROGRAMS = underpass
+underpass_SOURCES = src/underpass.cc 
+underpass_LDADD = libunderpass.la $(BOOST_LIBS)
 
 if JEMALLOC
 AM_CXXFLAGS = \
@@ -119,19 +109,19 @@ AM_CPPFLAGS = \
 # clutter to the output. This should only be enabled when doing performance tuning.
 #	-DTIMING_DEBUG
 
-pkgdata_DATA = $(SQL_FILES) data/priority.geojson data/setupdb.sh $(PYTHON_UTILS)
+pkgdata_DATA = $(SQL_FILES) config/priority.geojson setup/setupdb.sh $(PYTHON_UTILS)
 
 EXTRA_DIST = \
 	$(SQL_FILES) \
 	$(YAML_FILES) \
 	$(PYTHON_UTILS) \
-	testsuite \
-	data/priority.geojson \
-	po \
+	src/testsuite \
+	config/priority.geojson \
 	doc \
-	debian \
-	util \
-	redhat
+	dist/debian \
+	dist/redhat \
+	utils
+	
 
 DEJATOOL = libunderpass
 
@@ -139,7 +129,7 @@ if ENABLE_PYTHON
 EXT := $(shell python3-config --extension-suffix)
 DIR := $(shell python3-config --configdir)
 noinst_LTLIBRARIES = underpass.la
-underpass_la_SOURCES = data/python.cc $(libunderpass_la_SOURCES)
+underpass_la_SOURCES = src/wrappers/python.cc $(libunderpass_la_SOURCES)
 underpass_la_LDFADD = $(BOOST_LIBS) libunderpass.la validate/libhotosm.la
 underpass_la_LDFLAGS = -module -avoid-version -no-undefined -rpath /usr/lib64/ validate/libhotosm.la $(BOOST_LIBS) -lboost_python38
 PY_OBJECTS = $(libunderpass_la_OBJECTS:.lo=.o)
@@ -164,7 +154,7 @@ endif
 
 install-data-hook:
 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
-	cp -uvp $(srcdir)/data/priority.geojson $(DESTDIR)/$(pkglibdir)
+	cp -uvp $(srcdir)/config/priority.geojson $(DESTDIR)/$(pkglibdir)
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
 	cp -ruvp $(srcdir)/doc/*.md $(DESTDIR)/$(docdir)
 
@@ -184,28 +174,20 @@ if ENABLE_PCH
 PCHFLAGS = \
         -I$(top_builddir) \
         -I$(top_srcdir) \
-        -I$(top_srcdir)/galaxy \
-        -I$(top_srcdir)/data \
-        -I$(top_srcdir)/hottm
+        -I$(top_srcdir)/src/stats \
+		-I$(top_srcdir)/src/validate \
+        -I$(top_srcdir)/src/data
 
 PCHHEADERS = \
-        $(top_srcdir)/timer.hh \
-        $(top_srcdir)/hottm.hh \
-        $(top_srcdir)/galaxy/planetreplicator.hh \
-        $(top_srcdir)/galaxy/galaxy.hh \
-        $(top_srcdir)/galaxy/replication.hh \
-        $(top_srcdir)/galaxy/osmchange.hh \
-        $(top_srcdir)/galaxy/changeset.hh \
-        $(top_srcdir)/data/validate.hh \
-        $(top_srcdir)/data/pgsnapshot.hh \
-        $(top_srcdir)/data/osmobjects.hh \
-        $(top_srcdir)/data/osm2pgsql.hh \
-        $(top_srcdir)/data/geoutil.hh \
-        $(top_srcdir)/data/threads.hh \
-        $(top_srcdir)/data/underpass.hh \
-        $(top_srcdir)/hottm/tmusers.hh \
-        $(top_srcdir)/hottm/tmteams.hh \
-        $(top_srcdir)/hottm/tmprojects.hh
+        $(top_srcdir)/src/replicator/planetreplicator.hh \
+        $(top_srcdir)/src/stats/querystats.hh \
+        $(top_srcdir)/src/replicator/replication.hh \
+        $(top_srcdir)/src/osm/osmchange.hh \
+        $(top_srcdir)/src/osm/changeset.hh \
+        $(top_srcdir)/src/osm/osmobjects.hh \
+        $(top_srcdir)/src/validate/validate.hh \
+        $(top_srcdir)/src/utils/geoutil.hh \
+        $(top_srcdir)/src/replicator/threads.hh
 
 PCHOTHER = \
 	array \
@@ -238,8 +220,8 @@ endif
 #
 # The rest of this file is only used to build snapshots and releases
 #
-include $(srcdir)/redhat/rpm.am
-include $(srcdir)/debian/deb.am
+include $(srcdir)/dist/redhat/rpm.am
+include $(srcdir)/dist/debian/deb.am
 
 NOW := $(shell date "+%Y%m%d")
 
@@ -341,7 +323,7 @@ revno.h:
 	  echo "#define BRANCH_NICK \"$${nick}\"" >> revno.h; \
 	  echo "#define COMMIT_ID \"$${comm_id}\"" >> revno.h; \
 	  echo "#define VERSION \"$(VERSION)\"" >> revno.h; \
-	  touch .lastmod; \
+	  touch .lastmod;
 	fi
 
 .configline: revno.h
@@ -349,5 +331,5 @@ revno.h:
 	@head config.log | grep " .*/configure " | sed -e 's:^	. .*configure ::' > .configline
 
 check: all
-	cd testsuite; \
+	cd src/testsuite; \
 	$(MAKE) check $(RUNTESTFLAGS)

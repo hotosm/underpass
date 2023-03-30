@@ -96,33 +96,9 @@ to validate buildings that have been edited, as not all the nodes in
 the building polygon are in the change file. Most remote mapping only
 adds buildings, any editing is done later by a human validator.
 
-## Building Conflation
-
-In addition to validating building geometry, all newly created
-buildings in the change file are also checked to make sure they don't
-overlap. This is done by simply looking for buildings polygons that
-intersect each other.
-
-When a smaller dataset is used, Underpass can then conflate with
-existing OSM data. Then validation issues can be identified
-between new buildings and existing buildings. This applies to both
-duplicate buildings and overlapping buildings.
-
-To determine whether a building is a duplicate, each building in the
-change file is compared against all other buildings in OSM in that
-area for intersections. Due to changing imagery offsets, buildings
-that may be duplicates don't always match the same location, and
-sometimes may not even intersect.
-
-The difference between determining overlapping buildings vs duplicate
-buildings is the amount of intersecting areas. the area of the
-new buildings is compared to the area of one of the buildings. If the
-are of intersection is less than 30%, it's assumed to be overlapping,
-instead of a duplicate.
-
 ## Highway Validation
 
-Validating highways starts the correct tag valu. More than validating
+Validating highways starts the correct tag value. More than validating
 the values for the highway tag, this also will check the values of
 important tags, like surface, smoothness, tracktype, and
 sac_scale. The important validation is making sure any new highway

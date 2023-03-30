@@ -192,45 +192,6 @@ The processing thread then passes the statistics data to
 [osmstats::applyChange()](https://hotosm.github.io/underpass/classosmstats_1_1QueryOSMStats.html#aa0aeffb3bb77e4891553ca1883f11a10),
 to insert them into the database.
 
-# Statistics Database
-
-The new statistics database schema is very different from the current
-one used for [OSM Stats](osmstats.md). The current database schema is
-more oriented towards supporting the display functions, and is not
-extendable beyond the few features it collects data about.
-
-The new schema is designed to be more flexible to track more types of
-features, as well as to be more flexible on the types of queries it
-can support. By adding spatial data, it can filter data extracts by
-polygon. The current implementation is limited to using country
-boundaries.
-
-## geoboundaries table
-
-This a static table, the data is maintained outside of this
-project. It can be produced by extracting administrative boundaries
-from OpenStreetMap data to update if changes are made to the
-boundaries. This table is not used by backend, it's primarily to
-assist the frontend to create a list of existing polygons that can be
-used by the frontend to filter data. Rather than the existing
-raw_countries table in the osmstats schema which was English only,
-this one support internationalized names, and both the official 2 and
-3 letter ISO abbreviations.
-
-Currently this table contains the data for most countries, and US
-states. Other boundaries could also be added, and using admin_level to
-differentiate them from the existing ones. For example, this could
-also be populated by Tasking Manager project boundaries.
-
-Keyword | Description
---------|------------
-cid | An internal ID for this administrative boundary
-name | The name of the boundary
-admin_level | The administrative level of this boundary
-tags | Other metadata related to this boundary
-priority | If this is in a priority boundary
-boundary | The multipolygon of this boundary
-
 ## changesets table
 
 This is the primary table used to contain the data for each
@@ -250,7 +211,7 @@ backend and the frontend, without having modify the database schema.
 An example query to count the total number of buildings added by the
 user **4321** for a Tasking Manager project **1234** would be this:
 > SELECT SUM(CAST(added::hstore->'building' AS DOUBLE precision)) FROM
-changesets WHERE 'hotosm-project1234' = ANY(hashtags) AND user_id=4321;
+changesets WHERE 'hotosm-project-1234' = ANY(hashtags) AND user_id=4321;
 
 The source is the satellite imagery used for remote mapping.
 
@@ -269,94 +230,5 @@ modified | An hstore array of the modified map features
 deleted | An hstore array of the deleted map features
 hashtags | An array of the hashtags used for this changeset
 source | The imagery source used for this changeset
-validated | Where this changeset has been validated in the Tasking Manager
 bbox | The bounding box of this changeset
 
-## users table
-
-This table contains data on mappers, and is used to track indivigual
-activity. Often badges are given based on this data. Most of this data
-comes from the Tasking Manager, but is copied hear to improve
-performance. 
-
-Keyword | Description
---------|------------
-id | The OSM ID of this mapper
-name | The OSM user name of the mapper
-tm_registration | The timestamp of when the mapper registered with the tasking manager
-osm_registration | The timestamp of when the mapper registered with openstreetmap
-tasks_mapped | The number of tasking manager tasks completed
-tasks_validated | The number of tasking manager tasks validated
-projects_mapped | The number of tasking manager tasks invalidated
-gender | The mappers gender, when available
-age | The age (optional) of the mapper
-home | The mappers home location, when available
-
-## ground data table
-
-This table collects statistics on ground mapping campaigns, which
-contains different metadata that gets lost when the data is edited for
-uploading to OpenStreetMap. This table is currently a placeholder for
-future developement at this time, so unused for now,
-
-Keyword | Description
---------|------------
-starttime | The timestamp of when the user opened the app and started data collection
-endtime | The timestamp for when the data collection was completed
-username | The username of the mapper, not the same as an OSM username
-changeset_id | Changeset ID applied when the data is uploaded to OSM
-location | The coordinates of this POI
-
-## training data table
-
-Keyword | Description
---------|------------
-name | The mappers name
-local | Whether it was a local training, or remote
-oid | The ID for the organization doing the training
-topics | The topics covered in the training
-hours | The hours of training (optional)
-timestamp | When was this training done ?
-
-## validation data table
-
-Keyword | Description
---------|------------
-name | The name of this training session
-local | A flag for ground mapping or remote mapping
-oid | The ID of the organization doing the training
-tools | The tools this class did training on
-hours | How many hours was the training
-timestamp | The time of this training session
-
-
-## Organization data table
-
-The organization table requires two defined type fields, which are
-created first:
-
-Unit type of the organization:
-
-- country
-- region
-- microgrant
-- organization
-- osm
-- boundary
-- campaign
-- hot
-
-Segment type of the organization:
-
-- new_existing
-- youth_mappers
-- ngo
-- government
-
-
-Keyword | Description
---------|------------
-name text,
-oid int,
-unit units,
-trainee segments

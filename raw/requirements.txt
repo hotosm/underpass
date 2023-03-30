@@ -1,5 +1,0 @@
-psycopg2
-DateTime
-python-dateutil
-wget
-osmium

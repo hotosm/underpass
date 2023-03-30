@@ -281,11 +281,10 @@ AC_SUBST(SRCDIR)
 AC_CONFIG_FILES([
 Makefile
 doc/Doxyfile
-validate/Makefile
-testsuite/Makefile
-testsuite/libunderpass.all/Makefile
-redhat/underpass.spec
-po/Makefile
+src/validate/Makefile
+src/testsuite/Makefile
+src/testsuite/libunderpass.all/Makefile
+dist/redhat/underpass.spec
 ])
 
 AC_OUTPUT

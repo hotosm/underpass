@@ -119,8 +119,7 @@ cores. When a new data file is downloaded, it's uncompressed and
 parsed. During the parsing process, some data validation is done.
 If a change fails validation, it's written to a database table so a
 validator can look into the issue later. If it passes validation, then
-statistics are calculated, and written to the **OSM Stats**
-database. Some data also comes from the Tasking Manager.
+statistics are calculated, and written to the database.
 
 ## Output Databases
 
