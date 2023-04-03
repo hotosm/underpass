@@ -7,7 +7,7 @@ you'll may want to re-process all data.
 
 Changes are filtered by `areaFilter()` for both Changesets and OsmChanges.
 
-For adding a new country or expanding the priority boundary, just edit the [boundary file](https://github.com/hotosm/underpass/blob/master/data/priority.geojson) and run the replication process again.
+For adding a new country or expanding the priority boundary, just edit the [boundary file](https://github.com/hotosm/underpass/blob/master/config/replicator/priority.geojson) and run the replication process again.
 
 ### Stats configuration
 

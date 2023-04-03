@@ -62,7 +62,7 @@ using namespace boost::gregorian;
 #include "osm/osmchange.hh"
 #include <ogr_geometry.h>
 
-#include "data/statsconfig.hh"
+#include "stats/statsconfig.hh"
 
 using namespace osmobjects;
 
@@ -95,7 +95,7 @@ OsmChangeFile::readChanges(const std::string &file)
     std::ifstream change;
     int size = 0;
     unsigned char *buffer;
-    log_debug(_("Reading OsmChange file %1%"), file);
+    log_debug("Reading OsmChange file %1%", file);
     std::string suffix = boost::filesystem::extension(file);
     // It's a gzipped file, common for files downloaded from planet
     std::ifstream ifile(file, std::ios_base::in | std::ios_base::binary);
@@ -107,10 +107,10 @@ OsmChangeFile::readChanges(const std::string &file)
             inbuf.push(boost::iostreams::gzip_decompressor());
             inbuf.push(ifile);
             std::istream instream(&inbuf);
-            // log_debug(_(instream.rdbuf();
+            // log_debug(instream.rdbuf());
             readXML(instream);
         } catch (std::exception &e) {
-            log_debug(_("ERROR opening %1% %2%"), file, e.what());
+            log_debug("ERROR opening %1% %2%", file, e.what());
             // return false;
         }
     } else { // it's a text file
@@ -140,7 +140,7 @@ OsmChangeFile::readXML(std::istream &xml)
     // this is necessary to parse lat-lon with std::stod correctly without
     // loosing precision
     std::setlocale(LC_NUMERIC, "C");
-    // log_debug(_("OsmChangeFile::readXML(): " << xml.rdbuf();
+    // log_debug("OsmChangeFile::readXML(): " << xml.rdbuf());
     std::ofstream myfile;
 #ifdef LIBXML
     // libxml calls on_element_start for each node, using a SAX parser,
@@ -152,7 +152,7 @@ OsmChangeFile::readXML(std::istream &xml)
         // FIXME: files downloaded seem to be missing a trailing \n,
         // so produce an error, but we can ignore this as the file is
         // processed correctly.
-        // log_error(_("libxml++ exception: %1%"), ex.what());
+        // log_error("libxml++ exception: %1%", ex.what());
         // log_debug(xml.rdbuf());
         int return_code = EXIT_FAILURE;
     }
@@ -168,13 +168,13 @@ OsmChangeFile::readXML(std::istream &xml)
     try {
         boost::property_tree::read_xml(xml, pt);
     } catch (exception& boost::property_tree::xml_parser::xml_parser_error) {
-        log_error(_("Error parsing XML"));
+        log_error("Error parsing XML");
         return false;
     }
 #endif
 
     if (pt.empty()) {
-        log_error(_("ERROR: XML data is empty!"));
+        log_error("ERROR: XML data is empty!");
         return false;
     }
 
@@ -247,7 +247,7 @@ OsmChangeFile::on_start_element(const Glib::ustring &name,
 {
     // If a change is in progress, apply to to that instance
     std::shared_ptr<OsmChange> change;
-    // log_debug(_("NAME: %1%"), name);
+    // log_debug("NAME: %1%", name);
     // Top level element can be ignored
     if (name == "osmChange") {
         return;
@@ -301,14 +301,14 @@ OsmChangeFile::on_start_element(const Glib::ustring &name,
                 } else if (a.value == "relation") {
                     type = osmobjects::osmtype_t::relation;
                 } else {
-                    log_debug(_("Invalid relation type '%1%'!"), a.value);
+                    log_debug("Invalid relation type '%1%'!", a.value);
                 }
             } else if (a.name == "ref") {
                 ref = std::stol(a.value);
             } else if (a.name == "role") {
                 role = a.value;
             } else {
-                log_debug(_("Invalid attribute '%1%' in relation member!"),
+                log_debug("Invalid attribute '%1%' in relation member!",
                           a.name);
             }
         }
@@ -316,7 +316,7 @@ OsmChangeFile::on_start_element(const Glib::ustring &name,
         if (ref != -1 && type != osmobjects::osmtype_t::empty) {
             changes.back()->addMember(ref, type, role);
         } else {
-            log_debug(_("Invalid relation (ref: %1%, type: %2%, role: %3%"),
+            log_debug("Invalid relation (ref: %1%, type: %2%, role: %3%",
                       ref, type, role);
         }
     } else if (name == "nd") {
@@ -461,7 +461,7 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
     boost::timer::auto_cpu_timer timer("OsmChangeFile::areaFilter: took %w seconds\n");
 #endif
     std::map<long, bool> priority;
-    // log_debug(_("Pre filtering size is %1%"), changes.size());
+    // log_debug("Pre filtering size is %1%", changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
         OsmChange *change = it->get();
 
@@ -479,16 +479,16 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
             // std::cerr << "Checking " << boost::geometry::wkt(node->point) << " within " << boost::geometry::wkt(poly) << std::endl;
             if (!boost::geometry::within(node->point, poly)) {
                 // std::cerr << "Deleting point " << node->point.x() << ", " << node->point.y() << std::endl;
-                // log_debug(_("Validating Node %1% is not in a priority area"), node->change_id);
+                // log_debug("Validating Node %1% is not in a priority area", node->change_id);
                 change->nodes.erase(nit--);
             } else {
-                // log_debug(_("Validating Node %1% is in a priority area"), node->change_id);
+                // log_debug("Validating Node %1% is in a priority area", node->change_id);
                 node->priority = true;
                 priority[node->change_id] = true;
             }
         }
 
-        //log_debug(_("Post filtering size is %1%"), changes.size());
+        //log_debug("Post filtering size is %1%", changes.size());
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
             OsmWay *way = wit->get();
             if (way->action == osmobjects::remove) {
@@ -505,11 +505,11 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
             }
             if (way->linestring.size() == 0 && way->action == osmobjects::modify) {
                 if (priority[way->change_id]) {
-                    // log_debug(_("FIXME: priority is TRUE for way %1%"), way->id);
+                    // log_debug("FIXME: priority is TRUE for way %1%", way->id);
                     way->priority = true;
                 } else {
                     change->ways.erase(wit--);
-                    // log_debug(_("FIXME: priority is FALSE for way %1%"), way->id);
+                    // log_debug("FIXME: priority is FALSE for way %1%", way->id);
                 }
                 continue;
             }
@@ -518,21 +518,21 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
                 // point_t pt = nodecache.find(way->refs[1])->second;
                 // log_debug("ST_GeomFromEWKT(\'SRID=4326; %1%\'))", boost::geometry::wkt(pt));
                 if (!boost::geometry::within(way->center, poly)) {
-                    // log_debug(_("Validating Way %1% is not in a priority area"), way->id);
+                    // log_debug("Validating Way %1% is not in a priority area", way->id);
                     change->ways.erase(wit--);
                 } else {
-                    // log_debug(_("Validating Way %1% is in a priority area"), way->id);
+                    // log_debug("Validating Way %1% is in a priority area", way->id);
                     way->priority = true;
                     priority[way->change_id] = true;
                 }
             } else {
-                log_error(_("Way %1% has no geometry!"), way->id);
+                log_error("Way %1% has no geometry!", way->id);
             }
         }
         // Delete the whole change if no ways or nodes or relations
         // TODO: check for relations in priority area ?
         if (change->nodes.empty() && change->ways.empty()) {
-            // log_debug(_("Deleting empty change %1% after area filtering."), change->obj->id);
+            // log_debug("Deleting empty change %1% after area filtering.", change->obj->id);
             // std::cerr << "Deleting whole change " << change->obj->id << std::endl;
             // changes.erase(it--);
         }
@@ -736,10 +736,10 @@ OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Validat
             nit != std::end(change->nodes); ++nit) {
             OsmNode *node = nit->get();
             if (!node->priority) {
-                // log_debug(_("Validating Node %1% is not in a priority area"), node->id);
+                // log_debug("Validating Node %1% is not in a priority area", node->id);
                 continue;
             } else {
-                // log_debug(_("Validating Node %1% is in a priority area"), node->id);
+                // log_debug("Validating Node %1% is in a priority area", node->id);
                 // A node with no tags is probably part of a way
                 if (node->tags.empty() || node->action == osmobjects::remove) {
                     continue;

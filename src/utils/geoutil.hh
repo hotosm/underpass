@@ -47,7 +47,7 @@ using namespace boost::gregorian;
 #include <ogr_geometry.h>
 
 #include "stats/querystats.hh"
-#include "data/osmobjects.hh"
+#include "osm/osmobjects.hh"
 
 /// \namespace geoutil
 namespace geoutil {

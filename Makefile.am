@@ -16,6 +16,9 @@
 #     You should have received a copy of the GNU General Public License
 #     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 
+
+DEFAULT_INCLUDES = -I . -I $(srcdir)/src
+
 AUTOMAKE_OPTIONS = dejagnu subdir-objects
 ACLOCAL_AMFLAGS = -I m4
 
@@ -47,7 +50,7 @@ BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
 	$(BOOST_PYTHON_LIB)
 
 SQL_FILES = \
-	data/underpass.sql
+	setup/underpass.sql
 
 YAML_FILES = \
 	config/validate/building.yaml \
@@ -109,14 +112,14 @@ AM_CPPFLAGS = \
 # clutter to the output. This should only be enabled when doing performance tuning.
 #	-DTIMING_DEBUG
 
-pkgdata_DATA = $(SQL_FILES) config/priority.geojson setup/setupdb.sh $(PYTHON_UTILS)
+pkgdata_DATA = $(SQL_FILES) config/replicator/priority.geojson setup/setupdb.sh $(PYTHON_UTILS)
 
 EXTRA_DIST = \
 	$(SQL_FILES) \
 	$(YAML_FILES) \
 	$(PYTHON_UTILS) \
 	src/testsuite \
-	config/priority.geojson \
+	config/replicator/priority.geojson \
 	doc \
 	dist/debian \
 	dist/redhat \
@@ -130,8 +133,8 @@ EXT := $(shell python3-config --extension-suffix)
 DIR := $(shell python3-config --configdir)
 noinst_LTLIBRARIES = underpass.la
 underpass_la_SOURCES = src/wrappers/python.cc $(libunderpass_la_SOURCES)
-underpass_la_LDFADD = $(BOOST_LIBS) libunderpass.la validate/libhotosm.la
-underpass_la_LDFLAGS = -module -avoid-version -no-undefined -rpath /usr/lib64/ validate/libhotosm.la $(BOOST_LIBS) -lboost_python38
+underpass_la_LDFADD = $(BOOST_LIBS) libunderpass.la src/validate/libhotosm.la
+underpass_la_LDFLAGS = -module -avoid-version -no-undefined -rpath /usr/lib64/ src/validate/libhotosm.la $(BOOST_LIBS) -lboost_python38
 PY_OBJECTS = $(libunderpass_la_OBJECTS:.lo=.o)
 # /usr/lib/python3.9/lib-dynload/underpass.cpython-39-x86_64-linux-gnu.so
 install-python: underpass.la
@@ -154,7 +157,7 @@ endif
 
 install-data-hook:
 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
-	cp -uvp $(srcdir)/config/priority.geojson $(DESTDIR)/$(pkglibdir)
+	cp -uvp $(srcdir)/config/replicator/priority.geojson $(DESTDIR)/$(pkglibdir)
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
 	cp -ruvp $(srcdir)/doc/*.md $(DESTDIR)/$(docdir)
 
@@ -173,7 +176,7 @@ if ENABLE_PCH
 
 PCHFLAGS = \
         -I$(top_builddir) \
-        -I$(top_srcdir) \
+        -I$(top_srcdir)/src \
         -I$(top_srcdir)/src/stats \
 		-I$(top_srcdir)/src/validate \
         -I$(top_srcdir)/src/data
@@ -311,7 +314,8 @@ snapshot-clean:
 # It's primarily used by the testsuites and when building binary packages
 # from multiple branches.
 #
-BUILT_SOURCES = revno.h .configline
+BUILT_SOURCES = 
+#revno.h .configline
 revno.h:
 	@echo "Getting build info for revno.h"; \
 	revno="`cd $(top_srcdir) && $(GIT) rev-list HEAD | wc -l`"; \

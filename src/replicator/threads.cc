@@ -84,7 +84,7 @@ using tcp = net::ip::tcp;         // from <boost/asio/ip/tcp.hpp>
 std::mutex stream_mutex;
 
 using namespace logger;
-using namespace querystats;
+using namespace stats;
 
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
@@ -117,7 +117,7 @@ getClosest(std::shared_ptr<std::vector<ReplicationTask>> tasks, ptime now) {
 void
 startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
                const multipolygon_t &poly,
-               const replicatorconfig::ReplicatorConfig &config)
+               const underpassconfig::UnderpassConfig &config)
 {
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("startMonitorChangesets: took %w seconds\n");
@@ -125,14 +125,14 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     // This function is for changesets only!
     assert(remote->frequency == frequency_t::changeset);
 
-    std::shared_ptr<galaxy::QueryGalaxy> ostats = std::make_shared<galaxy::QueryGalaxy>();
-    if (!ostats->connect(config.galaxy_db_url)) {
-        log_error(_("Could not connect to galaxy DB, aborting monitoring thread!"));
+    std::shared_ptr<stats::QueryStats> ostats = std::make_shared<stats::QueryStats>();
+    if (!ostats->connect(config.underpass_db_url)) {
+        log_error("Could not connect to Underpass DB, aborting monitoring thread!");
         return;
     }
 
     // Support multiple database connections
-    std::vector<std::shared_ptr<galaxy::QueryGalaxy>> galaxies;
+    std::vector<std::shared_ptr<stats::QueryStats>> querystats;
     std::vector<std::string> servers;
     for (auto it = std::begin(config.planet_servers); it != std::end(config.planet_servers); ++it) {
         servers.push_back(it->domain);
@@ -141,8 +141,8 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     int cores = config.concurrency;
     int i = 0;
     while (i <= cores/4) {
-        auto galaxyConnection = std::make_shared<galaxy::QueryGalaxy>(config.galaxy_db_url);
-        galaxies.push_back(galaxyConnection);
+        auto dbConnection = std::make_shared<stats::QueryStats>(config.underpass_db_url);
+        querystats.push_back(dbConnection);
         std::rotate(servers.begin(), servers.begin()+1, servers.end());
         auto replicationPlanet = std::make_shared<replication::Planet>(*remote);
         replicationPlanet->connectServer(servers.front());
@@ -170,11 +170,11 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
                 std::make_shared<replication::RemoteURL>(remote->getURL()),
                 std::ref(planets.front()),
                 std::ref(poly),
-                std::ref(galaxies.front()),
+                std::ref(querystats.front()),
                 std::ref(tasks)
             );
             boost::asio::post(pool, task);
-            std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
+            std::rotate(querystats.begin(), querystats.begin()+1, querystats.end());
             std::rotate(planets.begin(), planets.begin()+1, planets.end());
             remote->updateDomain(planets.front()->domain);
         }
@@ -194,7 +194,7 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
             boost::posix_time::time_duration delta_closest = now - closest.timestamp;
             if (delta_closest.hours() * 60 + delta_closest.minutes() <= 2) {
                 caughtUpWithNow = true;
-                log_debug(_("Caught up with: %1%"), closest.url);
+                log_debug("Caught up with: %1%", closest.url);
                 remote->updatePath(
                     std::stoi(closest.url.substr(0, 3)),
                     std::stoi(closest.url.substr(4, 3)),
@@ -211,13 +211,13 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
 void
 startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
             const multipolygon_t &poly,
-            const replicatorconfig::ReplicatorConfig &config)
+            const underpassconfig::UnderpassConfig &config)
 {
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("startMonitorChanges: took %w seconds\n");
 #endif
     if (remote->frequency == frequency_t::changeset) {
-        log_error(_("Could not start monitoring thread for OSM changes: URL %1% does not appear to be a valid URL for changes!"), remote->filespec);
+        log_error("Could not start monitoring thread for OSM changes: URL %1% does not appear to be a valid URL for changes!", remote->filespec);
         return;
     }
 
@@ -231,9 +231,9 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     boost::function<plugin_t> creator;
     try {
         creator = boost::dll::import_alias<plugin_t>(lib_path / "libhotosm", "create_plugin", boost::dll::load_mode::append_decorations);
-        log_debug(_("Loaded plugin hotosm!"));
+        log_debug("Loaded plugin hotosm!");
     } catch (std::exception &e) {
-        log_debug(_("Couldn't load plugin! %1%"), e.what());
+        log_debug("Couldn't load plugin! %1%", e.what());
         exit(0);
     }
     auto validator = creator();
@@ -242,7 +242,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     size_t sz, active1, active2;
 #endif    // JEMALLOC memory debugging
     // Support multiple database connections
-    std::vector<std::shared_ptr<galaxy::QueryGalaxy>> galaxies;
+    std::vector<std::shared_ptr<stats::QueryStats>> querystats;
     std::vector<std::string> servers;
     for (auto it = std::begin(config.planet_servers); it != std::end(config.planet_servers); ++it) {
         servers.push_back(it->domain);
@@ -251,8 +251,8 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     int cores = config.concurrency;
     int i = 0;
     while (i <= cores/4) {
-        auto galaxyConnection = std::make_shared<galaxy::QueryGalaxy>(config.galaxy_db_url);
-        galaxies.push_back(galaxyConnection);
+        auto dbConnection = std::make_shared<stats::QueryStats>(config.underpass_db_url);
+        querystats.push_back(dbConnection);
         std::rotate(servers.begin(), servers.begin()+1, servers.end());
         auto replicationPlanet = std::make_shared<replication::Planet>(*remote);
         replicationPlanet->connectServer(servers.front());
@@ -281,21 +281,22 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
                 std::make_shared<replication::RemoteURL>(remote->getURL()),
                 std::ref(planets.front()),
                 std::ref(poly),
-                std::ref(galaxies.front()),
-                std::ref(rawosm.front()),
+                std::ref(querystats.front()),
                 std::ref(validator),
                 std::ref(removals),
                 std::ref(tasks)
             );
             boost::asio::post(pool, task);
-            std::rotate(galaxies.begin(), galaxies.begin()+1, galaxies.end());
+            std::rotate(querystats.begin(), querystats.begin()+1, querystats.end());
             std::rotate(planets.begin(), planets.begin()+1, planets.end());
-            std::rotate(rawosm.begin(), rawosm.begin()+1, rawosm.end());
         }
         pool.join();
 
         std::cout << "Removals: " << removals->size() << std::endl;
-        galaxies.front()->updateValidation(removals);
+        
+        // TODO: validation
+        // databases.front()->updateValidation(removals);
+        
         removals->clear();
 
         ptime now  = boost::posix_time::second_clock::universal_time();
@@ -312,7 +313,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
             boost::posix_time::time_duration delta_closest = now - closest.timestamp;
             if (delta_closest.hours() * 60 + delta_closest.minutes() <= 2) {
                 caughtUpWithNow = true;
-                log_debug(_("Caught up with: %1%"), closest.url);
+                log_debug("Caught up with: %1%", closest.url);
                 remote->updatePath(
                     std::stoi(closest.url.substr(0, 3)),
                     std::stoi(closest.url.substr(4, 3)),
@@ -330,7 +331,7 @@ void
 threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
         std::shared_ptr<replication::Planet> &planet,
         const multipolygon_t &poly,
-        std::shared_ptr<galaxy::QueryGalaxy> &galaxy,
+        std::shared_ptr<stats::QueryStats> &querystats,
         std::shared_ptr<Validate> &plugin,
         std::shared_ptr<std::vector<long>> removals,
         std::shared_ptr<std::vector<ReplicationTask>> tasks)
@@ -339,7 +340,7 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("threadOsmChange: took %w seconds\n");
 #endif
-    log_debug(_("Processing OsmChange: %1%"), remote->filespec);
+    log_debug("Processing OsmChange: %1%", remote->filespec);
     ReplicationTask task;
     task.url = remote->subpath;
     auto file = planet->downloadFile(*remote.get());
@@ -361,16 +362,16 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
                 osmchanges->readXML(changes_xml);  
                 if (osmchanges->changes.size() > 0) {
                     task.timestamp = osmchanges->changes.back()->final_entry;
-                    log_debug(_("OsmChange final_entry: %1%"), task.timestamp);
+                    log_debug("OsmChange final_entry: %1%", task.timestamp);
                 }
             } catch (std::exception &e) {
-                log_error(_("Couldn't parse: %1%"), remote->filespec);
+                log_error("Couldn't parse: %1%", remote->filespec);
                 boost::filesystem::remove(remote->filespec);
                 std::cerr << e.what() << std::endl;
             }
 
         } catch (std::exception &e) {
-            log_error(_("%1% is corrupted!"), remote->filespec);
+            log_error("%1% is corrupted!", remote->filespec);
             boost::filesystem::remove(remote->filespec);
             std::cerr << e.what() << std::endl;
         }
@@ -378,22 +379,7 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
     const std::lock_guard<std::mutex> lock(tasks_change_mutex);
     tasks->push_back(task);
 
-#if 0
-    for (auto cit = std::begin(osmchanges->changes); cit != std::end(osmchanges->changes); ++cit) {
-        osmchange::OsmChange *change = cit->get();
-        // change->dump();
-        for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
-            osmobjects::OsmNode *node = nit->get();
-        }
-        for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
-            osmobjects::OsmWay *way = wit->get();
-        }
-    }
-#endif
     osmchanges->areaFilter(poly);
-    if (o2pgsql->isOpen()) {
-        // o2pgsql.updateDatabase(osmchanges);
-    }
 
     // These stats are for the entire file
     auto stats = osmchanges->collectStats(poly);
@@ -402,12 +388,12 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
             continue;
         }
         // it->second->dump();
-        galaxy->applyChange(*it->second);
+        querystats->applyChange(*it->second);
     }
 #if 1
     // Delete existing entries in the validation table to remove features that have been fixed
     for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
-        OsmChange *change = it->get();
+        osmchange::OsmChange *change = it->get();
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
             osmobjects::OsmWay *way = wit->get();
             if (way->action == osmobjects::remove) {
@@ -424,16 +410,18 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
         }
     }
 #endif
-    auto nodeval = osmchanges->validateNodes(poly, plugin);
-    // std::cerr << "SIZE " << nodeval->size() << std::endl;
-    for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
-        galaxy->applyChange(*it->get());
-    }
-    auto wayval = osmchanges->validateWays(poly, plugin);
-    // std::cerr << "SIZE " << wayval->size() << std::endl;
-    for (auto it = wayval->begin(); it != wayval->end(); ++it) {
-        galaxy->applyChange(*it->get());
-    }
+
+    // TODO: validation
+    // auto nodeval = osmchanges->validateNodes(poly, plugin);
+    // // std::cerr << "SIZE " << nodeval->size() << std::endl;
+    // for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
+    //     queryvalidate->applyChange(*it->get());
+    // }
+    // auto wayval = osmchanges->validateWays(poly, plugin);
+    // // std::cerr << "SIZE " << wayval->size() << std::endl;
+    // for (auto it = wayval->begin(); it != wayval->end(); ++it) {
+    //     queryvalidate->applyChange(*it->get());
+    // }
 }
 
 // This parses the changeset file into changesets
@@ -441,7 +429,7 @@ void
 threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
         std::shared_ptr<replication::Planet> &planet,
         const multipolygon_t &poly,
-        std::shared_ptr<galaxy::QueryGalaxy> galaxy,
+        std::shared_ptr<stats::QueryStats> querystats,
         std::shared_ptr<std::vector<ReplicationTask>> tasks)
 {
 #ifdef TIMING_DEBUG
@@ -453,7 +441,7 @@ threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
     task.status = file.status;
     if (file.status == reqfile_t::success) {
         auto changeset = std::make_unique<changeset::ChangeSetFile>();
-        log_debug(_("Processing ChangeSet: %1%"), remote->filespec);
+        log_debug("Processing ChangeSet: %1%", remote->filespec);
         auto xml = planet->processData(remote->filespec, *file.data);
         std::istream& input(xml);
         changeset->readXML(input);
@@ -462,10 +450,10 @@ threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
         } else if (changeset->changes.size() && changeset->changes.back()->created_at != not_a_date_time) {
             task.timestamp = changeset->changes.back()->created_at;
         }
-        log_debug(_("ChangeSet last_closed_at: %1%"), task.timestamp);
+        log_debug("ChangeSet last_closed_at: %1%", task.timestamp);
         changeset->areaFilter(poly);
         for (auto cit = std::begin(changeset->changes); cit != std::end(changeset->changes); ++cit) {
-            galaxy->applyChange(*cit->get());
+            querystats->applyChange(*cit->get());
         }
     }
     const std::lock_guard<std::mutex> lock(tasks_changeset_mutex);

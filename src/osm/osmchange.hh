@@ -50,7 +50,7 @@ using namespace boost::gregorian;
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
 #include "validate/validate.hh"
-#include "data/osmobjects.hh"
+#include "osm/osmobjects.hh"
 #include "osm/osmchange.hh"
 #include <ogr_geometry.h>
 
@@ -151,7 +151,7 @@ class OsmChange {
         if (type == relation && relations.size() > 0) {
             relations.back()->addMember(ref, _type, role);
         } else {
-            log_debug(_("Could not add member to relation!"));
+            log_debug("Could not add member to relation!");
         }
     };
     /// Set the User ID for the current node or way

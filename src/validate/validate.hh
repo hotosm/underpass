@@ -181,7 +181,7 @@ class BOOST_SYMBOL_VISIBLE Validate {
         } else if (boost::filesystem::exists("../validate")) {
             dir = "../validate";
         } else {
-            log_error(_("No validation config files in %1%!"), dir);
+            log_error("No validation config files in %1%!", dir);
         }
         for (auto &file: std::filesystem::recursive_directory_iterator(dir)) {
             std::filesystem::path config = file.path();
@@ -246,7 +246,7 @@ class BOOST_SYMBOL_VISIBLE Validate {
                 osmobjects::OsmWay *oldway = nit->get();
                 if (boost::geometry::overlaps(oldway->polygon, way.polygon)) {
                     if (way.getTagValue("layer") == oldway->getTagValue("layer") && way.id != oldway->id) {
-                        log_error(_("Building %1% overlaps with %2%"), way.id, oldway->id);
+                        log_error("Building %1% overlaps with %2%", way.id, oldway->id);
                         return true;
                     }
                 }
@@ -278,7 +278,7 @@ class BOOST_SYMBOL_VISIBLE Validate {
                 double iareapercent = (iarea * 100) / wayarea;
                 if (iareapercent >= 80) {
                     if (way.getTagValue("layer") == oldway->getTagValue("layer") && way.id != oldway->id) {
-                        log_error(_("Building %1% duplicate %2%"), way.id, oldway->id);
+                        log_error("Building %1% duplicate %2%", way.id, oldway->id);
                         return true;
                     }
                 }
@@ -330,7 +330,7 @@ class BOOST_SYMBOL_VISIBLE Validate {
         bool circle = false;
         double angleSum = 0;
         if (num_points <= 3) {
-            log_error(_("way is a triangle or has no line segments!"));
+            log_error("way is a triangle or has no line segments!");
             return std::tuple<double, double, bool>(-1,  -1, false);
         }
         for(int i = 0; i < num_points; i++) {

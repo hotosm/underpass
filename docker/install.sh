@@ -15,9 +15,9 @@ echo "Installing Postgres ..." && \
 docker exec -t underpass apt update && \
 docker exec -t underpass apt -y install postgresql postgresql-contrib && \
 echo "Creating database ..." && \
-docker exec -t underpass psql -U underpass -c 'create database galaxy';
+docker exec -t underpass psql -U underpass -c 'create database underpass';
 echo "Setting up database ..." && \
-docker exec -w /code/data -t underpass psql -U underpass galaxy -f galaxy.sql && \
+docker exec -w /code/data -t underpass psql -U underpass underpass -f underpass.sql && \
 echo "Setting up config ..." && \
 docker exec -t underpass cp /code/docker/underpass-config.yaml /root/.underpass && \
 echo "Setting up utils ..." && \

@@ -120,13 +120,13 @@ StateFile::StateFile(const std::string &file, bool memory)
     // It's a disk file, so read it in.
     if (!memory) {
         if (!boost::filesystem::exists(file)) {
-                log_error(_("%1%  doesn't exist!"), file);
+                log_error("%1%  doesn't exist!", file);
             return;
         }
         try {
             state.open(file, std::ifstream::in);
         } catch (std::exception &e) {
-            log_error(_(" opening %1% %2%"), file, e.what());
+            log_error(" opening %1% %2%", file, e.what());
             // return false;
         }
         // For a disk file, none of the state files appears to be larger than
@@ -186,7 +186,7 @@ StateFile::StateFile(const std::string &file, bool memory)
                 tstamp += value.substr(pos + 1, 3); // get seconds
                 timestamp = from_iso_extended_string(tstamp);
             } else {
-                log_error(_("Invalid Key found: "), key);
+                log_error("Invalid Key found: ", key);
             }
         }
     }
@@ -237,7 +237,7 @@ Planet::getLinks(GumboNode *node, std::shared_ptr<std::vector<std::string>> &lin
 {
     // if (node->type == GUMBO_NODE_TEXT) {
     //     std::string val = std::string(node->v.text.text);
-    //     log_debug(_("FIXME: " << "GUMBO_NODE_TEXT " << val);
+    //     log_debug("FIXME: " << "GUMBO_NODE_TEXT " << val);
     // }
 
     if (node->type == GUMBO_NODE_ELEMENT) {
@@ -247,7 +247,7 @@ Planet::getLinks(GumboNode *node, std::shared_ptr<std::vector<std::string>> &lin
             // start with a 3 digit number
             if (href->value[0] >= 48 && href->value[0] <= 57) {
                 //if (std::isalnum(href->value[0]) && std::isalnum(href->value[1])) {
-                // log_debug(_("FIXME: %1%"), href->value);
+                // log_debug("FIXME: %1%", href->value);
                 if (std::strlen(href->value) > 0) {
                     links->push_back(href->value);
                 }
@@ -276,7 +276,7 @@ Planet::processData(const std::string &dest, std::vector<unsigned char> &data)
             xml.str(std::string{std::istreambuf_iterator<char>(instream), {}});
         }
     } catch (std::exception &e) {
-        log_error(_("%1% is corrupted!"), dest);
+        log_error("%1% is corrupted!", dest);
         std::cerr << e.what() << std::endl;
     }
     return xml;
@@ -322,7 +322,7 @@ Planet::downloadFile(const std::string &url)
         // Perform the SSL handshake
         stream.handshake(ssl::stream_base::client);
     } catch (boost::system::system_error ex) {
-        log_error(_("stream write failed: %1%"), ex.what());
+        log_error("stream write failed: %1%", ex.what());
         file.status = reqfile_t::systemError;
         return file;
     }
@@ -342,9 +342,9 @@ Planet::downloadFile(const std::string &url)
     // Send the HTTP request to the remote host
     try {
         http::write(stream, req);
-        // log_debug(_("Downloading %1% ... "), url);
+        // log_debug("Downloading %1% ... ", url);
     } catch (boost::system::system_error ex) {
-        log_error(_("stream write failed: %1%"), ex.what());
+        log_error("stream write failed: %1%", ex.what());
         file.status = reqfile_t::systemError;
         return file;
     }
@@ -360,7 +360,7 @@ Planet::downloadFile(const std::string &url)
 
         if (parser.get().result() == boost::beast::http::status::not_found ||
             parser.get().result() == boost::beast::http::status::gateway_timeout) {
-            log_error(_("Remote file not found: %1%"), url);
+            log_error("Remote file not found: %1%", url);
             file.status = reqfile_t::remoteNotFound;
             return file;
         } else {
@@ -378,7 +378,7 @@ Planet::downloadFile(const std::string &url)
         }
 
     } catch (boost::system::system_error ex) {
-        log_error(_("stream read failed: %1%"), ex.what());
+        log_error("stream read failed: %1%", ex.what());
     }
 
     // Gracefully close the stream
@@ -394,7 +394,7 @@ Planet::downloadFile(const std::string &url)
     if (file.data->size() > 0) {
         writeFile(remote, file.data);
     } else {
-        log_error(_("%1% does not exist!"), remote.filespec);
+        log_error("%1% does not exist!", remote.filespec);
     }
 #endif
     file.status = reqfile_t::success;
@@ -404,7 +404,7 @@ Planet::downloadFile(const std::string &url)
 
 RequestedFile
 Planet::readFile(std::string &filespec) {
-    log_debug(_("Reading cached file: %1%"), filespec);
+    log_debug("Reading cached file: %1%", filespec);
     // Since we want to read in the entire file so it can be
     // decompressed, blow off C++ streaming and just load the
     // entire thing.
@@ -414,7 +414,7 @@ Planet::readFile(std::string &filespec) {
     try {
         size = boost::filesystem::file_size(filespec);
     } catch (const std::exception &ex) {
-        log_error(_("File %1% doesn't exist but should!: %2%"), filespec, ex.what());
+        log_error("File %1% doesn't exist but should!: %2%", filespec, ex.what());
         file.status = reqfile_t::localError;
         return file;
     }
@@ -439,14 +439,14 @@ void Planet::writeFile(RemoteURL &remote, std::shared_ptr<std::vector<unsigned c
             boost::filesystem::create_directories(remote.destdir);
         }
     } catch (boost::system::system_error ex) {
-        log_error(_("Destdir corrupted!: %1%, %2%"), remote.destdir, ex.what());
+        log_error("Destdir corrupted!: %1%, %2%", remote.destdir, ex.what());
     }
     std::ofstream myfile;
     myfile.open(remote.filespec, std::ofstream::out | std::ios::binary);
     myfile.write(reinterpret_cast<char *>(data.get()->data()), data.get()->size());
     myfile.flush();
     myfile.close();
-    log_debug(_("Wrote downloaded file %1% to disk from %2%"), remote.filespec, remote.domain);
+    log_debug("Wrote downloaded file %1% to disk from %2%", remote.filespec, remote.domain);
 }
 
 Planet::~Planet(void)
@@ -510,16 +510,16 @@ Planet::connectServer(const std::string &planet)
         auto const dns = resolver.resolve(tmp, std::to_string(port));
         boost::asio::connect(stream.next_layer(), dns.begin(), dns.end(), ec);
         if (ec) {
-            log_error(_("stream connect failed %1%"), ec.message());
+            log_error("stream connect failed %1%", ec.message());
             return false;
         }
         stream.handshake(ssl::stream_base::client, ec);
         if (ec) {
-            log_error(_("stream handshake failed %1%"), ec.message());
+            log_error("stream handshake failed %1%", ec.message());
             return false;
         }
     } catch (const std::exception &ex) {
-        log_error(_("Connection to %1% failed: %2%"), tmp, ex.what());
+        log_error("Connection to %1% failed: %2%", tmp, ex.what());
         return false;
     }
 
@@ -536,7 +536,7 @@ Planet::scanDirectory(const std::string &dir)
 {
 
     RemoteURL remote(dir);
-    log_debug(_("Scanning remote Directory: %1%"), dir);
+    log_debug("Scanning remote Directory: %1%", dir);
 
     // The io_context is required for all I/O
     boost::asio::io_context ioc;
@@ -593,7 +593,7 @@ Planet::scanDirectory(const std::string &dir)
         ec = {};
     }
     if (ec) {
-        log_debug(_("stream shutdown failed: %1%"), ec.message());
+        log_debug("stream shutdown failed: %1%", ec.message());
     }
     return links;
 }
@@ -604,7 +604,7 @@ void
 RemoteURL::parse(const std::string &rurl)
 {
     if (rurl.empty()) {
-        log_error(_("URL is empty!"));
+        log_error("URL is empty!");
         return;
     }
 
@@ -630,13 +630,13 @@ RemoteURL::parse(const std::string &rurl)
                 minor = std::stoi(parts[6]);
                 index = std::stoi(parts[7]);
             } catch (const std::exception &ex) {
-                log_error(_("Error parsing URL: %1%"), ex.what());
+                log_error("Error parsing URL: %1%", ex.what());
             }
             filespec = rurl.substr(rurl.find(datadir));
             destdir = datadir + "/" + parts[4] + "/" + parts[5] + "/" + parts[6];
         } else {
-            log_error(_("Error parsing URL %1%: not in the expected form "
-                "(https://<server>/replication/<frequency>/000/000/001)"), rurl);
+            log_error("Error parsing URL %1%: not in the expected form "
+                "(https://<server>/replication/<frequency>/000/000/001)", rurl);
         }
     }
 }

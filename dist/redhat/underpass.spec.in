@@ -31,7 +31,6 @@ make install
 rm -rf $RPM_BUILD_ROOT
 
 %files
-/usr/share/underpass/osmstats.sql
 /usr/share/underpass/underpass.sql
 /usr/lib/underpass/priority.geojson
 /usr/share/underpass/priority.geojson
@@ -67,9 +66,3 @@ rm -rf $RPM_BUILD_ROOT
 %changelog
 * Mon Jun 14 2021 Rob Savoye <rob.savoye@hotosm.org>
 - Initial creation of this RPM support.
-
-* Wed Mar 29 2023 Emilio Mariscal <emilio.mariscal@hotosm.org>
-- Remove old code.
-
-
-

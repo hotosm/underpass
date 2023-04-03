@@ -33,7 +33,7 @@
 namespace opts = boost::program_options;
 
 using namespace boost::posix_time;
-using namespace replicatorconfig;
+using namespace underpassconfig;
 using namespace planetreplicator;
 using namespace logger;
 
@@ -101,7 +101,7 @@ class TestStats {
         void
         collectStats(opts::variables_map vm) {
 
-            ReplicatorConfig config;
+            UnderpassConfig config;
             config.start_time = startTime;
             config.planet_server = config.planet_servers[0].domain + "/replication";
             planetreplicator::PlanetReplicator replicator;

@@ -124,13 +124,13 @@ ChangeSetFile::importChanges(const std::string &file)
         // FIXME: files downloaded seem to be missing a trailing \n,
         // so produce an error, but we can ignore this as the file is
         // processed correctly.
-        // log_error(_("libxml++ exception: %1%"), ex.what());
+        // log_error("libxml++ exception: %1%", ex.what());
         int return_code = EXIT_FAILURE;
     }
 #endif
 
-    galaxy::QueryGalaxy ostats;
-    ostats.connect("galaxy");
+    stats::QueryStats ostats;
+    ostats.connect("underpass");
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         // ostats.applyChange(*it);
     }
@@ -156,7 +156,7 @@ ChangeSetFile::readChanges(const std::string &file)
     //    store = false;
 
     unsigned char *buffer;
-    log_debug(_("Reading changeset file %1% "), file);
+    log_debug("Reading changeset file %1% ", file);
     std::string suffix = boost::filesystem::extension(file);
     // It's a gzipped file, common for files downloaded from planet
     std::ifstream ifile(file, std::ios_base::in | std::ios_base::binary);
@@ -168,10 +168,10 @@ ChangeSetFile::readChanges(const std::string &file)
             inbuf.push(boost::iostreams::gzip_decompressor());
             inbuf.push(ifile);
             std::istream instream(&inbuf);
-            // log_debug(_(instream.rdbuf();
+            // log_debug(instream.rdbuf());
             readXML(instream);
         } catch (std::exception &e) {
-            log_error(_("opening %1% %2%"), file, e.what());
+            log_error("opening %1% %2%", file, e.what());
             // return false;
         }
     } else { // it's a text file
@@ -188,11 +188,11 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly)
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("ChangeSetFile::areaFilter: took %w seconds\n");
 #endif
-    // log_debug(_("Pre filtering changeset size is %1%"), changes.size());
+    // log_debug("Pre filtering changeset size is %1%", changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
         ChangeSet *change = it->get();
         if (poly.empty()) {
-            // log_debug(_("Accepting changeset %1% as in priority area because area information is missing"),
+            // log_debug("Accepting changeset %1% as in priority area because area information is missing",
             // change->id);
             change->priority = true;
             continue;
@@ -205,17 +205,17 @@ ChangeSetFile::areaFilter(const multipolygon_t &poly)
         // point_t pt;
         // boost::geometry::centroid(change->bbox, pt);
         if (!boost::geometry::intersects(change->bbox, poly)) {
-            // log_debug(_("Validating changeset %1% is not in a priority area"), change->id);
+            // log_debug("Validating changeset %1% is not in a priority area", change->id);
 
             change->priority = false;
 
             changes.erase(it--);
         } else {
-            // log_debug(_("Validating changeset %1% is in a priority area"), change->id);
+            // log_debug("Validating changeset %1% is in a priority area", change->id);
             change->priority = true;
         }
     }
-    // log_debug(_("Post filtering changeset size is %1%"),
+    // log_debug("Post filtering changeset size is %1%",
     // changeset->changes.size());
 }
 
@@ -302,8 +302,8 @@ ChangeSet::ChangeSet(const std::deque<xmlpp::SaxParser::Attribute> attributes)
             } else if (attr_pair.name == "comments_count") {
             }
         } catch (const Glib::ConvertError &ex) {
-            log_error(_("ChangeSet::ChangeSet(): Exception caught while "
-                        "converting values for std::cout: "),
+            log_error("ChangeSet::ChangeSet(): Exception caught while "
+                        "converting values for std::cout: ",
                       ex.what());
         }
     }
@@ -334,7 +334,7 @@ ChangeSetFile::readXML(std::istream &xml)
         // FIXME: files downloaded seem to be missing a trailing \n,
         // so produce an error, but we can ignore this as the file is
         // processed correctly.
-        log_error(_("libxml++ exception: %1%"), ex.what());
+        log_error("libxml++ exception: %1%", ex.what());
         return false;
     }
 #else
@@ -346,12 +346,12 @@ ChangeSetFile::readXML(std::istream &xml)
     try {
         boost::property_tree::read_xml(xml, pt);
     } catch (exception& boost::property_tree::xml_parser::xml_parser_error) {
-        log_error(_("Error parsing XML"));
+        log_error("Error parsing XML");
         return false;
     }
 
     if (pt.empty()) {
-        log_error(_("ERROR: XML data is empty!"));
+        log_error("ERROR: XML data is empty!");
         return false;
     }
 
@@ -392,14 +392,14 @@ ChangeSetFile::readXML(std::istream &xml)
 void
 ChangeSetFile::on_end_element(const Glib::ustring &name)
 {
-    // log_debug(_("Element \'%1%\' ending"), name);
+    // log_debug("Element \'%1%\' ending", name);
 }
 
 void
 ChangeSetFile::on_start_element(const Glib::ustring &name,
                                 const AttributeList &attributes)
 {
-    // log_debug(_("Element %1%"), name);
+    // log_debug("Element %1%", name);
     if (name == "changeset") {
         auto change = std::make_shared<changeset::ChangeSet>(attributes);
         changes.push_back(change);

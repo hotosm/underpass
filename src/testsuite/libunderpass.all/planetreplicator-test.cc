@@ -25,7 +25,7 @@
 #include <boost/program_options.hpp>
 #include "boost/format.hpp"
 #include "osm/osmchange.hh"
-#include "replicatorconfig.hh"
+#include "underpassconfig.hh"
 #include "replicator/planetreplicator.hh"
 #include "osm/changeset.hh"
 #include "replicator/replication.hh"
@@ -34,7 +34,7 @@
 #include <iterator>
 
 using namespace logger;
-using namespace replicatorconfig;
+using namespace underpassconfig;
 using namespace planetreplicator;
 using namespace replication;
 using namespace boost::posix_time;
@@ -49,7 +49,7 @@ class TestPlanet : public replication::Planet {
 
 TestState runtest;
 
-void testPath(ReplicatorConfig config) {
+void testPath(underpassconfig::UnderpassConfig config) {
     planetreplicator::PlanetReplicator replicator;
     auto osmchange = replicator.findRemotePath(config, config.start_time);
     TestCO change;
@@ -83,7 +83,7 @@ main(int argc, char *argv[]) {
     dbglogfile.setLogFilename("planetreplicator-test.log");
     dbglogfile.setVerbosity(3);
 
-    ReplicatorConfig config;
+    UnderpassConfig config;
     config.planet_server = config.planet_servers[0].domain + "/replication";
 
     // Declare the supported options.

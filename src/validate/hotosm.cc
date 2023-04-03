@@ -66,7 +66,7 @@ Hotosm::Hotosm(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
             for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
                 osmobjects::OsmNode *node = it->get();
                 if (node->tags.size() > 0) {
-                    // log_debug(_("Validating New Node ID %1% has tags"), node->id);
+                    // log_debug("Validating New Node ID %1% has tags", node->id);
                     checkPOI(node);
                 } else {
                     continue;
@@ -74,7 +74,7 @@ Hotosm::Hotosm(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
             // for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
             //     OsmWay *way = it->get();
             //     if (way->tags.size() == 0) {
-            //         log_error(_("Validating New Way ID %1% has no tags"), way->id);
+            //         log_error("Validating New Way ID %1% has no tags", way->id);
             //         checkWay(way);
             //     } else {
             //         continue;
@@ -91,13 +91,13 @@ bool Hotosm::isValidTag(const std::string &key, const std::string &value, yaml::
         (tags.get(key).children.size() == 0 && tags.contains_key(key))) {
             return true;
     }
-    log_debug(_("Bad tag: %1%=%2%"), key, value);
+    log_debug("Bad tag: %1%=%2%", key, value);
     return false;
 }
 
 bool Hotosm::isRequiredTag(const std::string &key, yaml::Node required_tags) {
     if (required_tags.children.size() > 0 && required_tags.contains_key(key)) {
-        log_debug(_("Required tag: %1%"), key);
+        log_debug("Required tag: %1%", key);
         return true;
     }
     return false;
@@ -113,7 +113,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     status->user_id = node.uid;
 
     if (yamls.size() == 0) {
-        log_error(_("No config files!"));
+        log_error("No config files!");
         return status;
     }
     if (node.tags.size() == 0) {
@@ -172,7 +172,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     status->user_id = way.uid;
 
     if (yamls.size() == 0) {
-        log_error(_("No config files!"));
+        log_error("No config files!");
         return status;
     }
     if (way.tags.size() == 0) {
@@ -263,7 +263,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             // minangle, maxangle, circle
 
             // std::tuple<double, double, bool> angles = cornerAngles(way.linestring);
-            // log_error(_("Angle max: %1% min: %2%"), std::get<0>(angles), std::get<1>(angles));
+            // log_error("Angle max: %1% min: %2%", std::get<0>(angles), std::get<1>(angles));
             // if (std::get<2>(angles)) {
             //     if (way.linestring.size() - 1 < circleMinPoints) {
             //         status->angle = std::get<0>(angles);
@@ -294,22 +294,22 @@ Hotosm::checkTag(const std::string &key, const std::string &value)
     // status->status.insert(correct);
     // Check for an empty value
     if (!key.empty() && value.empty()) {
-        log_debug(_("WARNING: empty value for tag \"%1%\""), key);
+        log_debug("WARNING: empty value for tag \"%1%\"", key);
         status->status.insert(badvalue);
     }
     // Check for a space in the tag key
     if (key.find(' ') != std::string::npos) {
-        log_error(_("WARNING: spaces in tag key \"%1%\""), key);
+        log_error("WARNING: spaces in tag key \"%1%\"", key);
         status->status.insert(badvalue);
     }
     // Check for single quotes in the tag value
     if (value.find('\'') != std::string::npos) {
-        log_error(_("WARNING: single quote in tag value \"%1%\""), value);
+        log_error("WARNING: single quote in tag value \"%1%\"", value);
         status->status.insert(badvalue);
     }
     // Check for single quotes in the tag value
     if (value.find('\"') != std::string::npos) {
-        log_error(_("WARNING: double quote in tag value \"%1%\""), value);
+        log_error("WARNING: double quote in tag value \"%1%\"", value);
         status->status.insert(badvalue);
     }
 

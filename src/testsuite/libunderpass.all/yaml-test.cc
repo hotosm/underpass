@@ -25,12 +25,12 @@
 #include <fcntl.h>
 
 #include "stats/querystats.hh"
-#include "data/yaml.hh"
+#include "utils/yaml.hh"
 #include "utils/log.hh"
 
 using namespace logger;
 
-using namespace querystats;
+using namespace stats;
 
 TestState runtest;
 

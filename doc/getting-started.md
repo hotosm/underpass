@@ -42,7 +42,7 @@ docker exec -t underpass ./replicator -t now
 Get stats for added, modified and hashtags and export them to a CSV file in `underpass/build/stats.csv`.
 
 ```
-docker exec -t underpass psql --csv -t -d postgresql://underpass@postgis/galaxy -c '\copy (SELECT id,added,modified,hashtags FROM changesets) to /code/build/stats.csv'
+docker exec -t underpass psql --csv -t -d postgresql://underpass@postgis/underpass -c '\copy (SELECT id,added,modified,hashtags FROM changesets) to /code/build/stats.csv'
 ```
 
 ### Validation
@@ -50,12 +50,12 @@ docker exec -t underpass psql --csv -t -d postgresql://underpass@postgis/galaxy 
 Get ChangeSet ids and validation results and export them to a the CSV file in `underpass/build/validation.csv`.
 
 ```
-docker exec -t underpass psql --csv -t -d postgresql://underpass@postgis/galaxy -c '\copy (SELECT change_id, status FROM validation WHERE 'correct' != ANY (status);) to /code/build/validation.csv'
+docker exec -t underpass psql --csv -t -d postgresql://underpass@postgis/underpass -c '\copy (SELECT change_id, status FROM validation WHERE 'correct' != ANY (status);) to /code/build/validation.csv'
 ```
 
 ### Database
 
-You can also use the connection string `postgresql://underpass@postgis/galaxy` to connect to the DB with any PostregSQL client.
+You can also use the connection string `postgresql://underpass@postgis/underpass` to connect to the DB with any PostregSQL client.
 
 ## Customization
 
@@ -73,7 +73,7 @@ You can find more information about validation [here](docs/validation.md)
 
 ### Filter by area
 
-To collect data for an specific area, create a GeoJSON file with the area you want. This file must contain a single MultiPolygon, like [this one](https://github.com/hotosm/underpass/blob/master/data/priority.geojson).
+To collect data for an specific area, create a GeoJSON file with the area you want. This file must contain a single MultiPolygon, like [this one](https://github.com/hotosm/underpass/blob/master/config/replicator/priority.geojson).
 
 Then, just copy the file to `underpass/build` and pass the `--boundary` option:
 

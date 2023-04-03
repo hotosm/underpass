@@ -26,7 +26,7 @@ class UnderpassDB():
     # This might be replaced by an .ini config file
     
     def __init__(self, connectionString = None):
-        self.connectionString = connectionString or "postgresql://underpass:underpass@postgis/galaxy"
+        self.connectionString = connectionString or "postgresql://underpass:underpass@postgis/underpass"
         self.connect()
 
     def connect(self):

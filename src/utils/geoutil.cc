@@ -43,9 +43,8 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
-#include "data/geoutil.hh"
+#include "utils/geoutil.hh"
 #include "osm/changeset.hh"
-#include "stats/querystats.hh"
 #include <ogr_geometry.h>
 #include <ogrsf_frmts.h>
 
@@ -60,7 +59,7 @@ GeoUtil::readFile(const std::string &filespec)
     std::filesystem::path boundary_file = filespec;
     if (filespec.front() == '.' || filespec.front() == '/') {
         if (!std::filesystem::exists(boundary_file)) {
-            log_error(_("Geo boundary file %1% doesn't exist!"), boundary_file);
+            log_error("Geo boundary file %1% doesn't exist!", boundary_file);
         }
     } else {
         if (!std::filesystem::exists(boundary_file)) {
@@ -73,22 +72,22 @@ GeoUtil::readFile(const std::string &filespec)
         }
     }
     if (!std::filesystem::exists(boundary_file)) {
-        log_error(_("Boundary file %1% doesn't exist!"), boundary_file);
+        log_error("Boundary file %1% doesn't exist!", boundary_file);
         return false;
     }
     
-    log_debug(_("Opening geo data file: %1%"), boundary_file);
+    log_debug("Opening geo data file: %1%", boundary_file);
     std::string foo = boundary_file.string();
     GDALDataset *poDS = (GDALDataset *)GDALOpenEx(foo.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
     if (poDS == 0) {
-        log_error(_("couldn't open %1%"), boundary_file);
+        log_error("couldn't open %1%", boundary_file);
         return false;
     }
 
     OGRLayer *layer;
     layer = poDS->GetLayerByName(boundary_file.stem().c_str());
     if (layer == 0) {
-        log_error(_("Couldn't get layer \"%1%\""),boundary_file.stem());
+        log_error("Couldn't get layer \"%1%\"",boundary_file.stem());
         return false;
     }
 

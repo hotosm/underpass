@@ -41,7 +41,7 @@ using namespace logger;
 
 using namespace boost::posix_time;
 using namespace boost::gregorian;
-using namespace querystats;
+using namespace stats;
 
 TestState runtest;
 class TestOsmChange : public osmchange::OsmChangeFile {};
@@ -74,9 +74,9 @@ main(int argc, char *argv[])
             lib_path / "libhotosm", "create_plugin",
             boost::dll::load_mode::append_decorations
         );
-        log_debug(_("Loaded plugin hotosm!"));
+        log_debug("Loaded plugin hotosm!");
     } catch (std::exception& e) {
-        log_debug(_("Couldn't load plugin! %1%"), e.what());
+        log_debug("Couldn't load plugin! %1%", e.what());
         exit(0);
     }
     auto plugin = creator();
@@ -97,7 +97,7 @@ osmobjects::OsmWay readOsmWayFromFile(std::string filename) {
     if (boost::filesystem::exists(filespec)) {
         osmchange.readChanges(filespec);
     } else {
-        log_debug(_("Couldn't load ! %1%"), filespec);
+        log_debug("Couldn't load ! %1%", filespec);
     };
     return *osmchange.changes.front().get()->ways.front().get();
 }
@@ -418,7 +418,7 @@ test_geometry_building(std::shared_ptr<Validate> &plugin)
     if (boost::filesystem::exists(filespec)) {
         osmfoverlaping.readChanges(filespec);
     } else {
-        log_debug(_("Couldn't load ! %1%"), filespec);
+        log_debug("Couldn't load ! %1%", filespec);
     }
     for (auto it = std::begin(osmfoverlaping.changes); it != std::end(osmfoverlaping.changes); ++it) {
         osmchange::OsmChange *change = it->get();
@@ -449,7 +449,7 @@ test_geometry_building(std::shared_ptr<Validate> &plugin)
     if (boost::filesystem::exists(filespec)) {
         osmfnooverlaping.readChanges(filespec);
     } else {
-        log_debug(_("Couldn't load ! %1%"), filespec);
+        log_debug("Couldn't load ! %1%", filespec);
     }
     for (auto it = std::begin(osmfnooverlaping.changes); it != std::end(osmfnooverlaping.changes); ++it) {
         osmchange::OsmChange *change = it->get();

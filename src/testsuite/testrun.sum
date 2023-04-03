@@ -1,0 +1,39 @@
+Test run by root on Mon Apr  3 21:28:51 2023
+Native configuration is x86_64-pc-linux-gnu
+
+		===  tests ===
+
+Schedule of variations:
+    unix
+
+Running target unix
+Running ./libunderpass.all/site.exp ...
+Running ./libunderpass.all/underpass.exp ...
+PASS:  Read file with no path
+PASS:  Read file with bad relative path
+PASS:  Read file with absolute path
+PASS:  PQ::PQ(void)
+PASS:  PQ::parseURL(dbname)
+PASS:  PQ::parseURL(localhost
+PASS:  PQ::parseURL(remote
+PASS:  PQ::parseURL(user
+PASS:  PQ::parseURL(user:pass
+PASS:  PQ::parseURL(user:pass
+PASS:  StatsConfigSearch::search()
+PASS:  StatsConfigSearch::search() - way custom tags
+PASS:  StatsConfigSearch::search() - node custom tags
+PASS:  StatsConfigSearch::search() - node custom tags and custom category
+PASS:  StatsConfigSearch::search() - way custom tags and custom category
+PASS:  Yaml::get().children
+PASS:  Yaml::get().contains_value()
+PASS:  Yaml::get().contains_value()
+PASS:  Yaml::get().get().children
+PASS:  Yaml::contains_key()
+PASS:  Yaml::contains_value(good)
+PASS:  Yaml::contains_value(good)
+PASS:  Yaml::containsKey()
+PASS:  Yaml::containsValue(none)
+
+		===  Summary ===
+
+# of expected passes		24

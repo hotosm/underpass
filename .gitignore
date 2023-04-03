@@ -8,6 +8,7 @@ TAGS
 *.out
 *.bak
 *.deb
+*.log
 .deps
 .libs
 aclocal.m4
@@ -23,7 +24,6 @@ deb-copy-stamp
 ltmain.sh
 libtool
 Makefile.in
-po/*.gmo
 py-compile
 doc/html
 infra/.terraform
@@ -38,7 +38,7 @@ missing
 unconfig.h.in
 m4/libtool.m4
 unconfig.h.in
-.ipynb_checkpoints
 **/ENV
 **/.DS_Store
 **/__pycache__/
+.vscode

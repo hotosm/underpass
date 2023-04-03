@@ -42,7 +42,7 @@ using namespace boost::gregorian;
 // typedef boost::geometry::model::multi_polygon<polygon_t> multipolygon_t;
 // typedef boost::geometry::model::linestring<point_t> linestring_t;
 
-#include "data/osmobjects.hh"
+#include "osm/osmobjects.hh"
 
 #include "utils/log.hh"
 using namespace logger;

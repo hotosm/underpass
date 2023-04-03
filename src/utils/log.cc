@@ -237,7 +237,7 @@ getTimeZoneOffset(double time) {
         // tm_isdst is negative: cannot get TZ info.
         // Convert and print in UTC instead.
         LOG_ONCE(
-            logger::log_error(_("Cannot get requested timezone information")););
+            logger::log_error("Cannot get requested timezone information"););
         offset = 0;
     }
 
@@ -290,7 +290,7 @@ Timestamp timestamp;
 
 void
 processLog_trace(const boost::format &fmt) {
-    dbglogfile.log(N_("TRACE"), fmt.str());
+    dbglogfile.log("TRACE", fmt.str());
     // Print messages to the Android log, where they can be retrieved with
     // logcat.
 #ifdef __ANDROID__
@@ -302,7 +302,7 @@ void
 processLog_debug(const boost::format &fmt) {
     if (dbglogfile.getVerbosity() < LogFile::LOG_DEBUG)
         return;
-    dbglogfile.log(N_("DEBUG"), fmt.str());
+    dbglogfile.log("DEBUG", fmt.str());
     // Print messages to the Android log, where they can be retrieved with
     // logcat.
 #ifdef __ANDROID__
@@ -322,7 +322,7 @@ processLog_info(const boost::format &fmt) {
 
 void
 processLog_network(const boost::format &fmt) {
-    dbglogfile.log(N_("NETWORK"), fmt.str());
+    dbglogfile.log("NETWORK", fmt.str());
     // Print messages to the Android log, where they can be retrieved with
     // logcat.
 #ifdef __ANDROID__
@@ -332,7 +332,7 @@ processLog_network(const boost::format &fmt) {
 
 void
 processLog_error(const boost::format &fmt) {
-    dbglogfile.log(N_("ERROR"), fmt.str());
+    dbglogfile.log("ERROR", fmt.str());
     // Print messages to the Android log, where they can be retrieved with
     // logcat.
 #ifdef __ANDROID__
@@ -342,7 +342,7 @@ processLog_error(const boost::format &fmt) {
 
 void
 processLog_unimpl(const boost::format &fmt) {
-    dbglogfile.log(N_("UNIMPLEMENTED"), fmt.str());
+    dbglogfile.log("UNIMPLEMENTED", fmt.str());
     // Print messages to the Android log, where they can be retrieved with
     // logcat.
 #ifdef __ANDROID__

@@ -22,17 +22,17 @@ AUTOMAKE_OPTIONS = dejagnu
 check_PROGRAMS = \
 	pq-test \
 	change-test \
-	val-test \
 	yaml-test \
-	stats-test \
-    statsconfig-test \
+	statsconfig-test \
 	planetreplicator-test \
 	geo-test \
 	areafilter-test \
 	hashtags-test \
+	stats-test \
+	val-test \
 	test-playground
 
-TOPSRC := $(shell cd $(top_srcdir) && pwd)
+TOPSRC := $(shell cd $(top_srcdir) && pwd)/src
 AM_CPPFLAGS = -I$(TOPSRC) -DDATADIR=\"$(TOPSRC)\"
 AM_LDFLAGS = -L../..
 
@@ -73,8 +73,8 @@ geo_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 val_test_SOURCES = val-test.cc
 val_test_LDFLAGS = -L../..
+val_test_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
 val_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS) ../../validate/hotosm.lo
-val_test_CPPFLAGS = -I$(TOPSRC) -DDATADIR=\"$(TOPSRC)\"
 
 # Test the replication classes
 #replication_test_SOURCES = replication-test.cc
@@ -90,6 +90,7 @@ val_test_CPPFLAGS = -I$(TOPSRC) -DDATADIR=\"$(TOPSRC)\"
 # Test the OSM Stats class
 stats_test_SOURCES = stats-test.cc
 stats_test_LDFLAGS = -L../..
+stats_test_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
 stats_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 # Test the OSM StatsConfig
@@ -107,12 +108,6 @@ change_test_SOURCES = change-test.cc
 change_test_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
 change_test_LDFLAGS = -L../..
 change_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
-
-# Test the usersync class
-usersync_test_SOURCES = usersync-test.cc
-usersync_test_CPPFLAGS = -DDATADIR=\"$(srcdir)\" -I$(TOPSRC)
-usersync_test_LDFLAGS = -L../..
-usersync_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 # Test areaFilter
 areafilter_test_SOURCES = areafilter-test.cc
@@ -136,6 +131,7 @@ CLEANFILES = \
 	change-test.log \
 	geo-test.log \
 	stats-test.log \
+	val-test.log \
     statsconfig-test.log \
 	planetreplicator-test.log \
 	areafilter-test.log \

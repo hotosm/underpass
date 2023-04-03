@@ -27,7 +27,7 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/date_time/gregorian/gregorian.hpp"
 
-#include "data/geoutil.hh"
+#include "utils/geoutil.hh"
 using namespace geoutil;
 using namespace boost::posix_time;
 using namespace boost::gregorian;
@@ -59,7 +59,7 @@ main(int argc, char* argv[])
 
     std::string test_data_dir(DATADIR);
 
-    if (!tgu.readFile("../../data/data/priority.geojson")) {
+    if (!tgu.readFile("../config/replicator/priority.geojson")) {
         runtest.pass("Read file with bad relative path");
     } else {
         runtest.fail("Read file with bad relative path");

@@ -57,15 +57,15 @@ using namespace boost::gregorian;
 using namespace boost;
 namespace opts = boost::program_options;
 
-#include "data/geoutil.hh"
+#include "utils/geoutil.hh"
 #include "osm/changeset.hh"
 #include "osm/osmchange.hh"
-#include "repicator/threads.hh"
+#include "replicator/threads.hh"
 #include "utils/log.hh"
-#include "replicatorconfig.hh"
+#include "underpassconfig.hh"
 
-using namespace querystats;
-using namespace replicatorconfig;
+using namespace stats;
+using namespace underpassconfig;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
@@ -110,7 +110,7 @@ bool PlanetReplicator::initializeRaw(std::vector<std::string> &rawfile, const st
     return false;
 };
 
-std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const replicatorconfig::ReplicatorConfig &config, ptime time) {
+std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const underpassconfig::UnderpassConfig &config, ptime time) {
     yaml::Yaml yaml;
 
     std::string statsConfigFilename = "planetreplicator.yaml";

@@ -38,6 +38,7 @@
 #include <vector>
 
 #include "underpassconfig.hh"
+#include "replicator/planetreplicator.hh"
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/date_time.hpp>
 using namespace boost::posix_time;
@@ -64,8 +65,8 @@ namespace opts = boost::program_options;
 #include "replicator/threads.hh"
 #include "underpassconfig.hh"
 
-using namespace querystats;
-using namespace replicatorconfig;
+using namespace stats;
+using namespace underpassconfig;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
@@ -84,8 +85,8 @@ main(int argc, char *argv[])
 {
 
     // Store the file names for replication files
-    std::string changeset;
-    std::string osmchange;
+    // std::string changeset;
+    // std::string osmchange;
 
     // The changesets URL path (e.g. "/001/001/999")
     std::string starting_url_path;
@@ -103,7 +104,7 @@ main(int argc, char *argv[])
         // clang-format off
         desc.add_options()
             ("help,h", "display help")
-            ("server,s", opts::value<std::string>(), "Database server for replicator output (defaults to localhost/galaxy) "
+            ("server,s", opts::value<std::string>(), "Database server for replicator output (defaults to localhost/underpass) "
                                                      "can be a hostname or a full connection string USER:PASSSWORD@HOST/DATABASENAME")
             ("planet,p", opts::value<std::string>(), "Replication server (defaults to planet.maps.mail.ru)")
             ("url,u", opts::value<std::string>(), "Starting URL path (ex. 000/075/000), takes precedence over 'timestamp' option")
@@ -181,7 +182,7 @@ main(int argc, char *argv[])
         try {
             // Set minimum required because we are starting separate threads for monitoring anyway
             config.concurrency = std::max(3, std::stoi(concurrency));
-            log_debug(_("Hardware threads: %1%"), std::thread::hardware_concurrency());
+            log_debug("Hardware threads: %1%", std::thread::hardware_concurrency());
             if (config.concurrency > std::thread::hardware_concurrency()) {
                 log_error("ERROR: concurrency cannot exceed the number of threads supported by hardware (%1%)!", std::thread::hardware_concurrency());
             }
@@ -198,12 +199,12 @@ main(int argc, char *argv[])
     }
 
     if (vm.count("server")) {
-        config.galaxy_db_url = vm["server"].as<std::string>();
+        config.underpass_db_url = vm["server"].as<std::string>();
     }
 
     geoutil::GeoUtil geou;
     if (!geou.readFile(boundary)) {
-        log_debug(_("Could not find '%1%' area file!"), boundary);
+        log_debug("Could not find '%1%' area file!", boundary);
     }
 
     planetreplicator::PlanetReplicator replicator;
@@ -213,13 +214,13 @@ main(int argc, char *argv[])
         auto changeset = std::make_shared<changeset::ChangeSetFile>();
         changeset->readChanges(file);
         changeset->areaFilter(geou.boundary);
-        galaxy::QueryGalaxy ostats;
-        if (ostats.connect(config.galaxy_db_url)) {
+        stats::QueryStats ostats;
+        if (ostats.connect(config.underpass_db_url)) {
             for (auto it = std::begin(changeset->changes); it != std::end(changeset->changes); ++it) {
                 ostats.applyChange(*it->get());
             }
         } else {
-            log_error("ERROR: could not connect to galaxy DB, check 'server' "
+            log_error("ERROR: could not connect to Underpass DB, check 'server' "
                       "parameter!");
             exit(-1);
         }
@@ -256,7 +257,7 @@ main(int argc, char *argv[])
         } else if (strfreq[0] == 'd') {
             config.frequency = replication::daily;
         } else {
-            log_debug(_("Invalid frequency!"));
+            log_debug("Invalid frequency!");
             exit(-1);
         }
     }
@@ -323,7 +324,7 @@ main(int argc, char *argv[])
         changesetThread = std::thread(threads::startMonitorChangesets, std::ref(changeset),
                         std::ref(*oscboundary), std::ref(config));
     }
-    log_info(_("Waiting..."));
+    log_info("Waiting...");
     if (changesetThread.joinable()) {
         changesetThread.join();
     }

@@ -69,7 +69,7 @@ Pq::Pq(void)
         }
     }
     if (!dbname.empty()) {
-        log_error(_("Must supply a database name!"));
+        log_error("Must supply a database name!");
         return;
     }
 
@@ -92,10 +92,10 @@ Pq::~Pq(void)
 void
 Pq::dump(void)
 {
-    log_debug(_("Database host: %1%"), host);
-    log_debug(_("Database name: %1%"), dbname);
-    log_debug(_("Database user: %1%"), user);
-    log_debug(_("Database password: %1%"), passwd);
+    log_debug("Database host: %1%", host);
+    log_debug("Database name: %1%", dbname);
+    log_debug("Database user: %1%", user);
+    log_debug("Database password: %1%", passwd);
 }
 
 bool
@@ -108,7 +108,7 @@ bool
 Pq::parseURL(const std::string &dburl)
 {
     if (dburl.empty()) {
-        // log_error(_("No database connection string!"));
+        log_error("No database connection string!");
         return false;
     }
 
@@ -171,13 +171,13 @@ Pq::connect(const std::string &dburl)
     try {
         sdb = std::make_unique<pqxx::connection>(args);
         if (sdb->is_open()) {
-            log_debug(_("Opened database connection to %1%"), args);
+            log_debug("Opened database connection to %1%", args);
             return true;
         } else {
             return false;
         }
     } catch (const std::exception &e) {
-        log_error(_("Couldn't open database connection to %1% %2%"), args,
+        log_error("Couldn't open database connection to %1% %2%", args,
                   e.what());
         return false;
     }
@@ -188,7 +188,7 @@ Pq::query(const std::string &query)
 {
     if (sdb) {
         if (!sdb->is_open()) {
-            log_error(_("Database isn't open!"));
+            log_error("Database isn't open!");
             result.clear();
             return result;
         }

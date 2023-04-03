@@ -44,7 +44,7 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
-#include "data/yaml.hh"
+#include "utils/yaml.hh"
 
 // MinGW related workaround
 #define BOOST_DLL_FORCE_ALIAS_INSTANTIATION

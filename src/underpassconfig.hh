@@ -83,7 +83,7 @@ struct PlanetServer {
 
     ///
     /// \brief baseUrl returns the full base url including the datadir
-    ///        (e.g. "https://free.nchc.org.tw/osm.planet/replcation" or "https://download.openstreetmap.fr/replication")
+    ///        (e.g. "https://free.nchc.org.tw/osm.planet/replication" or "https://download.openstreetmap.fr/replication")
     ///
     std::string replicationUrl() const
     {
@@ -92,15 +92,15 @@ struct PlanetServer {
 };
 
 ///
-/// \brief The underpassconfig struct stores replicator configuration
+/// \brief The UnderpassConfig struct stores replicator configuration
 ///
-struct underpassconfig {
+struct UnderpassConfig {
 
     ///
     /// \brief underpassconfig constructor: will try to initialize from uppercased same-name
     ///        environment variables prefixed by REPLICATOR_ (e.g. REPLICATOR_underpass_db_URL)
     ///
-    underpassconfig()
+    UnderpassConfig()
     {
 
         std::string homedir = getenv("HOME");

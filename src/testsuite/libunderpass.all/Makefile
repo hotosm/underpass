@@ -107,10 +107,10 @@ POST_UNINSTALL = :
 build_triplet = x86_64-pc-linux-gnu
 host_triplet = x86_64-pc-linux-gnu
 check_PROGRAMS = pq-test$(EXEEXT) change-test$(EXEEXT) \
-	val-test$(EXEEXT) yaml-test$(EXEEXT) stats-test$(EXEEXT) \
-	statsconfig-test$(EXEEXT) planetreplicator-test$(EXEEXT) \
-	geo-test$(EXEEXT) areafilter-test$(EXEEXT) \
-	hashtags-test$(EXEEXT) test-playground$(EXEEXT)
+	yaml-test$(EXEEXT) statsconfig-test$(EXEEXT) \
+	planetreplicator-test$(EXEEXT) geo-test$(EXEEXT) \
+	areafilter-test$(EXEEXT) hashtags-test$(EXEEXT) \
+	stats-test$(EXEEXT) val-test$(EXEEXT) test-playground$(EXEEXT)
 subdir = src/testsuite/libunderpass.all
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_boost_base.m4 \
@@ -190,7 +190,7 @@ pq_test_DEPENDENCIES = $(am__DEPENDENCIES_2)
 pq_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(pq_test_LDFLAGS) $(LDFLAGS) -o $@
-am_stats_test_OBJECTS = stats-test.$(OBJEXT)
+am_stats_test_OBJECTS = stats_test-stats-test.$(OBJEXT)
 stats_test_OBJECTS = $(am_stats_test_OBJECTS)
 stats_test_DEPENDENCIES = $(am__DEPENDENCIES_2)
 stats_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
@@ -241,7 +241,8 @@ am__depfiles_remade = ./$(DEPDIR)/areafilter-test.Po \
 	./$(DEPDIR)/change_test-change-test.Po \
 	./$(DEPDIR)/geo_test-geo-test.Po ./$(DEPDIR)/hashtags-test.Po \
 	./$(DEPDIR)/planetreplicator-test.Po \
-	./$(DEPDIR)/pq_test-pq-test.Po ./$(DEPDIR)/stats-test.Po \
+	./$(DEPDIR)/pq_test-pq-test.Po \
+	./$(DEPDIR)/stats_test-stats-test.Po \
 	./$(DEPDIR)/statsconfig-test.Po ./$(DEPDIR)/test-playground.Po \
 	./$(DEPDIR)/val_test-val-test.Po \
 	./$(DEPDIR)/yaml_test-yaml-test.Po
@@ -481,7 +482,7 @@ top_build_prefix = ../../../
 top_builddir = ../../..
 top_srcdir = ../../..
 AUTOMAKE_OPTIONS = dejagnu
-TOPSRC := $(shell cd $(top_srcdir) && pwd)
+TOPSRC := $(shell cd $(top_srcdir) && pwd)/src
 AM_CPPFLAGS = -I$(TOPSRC) -DDATADIR=\"$(TOPSRC)\"
 AM_LDFLAGS = -L../..
 BOOST_LIBS = \
@@ -518,8 +519,8 @@ geo_test_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
 geo_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 val_test_SOURCES = val-test.cc
 val_test_LDFLAGS = -L../..
+val_test_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
 val_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS) ../../validate/hotosm.lo
-val_test_CPPFLAGS = -I$(TOPSRC) -DDATADIR=\"$(TOPSRC)\"
 
 # Test the replication classes
 #replication_test_SOURCES = replication-test.cc
@@ -535,6 +536,7 @@ val_test_CPPFLAGS = -I$(TOPSRC) -DDATADIR=\"$(TOPSRC)\"
 # Test the OSM Stats class
 stats_test_SOURCES = stats-test.cc
 stats_test_LDFLAGS = -L../..
+stats_test_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
 stats_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 # Test the OSM StatsConfig
@@ -552,12 +554,6 @@ change_test_SOURCES = change-test.cc
 change_test_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
 change_test_LDFLAGS = -L../..
 change_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
-
-# Test the usersync class
-usersync_test_SOURCES = usersync-test.cc
-usersync_test_CPPFLAGS = -DDATADIR=\"$(srcdir)\" -I$(TOPSRC)
-usersync_test_LDFLAGS = -L../..
-usersync_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 # Test areaFilter
 areafilter_test_SOURCES = areafilter-test.cc
@@ -579,6 +575,7 @@ CLEANFILES = \
 	change-test.log \
 	geo-test.log \
 	stats-test.log \
+	val-test.log \
     statsconfig-test.log \
 	planetreplicator-test.log \
 	areafilter-test.log \
@@ -685,7 +682,7 @@ include ./$(DEPDIR)/geo_test-geo-test.Po # am--include-marker
 include ./$(DEPDIR)/hashtags-test.Po # am--include-marker
 include ./$(DEPDIR)/planetreplicator-test.Po # am--include-marker
 include ./$(DEPDIR)/pq_test-pq-test.Po # am--include-marker
-include ./$(DEPDIR)/stats-test.Po # am--include-marker
+include ./$(DEPDIR)/stats_test-stats-test.Po # am--include-marker
 include ./$(DEPDIR)/statsconfig-test.Po # am--include-marker
 include ./$(DEPDIR)/test-playground.Po # am--include-marker
 include ./$(DEPDIR)/val_test-val-test.Po # am--include-marker
@@ -759,6 +756,20 @@ pq_test-pq-test.obj: pq-test.cc
 #	$(AM_V_CXX)source='pq-test.cc' object='pq_test-pq-test.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pq_test_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o pq_test-pq-test.obj `if test -f 'pq-test.cc'; then $(CYGPATH_W) 'pq-test.cc'; else $(CYGPATH_W) '$(srcdir)/pq-test.cc'; fi`
+
+stats_test-stats-test.o: stats-test.cc
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stats_test_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT stats_test-stats-test.o -MD -MP -MF $(DEPDIR)/stats_test-stats-test.Tpo -c -o stats_test-stats-test.o `test -f 'stats-test.cc' || echo '$(srcdir)/'`stats-test.cc
+	$(AM_V_at)$(am__mv) $(DEPDIR)/stats_test-stats-test.Tpo $(DEPDIR)/stats_test-stats-test.Po
+#	$(AM_V_CXX)source='stats-test.cc' object='stats_test-stats-test.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stats_test_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o stats_test-stats-test.o `test -f 'stats-test.cc' || echo '$(srcdir)/'`stats-test.cc
+
+stats_test-stats-test.obj: stats-test.cc
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stats_test_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT stats_test-stats-test.obj -MD -MP -MF $(DEPDIR)/stats_test-stats-test.Tpo -c -o stats_test-stats-test.obj `if test -f 'stats-test.cc'; then $(CYGPATH_W) 'stats-test.cc'; else $(CYGPATH_W) '$(srcdir)/stats-test.cc'; fi`
+	$(AM_V_at)$(am__mv) $(DEPDIR)/stats_test-stats-test.Tpo $(DEPDIR)/stats_test-stats-test.Po
+#	$(AM_V_CXX)source='stats-test.cc' object='stats_test-stats-test.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stats_test_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o stats_test-stats-test.obj `if test -f 'stats-test.cc'; then $(CYGPATH_W) 'stats-test.cc'; else $(CYGPATH_W) '$(srcdir)/stats-test.cc'; fi`
 
 val_test-val-test.o: val-test.cc
 	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(val_test_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT val_test-val-test.o -MD -MP -MF $(DEPDIR)/val_test-val-test.Tpo -c -o val_test-val-test.o `test -f 'val-test.cc' || echo '$(srcdir)/'`val-test.cc
@@ -970,7 +981,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/hashtags-test.Po
 	-rm -f ./$(DEPDIR)/planetreplicator-test.Po
 	-rm -f ./$(DEPDIR)/pq_test-pq-test.Po
-	-rm -f ./$(DEPDIR)/stats-test.Po
+	-rm -f ./$(DEPDIR)/stats_test-stats-test.Po
 	-rm -f ./$(DEPDIR)/statsconfig-test.Po
 	-rm -f ./$(DEPDIR)/test-playground.Po
 	-rm -f ./$(DEPDIR)/val_test-val-test.Po
@@ -1026,7 +1037,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/hashtags-test.Po
 	-rm -f ./$(DEPDIR)/planetreplicator-test.Po
 	-rm -f ./$(DEPDIR)/pq_test-pq-test.Po
-	-rm -f ./$(DEPDIR)/stats-test.Po
+	-rm -f ./$(DEPDIR)/stats_test-stats-test.Po
 	-rm -f ./$(DEPDIR)/statsconfig-test.Po
 	-rm -f ./$(DEPDIR)/test-playground.Po
 	-rm -f ./$(DEPDIR)/val_test-val-test.Po

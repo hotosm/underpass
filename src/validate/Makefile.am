@@ -32,6 +32,7 @@ BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
 	$(BOOST_LOCALE_LIB)
 
 libhotosm_la_SOURCES = \
+	hotosm.cc hotosm.hh \
 	validate.hh
 
 libhotosm_la_LDFLAGS = -module -avoid-version
@@ -41,7 +42,7 @@ AM_CXXFLAGS = \
 	-Wno-deprecated-declarations
 
 AM_CPPFLAGS = \
-	-I$(top_srcdir) \
+	-I$(top_srcdir)/src \
 	-DPKGLIBDIR=\"$(pkglibdir)\" \
 	-DSRCDIR=\"$(srcdir)\" \
 	-DBOOST_LOCALE_HIDE_AUTO_PTR

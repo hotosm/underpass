@@ -54,7 +54,7 @@
 #define __FUNCDNAME__ __FUNCTION__
 #endif
 
-#include "dsodefs.hh"
+#include "../dsodefs.hh"
 
 namespace logger {
 

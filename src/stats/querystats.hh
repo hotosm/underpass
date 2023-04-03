@@ -58,8 +58,8 @@ namespace osmchange {
   class ChangeStats;
 }; // namespace osmchange
 
-/// \namespace querystats
-namespace querystats {
+/// \namespace stats
+namespace stats {
 
 /// \class QueryStats
 /// \brief This handles all direct database access
@@ -90,7 +90,7 @@ class QueryStats : public pq::Pq {
                                             ///< to the database
 };
 
-} // namespace querystats
+} // namespace stats
 
 #endif // EOF __DATA_HH__
 

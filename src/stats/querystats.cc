@@ -59,8 +59,8 @@ using namespace logger;
 
 std::once_flag prepare_user_statement_flag;
 
-/// \namespace querystats
-namespace querystats {
+/// \namespace stats
+namespace stats {
 
 static std::mutex pqxx_mutex;
 
@@ -153,7 +153,7 @@ QueryStats::applyChange(const osmchange::ChangeStats &change) const
     }
     aquery.erase(aquery.size() - 2);
 
-    // _debug(_("QUERY stats: %1%"), aquery);
+    // _debug("QUERY stats: %1%", aquery);
     // Serialize changes writing
     {
         std::scoped_lock write_lock{pqxx_mutex};
@@ -317,7 +317,7 @@ ptime
 QueryStats::getLastUpdate(void)
 {
     std::string query = "SELECT MAX(created_at) FROM changesets;";
-    // log_debug(_("QUERY: %1%"), query);
+    // log_debug("QUERY: %1%", query);
     pqxx::work worker(*sdb);
     pqxx::result result = worker.exec(query);
     worker.commit();
@@ -356,7 +356,7 @@ QueryStats::fixString(std::string text) const
     return sdb->esc(boost::locale::conv::to_utf<char>(newstr, "Latin1"));
 }
 
-} // namespace querystats
+} // namespace stats
 
 // local Variables:
 // mode: C++

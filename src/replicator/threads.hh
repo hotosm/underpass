@@ -69,7 +69,7 @@ using tcp = net::ip::tcp;
 
 #include "stats/querystats.hh"
 #include "replicator/replication.hh"
-#include "replicatorconfig.hh"
+#include "underpassconfig.hh"
 #include "validate/validate.hh"
 #include <ogr_geometry.h>
 
@@ -98,7 +98,7 @@ struct ReplicationTask {
 extern void
 startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     const multipolygon_t &poly,
-    const replicatorconfig::ReplicatorConfig &config
+    const underpassconfig::UnderpassConfig &config
 );
 
 /// This monitors the planet server for new OSM changes files.
@@ -107,7 +107,7 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
 extern void
 startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     const multipolygon_t &poly,
-    const replicatorconfig::ReplicatorConfig &config
+    const underpassconfig::UnderpassConfig &config
 );
 
 /// Updates the raw_hashtags, raw_users, and raw_changesets_countries tables
@@ -115,7 +115,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
 void threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
     std::shared_ptr<replication::Planet> &planet,
     const multipolygon_t &poly,
-    std::shared_ptr<galaxy::QueryGalaxy> &galaxy,
+    std::shared_ptr<stats::QueryStats> &querystats,
     std::shared_ptr<Validate> &plugin,
     std::shared_ptr<std::vector<long>> removals,
     std::shared_ptr<std::vector<ReplicationTask>> tasks
@@ -128,7 +128,7 @@ void
 threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
     std::shared_ptr<replication::Planet> &planet,
     const multipolygon_t &poly,
-    std::shared_ptr<galaxy::QueryGalaxy> galaxy,
+    std::shared_ptr<stats::QueryStats> querystats,
     std::shared_ptr<std::vector<ReplicationTask>> tasks
 );
 

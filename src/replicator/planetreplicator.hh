@@ -31,14 +31,14 @@
 #include "unconfig.h"
 #endif
 
-#include "replicatorconfig.hh"
+#include "underpassconfig.hh"
 #include "replicator/replication.hh"
 #include "osm/changeset.hh"
 #include <vector>
 #include <memory>
 
-using namespace querystats;
-using namespace replicatorconfig;
+using namespace stats;
+using namespace underpassconfig;
 
 /// \namespace planetreplicator
 namespace planetreplicator {
@@ -48,7 +48,7 @@ class PlanetReplicator : public replication::Planet {
         PlanetReplicator(void);
         ~PlanetReplicator(void) {};
         bool initializeRaw(std::vector<std::string> &rawfile, const std::string &database);
-        std::shared_ptr<RemoteURL> findRemotePath(const replicatorconfig::ReplicatorConfig &config, ptime time);
+        std::shared_ptr<RemoteURL> findRemotePath(const underpassconfig::UnderpassConfig &config, ptime time);
     // These are used for the import command
     private:
         std::vector<StateFile> default_minutes;

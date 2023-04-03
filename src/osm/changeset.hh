@@ -52,11 +52,11 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
-#include "data/osmobjects.hh"
+#include "osm/osmobjects.hh"
 #include "stats/querystats.hh"
 
 // Forward declaration
-namespace querystats {
+namespace stats {
 class RawCountry;
 };
 

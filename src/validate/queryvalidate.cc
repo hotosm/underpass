@@ -96,7 +96,7 @@ QueryValidate::applyChange(const ValidateStatus &validation) const
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("applyChange(validation): took %w seconds\n");
 #endif
-    log_debug(_("Applying Validation data"));
+    log_debug("Applying Validation data");
     // validation.dump();
 
     if (validation.angle == 0 && validation.status.size() == 0) {
@@ -166,7 +166,7 @@ QueryValidate::applyChange(const ValidateStatus &validation) const
     if (validation.values.size() > 0) {
         query += ", values = ARRAY[" + valtmp + " ], source = \'" + validation.source + "\'";
     }
-//    log_debug(_("QUERY: %1%"), query);
+//    log_debug("QUERY: %1%", query);
 
     std::scoped_lock write_lock{pqxx_mutex};
     pqxx::work worker(*sdb);
