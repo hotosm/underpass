@@ -19,7 +19,7 @@ cd ${TEMP_DIR}
 make distclean -j `nproc` || true
 make clean -j `nproc` || true
 
-DOCKER_DIR="${TEMP_DIR}/docker"
+DOCKER_DIR="${TEMP_DIR}"
 DOCKER_COMPOSE_FILE="${DOCKER_DIR}/docker-compose.yml"
 DOCKER_BASE_COMMAND="docker-compose -f ${DOCKER_COMPOSE_FILE}"
 
