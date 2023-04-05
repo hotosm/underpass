@@ -356,7 +356,7 @@ threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
         log_debug("ChangeSet last_closed_at: %1%", task.timestamp);
         changeset->areaFilter(poly);
         for (auto cit = std::begin(changeset->changes); cit != std::end(changeset->changes); ++cit) {
-            task.query = querystats.applyChange(*cit->get());
+            task.query += querystats.applyChange(*cit->get());
         }
     }
     const std::lock_guard<std::mutex> lock(tasks_changeset_mutex);
@@ -423,7 +423,7 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
         if (it->second->added.size() == 0 && it->second->modified.size() == 0) {
             continue;
         }
-        task.query = querystats.applyChange(*it->second);
+        task.query += querystats.applyChange(*it->second);
     }
 
     auto removals = std::make_shared<std::vector<long>>();

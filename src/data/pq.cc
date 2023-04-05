@@ -81,10 +81,10 @@ Pq::Pq(const std::string &args) { connect(args); };
 
 Pq::~Pq(void)
 {
-    // db->disconnect();        // close the database connection
     if (sdb) {
         if (sdb->is_open()) {
-            sdb->close(); // close the database connection
+            // Close the database connection
+            sdb->close(); 
         }
     }
 }
@@ -215,6 +215,7 @@ Pq::fixString(std::string text)
         }
         i++;
     }
+    // FIXME: sdb->esc()
     return boost::locale::conv::to_utf<char>(newstr, "Latin1");
 }
 
