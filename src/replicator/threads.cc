@@ -133,13 +133,14 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     // This function is for changesets only!
     assert(remote->frequency == frequency_t::changeset);
 
-    int cores = config.concurrency;
 
-    pq::Pq db = pq::Pq();
+    pq::Pq db;
     if (!db.connect(config.underpass_db_url)) {
         log_error("Could not connect to Underpass DB, aborting monitoring thread!");
         return;
     }
+
+    int cores = config.concurrency;
 
     // Support multiple OSM planet servers
     std::vector<std::shared_ptr<replication::Planet>> planets;
@@ -249,17 +250,22 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
 #ifdef MEMORY_DEBUG
     size_t sz, active1, active2;
 #endif    // JEMALLOC memory debugging
-    pq::Pq db = pq::Pq();
+    pq::Pq db;
     if (!db.connect(config.underpass_db_url)) {
         log_error("Could not connect to Underpass DB, aborting monitoring thread!");
         return;
     }
+
+    int cores = config.concurrency;
+
+    // Support multiple OSM planet servers
+    std::vector<std::shared_ptr<replication::Planet>> planets;
     std::vector<std::string> servers;
     for (auto it = std::begin(config.planet_servers); it != std::end(config.planet_servers); ++it) {
         servers.push_back(it->domain);
     }
-    std::vector<std::shared_ptr<replication::Planet>> planets;
-    int cores = config.concurrency;
+
+    // Rotate OSM Planet servers
     int i = 0;
     while (i <= cores/4) {
         std::rotate(servers.begin(), servers.begin()+1, servers.end());

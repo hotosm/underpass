@@ -194,6 +194,8 @@ Pq::query(const std::string &query)
     return result;
 }
 
+pqxx::connection Pq::_sdb;
+
 std::string
 Pq::fixString(std::string text)
 {
@@ -215,8 +217,7 @@ Pq::fixString(std::string text)
         }
         i++;
     }
-    // FIXME: sdb->esc()
-    return boost::locale::conv::to_utf<char>(newstr, "Latin1");
+    return _sdb.esc(boost::locale::conv::to_utf<char>(newstr, "Latin1"));
 }
 
 } // namespace pq

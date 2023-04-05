@@ -42,7 +42,7 @@
 namespace pq {
 
 /// \class Pq
-/// \brief This is a higher level class wrpped around libpqxx
+/// \brief This is a higher level class wrapped around libpqxx
 class Pq {
   public:
     Pq(void);
@@ -65,14 +65,21 @@ class Pq {
 
     static std::string fixString(std::string text);
 
+    // Database connection
+    std::shared_ptr<pqxx::connection> sdb;
+
     //protected:
-    std::shared_ptr<pqxx::connection> sdb;  ///< The pqxx connection
     pqxx::result result;  ///< The result from a query
     std::string host;  ///< The database host
     std::string user;  ///< The database user
     std::string passwd;  ///< The database password
     std::string dbname;  ///< The database name
     std::mutex pqxx_mutex;
+
+    private:
+      // Used for escape strings
+      static pqxx::connection _sdb;
+
 };
 
 } // namespace pq
