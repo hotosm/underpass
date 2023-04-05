@@ -55,10 +55,6 @@ using namespace boost::gregorian;
 #include "osm/osmobjects.hh"
 #include "stats/querystats.hh"
 
-// Forward declaration
-namespace stats {
-class RawCountry;
-};
 
 // Forward declaration
 namespace geoutil {
@@ -68,9 +64,6 @@ class GeoUtil;
 /// \namespace changeset
 namespace changeset {
 
-/// Check a character in a string if it'S a control character
-extern bool
-IsControl(int i);
 
 /// \file changeset.hh
 /// \brief The file is used for processing changeset files
@@ -159,9 +152,6 @@ class ChangeSetFile
 
     /// Read a changeset file from disk or memory into internal storage
     bool readChanges(const std::vector<unsigned char> &buffer);
-
-    /// Import a changeset file from disk and initialize the database
-    bool importChanges(const std::string &file);
 
 #ifdef LIBXML
     /// Called by libxml++ for the start of each element in the XML file

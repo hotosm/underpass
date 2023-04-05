@@ -36,6 +36,7 @@
 #include <pqxx/pqxx>
 #include <string>
 #include <vector>
+#include <mutex>
 
 /// \namespace pq
 namespace pq {
@@ -54,13 +55,15 @@ class Pq {
     /// \return TRUE if the DB is open.
     bool isOpen() const;
 
-    /// Query the database
+    /// Run query into the database
     pqxx::result query(const std::string &query);
     /// Parse the URL for the database connection
     bool parseURL(const std::string &query);
 
     /// Dump internal data for debugging
     void dump(void);
+
+    static std::string fixString(std::string text);
 
     //protected:
     std::shared_ptr<pqxx::connection> sdb;  ///< The pqxx connection
@@ -69,6 +72,7 @@ class Pq {
     std::string user;  ///< The database user
     std::string passwd;  ///< The database password
     std::string dbname;  ///< The database name
+    std::mutex pqxx_mutex;
 };
 
 } // namespace pq

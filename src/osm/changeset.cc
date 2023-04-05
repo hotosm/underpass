@@ -87,59 +87,6 @@ using namespace logger;
 /// \namespace changeset
 namespace changeset {
 
-/// Check a character in a string if it's a control character
-bool
-IsControl(int i)
-{
-    return (iscntrl(i));
-}
-
-/// Read a changeset file from disk, which may be a huge file
-/// Since it is a huge file, process in pieces and don't store
-/// anything except in the database. A changeset file entry
-/// looks like this:
-///
-/// <changeset id="12345" created_at="2014-10-10T01:57:09Z"
-/// closed_at="2014-10-10T01:57:23Z" open="false" user="foo" uid="54321"
-/// min_lat="-2.8042325" min_lon="29.5842812" max_lat="-2.7699398"
-/// max_lon="29.6012844" num_changes="569" comments_count="0">
-///  <tag k="source" v="Bing"/>
-///  <tag k="comment" v="#hotosm-task-001 #redcross #missingmaps"/>
-///  <tag k="created_by" v="JOSM/1.5 (7182 en)"/>
-/// </changeset>
-bool
-ChangeSetFile::importChanges(const std::string &file)
-{
-    std::ifstream change;
-    int size = 0;
-    //    store = false;
-
-#ifdef LIBXML
-    // FIXME: this should really use CHUNKS, since the files can
-    // many gigs.
-    try {
-        set_substitute_entities(true);
-        parse_file(file);
-    } catch (const xmlpp::exception &ex) {
-        // FIXME: files downloaded seem to be missing a trailing \n,
-        // so produce an error, but we can ignore this as the file is
-        // processed correctly.
-        // log_error("libxml++ exception: %1%", ex.what());
-        int return_code = EXIT_FAILURE;
-    }
-#endif
-
-    stats::QueryStats ostats;
-    ostats.connect("underpass");
-    for (auto it = std::begin(changes); it != std::end(changes); ++it) {
-        // ostats.applyChange(*it);
-    }
-
-    change.close();
-    // FIXME: return real value
-    return false;
-}
-
 bool
 ChangeSetFile::readChanges(const std::vector<unsigned char> &buffer)
 {

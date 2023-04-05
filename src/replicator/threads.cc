@@ -77,22 +77,30 @@ using tcp = net::ip::tcp;         // from <boost/asio/ip/tcp.hpp>
 #include "osm/changeset.hh"
 #include "osm/osmchange.hh"
 #include "stats/querystats.hh"
+#include "validate/queryvalidate.hh"
 #include "replicator/replication.hh"
 #include "validate/validate.hh"
 #include <jemalloc/jemalloc.h>
+#include "data/pq.hh"
 
 std::mutex stream_mutex;
 
 using namespace logger;
 using namespace stats;
+using namespace queryvalidate;
 
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 namespace threads {
 
-std::mutex remove_mutex;
-std::mutex tasks_change_mutex;
-std::mutex tasks_changeset_mutex;
+std::string
+allTasksQueries(std::shared_ptr<std::vector<ReplicationTask>> tasks) {
+    std::string queries = "";
+    for (auto it = tasks->begin(); it != tasks->end(); ++it) {
+        queries += it->query;
+    }
+    return queries;
+}
 
 // Get closest change from a list of tasks
 std::shared_ptr<ReplicationTask>
@@ -125,24 +133,24 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     // This function is for changesets only!
     assert(remote->frequency == frequency_t::changeset);
 
-    std::shared_ptr<stats::QueryStats> ostats = std::make_shared<stats::QueryStats>();
-    if (!ostats->connect(config.underpass_db_url)) {
+    int cores = config.concurrency;
+
+    pq::Pq db = pq::Pq();
+    if (!db.connect(config.underpass_db_url)) {
         log_error("Could not connect to Underpass DB, aborting monitoring thread!");
         return;
     }
 
-    // Support multiple database connections
-    std::vector<std::shared_ptr<stats::QueryStats>> querystats;
+    // Support multiple OSM planet servers
+    std::vector<std::shared_ptr<replication::Planet>> planets;
     std::vector<std::string> servers;
     for (auto it = std::begin(config.planet_servers); it != std::end(config.planet_servers); ++it) {
         servers.push_back(it->domain);
     }
-    std::vector<std::shared_ptr<replication::Planet>> planets;
-    int cores = config.concurrency;
+
+    // Rotate OSM Planet servers
     int i = 0;
     while (i <= cores/4) {
-        auto dbConnection = std::make_shared<stats::QueryStats>(config.underpass_db_url);
-        querystats.push_back(dbConnection);
         std::rotate(servers.begin(), servers.begin()+1, servers.end());
         auto replicationPlanet = std::make_shared<replication::Planet>(*remote);
         replicationPlanet->connectServer(servers.front());
@@ -150,9 +158,9 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
         i++;
     }
 
-     // Process Changesets
-    auto delay = std::chrono::seconds{0};
+    // Process Changesets replication files
     ReplicationTask closest;
+    auto delay = std::chrono::seconds{0};
     auto last_task = std::make_shared<ReplicationTask>();
     bool caughtUpWithNow = false;
     bool monitoring = true;
@@ -170,15 +178,15 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
                 std::make_shared<replication::RemoteURL>(remote->getURL()),
                 std::ref(planets.front()),
                 std::ref(poly),
-                std::ref(querystats.front()),
                 std::ref(tasks)
             );
             boost::asio::post(pool, task);
-            std::rotate(querystats.begin(), querystats.begin()+1, querystats.end());
             std::rotate(planets.begin(), planets.begin()+1, planets.end());
             remote->updateDomain(planets.front()->domain);
         }
+
         pool.join();
+        db.query(allTasksQueries(tasks));
 
         ptime now  = boost::posix_time::second_clock::universal_time();
         last_task = getClosest(tasks, now);
@@ -241,8 +249,11 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
 #ifdef MEMORY_DEBUG
     size_t sz, active1, active2;
 #endif    // JEMALLOC memory debugging
-    // Support multiple database connections
-    std::vector<std::shared_ptr<stats::QueryStats>> querystats;
+    pq::Pq db = pq::Pq();
+    if (!db.connect(config.underpass_db_url)) {
+        log_error("Could not connect to Underpass DB, aborting monitoring thread!");
+        return;
+    }
     std::vector<std::string> servers;
     for (auto it = std::begin(config.planet_servers); it != std::end(config.planet_servers); ++it) {
         servers.push_back(it->domain);
@@ -251,8 +262,6 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     int cores = config.concurrency;
     int i = 0;
     while (i <= cores/4) {
-        auto dbConnection = std::make_shared<stats::QueryStats>(config.underpass_db_url);
-        querystats.push_back(dbConnection);
         std::rotate(servers.begin(), servers.begin()+1, servers.end());
         auto replicationPlanet = std::make_shared<replication::Planet>(*remote);
         replicationPlanet->connectServer(servers.front());
@@ -261,7 +270,6 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     }
 
     // Process OSM changes
-    auto removals = std::make_shared<std::vector<long>>();
     auto delay = std::chrono::seconds{0};
     ReplicationTask closest;
     auto last_task = std::make_shared<ReplicationTask>();
@@ -281,23 +289,15 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
                 std::make_shared<replication::RemoteURL>(remote->getURL()),
                 std::ref(planets.front()),
                 std::ref(poly),
-                std::ref(querystats.front()),
                 std::ref(validator),
-                std::ref(removals),
                 std::ref(tasks)
             );
             boost::asio::post(pool, task);
-            std::rotate(querystats.begin(), querystats.begin()+1, querystats.end());
             std::rotate(planets.begin(), planets.begin()+1, planets.end());
         }
+        
         pool.join();
-
-        std::cout << "Removals: " << removals->size() << std::endl;
-        
-        // TODO: validation
-        // databases.front()->updateValidation(removals);
-        
-        removals->clear();
+        db.query(allTasksQueries(tasks));
 
         ptime now  = boost::posix_time::second_clock::universal_time();
         last_task = getClosest(tasks, now);
@@ -326,14 +326,49 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     }
 }
 
+// This parses the changeset file into changesets
+void
+threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
+        std::shared_ptr<replication::Planet> &planet,
+        const multipolygon_t &poly,
+        std::shared_ptr<std::vector<ReplicationTask>> tasks)
+{
+#ifdef TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("threadChangeSet: took %w seconds\n");
+#endif
+    ReplicationTask task;
+    task.url = remote->subpath;
+    auto file = planet->downloadFile(*remote.get());
+    task.status = file.status;
+    stats::QueryStats querystats;
+
+    if (file.status == reqfile_t::success) {
+        auto changeset = std::make_unique<changeset::ChangeSetFile>();
+        log_debug("Processing ChangeSet: %1%", remote->filespec);
+        auto xml = planet->processData(remote->filespec, *file.data);
+        std::istream& input(xml);
+        changeset->readXML(input);
+        if (changeset->last_closed_at != not_a_date_time) {
+            task.timestamp = changeset->last_closed_at;
+        } else if (changeset->changes.size() && changeset->changes.back()->created_at != not_a_date_time) {
+            task.timestamp = changeset->changes.back()->created_at;
+        }
+        log_debug("ChangeSet last_closed_at: %1%", task.timestamp);
+        changeset->areaFilter(poly);
+        for (auto cit = std::begin(changeset->changes); cit != std::end(changeset->changes); ++cit) {
+            task.query = querystats.applyChange(*cit->get());
+        }
+    }
+    const std::lock_guard<std::mutex> lock(tasks_changeset_mutex);
+    tasks->push_back(task);
+}
+
 // This thread get started for every osmChange file
 void
 threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
         std::shared_ptr<replication::Planet> &planet,
         const multipolygon_t &poly,
-        std::shared_ptr<stats::QueryStats> &querystats,
         std::shared_ptr<Validate> &plugin,
-        std::shared_ptr<std::vector<long>> removals,
         std::shared_ptr<std::vector<ReplicationTask>> tasks)
 {
     auto osmchanges = std::make_shared<osmchange::OsmChangeFile>();
@@ -345,6 +380,9 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
     task.url = remote->subpath;
     auto file = planet->downloadFile(*remote.get());
     task.status = file.status;
+    QueryStats querystats;
+    QueryValidate queryvalidate;
+
     if (file.status == replication::success) {
         try {
             std::istringstream changes_xml;
@@ -376,8 +414,6 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
             std::cerr << e.what() << std::endl;
         }
     }
-    const std::lock_guard<std::mutex> lock(tasks_change_mutex);
-    tasks->push_back(task);
 
     osmchanges->areaFilter(poly);
 
@@ -387,77 +423,41 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
         if (it->second->added.size() == 0 && it->second->modified.size() == 0) {
             continue;
         }
-        // it->second->dump();
-        querystats->applyChange(*it->second);
+        task.query = querystats.applyChange(*it->second);
     }
-#if 1
+
+    auto removals = std::make_shared<std::vector<long>>();
     // Delete existing entries in the validation table to remove features that have been fixed
     for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
         osmchange::OsmChange *change = it->get();
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
             osmobjects::OsmWay *way = wit->get();
             if (way->action == osmobjects::remove) {
-                const std::lock_guard<std::mutex> lock(remove_mutex);
                 removals->push_back(way->id);
             }
         }
         for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
             osmobjects::OsmNode *node = nit->get();
             if (node->action == osmobjects::remove) {
-                const std::lock_guard<std::mutex> lock(remove_mutex);
                 removals->push_back(node->id);
             }
         }
     }
-#endif
 
-    // TODO: validation
-    // auto nodeval = osmchanges->validateNodes(poly, plugin);
-    // // std::cerr << "SIZE " << nodeval->size() << std::endl;
-    // for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
-    //     queryvalidate->applyChange(*it->get());
-    // }
-    // auto wayval = osmchanges->validateWays(poly, plugin);
-    // // std::cerr << "SIZE " << wayval->size() << std::endl;
-    // for (auto it = wayval->begin(); it != wayval->end(); ++it) {
-    //     queryvalidate->applyChange(*it->get());
-    // }
-}
+    task.query += queryvalidate.updateValidation(removals);
 
-// This parses the changeset file into changesets
-void
-threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
-        std::shared_ptr<replication::Planet> &planet,
-        const multipolygon_t &poly,
-        std::shared_ptr<stats::QueryStats> querystats,
-        std::shared_ptr<std::vector<ReplicationTask>> tasks)
-{
-#ifdef TIMING_DEBUG
-    boost::timer::auto_cpu_timer timer("threadChangeSet: took %w seconds\n");
-#endif
-    ReplicationTask task;
-    task.url = remote->subpath;
-    auto file = planet->downloadFile(*remote.get());
-    task.status = file.status;
-    if (file.status == reqfile_t::success) {
-        auto changeset = std::make_unique<changeset::ChangeSetFile>();
-        log_debug("Processing ChangeSet: %1%", remote->filespec);
-        auto xml = planet->processData(remote->filespec, *file.data);
-        std::istream& input(xml);
-        changeset->readXML(input);
-        if (changeset->last_closed_at != not_a_date_time) {
-            task.timestamp = changeset->last_closed_at;
-        } else if (changeset->changes.size() && changeset->changes.back()->created_at != not_a_date_time) {
-            task.timestamp = changeset->changes.back()->created_at;
-        }
-        log_debug("ChangeSet last_closed_at: %1%", task.timestamp);
-        changeset->areaFilter(poly);
-        for (auto cit = std::begin(changeset->changes); cit != std::end(changeset->changes); ++cit) {
-            querystats->applyChange(*cit->get());
-        }
+    auto nodeval = osmchanges->validateNodes(poly, plugin);
+    for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
+        task.query += queryvalidate.applyChange(*it->get());
     }
-    const std::lock_guard<std::mutex> lock(tasks_changeset_mutex);
+    auto wayval = osmchanges->validateWays(poly, plugin);
+    for (auto it = wayval->begin(); it != wayval->end(); ++it) {
+        task.query += queryvalidate.applyChange(*it->get());
+    }
+
+    const std::lock_guard<std::mutex> lock(tasks_change_mutex);
     tasks->push_back(task);
+
 }
 
 } // namespace threads

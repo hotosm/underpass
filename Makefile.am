@@ -67,6 +67,7 @@ libunderpass_la_SOURCES = \
 	src/underpassconfig.hh \
 	src/stats/querystats.cc src/stats/querystats.hh \
 	src/stats/statsconfig.hh src/stats/statsconfig.cc \
+	src/validate/queryvalidate.cc src/validate/queryvalidate.hh \
 	src/osm/changeset.cc src/osm/changeset.hh \
 	src/osm/osmchange.cc src/osm/osmchange.hh \
 	src/osm/osmobjects.cc src/osm/osmobjects.hh \

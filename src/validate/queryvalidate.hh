@@ -36,7 +36,6 @@
 #include <array>
 #include <iostream>
 #include <memory>
-#include <pqxx/pqxx>
 #include <string>
 #include <vector>
 
@@ -46,7 +45,6 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "validate/validate.hh"
-#include "data/pq.hh"
 #include "osm/changeset.hh"
 #include "osm/osmchange.hh"
 
@@ -59,30 +57,22 @@ namespace osmchange {
 namespace queryvalidate {
 
 /// \class QueryValidate
-/// \brief This handles all direct database access
+/// \brief This build validation queries for the database
 ///
-/// This class handles all the queries to the OSM Stats database.
-/// This includes querying the database for existing data, as
-/// well as updating the data whenh applying a replication file.
-class QueryValidate : public pq::Pq {
+/// This manages the OSM Validation schema in a postgres database.
+/// This includes building queries for existing data in the database,
+/// as well for updating the database.
+
+class QueryValidate  {
   public:
     QueryValidate(void);
-    QueryValidate(const std::string &dburl);
-    /// close the database connection
     ~QueryValidate(void){};
 
-    /// Read in a data file of boundaries as a multipolygon
-    bool readGeoBoundaries(const std::string &rawfile) { return false; };
-
     /// Apply data validation to the database
-    bool applyChange(const ValidateStatus &validation) const;
+    std::string applyChange(const ValidateStatus &validation) const;
     /// Update the validation table, delete any feature that has been fixed.
-    bool updateValidation(std::shared_ptr<std::vector<long>> removals);
+    std::string updateValidation(std::shared_ptr<std::vector<long>> removals);
 
-    std::string fixString(std::string text) const;
-  private:
-    mutable std::mutex changes_write_mutex; ///< Mutex for data acccess when writing
-                                            ///< to the database
 };
 
 } // namespace queryvalidate

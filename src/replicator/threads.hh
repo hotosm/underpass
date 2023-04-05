@@ -83,13 +83,13 @@ typedef std::shared_ptr<Validate>(plugin_t)();
 /// \namespace threads
 namespace threads {
 
-
 /// \struct ReplicationTask
 /// \brief Represents a replication task
 struct ReplicationTask {
     std::string url;
     ptime timestamp = not_a_date_time;
     replication::reqfile_t status = replication::reqfile_t::none;
+    std::string query;
 };
 
 /// This monitors the planet server for new changesets files.
@@ -101,6 +101,15 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     const underpassconfig::UnderpassConfig &config
 );
 
+/// This updates several fields in the changesets table, which are part of
+/// the changeset file, and don't need to be calculated.
+void
+threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
+    std::shared_ptr<replication::Planet> &planet,
+    const multipolygon_t &poly,
+    std::shared_ptr<std::vector<ReplicationTask>> tasks
+);
+
 /// This monitors the planet server for new OSM changes files.
 /// It does a bulk download to catch up the database, then checks for the
 /// minutely change files and processes them.
@@ -110,27 +119,16 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     const underpassconfig::UnderpassConfig &config
 );
 
-/// Updates the raw_hashtags, raw_users, and raw_changesets_countries tables
-/// from a changeset file
+/// Updates the tables from a changeset file
 void threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
     std::shared_ptr<replication::Planet> &planet,
     const multipolygon_t &poly,
-    std::shared_ptr<stats::QueryStats> &querystats,
     std::shared_ptr<Validate> &plugin,
-    std::shared_ptr<std::vector<long>> removals,
     std::shared_ptr<std::vector<ReplicationTask>> tasks
 );
 
-/// This updates several fields in the raw_changesets table, which are part of
-/// the changeset file, and don't need to be calculated.
-// extern bool threadChangeSet(const std::string &file);
-void
-threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
-    std::shared_ptr<replication::Planet> &planet,
-    const multipolygon_t &poly,
-    std::shared_ptr<stats::QueryStats> querystats,
-    std::shared_ptr<std::vector<ReplicationTask>> tasks
-);
+static std::mutex tasks_change_mutex;
+static std::mutex tasks_changeset_mutex;
 
 } // namespace threads
 

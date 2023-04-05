@@ -29,12 +29,10 @@
 #include "unconfig.h"
 #endif
 
-#include "pqxx/nontransaction"
 #include <array>
 #include <assert.h>
 #include <iostream>
 #include <memory>
-#include <pqxx/pqxx>
 #include <string>
 #include <vector>
 
@@ -56,51 +54,44 @@ using namespace boost::gregorian;
 #include "osm/changeset.hh"
 #include "validate/queryvalidate.hh"
 #include "validate/validate.hh"
-using namespace logger;
+#include "data/pq.hh"
+using namespace pq;
 
-std::once_flag prepare_user_statement_flag;
+using namespace logger;
 
 /// \namespace queryvalidate
 namespace queryvalidate {
 
-static std::mutex pqxx_mutex;
-
 QueryValidate::QueryValidate(void) {}
 
-QueryValidate::QueryValidate(const std::string &dburl) { connect(dburl); };
-
-bool
+std::string
 QueryValidate::updateValidation(std::shared_ptr<std::vector<long>> removals)
 {
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("updateValidation: took %w seconds\n");
 #endif
+    std::string query = "";
     if (removals->size() > 0) {
-        std::string query = "DELETE FROM validation WHERE osm_id IN(";
+        query = "DELETE FROM validation WHERE osm_id IN(";
         for (const auto &osm_id : *removals) {
             query += std::to_string(osm_id) + ",";
         };
         query.erase(query.size() - 1);
         query += ");";
-        std::scoped_lock write_lock{pqxx_mutex};
-        pqxx::work worker(*sdb);
-        pqxx::result result = worker.exec(query);
-        worker.commit();
     }
-    return true;
+    return query;
 }
 
-bool
+std::string
 QueryValidate::applyChange(const ValidateStatus &validation) const
 {
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("applyChange(validation): took %w seconds\n");
 #endif
     log_debug("Applying Validation data");
-    // validation.dump();
 
     if (validation.angle == 0 && validation.status.size() == 0) {
-        return true;
+        return "";
     }
     std::map<osmobjects::osmtype_t, std::string> objtypes = {
         {osmobjects::empty, "empty"},
@@ -146,7 +137,7 @@ QueryValidate::applyChange(const ValidateStatus &validation) const
     fmt % stattmp;
     if (validation.values.size() > 0) {
         for (const auto &tag: std::as_const(validation.values)) {
-            valtmp += " \'" + fixString(tag) + "\',";
+            valtmp += " \'" + Pq::fixString(tag) + "\',";
         }
         if (!valtmp.empty()) {
             valtmp.pop_back();
@@ -166,38 +157,8 @@ QueryValidate::applyChange(const ValidateStatus &validation) const
     if (validation.values.size() > 0) {
         query += ", values = ARRAY[" + valtmp + " ], source = \'" + validation.source + "\'";
     }
-//    log_debug("QUERY: %1%", query);
 
-    std::scoped_lock write_lock{pqxx_mutex};
-    pqxx::work worker(*sdb);
-    pqxx::result result = worker.exec(query);
-    worker.commit();
-
-    return true;
-}
-
-std::string
-QueryValidate::fixString(std::string text) const
-{
-    std::string newstr;
-    int i = 0;
-    while (i < text.size()) {
-        if (text[i] == '\'') {
-            newstr += "&apos;";
-        } else if (text[i] == '\"') {
-            newstr += "&quot;";
-        } else if (text[i] == ')') {
-            newstr += "&#41;";
-        } else if (text[i] == '(') {
-            newstr += "&#40;";
-        } else if (text[i] == '\\') {
-            // drop this character
-        } else {
-            newstr += text[i];
-        }
-        i++;
-    }
-    return sdb->esc(boost::locale::conv::to_utf<char>(newstr, "Latin1"));
+    return query + ";";
 }
 
 } // namespace queryvalidate

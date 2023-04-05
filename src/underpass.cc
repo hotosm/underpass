@@ -208,27 +208,7 @@ main(int argc, char *argv[])
     }
 
     planetreplicator::PlanetReplicator replicator;
-    if (vm.count("changefile")) {
-        std::string file = vm["changefile"].as<std::string>();
-        std::cout << "Importing change file " << file << std::endl;
-        auto changeset = std::make_shared<changeset::ChangeSetFile>();
-        changeset->readChanges(file);
-        changeset->areaFilter(geou.boundary);
-        stats::QueryStats ostats;
-        if (ostats.connect(config.underpass_db_url)) {
-            for (auto it = std::begin(changeset->changes); it != std::end(changeset->changes); ++it) {
-                ostats.applyChange(*it->get());
-            }
-        } else {
-            log_error("ERROR: could not connect to Underpass DB, check 'server' "
-                      "parameter!");
-            exit(-1);
-        }
 
-        exit(0);
-    }
-
-    std::vector<std::string> rawfile;
     std::shared_ptr<std::vector<unsigned char>> data;
 
     if (!starting_url_path.empty() && vm.count("timestamp")) {

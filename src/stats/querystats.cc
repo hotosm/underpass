@@ -29,12 +29,9 @@
 #include "unconfig.h"
 #endif
 
-#include "pqxx/nontransaction"
 #include <array>
-#include <assert.h>
 #include <iostream>
 #include <memory>
-#include <pqxx/pqxx>
 #include <string>
 #include <vector>
 
@@ -55,20 +52,16 @@ using namespace boost::gregorian;
 #include "utils/log.hh"
 #include "osm/changeset.hh"
 #include "stats/querystats.hh"
+#include "data/pq.hh"
+using namespace pq;
 using namespace logger;
-
-std::once_flag prepare_user_statement_flag;
 
 /// \namespace stats
 namespace stats {
 
-static std::mutex pqxx_mutex;
-
 QueryStats::QueryStats(void) {}
 
-QueryStats::QueryStats(const std::string &dburl) { connect(dburl); };
-
-bool
+std::string
 QueryStats::applyChange(const osmchange::ChangeStats &change) const
 {
 #ifdef TIMING_DEBUG_X
@@ -90,8 +83,8 @@ QueryStats::applyChange(const osmchange::ChangeStats &change) const
         ahstore = "HSTORE(ARRAY[";
         for (const auto &added: std::as_const(change.added)) {
             if (added.second > 0) {
-                ahstore += " ARRAY[\'" + fixString(added.first) + "\',\'" +
-                           fixString(std::to_string(added.second)) + "\'],";
+                ahstore += " ARRAY[\'" + Pq::fixString(added.first) + "\',\'" +
+                           Pq::fixString(std::to_string(added.second)) + "\'],";
             }
         }
         ahstore.erase(ahstore.size() - 1);
@@ -102,8 +95,8 @@ QueryStats::applyChange(const osmchange::ChangeStats &change) const
         mhstore = "HSTORE(ARRAY[";
         for (const auto &modified: std::as_const(change.modified)) {
             if (modified.second > 0) {
-                mhstore += " ARRAY[\'" + fixString(modified.first) + "\',\'" +
-                           fixString(std::to_string(modified.second)) + "\'],";
+                mhstore += " ARRAY[\'" + Pq::fixString(modified.first) + "\',\'" +
+                           Pq::fixString(std::to_string(modified.second)) + "\'],";
             }
         }
         mhstore.erase(mhstore.size() - 1);
@@ -153,41 +146,18 @@ QueryStats::applyChange(const osmchange::ChangeStats &change) const
     }
     aquery.erase(aquery.size() - 2);
 
-    // _debug("QUERY stats: %1%", aquery);
-    // Serialize changes writing
-    {
-        std::scoped_lock write_lock{pqxx_mutex};
-        pqxx::work worker(*sdb);
-        pqxx::result result = worker.exec(aquery);
-        worker.commit();
-    }
+    return aquery + ";";
 
-    return true;
 }
 
-bool
+std::string
 QueryStats::applyChange(const changeset::ChangeSet &change) const
 {
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("applyChange(changeset): took %w seconds\n");
 #endif
 
-    // Some old changefiles have no user information
-    std::string query = "INSERT INTO users VALUES(";
-    query += std::to_string(change.uid) + ",\'" + fixString(change.user);
-    query += "\') ON CONFLICT DO NOTHING;";
-
-    // Serialize changes writing
-    {
-    std::scoped_lock write_lock{pqxx_mutex};
-        pqxx::work worker(*sdb);
-        pqxx::result result = worker.exec(query);
-        worker.commit();
-    }
-
-    ptime now = boost::posix_time::microsec_clock::universal_time();
-
-    query = "INSERT INTO changesets (id, editor, user_id, created_at, closed_at, updated_at";
+    std::string query = "INSERT INTO changesets (id, editor, user_id, created_at, closed_at, updated_at";
 
     if (change.hashtags.size() > 0) {
         query += ", hashtags ";
@@ -198,7 +168,7 @@ QueryStats::applyChange(const changeset::ChangeSet &change) const
     }
 
     query += ", bbox) VALUES(";
-    query += std::to_string(change.id) + ",\'" + fixString(change.editor) + "\',\'";
+    query += std::to_string(change.id) + ",\'" + Pq::fixString(change.editor) + "\',\'";
 
     query += std::to_string(change.uid) + "\',\'";
     query += to_simple_string(change.created_at) + "\', \'";
@@ -207,6 +177,7 @@ QueryStats::applyChange(const changeset::ChangeSet &change) const
     } else {
         query += to_simple_string(change.created_at) + "\', \'";
     }
+    ptime now = boost::posix_time::microsec_clock::universal_time();
     query += to_simple_string(now) + "\'";
 
 
@@ -216,7 +187,7 @@ QueryStats::applyChange(const changeset::ChangeSet &change) const
         for (const auto &hashtag: std::as_const(change.hashtags)) {
             auto ht{hashtag};
             boost::algorithm::replace_all(ht, "\"", "&quot;");
-            query += "\"" + fixString(ht) + "\"" + ", ";
+            query += "\"" + Pq::fixString(ht) + "\"" + ", ";
         }
         query.erase(query.size() - 2);
         query += " }\'";
@@ -281,7 +252,7 @@ QueryStats::applyChange(const changeset::ChangeSet &change) const
     query += bbox;
 
     query += ")\')";
-    query += ")) ON CONFLICT (id) DO UPDATE SET editor=\'" + fixString(change.editor);
+    query += ")) ON CONFLICT (id) DO UPDATE SET editor=\'" + Pq::fixString(change.editor);
     query += "\', created_at=\'" + to_simple_string(change.created_at);
     query += "\', updated_at=\'" + to_simple_string(now) + "\'";
 
@@ -291,7 +262,7 @@ QueryStats::applyChange(const changeset::ChangeSet &change) const
         for (const auto &hashtag: std::as_const(change.hashtags)) {
             auto ht{hashtag};
             boost::algorithm::replace_all(ht, "\"", "&quot;");
-            query += "\"" + fixString(ht) + "\"" + ", ";
+            query += "\"" + Pq::fixString(ht) + "\"" + ", ";
         }
         query.erase(query.size() - 2);
         query += " }\'";
@@ -299,61 +270,9 @@ QueryStats::applyChange(const changeset::ChangeSet &change) const
         query += ", hashtags=null";
     }
 
-    query += ", bbox=" + bbox.substr(2) + ")'))";
+    query += ", bbox=" + bbox.substr(2) + ")'));";
+    return query;
 
-    // Serialize changes writing
-    {
-    std::scoped_lock write_lock{pqxx_mutex};
-        pqxx::work worker(*sdb);
-        pqxx::result result = worker.exec(query);
-        worker.commit();
-    }
-
-    return true;
-}
-
-// Get the timestamp of the last update in the database
-ptime
-QueryStats::getLastUpdate(void)
-{
-    std::string query = "SELECT MAX(created_at) FROM changesets;";
-    // log_debug("QUERY: %1%", query);
-    pqxx::work worker(*sdb);
-    pqxx::result result = worker.exec(query);
-    worker.commit();
-
-    ptime last;
-
-    if (result[0][0].size() > 0) {
-        last = time_from_string(result[0][0].c_str());
-        return last;
-    }
-
-    return not_a_date_time;
-}
-
-std::string
-QueryStats::fixString(std::string text) const
-{
-    std::string newstr;
-    int i = 0;
-    while (i < text.size()) {
-        if (text[i] == '\'') {
-            newstr += "&apos;";
-        } else if (text[i] == '\"') {
-            newstr += "&quot;";
-        } else if (text[i] == ')') {
-            newstr += "&#41;";
-        } else if (text[i] == '(') {
-            newstr += "&#40;";
-        } else if (text[i] == '\\') {
-            // drop this character
-        } else {
-            newstr += text[i];
-        }
-        i++;
-    }
-    return sdb->esc(boost::locale::conv::to_utf<char>(newstr, "Latin1"));
 }
 
 } // namespace stats

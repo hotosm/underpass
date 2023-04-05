@@ -25,6 +25,7 @@
 #include "data/pq.hh"
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/split.hpp>
+#include <boost/locale.hpp>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -186,18 +187,35 @@ Pq::connect(const std::string &dburl)
 pqxx::result
 Pq::query(const std::string &query)
 {
-    if (sdb) {
-        if (!sdb->is_open()) {
-            log_error("Database isn't open!");
-            result.clear();
-            return result;
-        }
-    }
-    // pqxx::workker(*sdb);
-    pqxx::nontransaction worker(*sdb);
-    result = worker.exec(query);
+    std::scoped_lock write_lock{pqxx_mutex};
+    pqxx::work worker(*sdb);
+    pqxx::result result = worker.exec(query);
     worker.commit();
     return result;
+}
+
+std::string
+Pq::fixString(std::string text)
+{
+    std::string newstr;
+    int i = 0;
+    while (i < text.size()) {
+        if (text[i] == '\'') {
+            newstr += "&apos;";
+        } else if (text[i] == '\"') {
+            newstr += "&quot;";
+        } else if (text[i] == ')') {
+            newstr += "&#41;";
+        } else if (text[i] == '(') {
+            newstr += "&#40;";
+        } else if (text[i] == '\\') {
+            // drop this character
+        } else {
+            newstr += text[i];
+        }
+        i++;
+    }
+    return boost::locale::conv::to_utf<char>(newstr, "Latin1");
 }
 
 } // namespace pq

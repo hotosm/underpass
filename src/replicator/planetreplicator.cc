@@ -99,17 +99,6 @@ operator<<(std::ostream &os, const std::vector<T> &v)
 /// Create a new instance, and read in the geoboundaries file.
 PlanetReplicator::PlanetReplicator(void) {};
 
-/// Initialize the raw_user, raw_hashtags, and raw_changeset tables
-/// in the OSM stats database from a changeset file
-bool PlanetReplicator::initializeRaw(std::vector<std::string> &rawfile, const std::string &database)
-{
-    for (auto it = std::begin(rawfile); it != std::end(rawfile); ++it) {
-        changes->importChanges(*it);
-    }
-    // FIXME: return a real value
-    return false;
-};
-
 std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const underpassconfig::UnderpassConfig &config, ptime time) {
     yaml::Yaml yaml;
 
