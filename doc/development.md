@@ -16,5 +16,5 @@ Just add the following line add the bottom of `~/.bashrc`:
 
 And you'll be able to run the debugger, for example:
 
-`lg testsuite/libunderpass.all/yaml-test`
+`lg src/testsuite/libunderpass.all/yaml-test`
 

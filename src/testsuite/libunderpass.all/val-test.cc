@@ -106,7 +106,7 @@ void
 test_semantic_highway(std::shared_ptr<Validate> &plugin) {
      // Way - checkWay()
 
-    auto way = readOsmWayFromFile("/testsuite/testdata/validation/highway.osc");
+    auto way = readOsmWayFromFile("/src/testsuite/testdata/validation/highway.osc");
 
     way.addTag("highway", "primary");
 
@@ -228,7 +228,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
 
     // Way - checkWay()
 
-    auto way = readOsmWayFromFile("/testsuite/testdata/validation/building.osc");
+    auto way = readOsmWayFromFile("/src/testsuite/testdata/validation/building.osc");
 
     status = plugin->checkWay(way, "building");
     // Way with no tags
@@ -281,7 +281,7 @@ test_geometry_building(std::shared_ptr<Validate> &plugin)
 
     osmchange::OsmChangeFile ocf;
     std::string filespec = DATADIR;
-    filespec += "/testsuite/testdata/validation/rect.osc";
+    filespec += "/src/testsuite/testdata/validation/rect.osc";
     if (boost::filesystem::exists(filespec)) {
         ocf.readChanges(filespec);
     }
@@ -376,9 +376,9 @@ test_geometry_building(std::shared_ptr<Validate> &plugin)
         }
     }
 
-    auto way = readOsmWayFromFile("/testsuite/testdata/validation/building.osc");
-    auto way2 = readOsmWayFromFile("/testsuite/testdata/validation/building2.osc");
-    auto way3 = readOsmWayFromFile("/testsuite/testdata/validation/rect-no-duplicate-building.osc");
+    auto way = readOsmWayFromFile("/src/testsuite/testdata/validation/building.osc");
+    auto way2 = readOsmWayFromFile("/src/testsuite/testdata/validation/building2.osc");
+    auto way3 = readOsmWayFromFile("/src/testsuite/testdata/validation/rect-no-duplicate-building.osc");
 
     std::list<std::shared_ptr<osmobjects::OsmWay>> allways;
     allways.push_back(std::make_shared<osmobjects::OsmWay>(way2));
@@ -414,7 +414,7 @@ test_geometry_building(std::shared_ptr<Validate> &plugin)
     osmchange::OsmChangeFile osmfoverlaping;
     const multipolygon_t poly;
     filespec = DATADIR;
-    filespec += "/testsuite/testdata/validation/rect-overlap-and-duplicate-building.osc";
+    filespec += "/src/testdata/validation/rect-overlap-and-duplicate-building.osc";
     if (boost::filesystem::exists(filespec)) {
         osmfoverlaping.readChanges(filespec);
     } else {
@@ -445,7 +445,7 @@ test_geometry_building(std::shared_ptr<Validate> &plugin)
     // No overlapping, no duplicate
     osmchange::OsmChangeFile osmfnooverlaping;
     filespec = DATADIR;
-    filespec += "/testsuite/testdata/validation/rect-no-overlap-and-duplicate-building.osc";
+    filespec += "/src/testsuite/testdata/validation/rect-no-overlap-and-duplicate-building.osc";
     if (boost::filesystem::exists(filespec)) {
         osmfnooverlaping.readChanges(filespec);
     } else {

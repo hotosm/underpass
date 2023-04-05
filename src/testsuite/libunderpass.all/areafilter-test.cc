@@ -87,9 +87,9 @@ main(int argc, char *argv[])
 
     // Small changeset in Bangladesh
     std::string changesetFile(DATADIR);
-    changesetFile += "/testsuite/testdata/areafilter-test.osc";
+    changesetFile += "/src/testsuite/testdata/areafilter-test.osc";
     std::string osmchangeFile(DATADIR);
-    osmchangeFile += "/testsuite/testdata/areafilter-test.osm";
+    osmchangeFile += "/src/testsuite/testdata/areafilter-test.osm";
     TestChangeset changeset;
     TestOsmChange osmchange;
     changeset::ChangeSet *testChangeset;

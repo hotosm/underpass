@@ -20,7 +20,7 @@ You can run other existing tests or create your own custom ones.
 
 Extract stats from file and print the JSON result:
 
-`./testsuite/libunderpass.all/stats-test -f stats/107235440.xml`
+`./src/testsuite/libunderpass.all/stats-test -f stats/107235440.xml`
 
 ```xml
 {
@@ -38,7 +38,7 @@ Extract stats from file and print the JSON result:
 
 If you want to assert the results agains a YAML file, add second `-f` argument: 
 
-`./testsuite/libunderpass.all/stats-test -f /stats/107235440.xml -f /stats/107235440.yaml`
+`./src/testsuite/libunderpass.all/stats-test -f /stats/107235440.xml -f /stats/107235440.yaml`
 
 ```
     PASSED: Calculating added highway
@@ -59,7 +59,7 @@ The YAML file contain the expected results:
 Run a replicator process from timestamp, incrementing the path and collecting stats from
 OsmChange files. This is useful for doing a comparison with other sources (ex: Insights DB).
 
-`./testsuite/libunderpass.all/stats-test -m collect-stats -t 2021-05-11T17:00:00 -i 10 > result.json`
+`./src/testsuite/libunderpass.all/stats-test -m collect-stats -t 2021-05-11T17:00:00 -i 10 > result.json`
 
 ### Stats configuration file
 
@@ -72,8 +72,8 @@ There are two different configurations for collecting stats from that file.
 On `statsconfig2.yaml` , _building_, _fire_station_, _hospital_ and _police_
 are different categories of stats.
 
-`./testsuite/libunderpass.all/stats-test -f stats/test_statsconfig.osc \
-    --statsconfigfile /testsuite/testdata/stats/statsconfig2.yaml`
+`./src/testsuite/libunderpass.all/stats-test -f stats/test_statsconfig.osc \
+    --statsconfigfile /src/testsuite/testdata/stats/statsconfig2.yaml`
 
 Running the command above, you'll see this results:
 
@@ -91,16 +91,16 @@ Running the command above, you'll see this results:
 
 You can assert this results adding another `-f` argument:
 
-`./testsuite/libunderpass.all/stats-test -f stats/test_statsconfig.osc \
-    --statsconfigfile /testsuite/testdata/stats/statsconfig2.yaml \
+`./src/testsuite/libunderpass.all/stats-test -f stats/test_statsconfig.osc \
+    --statsconfigfile /src/testsuite/testdata/stats/statsconfig2.yaml \
     -f stats/test_statsconfig2.yaml`
 
 On the other configuration file (`statsconfig3.yaml`) there are two categories for stats: _building_ and _humanitarian_building_.
 
 If you get stats from that file:
 
-`./testsuite/libunderpass.all/stats-test -f stats/test_statsconfig.osc \
-    --statsconfigfile /testsuite/testdata/stats/statsconfig2.yaml`
+`./src/testsuite/libunderpass.all/stats-test -f stats/test_statsconfig.osc \
+    --statsconfigfile /src/testsuite/testdata/stats/statsconfig2.yaml`
 
 You'll see a different result:
 
@@ -116,6 +116,6 @@ You'll see a different result:
 
 Again, you can assert the results:
 
-`./testsuite/libunderpass.all/stats-test -f stats/test_statsconfig.osc \
-    --statsconfigfile /testsuite/testdata/stats/statsconfig2.yaml \
+`./src/testsuite/libunderpass.all/stats-test -f stats/test_statsconfig.osc \
+    --statsconfigfile /src/testsuite/testdata/stats/statsconfig2.yaml \
     -f stats/test_statsconfig2.yaml`
