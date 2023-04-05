@@ -76,8 +76,8 @@ QueryStats::applyChange(const osmchange::ChangeStats &change) const
         ahstore = "HSTORE(ARRAY[";
         for (const auto &added: std::as_const(change.added)) {
             if (added.second > 0) {
-                ahstore += " ARRAY[\'" + Pq::fixString(added.first) + "\',\'" +
-                           Pq::fixString(std::to_string(added.second)) + "\'],";
+                ahstore += " ARRAY[" + Pq::escapedString(added.first) + "," +
+                           Pq::escapedString(std::to_string(added.second)) + "],";
             }
         }
         ahstore.erase(ahstore.size() - 1);
@@ -88,8 +88,8 @@ QueryStats::applyChange(const osmchange::ChangeStats &change) const
         mhstore = "HSTORE(ARRAY[";
         for (const auto &modified: std::as_const(change.modified)) {
             if (modified.second > 0) {
-                mhstore += " ARRAY[\'" + Pq::fixString(modified.first) + "\',\'" +
-                           Pq::fixString(std::to_string(modified.second)) + "\'],";
+                mhstore += " ARRAY[" + Pq::escapedString(modified.first) + "," +
+                           Pq::escapedString(std::to_string(modified.second)) + "],";
             }
         }
         mhstore.erase(mhstore.size() - 1);
@@ -161,7 +161,7 @@ QueryStats::applyChange(const changeset::ChangeSet &change) const
     }
 
     query += ", bbox) VALUES(";
-    query += std::to_string(change.id) + ",\'" + Pq::fixString(change.editor) + "\',\'";
+    query += std::to_string(change.id) + "," + Pq::escapedString(change.editor) + ",\'";
 
     query += std::to_string(change.uid) + "\',\'";
     query += to_simple_string(change.created_at) + "\', \'";
@@ -176,14 +176,14 @@ QueryStats::applyChange(const changeset::ChangeSet &change) const
 
     // Hashtags
     if (change.hashtags.size() > 0) {
-        query += ", \'{ ";
+        query += ", ARRAY[";
         for (const auto &hashtag: std::as_const(change.hashtags)) {
             auto ht{hashtag};
             boost::algorithm::replace_all(ht, "\"", "&quot;");
-            query += "\"" + Pq::fixString(ht) + "\"" + ", ";
+            query += Pq::escapedString(ht) + ", ";
         }
         query.erase(query.size() - 2);
-        query += " }\'";
+        query += "]";
     }
 
     // The source field is not always present
@@ -245,25 +245,26 @@ QueryStats::applyChange(const changeset::ChangeSet &change) const
     query += bbox;
 
     query += ")\')";
-    query += ")) ON CONFLICT (id) DO UPDATE SET editor=\'" + Pq::fixString(change.editor);
-    query += "\', created_at=\'" + to_simple_string(change.created_at);
+    query += ")) ON CONFLICT (id) DO UPDATE SET editor=" + Pq::escapedString(change.editor);
+    query += ", created_at=\'" + to_simple_string(change.created_at);
     query += "\', updated_at=\'" + to_simple_string(now) + "\'";
 
     if (change.hashtags.size() > 0) {
         query += ", hashtags=";
-        query += "\'{ ";
+        query += "ARRAY [";
         for (const auto &hashtag: std::as_const(change.hashtags)) {
             auto ht{hashtag};
             boost::algorithm::replace_all(ht, "\"", "&quot;");
-            query += "\"" + Pq::fixString(ht) + "\"" + ", ";
+            query += Pq::escapedString(ht) + ", ";
         }
         query.erase(query.size() - 2);
-        query += " }\'";
+        query += "]";
     } else {
         query += ", hashtags=null";
     }
 
     query += ", bbox=" + bbox.substr(2) + ")'));";
+    
     return query;
 
 }

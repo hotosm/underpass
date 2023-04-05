@@ -119,9 +119,6 @@ struct UnderpassConfig {
                     );
                 }
             };
-            if (yaml.contains_key("underpass_db_url")) {
-                underpass_db_url = yamlConfig.get_value("underpass_db_url");
-            }
         }
 
         if (getenv("REPLICATOR_UNDERPASS_DB_URL")) {

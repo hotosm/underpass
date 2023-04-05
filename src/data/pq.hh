@@ -63,7 +63,7 @@ class Pq {
     /// Dump internal data for debugging
     void dump(void);
 
-    static std::string fixString(std::string text);
+    static std::string escapedString(std::string text);
 
     // Database connection
     std::shared_ptr<pqxx::connection> sdb;
@@ -75,10 +75,6 @@ class Pq {
     std::string passwd;  ///< The database password
     std::string dbname;  ///< The database name
     std::mutex pqxx_mutex;
-
-    private:
-      // Used for escape strings
-      static pqxx::connection _sdb;
 
 };
 

@@ -35,47 +35,7 @@ using namespace logger;
 
 namespace pq {
 
-Pq::Pq(void)
-{
-    // Validate environment variable is defined.
-    char *tmp;
-    tmp = std::getenv("PGHOST");
-    if (tmp) {
-        host = tmp;
-    }
-    tmp = std::getenv("PGUSER");
-    if (tmp) {
-        user = tmp;
-    }
-    tmp = std::getenv("PGPASSWORD");
-    if (tmp) {
-        passwd = tmp;
-    }
-    tmp = std::getenv("PGDATABASE");
-    if (tmp) {
-        dbname = tmp;
-    }
-    std::string args;
-    if (!user.empty()) {
-        args += user;
-    }
-    if (!passwd.empty()) {
-        args += ":" + passwd;
-    }
-    if (!host.empty()) {
-        if (!user.empty()) {
-            args += "@" + host;
-        } else {
-            args += host;
-        }
-    }
-    if (!dbname.empty()) {
-        log_error("Must supply a database name!");
-        return;
-    }
-
-    connect(args);
-};
+Pq::Pq(void) {};
 
 Pq::Pq(const std::string &args) { connect(args); };
 
@@ -194,10 +154,8 @@ Pq::query(const std::string &query)
     return result;
 }
 
-pqxx::connection Pq::_sdb;
-
 std::string
-Pq::fixString(std::string text)
+Pq::escapedString(std::string text)
 {
     std::string newstr;
     int i = 0;
@@ -217,7 +175,7 @@ Pq::fixString(std::string text)
         }
         i++;
     }
-    return _sdb.esc(boost::locale::conv::to_utf<char>(newstr, "Latin1"));
+    return "E'" + boost::locale::conv::to_utf<char>(newstr, "Latin1") + "'";
 }
 
 } // namespace pq
