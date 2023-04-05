@@ -29,5 +29,5 @@ $ docker-compose up
 Commands can be executed from the host in the containers, for example you can open a shell in the container with:
 
 ```bash
-$ docker-compose -f docker/docker-compose.yml exec bash
+$ docker-compose -f docker-compose.yml exec bash
 ```
