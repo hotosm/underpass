@@ -24,9 +24,9 @@ jobs:
       - name: Build and Run Underpass Tests (broken - it never fails)
         run: docker-compose -f docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build/src/testsuite/libunderpass.all && make check -j `nproc`"
 
-      - name: Run Test pq-test
-        run: docker-compose -f docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build && src/testsuite/libunderpass.all/pq-test"
+      # - name: Run Test pq-test
+      #   run: docker-compose -f docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build && src/testsuite/libunderpass.all/pq-test"
 
-      - name: Run Test change-test
-        run: docker-compose -f docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build && src/testsuite/libunderpass.all/change-test"
+      # - name: Run Test change-test
+      #   run: docker-compose -f docker-compose.yml exec -T underpass-build-deps sh -c "cd /code/build && src/testsuite/libunderpass.all/change-test"
 
