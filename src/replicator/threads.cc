@@ -134,7 +134,7 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     assert(remote->frequency == frequency_t::changeset);
 
 
-    pq::Pq db;
+    pq::Pq db = pq::Pq();
     if (!db.connect(config.underpass_db_url)) {
         log_error("Could not connect to Underpass DB, aborting monitoring thread!");
         return;
@@ -250,7 +250,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
 #ifdef MEMORY_DEBUG
     size_t sz, active1, active2;
 #endif    // JEMALLOC memory debugging
-    pq::Pq db;
+    pq::Pq db = pq::Pq();
     if (!db.connect(config.underpass_db_url)) {
         log_error("Could not connect to Underpass DB, aborting monitoring thread!");
         return;
