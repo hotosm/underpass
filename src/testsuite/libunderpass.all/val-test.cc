@@ -41,7 +41,7 @@ using namespace logger;
 
 using namespace boost::posix_time;
 using namespace boost::gregorian;
-using namespace stats;
+using namespace querystats;
 
 TestState runtest;
 class TestOsmChange : public osmchange::OsmChangeFile {};

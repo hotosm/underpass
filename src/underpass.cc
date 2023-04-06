@@ -65,7 +65,7 @@ namespace opts = boost::program_options;
 #include "replicator/threads.hh"
 #include "underpassconfig.hh"
 
-using namespace stats;
+using namespace querystats;
 using namespace underpassconfig;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1

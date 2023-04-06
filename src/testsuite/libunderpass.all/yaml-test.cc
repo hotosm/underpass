@@ -30,7 +30,7 @@
 
 using namespace logger;
 
-using namespace stats;
+using namespace querystats;
 
 TestState runtest;
 

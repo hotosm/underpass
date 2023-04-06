@@ -37,7 +37,7 @@
 #include <vector>
 #include <memory>
 
-using namespace stats;
+using namespace querystats;
 using namespace underpassconfig;
 
 /// \namespace planetreplicator

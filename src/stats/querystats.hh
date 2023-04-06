@@ -46,6 +46,9 @@ using namespace boost::gregorian;
 
 #include "osm/changeset.hh"
 #include "osm/osmchange.hh"
+#include "data/pq.hh"
+
+using namespace pq;
 
 // Forward declarations
 namespace changeset {
@@ -56,8 +59,8 @@ namespace osmchange {
   class ChangeStats;
 }; // namespace osmchange
 
-/// \namespace stats
-namespace stats {
+/// \namespace querystats
+namespace querystats {
 
 /// \class QueryStats
 /// \brief This handles all direct database access
@@ -69,13 +72,16 @@ class QueryStats {
   public:
     QueryStats(void);
     ~QueryStats(void){};
+    QueryStats(std::shared_ptr<Pq> db);
     /// Build query for processed ChangeSet
     std::string applyChange(const changeset::ChangeSet &change) const;
     /// Build query for processed OsmChange
     std::string applyChange(const osmchange::ChangeStats &change) const;
+    // Database connection, used for escape strings
+    std::shared_ptr<Pq> dbconn;
 };
 
-} // namespace stats
+} // namespace querystats
 
 #endif // EOF __DATA_HH__
 

@@ -67,11 +67,15 @@ namespace ssl = boost::asio::ssl;
 namespace http = beast::http;
 using tcp = net::ip::tcp;
 
-#include "stats/querystats.hh"
 #include "replicator/replication.hh"
 #include "underpassconfig.hh"
+#include "stats/querystats.hh"
+#include "validate/queryvalidate.hh"
 #include "validate/validate.hh"
 #include <ogr_geometry.h>
+
+using namespace queryvalidate;
+using namespace querystats;
 
 namespace replication {
 class StateFile;
@@ -107,7 +111,8 @@ void
 threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
     std::shared_ptr<replication::Planet> &planet,
     const multipolygon_t &poly,
-    std::shared_ptr<std::vector<ReplicationTask>> tasks
+    std::shared_ptr<std::vector<ReplicationTask>> tasks,
+    std::shared_ptr<QueryStats> &querystats
 );
 
 /// This monitors the planet server for new OSM changes files.
@@ -124,7 +129,9 @@ void threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
     std::shared_ptr<replication::Planet> &planet,
     const multipolygon_t &poly,
     std::shared_ptr<Validate> &plugin,
-    std::shared_ptr<std::vector<ReplicationTask>> tasks
+    std::shared_ptr<std::vector<ReplicationTask>> tasks,
+    std::shared_ptr<QueryStats> &querystats,
+    std::shared_ptr<QueryValidate> &queryvalidate
 );
 
 static std::mutex tasks_change_mutex;

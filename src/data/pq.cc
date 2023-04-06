@@ -175,7 +175,7 @@ Pq::escapedString(std::string text)
         }
         i++;
     }
-    return "E'" + boost::locale::conv::to_utf<char>(newstr, "Latin1") + "'";
+    return "'" + sdb->esc(boost::locale::conv::to_utf<char>(newstr, "Latin1")) + "'";
 }
 
 } // namespace pq

@@ -63,7 +63,8 @@ class Pq {
     /// Dump internal data for debugging
     void dump(void);
 
-    static std::string escapedString(std::string text);
+    // Escape string
+    std::string escapedString(std::string text);
 
     // Database connection
     std::shared_ptr<pqxx::connection> sdb;

@@ -48,6 +48,10 @@ using namespace boost::gregorian;
 #include "osm/changeset.hh"
 #include "osm/osmchange.hh"
 
+#include "data/pq.hh"
+
+using namespace pq;
+
 // Forward declarations
 namespace osmchange {
   class OsmChange;
@@ -67,12 +71,14 @@ class QueryValidate  {
   public:
     QueryValidate(void);
     ~QueryValidate(void){};
+    QueryValidate(std::shared_ptr<Pq> db);
 
     /// Apply data validation to the database
     std::string applyChange(const ValidateStatus &validation) const;
     /// Update the validation table, delete any feature that has been fixed.
     std::string updateValidation(std::shared_ptr<std::vector<long>> removals);
-
+    // Database connection, used for escape strings
+    std::shared_ptr<Pq> dbconn;
 };
 
 } // namespace queryvalidate
