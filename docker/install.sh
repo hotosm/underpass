@@ -6,7 +6,7 @@ echo "Building Underpass ..." && \
 docker exec -t underpass mkdir -p /usr/local/lib/underpass/ && \
 docker exec -w /code -t underpass ./autogen.sh && \
 docker exec -w /code -t underpass mkdir -p /code/build && \
-docker exec -w /code/build -t underpass ../configure CXXFLAGS="-std=c++17 -g -O0" && \
+docker exec -w /code/build -t underpass ../configure" && \
 docker exec -w /code/build -t underpass make -j2 && \
 docker exec -w /code/build -t underpass make install && \
 docker exec -w /code/build -t underpass make install-python && \
@@ -31,8 +31,16 @@ docker exec -t underpass npm install --global yarn && \
 docker exec -w /code/js -t underpass yarn install && \
 docker exec -t underpass apt -y install python3-pip && \
 docker exec -w /code/python -t underpass pip install -r requirements.txt && \
+docker exec -t underpass apt -y install tmux && \
 echo "Starting services ..." && \
 docker exec -t underpass tmux new-session -d -s replicator 'cd /code/build && ./replicator -t $(date +%Y-%m-%dT%H:%M:%S -d "1 week ago")' && \
 docker exec -t underpass tmux new-session -d -s rest-api 'cd /code/python/restapi && uvicorn main:app --reload --host 0.0.0.0' && \
 docker exec -t underpass tmux new-session -d -s react-cosmos 'cd /code/js && yarn cosmos' && \
-echo "Done!"
+echo "Done! 🚀" \
+echo "Underpass OSM Planet replicator is now running on a Docker container" \
+echo "---" \
+echo "Reports on your browser: http://127.0.0.1:5000 " \
+echo "REST API: http://127.0.0.1:8000 " \
+echo "---" \
+echo "Or connect to the Underpass database:" \
+echo "postgresql://underpass@postgis/underpass"
