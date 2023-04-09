@@ -1,4 +1,4 @@
-FROM ubuntu:focal
+FROM ubuntu:kinetic
 
 # This image is available as elpaso/underpass-build-deps:focal
 LABEL maintainer="Humanitarian OpenStreetMap Team" Description="This image provides build deps for underpass" Vendor="HOT" Version="dev"
@@ -7,7 +7,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \
     && apt-get install -y software-properties-common \
-    && add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable \
     && apt-get update && apt-get install -y \
         git \
         libboost-dev \

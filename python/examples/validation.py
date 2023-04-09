@@ -46,6 +46,6 @@ def main():
         print(validateOsmChange(data, args.check))
     else:
         print("Usage: python validation.py -f <file> -c <check>")
-        print("Example: python validation.py -f ../../../src/testsuite/testdata/validation/building-tag.osc -c building")
+        print("Example: python validation.py -f ../../src/testsuite/testdata/validation/building-tag.osc -c building")
 if __name__ == "__main__":
     main()
