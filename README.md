@@ -3,7 +3,7 @@
 
 # Underpass
 
-Underpass is a **data engine** that proccesses **OpenStreetMap** data in **near real time**.
+Underpass is a **data engine** that processes **OpenStreetMap** data in **near real time**.
 
 It provides customizable **statistics** and **validation** reports and it can also be used to
 update a local copy of the OSM database. It is designed to be **high performance** on modest hardware.
@@ -83,7 +83,7 @@ where we need help, some of them are:
 
 Below there's reference to the Underpass Product Roadmap (subject to change).
 
-![image](https://user-images.githubusercontent.com/98902727/218773383-6c56e45d-132a-43d3-9fa9-ddff94c89b7c.png)
+<img width="810" alt="Screenshot 2023-04-07 at 10 34 22" src="https://user-images.githubusercontent.com/1226194/230617809-8d5a2757-3ba8-4097-b03e-650364f75dd5.png">
 
 ### Core documentation
 
