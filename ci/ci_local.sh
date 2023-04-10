@@ -27,14 +27,14 @@ DOCKER_BASE_COMMAND="docker-compose -f ${DOCKER_COMPOSE_FILE}"
 ${DOCKER_BASE_COMMAND} up -d
 
 # Build Underpass Library and Binaries
-${DOCKER_BASE_COMMAND} exec -T underpass-build-deps sh -c "cd /code && git clean -fx && git clean -f -d && ./autogen.sh && (rm -rf build || true) && mkdir build && cd build && ../configure --enable-shared && make -j `nproc`"
+${DOCKER_BASE_COMMAND} exec -T underpass sh -c "cd /code && git clean -fx && git clean -f -d && ./autogen.sh && (rm -rf build || true) && mkdir build && cd build && ../configure --enable-shared && make -j `nproc`"
 
 # Build and Run Underpass Tests - broken: alway succeeds
-${DOCKER_BASE_COMMAND} exec -T underpass-build-deps sh -c "cd /code/build/src/testsuite/libunderpass.all && make check -j `nproc`"
+${DOCKER_BASE_COMMAND} exec -T underpass sh -c "cd /code/build/src/testsuite/libunderpass.all && make check -j `nproc`"
 
 # Comment the cleanup lines below or exit here if you want to run additional
 # tests from a console in the temp container, for instance with:
-${DOCKER_BASE_COMMAND} exec underpass-build-deps bash
+${DOCKER_BASE_COMMAND} exec underpass bash
 
 ${DOCKER_BASE_COMMAND} down
 echo "Remove temporary folder ${TEMP_DIR}"

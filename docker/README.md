@@ -3,7 +3,7 @@
 + `underpass.dockerfile` is the recipe for Underpass build dependencies
 + `docker-compose.yml` runs two containers:
   + postgis: for Underpass I/O test DBs (DBs are intially empty)
-  + underpass-build-deps for Underpass build and test execution
+  + underpass for Underpass build and test execution
 
 A pre-built image of `underpass.dockerfile` is available on Docker Hub as `quay.io/hotosm/underpass:kinetic`.
 
