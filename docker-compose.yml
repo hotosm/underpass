@@ -42,14 +42,14 @@ services:
       internal:
 
   # Underpass build dependencies
-  underpass-build-deps:
+  underpass:
     # Pre-built for speed:
-    # image: quay.io/hotosm/underpass-build-deps:focal
+    # image: quay.io/hotosm/underpass:kinetic
     container_name: "underpass"
     # Build recipe:
     build:
      context: .
-     dockerfile: docker/underpass-build-deps.dockerfile
+     dockerfile: docker/underpass.dockerfile
     ports:
       - "8000:8000"
       - "5000:5000"
