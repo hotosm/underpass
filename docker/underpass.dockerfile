@@ -1,6 +1,6 @@
 FROM ubuntu:kinetic
 
-# This image is available as elpaso/underpass-build-deps:focal
+# This image is available as quay.io/hotosm/underpass:kinetic
 LABEL maintainer="Humanitarian OpenStreetMap Team" Description="This image provides build deps for underpass" Vendor="HOT" Version="dev"
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -47,20 +47,4 @@ RUN apt-get update \
     && rm -rf libpqxx-7.6.0 \
     && rm 7.6.0.zip
 
-RUN apt-get update -y \
-    && apt-get install -y  cmake \
-    liblua5.3-dev \
-    && wget https://github.com/openstreetmap/osm2pgsql/archive/refs/tags/1.5.1.zip \
-    && unzip 1.5.1.zip \
-    && cd osm2pgsql-1.5.1 \
-    && mkdir build \
-    && cd build \
-    && cmake .. \
-    && make \
-    && make install \
-    && cd ../.. \
-    && rm -rf osm2pgsql-1.5.1 \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY bzip2.pc /usr/lib/x86_64-linux-gnu/pkgconfig/bzip2.pc
-
+COPY docker/bzip2.pc /usr/lib/x86_64-linux-gnu/pkgconfig/bzip2.pc

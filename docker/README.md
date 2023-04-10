@@ -1,15 +1,15 @@
 # Docker images and compose setup for Underpass building and CI testing
 
-+ `underpass-build-deps.dockerfile` is the recipe for Underpass build dependencies
++ `underpass.dockerfile` is the recipe for Underpass build dependencies
 + `docker-compose.yml` runs two containers:
   + postgis: for Underpass I/O test DBs (DBs are intially empty)
   + underpass-build-deps for Underpass build and test execution
 
-A pre-built image of `underpass-build-deps.dockerfile` is available on Docker Hub as `elpaso/underpass-build-deps:focal`.
+A pre-built image of `underpass.dockerfile` is available on Docker Hub as `quay.io/hotosm/underpass:kinetic`.
 
 ## Build image
 
-`docker build -t elpaso/underpass-build-deps:focal -f underpass-build-deps.dockerfile .`
+`docker build -t quay.io/hotosm/underpass:kinetic -f underpass.dockerfile .`
 
 ## Docker compose
 

@@ -28,14 +28,14 @@ jobs:
         password: ${{ secrets.QUAY_ROBOT_TOKEN }}
 
     - name: Pull remote image
-      run: docker pull quay.io/hotosm/underpass-build-deps:focal
+      run: docker pull quay.io/hotosm/underpass:kinetic
 
     - name: Build and tag Dockerfile
-      run: cd docker && docker build -t quay.io/hotosm/underpass-build-deps:focal -f underpass-build-deps.dockerfile .
+      run: cd docker && docker build -t quay.io/hotosm/underpass:kinetic -f underpass.dockerfile .
 
     # If there are changes to the dockerfile, then a new image will
     # be pushed. Otherwise nothing will happen.
     - name: Push to Quay.io
-      run: docker push quay.io/hotosm/underpass-build-deps:focal
+      run: docker push quay.io/hotosm/underpass:kinetic
 
 
