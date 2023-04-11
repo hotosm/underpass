@@ -1,5 +1,5 @@
 dnl
-dnl Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+dnl Copyright (c) 2020, 2021, 2023 Humanitarian OpenStreetMap Team
 dnl
 dnl This file is part of Underpass.
 dnl
