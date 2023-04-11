@@ -27,7 +27,7 @@ CLEANFILES = \
 	all-includes.h.gch \
 	all-includes.h
 
-DISTCLEANFILES = doc/html doc/latex .lastmod
+DISTCLEANFILES = docs/html docs/latex .lastmod
 MAINTAINERCLEANFILES = revno.h .lastmod
 
 SUBDIRS = \
@@ -153,18 +153,18 @@ endif
 
 if ENABLE_DOXYGEN
 apidoc:
-	(cd doc && $(DOXYGEN))
+	(cd docs && $(DOXYGEN))
 endif
 
 install-data-hook:
 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
 	cp -uvp $(srcdir)/config/replicator/priority.geojson $(DESTDIR)/$(pkglibdir)
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
-	cp -ruvp $(srcdir)/doc/*.md $(DESTDIR)/$(docdir)
+	cp -ruvp $(srcdir)/docs/*.md $(DESTDIR)/$(docdir)
 
 dist-hook: apidoc
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
-	cp -ruvp doc/html $(DESTDIR)/$(docdir)
+	cp -ruvp docs/html $(DESTDIR)/$(docdir)
 
 if ENABLE_PCH
 # yes, a little consistency on the suffix would be nice.

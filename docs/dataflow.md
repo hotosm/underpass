@@ -129,4 +129,4 @@ validation results. The other database is a mirror of the raw OSM data
 that also gets updated every minute.
 
 &nbsp;
-![Flow Chart](https://raw.githubusercontent.com/hotosm/underpass/master/doc/dataflow.png)
+![Flow Chart](https://raw.githubusercontent.com/hotosm/underpass/master/docs/dataflow.png)

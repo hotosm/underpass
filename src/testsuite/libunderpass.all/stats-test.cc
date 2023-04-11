@@ -44,7 +44,7 @@ using namespace logger;
 /// files and assert the results against a YAML file
 /// or save them to a JSON file for other tasks
 ///
-/// For documentation see doc/stats-test.md
+/// For documentation see docs/stats-test.md
 
 class TestPlanet : public replication::Planet {
 };

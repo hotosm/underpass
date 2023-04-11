@@ -12,7 +12,7 @@ The new OnEnterSave property will be fired when the user enter to editor's "Uplo
 
 ### Python backend
 
-Having Underpass built on a server (see https://github.com/hotosm/underpass/blob/master/doc/getting-started.md) you can install the Python bindings with `make install-python` 
+Having Underpass built on a server (see https://github.com/hotosm/underpass/blob/master/docs/getting-started.md) you can install the Python bindings with `make install-python` 
 
 After this step, you'll be able to analyze a OsmChange using Underpass, with Python code:
 

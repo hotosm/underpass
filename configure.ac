@@ -280,7 +280,7 @@ AC_SUBST(SRCDIR)
 
 AC_CONFIG_FILES([
 Makefile
-doc/Doxyfile
+docs/Doxyfile
 src/validate/Makefile
 src/testsuite/Makefile
 src/testsuite/libunderpass.all/Makefile

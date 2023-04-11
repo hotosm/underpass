@@ -8,7 +8,7 @@ Is light, fast, easy to install and it can run on small systems.
 
 The easiest way to start using Underpass is with [Docker](https://docs.docker.com/get-docker/) and [docker-compose](https://docs.docker.com/compose/install/).
 
-_If you don't want to use Docker, you can install dependencies and build Underpass yourself. See  https://github.com/hotosm/underpass/blob/master/doc/install.md_
+_If you don't want to use Docker, you can install dependencies and build Underpass yourself. See  https://github.com/hotosm/underpass/blob/master/docs/install.md_
 
 ```
     git clone https://github.com/hotosm/underpass.git

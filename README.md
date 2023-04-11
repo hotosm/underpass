@@ -27,7 +27,7 @@ sh docker/services-stop.sh
 ```
 
 If you want to avoid using Docker and build Underpass on your system, check
-the [install](https://github.com/hotosm/underpass/blob/master/doc/install.md) 
+the [install](https://github.com/hotosm/underpass/blob/master/docs/install.md) 
 documentation.
 
 ## Using the data

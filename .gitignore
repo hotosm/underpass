@@ -25,7 +25,7 @@ ltmain.sh
 libtool
 Makefile.in
 py-compile
-doc/html
+docs/html
 infra/.terraform
 infra/.terraform.lock
 infra/.terraform.lock.hcl

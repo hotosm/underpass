@@ -25,12 +25,12 @@ jobs:
       run: cd docker && docker-compose up -d
 
     - name: Create Doxyfile
-      run: docker-compose -f docker-compose.yml exec -T underpass sh -c "cd /code && ./autogen.sh && ./configure && make doc/Doxyfile -j `nproc`"
+      run: docker-compose -f docker-compose.yml exec -T underpass sh -c "cd /code && ./autogen.sh && ./configure && make docs/Doxyfile -j `nproc`"
 
     - name: Doxygen Action
       uses: mattnotmitt/doxygen-action@v1.1.0
       with:
-          doxyfile-path: ./doc/Doxyfile
+          doxyfile-path: ./docs/Doxyfile
           working-directory: .
 
     - name: Debug
