@@ -6,7 +6,7 @@ echo "Building Underpass ..." && \
 docker exec -t underpass mkdir -p /usr/local/lib/underpass/ && \
 docker exec -w /code -t underpass ./autogen.sh && \
 docker exec -w /code -t underpass mkdir -p /code/build && \
-docker exec -w /code/build -t underpass ../configure && \
+docker exec -w /code/build -t underpass ../configure --enable-shared && \
 docker exec -w /code/build -t underpass make -j2 && \
 docker exec -w /code/build -t underpass make install && \
 docker exec -w /code/build -t underpass make install-python && \

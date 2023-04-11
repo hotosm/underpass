@@ -35,19 +35,9 @@ using namespace logger;
 
 namespace pq {
 
-Pq::Pq(void) {};
+Pq::Pq() {};
 
 Pq::Pq(const std::string &args) { connect(args); };
-
-Pq::~Pq(void)
-{
-    if (sdb) {
-        if (sdb->is_open()) {
-            // Close the database connection
-            sdb->close(); 
-        }
-    }
-}
 
 // Dump internal data to the terminal, used only for debugging
 void

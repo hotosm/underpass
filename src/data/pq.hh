@@ -45,8 +45,8 @@ namespace pq {
 /// \brief This is a higher level class wrapped around libpqxx
 class Pq {
   public:
-    Pq(void);
-    ~Pq(void);
+    Pq();
+
     /// Connect to the Pq database
     Pq(const std::string &dbname);
     bool connect(const std::string &args);

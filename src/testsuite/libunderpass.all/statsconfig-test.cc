@@ -43,7 +43,9 @@ main(int argc, char *argv[])
     dbglogfile.setWriteDisk(true);
     dbglogfile.setLogFilename("statsconfig-test.log");
     dbglogfile.setVerbosity(3);
-    statsconfig::StatsConfig::setConfigurationFile("../src/testsuite/testdata/stats/statsconfig.yaml");
+    std::string filespec = DATADIR;
+    filespec += "/testsuite/testdata/stats/statsconfig.yaml";
+    statsconfig::StatsConfig::setConfigurationFile(filespec);
     auto statsconfig = statsconfig::StatsConfig();
 
     if (statsconfig.search("building", "school", osmchange::way) == "buildings") {
