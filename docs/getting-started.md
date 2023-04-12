@@ -61,7 +61,7 @@ You can also use the connection string `postgresql://underpass@postgis/underpass
 
 ### Stats
 
-Collected stats can customized to your needs, changing the stats configuration YAML in [validate/statistics](https://github.com/hotosm/underpass/blob/master/validate/statistics.yaml).
+Collected stats can customized to your needs, changing the stats configuration YAML in `/usr/local/lib/underpass/config/validate`
 
 You can find more information about stats [here](docs/statistics.md)
 
@@ -73,7 +73,7 @@ You can find more information about validation [here](docs/validation.md)
 
 ### Filter by area
 
-To collect data for an specific area, create a GeoJSON file with the area you want. This file must contain a single MultiPolygon, like [this one](https://github.com/hotosm/underpass/blob/master/config/replicator/priority.geojson).
+To collect data for an specific area, create a GeoJSON file with the area you want. This file must contain a single MultiPolygon, like [this one](https://github.com/hotosm/underpass/blob/master/config/priority.geojson).
 
 Then, just copy the file to `underpass/build` and pass the `--boundary` option:
 

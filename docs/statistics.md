@@ -36,7 +36,7 @@ The original statistics counted buildings, waterways, and POIs. The
 new statistics break this down into two categories, accumulates
 statistics for things like *buildings*, as well as the more detailed
 representation, like what type of building it is. The list of values
-is configurable, as it uses a [YAML](https://github.com/hotosm/underpass/blob/master/validate/statistics.yaml) file
+is configurable, as it uses a [YAML](https://github.com/hotosm/underpass/blob/master/config/stats/statistics.yaml) file.
 
 
 OpenStreetMap features support a *keyword* and *value* pair. The

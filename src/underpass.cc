@@ -84,15 +84,12 @@ int
 main(int argc, char *argv[])
 {
 
-    // Store the file names for replication files
-    // std::string changeset;
-    // std::string osmchange;
-
     // The changesets URL path (e.g. "/001/001/999")
     std::string starting_url_path;
 
     std::string datadir = "replication/";
-    std::string boundary = "priority.geojson";
+    std::string boundary = PKGLIBDIR;
+    boundary += "/config/priority.geojson";
 
     UnderpassConfig config;
 
@@ -129,6 +126,7 @@ main(int argc, char *argv[])
         opts::notify(vm);
 
         if (vm.count("help")) {
+
             std::cout << "Usage: options_description [options]" << std::endl;
             std::cout << desc << std::endl;
             std::cout << "A few configuration options can be set through the "

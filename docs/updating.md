@@ -7,14 +7,13 @@ you'll may want to re-process all data.
 
 Changes are filtered by `areaFilter()` for both Changesets and OsmChanges.
 
-For adding a new country or expanding the priority boundary, just edit the [boundary file](https://github.com/hotosm/underpass/blob/master/config/replicator/priority.geojson) and run the replication process again.
+For adding a new country or expanding the priority boundary, just edit the [boundary file](https://github.com/hotosm/underpass/blob/master/config/priority.geojson) and run the replication process again.
 
 ### Stats configuration
 
 Added and modified stats are produced from OsmChanges.
 
-For changing the way Underpass collect statistics, just edit the [stats configuration file](https://github.com/hotosm/underpass/blob/master/validate/statistics.yaml) and run the replication process again,
-only for OsmChanges
+For changing the way Underpass collect statistics, just edit the [stats configuration file](https://github.com/hotosm/underpass/blob/master/config/stats/statistics.yaml) located on `/usr/local/lib/underpass/config/stats` and run the replication process again.
 
 ### Running the replication process
 

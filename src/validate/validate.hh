@@ -172,18 +172,12 @@ class ValidateStatus {
 class BOOST_SYMBOL_VISIBLE Validate {
   public:
     Validate(void) {
-        std::string dir;
-
-        if (boost::filesystem::exists(PKGLIBDIR)) {
-            dir = PKGLIBDIR;
-        } else if (boost::filesystem::exists(SRCDIR)) {
-            dir = SRCDIR;
-        } else if (boost::filesystem::exists("../validate")) {
-            dir = "../validate";
-        } else {
-            log_error("No validation config files in %1%!", dir);
+        std::string path = PKGLIBDIR;
+        path += "/config/validate";
+        if (!boost::filesystem::exists(path)) {
+            throw std::runtime_error("Validation configuration file not found: " + path);
         }
-        for (auto &file: std::filesystem::recursive_directory_iterator(dir)) {
+        for (auto &file: std::filesystem::recursive_directory_iterator(path)) {
             std::filesystem::path config = file.path();
             if (config.extension() == ".yaml") {
                 log_debug("Loading: %s", config.stem());

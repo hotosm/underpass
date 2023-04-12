@@ -32,8 +32,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 /usr/share/underpass/underpass.sql
-/usr/lib/underpass/priority.geojson
-/usr/share/underpass/priority.geojson
+/usr/lib/underpass/config/priority.geojson
 /usr/share/underpass/setupdb.sh
 
 %doc

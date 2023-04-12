@@ -224,11 +224,11 @@ class TestStats {
         void
         validateStatsFromFile(std::vector<std::string> files) {
             std::string statsFile(DATADIR);
-            statsFile += "/src/testsuite/testdata/" + files.at(0);
+            statsFile += "/testsuite/testdata/" + files.at(0);
             auto stats = getStatsFromFile(statsFile);
 
             std::string validationFile(DATADIR);
-            validationFile += "/src/testsuite/testdata/" + files.at(1);
+            validationFile += "/testsuite/testdata/" + files.at(1);
             auto validation = getValidationStatsFromFile(validationFile);
 
             for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {

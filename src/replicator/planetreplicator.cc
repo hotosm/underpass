@@ -102,13 +102,8 @@ PlanetReplicator::PlanetReplicator(void) {};
 std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const underpassconfig::UnderpassConfig &config, ptime time) {
     yaml::Yaml yaml;
 
-    std::string statsConfigFilename = "planetreplicator.yaml";
-    std::string rep_file = SRCDIR;
-    rep_file += "/src/replicator/" + statsConfigFilename;
-    if (!boost::filesystem::exists(rep_file)) {
-        rep_file = PKGLIBDIR;
-        rep_file += "/" + statsConfigFilename;
-    }
+    std::string rep_file = PKGLIBDIR;
+    rep_file += "/config/replicator/planetreplicator.yaml";
     yaml.read(rep_file);
     std::map<int, ptime> hashes;
 

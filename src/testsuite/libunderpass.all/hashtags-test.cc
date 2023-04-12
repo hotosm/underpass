@@ -36,7 +36,7 @@ main(int argc, char *argv[])
 
     // Changeset with 8 hashtags
     std::string changesetFile(DATADIR);
-    changesetFile += "/src/testsuite/testdata/hashtags-test.osc";
+    changesetFile += "/testsuite/testdata/hashtags-test.osc";
     TestChangeset changeset;
     changeset::ChangeSet *change;
     changeset.readChanges(changesetFile);

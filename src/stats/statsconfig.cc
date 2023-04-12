@@ -51,18 +51,19 @@ namespace statsconfig {
 
     StatsConfig::StatsConfig() {
         if (path.empty()) {
-            std::string statsConfigFilename = "statistics.yaml";
-            path = SRCDIR;
-            path += "/validate/" + statsConfigFilename;
+            path = PKGLIBDIR;
+            path += "/config/stats/statistics.yaml";
             if (!boost::filesystem::exists(path)) {
-                path = PKGLIBDIR;
-                path += "/" + statsConfigFilename;
+                throw std::runtime_error("Statistics file not found: " + path);
             }
         }
         read_yaml(path);
     }
 
     void StatsConfig::setConfigurationFile(std::string statsConfigFilename) {
+        if (!boost::filesystem::exists(statsConfigFilename)) {
+            throw std::runtime_error("Statistics configuration file not found: " + statsConfigFilename);
+        }
         path = statsConfigFilename;
     }
 

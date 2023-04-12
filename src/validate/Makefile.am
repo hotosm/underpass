@@ -50,4 +50,5 @@ AM_CPPFLAGS = \
 install-data-hook:
 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
 	cp -uvp .libs/libhotosm.so $(DESTDIR)/$(pkglibdir)
-	cp -uvp $(top_srcdir)/config/validate/*.yaml $(DESTDIR)/$(pkglibdir)
+	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)/config/validate
+	cp -ruvp $(top_srcdir)/config/validate/*.yaml $(DESTDIR)/$(pkglibdir)/config/validate

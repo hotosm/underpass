@@ -787,7 +787,7 @@ RemoteURL::dump(void)
 Planet::Planet(const RemoteURL &url)
 {
     if (!connectServer(url.domain)) {
-    throw std::runtime_error("Error connecting to server " + url.domain);
+        throw std::runtime_error("Error connecting to server " + url.domain);
     }
 }
 

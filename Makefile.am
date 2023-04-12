@@ -52,15 +52,6 @@ BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
 SQL_FILES = \
 	setup/underpass.sql
 
-YAML_FILES = \
-	config/validate/building.yaml \
-	config/validate/highway.yaml \
-	config/validate/place.yaml \
-	config/validate/landuse.yaml \
-	config/validate/natural.yaml \
-	config/validate/waterway.yaml \
-	config/stats/statistics.yaml
-
 libunderpass_la_SOURCES = \
 	src/utils/log.cc src/utils/log.hh \
 	src/dsodefs.hh src/gettext.h \
@@ -113,14 +104,14 @@ AM_CPPFLAGS = \
 # clutter to the output. This should only be enabled when doing performance tuning.
 #	-DTIMING_DEBUG
 
-pkgdata_DATA = $(SQL_FILES) config/replicator/priority.geojson setup/setupdb.sh $(PYTHON_UTILS)
+pkgdata_DATA = $(SQL_FILES) setup/setupdb.sh $(PYTHON_UTILS)
 
 EXTRA_DIST = \
 	$(SQL_FILES) \
-	$(YAML_FILES) \
 	$(PYTHON_UTILS) \
 	src/testsuite \
-	config/replicator/priority.geojson \
+	config/priority.geojson \
+	config/replicator/planetreplicator.yaml \
 	doc \
 	dist/debian \
 	dist/redhat \
@@ -158,7 +149,11 @@ endif
 
 install-data-hook:
 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
-	cp -uvp $(srcdir)/config/replicator/priority.geojson $(DESTDIR)/$(pkglibdir)
+	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)/config
+	cp -ruvp $(srcdir)/config/priority.geojson $(DESTDIR)/$(pkglibdir)/config
+	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)/config/replicator
+	cp -uvp $(srcdir)/config/replicator/planetreplicator.yaml $(DESTDIR)/$(pkglibdir)/config/replicator
+	cp -ruvp $(srcdir)/config/stats $(DESTDIR)/$(pkglibdir)/config
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
 	cp -ruvp $(srcdir)/docs/*.md $(DESTDIR)/$(docdir)
 

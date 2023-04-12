@@ -51,30 +51,21 @@ main(int argc, char* argv[])
     dbglogfile.setVerbosity(3);
     
     TestGU tgu;
-    if (tgu.readFile("priority.geojson")) {
-        runtest.pass("Read file with no path");
-    } else {
-        runtest.fail("Read file with no path");
-    }   
 
     std::string test_data_dir(DATADIR);
 
-    if (!tgu.readFile("../config/replicator/priority.geojson")) {
+    if (!tgu.readFile("../xxx/priority.geojson")) {
         runtest.pass("Read file with bad relative path");
     } else {
         runtest.fail("Read file with bad relative path");
     }   
 
-#if 1
-    // FIXME: this test is bogus under CI
-    if (tgu.readFile("/usr/local/lib/underpass/priority.geojson")) {
+    if (tgu.readFile("/usr/local/lib/underpass/config/priority.geojson")) {
         runtest.pass("Read file with absolute path");
     } else {
         runtest.fail("Read file with absolute path");
     }   
-#endif
-    /// Read an EWKT string as the boundary, instead of a file.
-    // tgu.readPoly();
+        
 };
 
 // local Variables:

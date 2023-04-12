@@ -22,7 +22,14 @@
 int
 main(int argc, char *argv[])
 {
-    std::cout << "It works!" << std::endl;
+    std::cout << "SRCDIR = " << SRCDIR << std::endl;
+    std::cout << "DATADIR = " << DATADIR << std::endl;
+    std::cout << "PKGLIBDIR = " << PKGLIBDIR << std::endl;
+
+    std::string changesetFile(DATADIR);
+    changesetFile += "/testsuite/testdata/areafilter-test.osc";
+    std::cout << "changesetFile = " << changesetFile << std::endl;
+
 }
 
 // local Variables:
