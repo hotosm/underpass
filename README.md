@@ -5,8 +5,8 @@
 
 Underpass is a customizable **data engine** that processes **OpenStreetMap** data.
 
-It provides customizable **statistics** and **validation** reports and it can also be used to
-update a local copy of the OSM database. It is designed to be **high performance** on modest hardware.
+It provides **statistics** and **validation** reports and it can also be used to
+update a local copy of the OSM database. It is designed to be **high performance** on modest hardware and it can run on near real-time.
 
 ## Quick start
 
@@ -61,7 +61,7 @@ See an example of how generate reports using the DB API:
 Use the Python example for download and analyze a Changeset:
 
 ```sh
-docker exec -w /code/util/python/examples -t underpass \
+docker exec -w /code/python/examples -t underpass \
 python validation.py -u https://www.openstreetmap.org/api/0.6/changeset/133637588/download -c place
 ```
 
