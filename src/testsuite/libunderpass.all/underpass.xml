@@ -1,0 +1,16 @@
+<?xml version="1.1"?>
+<!DOCTYPE testsuite [
+<!-- testsuite.dtd -->
+<!ELEMENT testsuite (test | summary)+>
+<!ELEMENT test (input, output, result, name, prms_id )>
+  <!ELEMENT input              (#PCDATA)>
+  <!ELEMENT output             (#PCDATA)>
+  <!ELEMENT result             (#PCDATA)>
+  <!ELEMENT name               (#PCDATA)>
+  <!ELEMENT prms_id            (#PCDATA)>
+  <!ELEMENT summary            (result, description, total)>
+  <!ELEMENT description        (#PCDATA)>
+  <!ELEMENT total              (#PCDATA)>
+]>
+<testsuite>
+</testsuite>

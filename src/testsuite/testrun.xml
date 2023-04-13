@@ -1,0 +1,189 @@
+<?xml version="1.1"?>
+<!DOCTYPE testsuite [
+<!-- testsuite.dtd -->
+<!ELEMENT testsuite (test | summary)+>
+<!ELEMENT test (input, output, result, name, prms_id )>
+  <!ELEMENT input              (#PCDATA)>
+  <!ELEMENT output             (#PCDATA)>
+  <!ELEMENT result             (#PCDATA)>
+  <!ELEMENT name               (#PCDATA)>
+  <!ELEMENT prms_id            (#PCDATA)>
+  <!ELEMENT summary            (result, description, total)>
+  <!ELEMENT description        (#PCDATA)>
+  <!ELEMENT total              (#PCDATA)>
+]>
+<testsuite>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> Read file with no path</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> Read file with bad relative path</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> Read file with absolute path</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> PQ::PQ(void)</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> PQ::parseURL(dbname)</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> PQ::parseURL(localhost</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> PQ::parseURL(remote</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> PQ::parseURL(user</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> PQ::parseURL(user:pass</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> PQ::parseURL(user:pass</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> StatsConfigSearch::search()</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> StatsConfigSearch::search() - way custom tags</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> StatsConfigSearch::search() - node custom tags</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> StatsConfigSearch::search() - node custom tags and custom category</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> StatsConfigSearch::search() - way custom tags and custom category</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> Yaml::get().children</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> Yaml::get().contains_value()</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> Yaml::get().contains_value()</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> Yaml::get().get().children</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> Yaml::contains_key()</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> Yaml::contains_value(good)</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> Yaml::contains_value(good)</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> Yaml::containsKey()</name>
+    <prms_id>0</prms_id>
+  </test>
+  <test>
+    <input></input>
+    <output></output>
+    <result>PASS</result>
+    <name> Yaml::containsValue(none)</name>
+    <prms_id>0</prms_id>
+  </test>
+  <summary>
+    <result>PASS</result>
+    <description># of expected passes</description>
+    <total>24</total>
+  </summary>
+</testsuite>

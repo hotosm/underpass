@@ -1,5 +1,5 @@
 dnl
-dnl Copyright (c) 2020, 2021 Humanitarian OpenStreetMap Team
+dnl Copyright (c) 2020, 2021, 2023 Humanitarian OpenStreetMap Team
 dnl
 dnl This file is part of Underpass.
 dnl
@@ -280,12 +280,11 @@ AC_SUBST(SRCDIR)
 
 AC_CONFIG_FILES([
 Makefile
-doc/Doxyfile
-validate/Makefile
-testsuite/Makefile
-testsuite/libunderpass.all/Makefile
-redhat/underpass.spec
-po/Makefile
+docs/Doxyfile
+src/validate/Makefile
+src/testsuite/Makefile
+src/testsuite/libunderpass.all/Makefile
+dist/redhat/underpass.spec
 ])
 
 AC_OUTPUT

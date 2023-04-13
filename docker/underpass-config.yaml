@@ -1,4 +1,4 @@
 # Underpass config file
 config:
-  - galaxy_db_url:
-    - underpass@postgis/galaxy
+  - underpass_db_url:
+    - underpass@postgis/underpass

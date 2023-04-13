@@ -3,5 +3,5 @@
 config:
   - planet_servers:
     - planet.openstreetmap.org
-  - galaxy_db_url:
-    - underpass@postgis/galaxy
+  - underpass_db_url:
+    - underpass@postgis/underpass

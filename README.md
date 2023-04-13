@@ -27,7 +27,7 @@ sh docker/services-stop.sh
 ```
 
 If you want to avoid using Docker and build Underpass on your system, check
-the [install](https://github.com/hotosm/underpass/blob/master/doc/install.md) 
+the [install](https://github.com/hotosm/underpass/blob/master/docs/install.md) 
 documentation.
 
 ## Using the data
@@ -83,7 +83,7 @@ where we need help, some of them are:
 
 Below there's reference to the Underpass Product Roadmap (subject to change).
 
-<img width="810" alt="Screenshot 2023-04-07 at 10 34 22" src="https://user-images.githubusercontent.com/1226194/230617923-50b77fcd-eb18-477a-85c7-ee673a330911.png">
+<img width="810" alt="Screenshot 2023-04-07 at 10 34 22" src="https://user-images.githubusercontent.com/1226194/230617809-8d5a2757-3ba8-4097-b03e-650364f75dd5.png">
 
 ### Core documentation
 
