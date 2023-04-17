@@ -61,7 +61,6 @@ class Hotosm : public Validate
 public:
     Hotosm(void);
     ~Hotosm(void) {  };
-    // Hotosm(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes);
 
     /// Check a POI for tags. A node that is part of a way shouldn't have any
     /// tags, this is to check actual POIs, like a school.
@@ -82,10 +81,6 @@ public:
     return std::make_shared<Hotosm>();
     };
 private:
-    std::vector<long> buildings;       ///< 
-    std::vector<long> node_errors;     ///< 
-    std::vector<long> way_errors;      ///< 
-    std::vector<long> relation_errors; ///<
     std::map<std::string, std::vector<std::string>> tests;
     bool isValidTag(const std::string &key, const std::string &value, yaml::Node tags);
     bool isRequiredTag(const std::string &key, yaml::Node required_tags);

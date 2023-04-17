@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version='0.6' generator='JOSM'>
+<create>
+  <node id='10264816946' action='modify' timestamp='2022-12-15T11:44:53Z' uid='15192063' user='Mikhail Fall1n1' visible='true' version='1' changeset='130111543' lat='43.50903647883' lon='77.54984149462' />
+  <node id='10264816947' action='modify' timestamp='2022-12-15T11:44:53Z' uid='15192063' user='Mikhail Fall1n1' visible='true' version='1' changeset='130111543' lat='43.50908229513' lon='77.5499387239' />
+  <node id='10264816948' action='modify' timestamp='2022-12-15T11:44:53Z' uid='15192063' user='Mikhail Fall1n1' visible='true' version='1' changeset='130111543' lat='43.50883131083' lon='77.55008189506' />
+  <node id='10264816949' action='modify' timestamp='2022-12-15T11:44:53Z' uid='15192063' user='Mikhail Fall1n1' visible='true' version='1' changeset='130111543' lat='43.50879738641' lon='77.54995409457' />
+  <node id='10264816950' action='modify' timestamp='2022-12-15T11:44:53Z' uid='15192063' user='Mikhail Fall1n1' visible='true' version='1' changeset='130111543' lat='43.5088352421' lon='77.54993499105' />
+  <node id='10264816951' action='modify' timestamp='2022-12-15T11:44:53Z' uid='15192063' user='Mikhail Fall1n1' visible='true' version='1' changeset='130111543' lat='43.50884445162' lon='77.5499696853' />
+  <node id='10264816952' action='modify' timestamp='2022-12-15T11:44:53Z' uid='15192063' user='Mikhail Fall1n1' visible='true' version='1' changeset='130111543' lat='43.50892462826' lon='77.54992922485' />
+  <node id='10264816953' action='modify' timestamp='2022-12-15T11:44:53Z' uid='15192063' user='Mikhail Fall1n1' visible='true' version='1' changeset='130111543' lat='43.50890012642' lon='77.54988830634' />
+  <node id='10264816954' action='modify' timestamp='2022-12-15T11:44:53Z' uid='15192063' user='Mikhail Fall1n1' visible='true' version='1' changeset='130111543' lat='43.50898149004' lon='77.54984779442' />
+  <node id='10264816955' action='modify' timestamp='2022-12-15T11:44:53Z' uid='15192063' user='Mikhail Fall1n1' visible='true' version='1' changeset='130111543' lat='43.50898651124' lon='77.54986671039' />
+  <way id='1122279698' timestamp='2022-12-15T11:44:53Z' uid='15192063' user='Mikhail Fall1n1' visible='true' version='1' changeset='130111543'>
+    <nd ref='10264816946' />
+    <nd ref='10264816947' />
+    <nd ref='10264816948' />
+    <nd ref='10264816949' />
+    <nd ref='10264816950' />
+    <nd ref='10264816951' />
+    <nd ref='10264816952' />
+    <nd ref='10264816953' />
+    <nd ref='10264816954' />
+    <nd ref='10264816955' />
+    <nd ref='10264816946' />
+    <tag k='building' v='yes' />
+  </way>
+</create>
+</osmChange>

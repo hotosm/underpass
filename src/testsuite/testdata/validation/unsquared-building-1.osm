@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version='0.6' generator='JOSM'>
+<create>
+  <node id='-111775' action='modify' visible='true' lat='4.6204197136' lon='21.72626330711' />
+  <node id='-111776' action='modify' visible='true' lat='4.62039907369' lon='21.72634685708' />
+  <node id='-111777' action='modify' visible='true' lat='4.62033657368' lon='21.72634525708' />
+  <node id='-111778' action='modify' visible='true' lat='4.62033867368' lon='21.72626015708' />
+  <way id='-101879' action='modify' visible='true'>
+    <nd ref='-111775' />
+    <nd ref='-111776' />
+    <nd ref='-111777' />
+    <nd ref='-111778' />
+    <nd ref='-111775' />
+    <tag k='building' v='yes' />
+    <tag k='note' v='Good rectangular building' />
+    <tag k='source' v='Bing' />
+  </way>
+</create>
+</osmChange>
