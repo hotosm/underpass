@@ -71,6 +71,7 @@ std::string dumpJSON(ValidateStatus& self) {
     output += "\t\"osm_id\":" + std::to_string(self.osm_id) + ",\n";
     output += "\t\"user_id\":" + std::to_string(self.user_id) + ",\n";
     output += "\t\"change_id\":" + std::to_string(self.change_id) + ",\n";
+    output += "\t\"angle\":" + std::to_string(self.angle) + ",\n";
 
     if (self.status.size() > 0) {
         output += "\t\"results\": [";

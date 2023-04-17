@@ -66,7 +66,6 @@ libunderpass_la_SOURCES = \
 	src/replicator/planetreplicator.cc src/replicator/planetreplicator.hh \
 	src/replicator/threads.cc src/replicator/threads.hh \
 	src/utils/geoutil.cc src/utils/geoutil.hh \
-	src/utils/geo.cc src/utils/geo.hh \
 	src/tils/yaml.hh src/utils/yaml.cc \
 	src/data/pq.hh src/data/pq.cc \
 	setup/setupdb.sh
@@ -187,7 +186,6 @@ PCHHEADERS = \
         $(top_srcdir)/src/osm/osmobjects.hh \
         $(top_srcdir)/src/validate/validate.hh \
         $(top_srcdir)/src/utils/geoutil.hh \
-		$(top_srcdir)/src/utils/geo.hh \
         $(top_srcdir)/src/replicator/threads.hh
 
 PCHOTHER = \

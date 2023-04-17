@@ -51,32 +51,34 @@ using namespace boost::gregorian;
 #include "osm/osmobjects.hh"
 #include "utils/yaml.hh"
 #include "utils/log.hh"
-#include "utils/geo.hh"
 
 using namespace logger;
 
 // JOSM validator
-//   [ ] Crossing ways
-//   [/] Duplicate Ways
-//   [ ] Duplicate nodes
-//   [ ] Duplicate relations
-//   [ ] Duplicated way nodes
-//   [ ] Orphan nodes
-//   [x] No square building corners
+//   Crossing ways
+//   Duplicate Ways
+//   Duplicate nodes
+//   Duplicate relations
+//   Duplicated way nodes
+//   Orphan nodes
+//   No square building corners
 
 // OSMInspector
-//   [x] Empty tag key
-//   [x] Unknown highway type
-//   [ ] Single node way
-//   [ ] Interescting ways
+//   Empty tag key
+//   Unknown highway type
+//   Single node way
+//   Interescting ways
 
 // OSMose
-//   [/] Overlapping buildings
-//   [ ] orphan nodes
-//   [/] Duplicate geomtry
-//   [ ] Highway not connected
-//   [x] Missing tags
-//   [/] Duplicate object
+//   Overlapping buildings
+//   orphan nodes
+//   Duplicate geomtry
+//   Highway not connected
+//   Missing tags
+//   Duplicate object
+//
+//
+
 
 /// \enum osmtype_t
 /// The data validation values for the status column in the database.
@@ -130,6 +132,7 @@ class ValidateStatus {
         std::cerr << "\tOSM ID: " << osm_id << std::endl;
         std::cerr << "\tUser ID: " << user_id << std::endl;
         std::cerr << "\tChange ID: " << change_id << std::endl;
+        std::cerr << "\tAngle: " << angle << std::endl;
 
         std::map<valerror_t, std::string> results;
         results[notags] = "No tags";
@@ -158,6 +161,7 @@ class ValidateStatus {
     long change_id = 0;        ///< The changeset ID
     ptime timestamp;        ///< The timestamp when this validation was performed
     point_t center;        ///< The centroid of the building polygon
+    double angle = 0;        ///< The calculated angle of a corner
     std::unordered_set<std::string> values; ///< The found bad tag values
     std::string source; //< The source of the validation status
 };
@@ -277,10 +281,52 @@ class BOOST_SYMBOL_VISIBLE Validate {
         return false;
     }
 
-    std::tuple<double, double> cornerAngles(const linestring_t &way) {
+    double calculateAzimuth(double x1, double y1, double x2, double y2) {
+        double azimuth = atan2(x2 - x1, y2 - y1);
+        return abs(azimuth * 180 / M_PI);
+    }
+
+    double calculateAngle(double x1, double y1, double x2, double y2, double x3, double y3) {
+        double ba0 = x1 - x2;
+        double ba1 = y1 - y2;
+        double bc0 = x3 - x2;
+        double bc1 = y3 - y2;
+        double dot_p = ba0 * bc0 + ba1 * bc1;
+        double cosine_angle = dot_p / (
+            std::pow((ba0 * ba0 + ba1 * ba1) , 0.5) *
+            std::pow((bc0 * bc0 + bc1 * bc1) , 0.5)
+        );
+        double angle = acos(cosine_angle);
+        return angle * 180 / M_PI;
+    }
+
+    // Checks if a polygon has pairs of parallel sides
+    bool polygonHasPairsOfParallelSides(const linestring_t &way) {
+        double x1 = boost::geometry::get<1>(way[0]);
+        double y1 = boost::geometry::get<0>(way[0]);
+        double x2 = boost::geometry::get<1>(way[1]);
+        double y2 = boost::geometry::get<0>(way[1]);
+        double x3 = boost::geometry::get<1>(way[2]);
+        double y3 = boost::geometry::get<0>(way[2]);
+        double x4 = boost::geometry::get<1>(way[3]);
+        double y4 = boost::geometry::get<0>(way[3]);
+        double az1 = std::round( calculateAzimuth(x1,y1, x2, y2));
+        double az2 = std::round( calculateAzimuth(x2,y2, x3, y3));
+        double az3 = std::round( calculateAzimuth(x4,y4, x3, y3));
+        double az4 = std::round( calculateAzimuth(x1,y1, x4, y4));
+        return(abs(az1 - az3) <= 10 && abs(az2 - az4) <= 10);
+    }
+
+    std::tuple<double, double, bool> cornerAngles(const linestring_t &way) {
         const int num_points =  boost::geometry::num_points(way) - 1;
         double max = 0;
         double min = 180;
+        bool circle = false;
+        double angleSum = 0;
+        if (num_points <= 3) {
+            log_error("way is a triangle or has no line segments!");
+            return std::tuple<double, double, bool>(-1,  -1, false);
+        }
         for(int i = 0; i < num_points; i++) {
             // Three points
             int a,b,c;
@@ -288,23 +334,23 @@ class BOOST_SYMBOL_VISIBLE Validate {
                 a = i;
                 b = i + 1;
                 c = i + 2;
-            } else if (i == num_points - 2) {
+            } else if (i < num_points - 1) {
                 a = i;
                 b = i + 1;
                 c = 0;
-            } else {
+            } else if (i < num_points) {
                 a = i;
                 b = 0;
                 c = 1;
             }
-            double x1 = boost::geometry::get<0>(way[a]);
-            double y1 = boost::geometry::get<1>(way[a]);
-            double x2 = boost::geometry::get<0>(way[b]);
-            double y2 = boost::geometry::get<1>(way[b]);
-            double x3 = boost::geometry::get<0>(way[c]);
-            double y3 = boost::geometry::get<1>(way[c]);
+            double x1 = boost::geometry::get<1>(way[a]);
+            double y1 = boost::geometry::get<0>(way[a]);
+            double x2 = boost::geometry::get<1>(way[b]);
+            double y2 = boost::geometry::get<0>(way[b]);
+            double x3 = boost::geometry::get<1>(way[c]);
+            double y3 = boost::geometry::get<0>(way[c]);
 
-            double angle = geo::Geo::calculateAngle(x1,y1,x2,y2,x3,y3);
+            double angle = calculateAngle(x1,y1,x2,y2,x3,y3);
 
             if (angle > max) {
                 max = angle;
@@ -312,9 +358,12 @@ class BOOST_SYMBOL_VISIBLE Validate {
             if (angle < min) {
                 min = angle;
             }
+            angleSum += angle;
         }
-
-        return std::tuple<double, double>(max,  min);
+        if (num_points > 7 && angleSum > 358 && angleSum < 362 && (max - min) < 10) {
+            circle = true;
+        }
+        return std::tuple<double, double, bool>(max,  min, circle);
     };
 
   protected:

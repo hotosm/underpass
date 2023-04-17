@@ -199,6 +199,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     // These values are in the config section of the YAML file
     double maxangle = 91;
     double minangle = 85;
+    int circleMinPoints = 0;
     auto config = tests.get("config");
 
     // This is the minimum angle used to determine rectangular buildings
@@ -210,6 +211,11 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     auto configMaxAngle = config.get("maxangle").children;
     if (configMaxAngle.size() > 0) {
         maxangle = std::stod(configMaxAngle[0].value);
+    }
+    // This is the maximum angle used to determine rectangular buildings
+    auto configCircleMinPoints = config.get("circleminpoints").children;
+    if (configCircleMinPoints.size() > 0) {
+        circleMinPoints = std::stoi(configCircleMinPoints[0].value);
     }
     // This enables/disables writing features flagged for not having values
     // in range as defined in the YAML config file. This prevents those
@@ -241,26 +247,39 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     }
 
     boost::geometry::centroid(way.linestring, status->center);
+    // boost::geometry::correct(way.polygon);
     // See if the way is a closed polygon
     if (way.refs.front() == way.refs.back()) {
+
         // If it's a building, check for square corners
-        if (way.tags.count("building")) {
-            const int num_points =  boost::geometry::num_points(way.linestring) - 1;
-            if (num_points == 3) {
-                log_debug("way is a triangle");
+
+        if (way.tags.count("building") && way.refs.size() == 5) {
+
+            if (!polygonHasPairsOfParallelSides(way.linestring)) {
                 status->status.insert(badgeom);
-            } else {
-                // minangle, maxangle
-                std::tuple<double, double> angles = cornerAngles(way.linestring);
-                if (num_points > 5 && std::get<0>(angles) - std::get<1>(angles) < 6 ) {
-                    log_debug("way looks like a circle");
-                } else if (std::get<0>(angles) > maxangle) {
-                    status->status.insert(badgeom);
-                } else if (std::get<1>(angles) < minangle) {
-                    status->status.insert(badgeom);
-                }
             }
+
+            // FIXME: angle calculation needs a close review
+            // minangle, maxangle, circle
+
+            // std::tuple<double, double, bool> angles = cornerAngles(way.linestring);
+            // log_error("Angle max: %1% min: %2%", std::get<0>(angles), std::get<1>(angles));
+            // if (std::get<2>(angles)) {
+            //     if (way.linestring.size() - 1 < circleMinPoints) {
+            //         status->angle = std::get<0>(angles);
+            //         status->status.insert(badgeom);
+            //     }
+            // } else if (std::get<0>(angles) > maxangle) {
+            //     status->angle = std::get<0>(angles);
+            //     status->status.insert(badgeom);
+            // } else if (std::get<1>(angles) < minangle) {
+            //     status->angle = std::get<1>(angles);
+            //     status->status.insert(badgeom);
+            // }
         }
+    }
+    if (status->status.size() == 0) {
+        status->status.insert(correct);
     }
     return status;
 }

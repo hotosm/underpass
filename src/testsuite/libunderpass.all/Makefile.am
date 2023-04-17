@@ -30,7 +30,6 @@ check_PROGRAMS = \
 	hashtags-test \
 	stats-test \
 	val-test \
-	val-unsquared-test \
 	test-playground
 
 TOPSRC := $(shell cd $(top_srcdir) && pwd)/src
@@ -76,11 +75,6 @@ val_test_SOURCES = val-test.cc
 val_test_LDFLAGS = -L../..
 val_test_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
 val_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS) ../../validate/hotosm.lo
-
-val_unsquared_test_SOURCES = val-unsquared-test.cc
-val_unsquared_test_LDFLAGS = -L../..
-val_unsquared_test_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
-val_unsquared_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS) ../../validate/hotosm.lo
 
 # Test the replication classes
 #replication_test_SOURCES = replication-test.cc
@@ -138,7 +132,6 @@ CLEANFILES = \
 	geo-test.log \
 	stats-test.log \
 	val-test.log \
-	val-unsquared-test \
     statsconfig-test.log \
 	planetreplicator-test.log \
 	areafilter-test.log \

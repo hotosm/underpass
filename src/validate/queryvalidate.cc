@@ -94,7 +94,7 @@ QueryValidate::applyChange(const ValidateStatus &validation) const
 #endif
     log_debug("Applying Validation data");
 
-    if (validation.status.size() == 0) {
+    if (validation.angle == 0 && validation.status.size() == 0) {
         return "";
     }
     std::map<osmobjects::osmtype_t, std::string> objtypes = {
@@ -115,15 +115,20 @@ QueryValidate::applyChange(const ValidateStatus &validation) const
     std::string format;
     std::string query;
     if (validation.values.size() > 0) {
-        query = "INSERT INTO validation (osm_id, change_id, user_id, type, status, values, timestamp, location, source) VALUES(";
+        query = "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, values, timestamp, location, source) VALUES(";
         format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], ARRAY[%s], \'%s\', ST_GeomFromText(\'%s\', 4326), \'%s\'";
     } else {
-        query = "INSERT INTO validation (osm_id, change_id, user_id, type, status, timestamp, location) VALUES(";
+        query = "INSERT INTO validation (osm_id, change_id, angle, user_id, type, status, timestamp, location) VALUES(";
         format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)";
     }
     boost::format fmt(format);
     fmt % validation.osm_id;
     fmt % validation.change_id;
+    if (isnan(validation.angle)) {
+        fmt % 0.0;
+    } else {
+        fmt % validation.angle;
+    }
     fmt % validation.user_id;
     fmt % objtypes[validation.objtype];
     std::string stattmp, valtmp;
