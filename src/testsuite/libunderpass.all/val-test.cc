@@ -354,10 +354,10 @@ test_geometry_building(std::shared_ptr<Validate> &plugin)
 
             // Bad geometry small circle
             if (way->id == 961600809) {
-                if (status->hasStatus(badgeom)) {
-                    runtest.pass("Validate::checkWay(badgeom small circle) [geometry building]");
+                if (!status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(good geometry circle) [geometry building]");
                 } else {
-                    runtest.fail("Validate::checkWay(badgeom small circle) [geometry building]");
+                    runtest.fail("Validate::checkWay(good geometry small circle) [geometry building]");
                 }
             }
 

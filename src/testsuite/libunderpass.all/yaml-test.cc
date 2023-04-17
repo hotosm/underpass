@@ -39,7 +39,7 @@ main(int argc, char *argv[])
 {
     logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
     dbglogfile.setWriteDisk(true);
-    dbglogfile.setLogFilename("val-test.log");
+    dbglogfile.setLogFilename("yaml-test.log");
     dbglogfile.setVerbosity(3);
 
     yaml::Yaml yaml;
