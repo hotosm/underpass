@@ -128,9 +128,11 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     yaml::Yaml tests = yamls[type];
     // List of valid tags to be validated
     auto tags = tests.get("tags");
+#if 0
     // Not using required_tags disables writing features flagged for not being tag complete
     // from being written to the database thus reducing the size of the results.
     auto required_tags = tests.get("required_tags");
+#endif
 
     std::string key;
     int tagexists = 0;
@@ -141,11 +143,14 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
             status->status.insert(badvalue);
             status->values.insert(vit->first + "=" +  vit->second);
         }
+#if 0
         if (isRequiredTag(vit->first, required_tags)) {
             tagexists++;
         }
+#endif
     }
 
+#if 0
     if (tagexists == required_tags.children.size()) {
         status->status.insert(complete);
     } else {
@@ -154,6 +159,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     if (status->status.size() == 0) {
         status->status.insert(correct);
     }
+#endif
     return status;
 }
 
@@ -192,10 +198,11 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     int tagexists = 0;
     // List of valid tags to be validated
     auto tags = tests.get("tags");
+#if 0
     // Not using required_tags disables writing features flagged for not being tag complete
     // from being written to the database thus reducing the size of the results.
     auto required_tags = tests.get("required_tags");
-
+#endif
     // These values are in the config section of the YAML file
     double maxangle = 91;
     double minangle = 85;
@@ -222,10 +229,11 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             status->status.insert(badvalue);
             status->values.insert(vit->first + "=" +  vit->second);
         }
+#if 0
         if (isRequiredTag(vit->first, required_tags)) {
             tagexists++;
         }
-
+#endif
         // FIXME: move out special cases to the config file
         if (!values) {
             if ((vit->first == "building" && vit->second == "commercial") && !way.tags.count("name")) {
@@ -233,13 +241,13 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             }
         }
     }
-
+#if 0
     if (tagexists == required_tags.children.size()) {
         status->status.insert(complete);
     } else {
         status->status.insert(incomplete);
     }
-
+#endif
     boost::geometry::centroid(way.linestring, status->center);
     // See if the way is a closed polygon
     if (way.refs.front() == way.refs.back()) {
