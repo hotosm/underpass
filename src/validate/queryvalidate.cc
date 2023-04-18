@@ -116,10 +116,10 @@ QueryValidate::applyChange(const ValidateStatus &validation) const
     std::string query;
     if (validation.values.size() > 0) {
         query = "INSERT INTO validation (osm_id, change_id, user_id, type, status, values, timestamp, location, source) VALUES(";
-        format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], ARRAY[%s], \'%s\', ST_GeomFromText(\'%s\', 4326), \'%s\'";
+        format = "%d, %d, %g, \'%s\', ARRAY[%s]::status[], ARRAY[%s], \'%s\', ST_GeomFromText(\'%s\', 4326), \'%s\'";
     } else {
         query = "INSERT INTO validation (osm_id, change_id, user_id, type, status, timestamp, location) VALUES(";
-        format = "%d, %d, %g, %d, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)";
+        format = "%d, %d, %g, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)";
     }
     boost::format fmt(format);
     fmt % validation.osm_id;

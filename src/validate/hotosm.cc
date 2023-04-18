@@ -246,8 +246,8 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
         // If it's a building, check for square corners
         if (way.tags.count("building")) {
             const int num_points =  boost::geometry::num_points(way.linestring) - 1;
-            if (num_points == 3) {
-                log_debug("way is a triangle");
+            if (num_points < 4) {
+                log_debug("way is a triangle or has few nodes");
                 status->status.insert(badgeom);
             } else {
                 // minangle, maxangle

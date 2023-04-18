@@ -233,8 +233,8 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     }
 
     std::string plugins;
-    if (boost::filesystem::exists("validate/.libs")) {
-        plugins = "validate/.libs";
+    if (boost::filesystem::exists("src/validate/.libs")) {
+        plugins = "src/validate/.libs";
     } else {
         plugins = PKGLIBDIR;
     }
@@ -456,8 +456,6 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
         }
     }
 
-    task.query += queryvalidate->updateValidation(removals);
-
     auto nodeval = osmchanges->validateNodes(poly, plugin);
     for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
         task.query += queryvalidate->applyChange(*it->get());
@@ -466,6 +464,7 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
     for (auto it = wayval->begin(); it != wayval->end(); ++it) {
         task.query += queryvalidate->applyChange(*it->get());
     }
+    task.query += queryvalidate->updateValidation(removals);
 
     const std::lock_guard<std::mutex> lock(tasks_change_mutex);
     tasks->push_back(task);
