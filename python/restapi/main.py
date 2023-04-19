@@ -75,12 +75,15 @@ def read_root():
 
 @app.post("/report/dataQualityGeo")
 def dataQualityGeo(request: DataQualityRequest):
-    results = reporter.getDataQualityGeo(
-        fromDate = request.fromDate,
-        toDate = request.toDate,
-        hashtags = request.hashtags,
-        area = request.area,
-    )
+    if request.fromDate or request.toDate or request.area or request.hashtags:
+        results = reporter.getDataQualityGeo(
+            fromDate = request.fromDate,
+            toDate = request.toDate,
+            hashtags = request.hashtags,
+            area = request.area
+        )
+    else:
+        results = reporter.getDataQualityGeoLatest()
     return results
 
 @app.post("/report/dataQualityGeo/csv", response_class=PlainTextResponse)

@@ -204,8 +204,9 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     auto required_tags = tests.get("required_tags");
 #endif
     // These values are in the config section of the YAML file
-    double maxangle = 91;
-    double minangle = 85;
+    double minangle = 70;
+    double maxangle = 110;
+    double anglethreshold = 19;
     auto config = tests.get("config");
 
     // This is the minimum angle used to determine rectangular buildings
@@ -218,6 +219,13 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     if (configMaxAngle.size() > 0) {
         maxangle = std::stod(configMaxAngle[0].value);
     }
+
+    // This is the maximum angle used to determine rectangular buildings
+    auto configAngleTreshold = config.get("angletreshold").children;
+    if (configAngleTreshold.size() > 0) {
+        anglethreshold = std::stod(configAngleTreshold[0].value);
+    }
+
     // This enables/disables writing features flagged for not having values
     // in range as defined in the YAML config file. This prevents those
     // from being written to the database to reduce the size of the results.
@@ -250,23 +258,15 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 #endif
     boost::geometry::centroid(way.linestring, status->center);
     // See if the way is a closed polygon
-    if (way.refs.front() == way.refs.back()) {
+    if (way.action == osmobjects::create && way.refs.front() == way.refs.back()) {
         // If it's a building, check for square corners
         if (way.tags.count("building")) {
             const int num_points =  boost::geometry::num_points(way.linestring) - 1;
             if (num_points < 4) {
                 log_debug("way is a triangle or has few nodes");
                 status->status.insert(badgeom);
-            } else {
-                // minangle, maxangle
-                std::tuple<double, double> angles = cornerAngles(way.linestring);
-                if (num_points > 5 && std::get<0>(angles) - std::get<1>(angles) < 6 ) {
-                    log_debug("way looks like a circle");
-                } else if (std::get<0>(angles) > maxangle) {
-                    status->status.insert(badgeom);
-                } else if (std::get<1>(angles) < minangle) {
-                    status->status.insert(badgeom);
-                }
+            } else if (unsquared(way.linestring, minangle, maxangle, anglethreshold)) {
+                status->status.insert(badgeom);
             }
         }
     }
