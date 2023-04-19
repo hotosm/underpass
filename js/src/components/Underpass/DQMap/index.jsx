@@ -36,7 +36,6 @@ export const DQMap = ({
 
     useEffect(() => {
       const getData = async () => {
-        console.log("getting data... ");
         setLoading(true);
         await API(apiUrl)[reports[report]](
           fromDate,
