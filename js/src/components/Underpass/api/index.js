@@ -8,14 +8,15 @@ const API = (url) => {
         process.env.REACT_APP_UNDERPASS_API
         || "http://localhost:8000";
     return {
-        reportDataQualityTag: async (fromDate, toDate, hashtags, options = {}) => {
+        reportDataQualityTag: async (fromDate, toDate, hashtags, page = 0, options = {}) => {
             fetch(API_URL + "/report/dataQualityTag", {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({
                     fromDate: fromDate,
                     toDate: toDate,
-                    hashtags: hashtags
+                    hashtags: hashtags,
+                    page: page
                 })
             })
             .then(res => {
@@ -31,14 +32,15 @@ const API = (url) => {
             )
         },
 
-        reportDataQualityTagCSV: async (fromDate, toDate, hashtags = [], options = {}) => {
+        reportDataQualityTagCSV: async (fromDate, toDate, hashtags = [], page = 0, options = {}) => {
             fetch(API_URL + "/report/dataQualityTag/csv", {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({
                     fromDate: fromDate,
                     toDate: toDate,
-                    hashtags: hashtags
+                    hashtags: hashtags,
+                    page: page
                 })
             })
             .then(res => {
@@ -54,14 +56,15 @@ const API = (url) => {
             )
         },
 
-        reportDataQualityGeo: async (fromDate, toDate, hashtags = [], options = {}) => {
+        reportDataQualityGeo: async (fromDate, toDate, hashtags = [], page = 0, options = {}) => {
             fetch(API_URL + "/report/dataQualityGeo", {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({
                     fromDate: fromDate,
                     toDate: toDate,
-                    hashtags: hashtags
+                    hashtags: hashtags,
+                    page: page
                 })
             })
             .then(res => {
@@ -77,14 +80,15 @@ const API = (url) => {
             )
         },
 
-        reportDataQualityGeoCSV: async (fromDate, toDate, hashtags = [], options = {}) => {
+        reportDataQualityGeoCSV: async (fromDate, toDate, hashtags = [], page = 0, options = {}) => {
             fetch(API_URL + "/report/dataQualityGeo/csv", {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({
                     fromDate: fromDate,
                     toDate: toDate,
-                    hashtags: hashtags
+                    hashtags: hashtags,
+                    page: page
                 })
             })
             .then(res => {
@@ -100,14 +104,15 @@ const API = (url) => {
             )
         },
 
-        reportDataQualityTagStats: async (fromDate, toDate, hashtags = [], options = {}) => {
+        reportDataQualityTagStats: async (fromDate, toDate, hashtags = [], page = 0, options = {}) => {
             fetch(API_URL + "/report/dataQualityTagStats", {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({
                     fromDate: fromDate,
                     toDate: toDate,
-                    hashtags: hashtags
+                    hashtags: hashtags,
+                    page: page
                 })
             })
             .then(res => {
@@ -123,14 +128,15 @@ const API = (url) => {
             )
         },
 
-        reportDataQualityTagStatsCSV: async (fromDate, toDate, hashtags = [], options = {}) => {
+        reportDataQualityTagStatsCSV: async (fromDate, toDate, hashtags = [], page = 0, options = {}) => {
             fetch(API_URL + "/report/dataQualityTagStats/csv", {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({
                     fromDate: fromDate,
                     toDate: toDate,
-                    hashtags: hashtags
+                    hashtags: hashtags,
+                    page: page
                 })
             })
             .then(res => {

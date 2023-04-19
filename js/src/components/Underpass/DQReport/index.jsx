@@ -7,6 +7,7 @@ export const DQReport = ({
     fromDate,
     toDate,
     hashtags,
+    page,
     onSuccess,
     apiUrl,
     className,
@@ -28,6 +29,7 @@ export const DQReport = ({
           fromDate,
           toDate,
           hashtags,
+          page,
           {
             onSuccess: (data) => {
               setResult(data);
