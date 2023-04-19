@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import API from '../api';
 import "./styles.css";
-import "./leaflet.css";
+import 'leaflet/dist/leaflet.css';
 
 function ChangeView({ center, zoom }) {
   const map = useMap();
@@ -18,23 +18,31 @@ export const DQMap = ({
     onSuccess,
     apiUrl,
     className,
-    report = "geo"
+    report = "geo",
+    page = 0
   }) => {
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(0);
+    const popup = useRef();
 
     const reports = {
       "geo": "reportDataQualityGeo",
     };
 
+    function closePopup() {
+      popup.current.close();
+    }
+
     useEffect(() => {
       const getData = async () => {
+        console.log("getting data... ");
         setLoading(true);
         await API(apiUrl)[reports[report]](
           fromDate,
           toDate,
           hashtags,
+          page,
           {
             onSuccess: (data) => {
               setResult(data);
@@ -42,17 +50,18 @@ export const DQMap = ({
               onSuccess && onSuccess(data);
             },
             onError: (error) => {
-              setLoading(false);
               console.log(error)
+              setLoading(false);
             }
           }
         );
       }
       getData();
     }, [fromDate, toDate, hashtags]);
+
     if (!loading) {
       if (result && result.length > 0) {
-        return <div>
+        return <div className={className || "Map"}>
           <MapContainer 
             style={{height: 500}}
             center={[result[0].lon, result[0].lat]}
@@ -65,15 +74,21 @@ export const DQMap = ({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           {result.map(x => 
-            <Marker position={[x.lon, x.lat]}>
-            <Popup>
-              {x.link}
+            <Marker
+              position={[x.lon, x.lat]}
+            >
+            <Popup ref={popup}>
+              <a href={x.link} target="_blank">{x.link}</a>
             </Popup>
           </Marker>
           )}
         </MapContainer>
         <button
-          onClick={() => setSelectedIndex(selectedIndex < result.length - 1 ? selectedIndex + 1 : 0)}
+          className={"button"}
+          onClick={() => {
+            setSelectedIndex(selectedIndex < result.length - 1 ? selectedIndex + 1 : 0);
+            closePopup();
+          }}
         >
           Next ({selectedIndex + 1}/{result.length})
         </button>

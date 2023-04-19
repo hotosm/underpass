@@ -3,7 +3,7 @@ import { DQReport } from '../components/Underpass/DQReport';
 
 const fromDate = () => {
   const now = new Date();
-  const d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const d = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000);
   const datestring = d.getFullYear()  + "-" + (d.getMonth()+1) + "-" + d.getDate() + "T" +
   d.getHours() + ":" + d.getMinutes() + ":00"; 
   return datestring; 
