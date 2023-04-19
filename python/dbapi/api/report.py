@@ -39,7 +39,9 @@ class Report:
     ):
         query = "select \
             'https://osm.org/' || type || '/' || osm_id as link, \
-            'https://osm.org/api/0.6/' || type || '/' || osm_id as download \
+            'https://osm.org/api/0.6/' || type || '/' || osm_id as download, \
+            st_x(location) as lat, \
+            st_y(location) as lon \
             from changesets \
             INNER JOIN validation \
             ON validation.change_id = changesets.id \
@@ -51,6 +53,25 @@ class Report:
                 "and closed_at <= '{0}'".format(toDate) if toDate else "",
                 "and " + hashtagsQueryBuilder(hashtags) if hashtags else "",
                 "and " + bboxQueryBuilder(area) if area else "",
+                RESULTS_PER_PAGE,
+                RESULTS_PER_PAGE * page
+            )
+        return self.underpassDB.run(query, responseType)
+
+    def getDataQualityGeoLatest(
+        self,
+        page = 0,
+        responseType = "json"
+    ):
+        query = "select \
+            'https://osm.org/' || type || '/' || osm_id as link, \
+            'https://osm.org/api/0.6/' || type || '/' || osm_id as download, \
+            st_x(location) as lat, \
+            st_y(location) as lon \
+            from validation \
+            where 'badgeom' = any (validation.status) \
+            order by osm_id \
+            limit {0} offset {1}".format(
                 RESULTS_PER_PAGE,
                 RESULTS_PER_PAGE * page
             )

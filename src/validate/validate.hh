@@ -277,10 +277,13 @@ class BOOST_SYMBOL_VISIBLE Validate {
         return false;
     }
 
-    std::tuple<double, double> cornerAngles(const linestring_t &way) {
+    bool unsquared(
+        const linestring_t &way,
+        double &min_angle,
+        double &max_angle,
+        double &threshold
+    ) {
         const int num_points =  boost::geometry::num_points(way) - 1;
-        double max = 0;
-        double min = 180;
         for(int i = 0; i < num_points; i++) {
             // Three points
             int a,b,c;
@@ -306,15 +309,14 @@ class BOOST_SYMBOL_VISIBLE Validate {
 
             double angle = geo::Geo::calculateAngle(x1,y1,x2,y2,x3,y3);
 
-            if (angle > max) {
-                max = angle;
-            }
-            if (angle < min) {
-                min = angle;
+            if (
+                (angle > max_angle - threshold && angle < max_angle)
+                || (angle > min_angle && angle < min_angle + threshold)
+            ) {
+                return true;
             }
         }
-
-        return std::tuple<double, double>(max,  min);
+        return false;
     };
 
   protected:

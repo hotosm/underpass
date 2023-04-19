@@ -1,15 +1,15 @@
 
 config:
   - minangle:
-    - 84
+    - 70
   - maxangle:
-    - 91
+    - 110
+  - anglethreshold:
+    - 19
   - overlaps:
     - yes
   - duplicate:
     - yes
-  - circleminpoints:
-    - 10
 
 tags:
   - building:
