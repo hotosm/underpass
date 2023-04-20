@@ -71,11 +71,13 @@ using tcp = net::ip::tcp;
 #include "underpassconfig.hh"
 #include "stats/querystats.hh"
 #include "validate/queryvalidate.hh"
+#include "raw/queryraw.hh"
 #include "validate/validate.hh"
 #include <ogr_geometry.h>
 
 using namespace queryvalidate;
 using namespace querystats;
+using namespace queryraw;
 
 namespace replication {
 class StateFile;
@@ -131,7 +133,8 @@ void threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
     std::shared_ptr<Validate> &plugin,
     std::shared_ptr<std::vector<ReplicationTask>> tasks,
     std::shared_ptr<QueryStats> &querystats,
-    std::shared_ptr<QueryValidate> &queryvalidate
+    std::shared_ptr<QueryValidate> &queryvalidate,
+    std::shared_ptr<QueryRaw> &queryraw
 );
 
 static std::mutex tasks_change_mutex;

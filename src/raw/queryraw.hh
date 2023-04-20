@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021, 2022, 2023 Humanitarian OpenStreetMap Team
+// Copyright (c) 2023 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -17,13 +17,13 @@
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
 
-#ifndef __QUERYSTATS_HH__
-#define __QUERYSTATS_HH__
+#ifndef __QUERYRAW_HH__
+#define __QUERYRAW_HH__
 
-/// \file data.hh
-/// \brief This build stats queries for the database
+/// \file queryraw.hh
+/// \brief This build raw queries for the database
 ///
-/// This manages the OSM Stats schema in a postgres database. This
+/// This manages the OSM Raw schema in a postgres database. This
 /// includes building queries for existing data in the database, 
 /// as well for updating the database.
 
@@ -32,35 +32,15 @@
 #include "unconfig.h"
 #endif
 
-#include <algorithm>
-#include <array>
 #include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-
-#include <boost/date_time.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-using namespace boost::posix_time;
-using namespace boost::gregorian;
-
-#include "osm/changeset.hh"
-#include "osm/osmchange.hh"
 #include "data/pq.hh"
+#include "osm/osmobjects.hh"
 
 using namespace pq;
+using namespace osmobjects;
 
-// Forward declarations
-namespace changeset {
-  class ChangeSet;
-};
-namespace osmchange {
-  class OsmChange;
-  class ChangeStats;
-}; // namespace osmchange
-
-/// \namespace querystats
-namespace querystats {
+/// \namespace queryraw
+namespace queryraw {
 
 /// \class QueryStats
 /// \brief This handles all direct database access
@@ -68,22 +48,24 @@ namespace querystats {
 /// This class handles all the queries to the OSM Stats database.
 /// This includes querying the database for existing data, as
 /// well as updating the data whenh applying a replication file.
-class QueryStats {
+class QueryRaw {
   public:
-    QueryStats(void);
-    ~QueryStats(void){};
-    QueryStats(std::shared_ptr<Pq> db);
-    /// Build query for processed ChangeSet
-    std::string applyChange(const changeset::ChangeSet &change) const;
-    /// Build query for processed OsmChange
-    std::string applyChange(const osmchange::ChangeStats &change) const;
+    QueryRaw(void);
+    ~QueryRaw(void){};
+    QueryRaw(std::shared_ptr<Pq> db);
+
+    /// Build query for processed Node
+    std::string applyChange(const OsmNode &node) const;
+    /// Build query for processed Way
+    std::string applyChange(const OsmWay &way) const;
+
     // Database connection, used for escape strings
     std::shared_ptr<Pq> dbconn;
 };
 
-} // namespace querystats
+} // namespace queryraw
 
-#endif // EOF __QUERYSTATS_HH__
+#endif // EOF __QUERYRAW_HH__
 
 // local Variables:
 // mode: C++

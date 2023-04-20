@@ -136,7 +136,7 @@ QueryValidate::applyChange(const ValidateStatus &validation) const
     fmt % stattmp;
     if (validation.values.size() > 0) {
         for (const auto &tag: std::as_const(validation.values)) {
-            valtmp += dbconn->escapedString(tag) + ",";
+            valtmp += + "'" + dbconn->escapedString(tag) + "',";
         }
         if (!valtmp.empty()) {
             valtmp.pop_back();

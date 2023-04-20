@@ -47,7 +47,6 @@ CREATE TABLE public.validation (
     user_id bigint,
     change_id bigint,
     type public.objtype,
-    angle double precision,
     status public.status[],
     values text[],
     source text,
@@ -56,4 +55,17 @@ CREATE TABLE public.validation (
 );
 ALTER TABLE ONLY public.validation
     ADD CONSTRAINT validation_pkey PRIMARY KEY (osm_id);
+
+CREATE TABLE public.raw (
+    osm_id bigint,
+    change_id bigint,
+    type public.objtype,
+    geometry public.geometry(Geometry,4326),
+    tags public.hstore,
+    refs bigint[],
+    timestamp timestamp with time zone
+);
+ALTER TABLE ONLY public.raw
+    ADD CONSTRAINT raw_pkey PRIMARY KEY (osm_id);
+
 

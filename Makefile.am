@@ -57,6 +57,7 @@ libunderpass_la_SOURCES = \
 	src/dsodefs.hh src/gettext.h \
 	src/underpassconfig.hh \
 	src/stats/querystats.cc src/stats/querystats.hh \
+	src/raw/queryraw.cc src/raw/queryraw.hh \
 	src/stats/statsconfig.hh src/stats/statsconfig.cc \
 	src/validate/queryvalidate.cc src/validate/queryvalidate.hh \
 	src/osm/changeset.cc src/osm/changeset.hh \
@@ -181,6 +182,7 @@ PCHFLAGS = \
 PCHHEADERS = \
         $(top_srcdir)/src/replicator/planetreplicator.hh \
         $(top_srcdir)/src/stats/querystats.hh \
+		$(top_srcdir)/src/raw/queryraw.hh \
         $(top_srcdir)/src/replicator/replication.hh \
         $(top_srcdir)/src/osm/osmchange.hh \
         $(top_srcdir)/src/osm/changeset.hh \

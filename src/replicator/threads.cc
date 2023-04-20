@@ -80,6 +80,7 @@ using tcp = net::ip::tcp;         // from <boost/asio/ip/tcp.hpp>
 #include "validate/queryvalidate.hh"
 #include "validate/validate.hh"
 #include "replicator/replication.hh"
+#include "raw/queryraw.hh"
 #include <jemalloc/jemalloc.h>
 #include "data/pq.hh"
 
@@ -88,6 +89,7 @@ std::mutex stream_mutex;
 using namespace logger;
 using namespace querystats;
 using namespace queryvalidate;
+using namespace queryraw;
 
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
@@ -138,7 +140,7 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
         log_error("Could not connect to Underpass DB, aborting monitoring thread!");
         return;
     }
-    auto querystats = std::make_shared<querystats::QueryStats>(db);
+    auto querystats = std::make_shared<QueryStats>(db);
 
     int cores = config.concurrency;
 
@@ -257,8 +259,9 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
         log_error("Could not connect to Underpass DB, aborting monitoring thread!");
         return;
     }
-    auto querystats = std::make_shared<querystats::QueryStats>(db);
-    auto queryvalidate = std::make_shared<queryvalidate::QueryValidate>(db);
+    auto querystats = std::make_shared<QueryStats>(db);
+    auto queryvalidate = std::make_shared<QueryValidate>(db);
+    auto queryraw = std::make_shared<QueryRaw>(db);
 
     int cores = config.concurrency;
 
@@ -302,7 +305,8 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
                 std::ref(validator),
                 std::ref(tasks),
                 std::ref(querystats),
-                std::ref(queryvalidate)
+                std::ref(queryvalidate),
+                std::ref(queryraw)
             );
             boost::asio::post(pool, task);
             std::rotate(planets.begin(), planets.begin()+1, planets.end());
@@ -383,7 +387,8 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
         std::shared_ptr<Validate> &plugin,
         std::shared_ptr<std::vector<ReplicationTask>> tasks,
         std::shared_ptr<QueryStats> &querystats,
-        std::shared_ptr<QueryValidate> &queryvalidate)
+        std::shared_ptr<QueryValidate> &queryvalidate,
+        std::shared_ptr<QueryRaw> &queryraw)
 {
     auto osmchanges = std::make_shared<osmchange::OsmChangeFile>();
 #ifdef TIMING_DEBUG
@@ -438,8 +443,9 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
         task.query += querystats->applyChange(*it->second);
     }
 
+    // Existing entries in the validation table that needs to be removed
     auto removals = std::make_shared<std::vector<long>>();
-    // Delete existing entries in the validation table to remove features that have been fixed
+    
     for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
         osmchange::OsmChange *change = it->get();
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
@@ -447,15 +453,20 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
             if (way->action == osmobjects::remove) {
                 removals->push_back(way->id);
             }
+            // Update raw data database
+            task.query += queryraw->applyChange(*way);
         }
         for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
             osmobjects::OsmNode *node = nit->get();
             if (node->action == osmobjects::remove) {
                 removals->push_back(node->id);
             }
+            // Update raw data database
+            task.query += queryraw->applyChange(*node);
         }
     }
 
+    // Validation & Raw data
     auto nodeval = osmchanges->validateNodes(poly, plugin);
     for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
         task.query += queryvalidate->applyChange(*it->get());
