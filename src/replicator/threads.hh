@@ -78,6 +78,7 @@ using tcp = net::ip::tcp;
 using namespace queryvalidate;
 using namespace querystats;
 using namespace queryraw;
+using namespace underpassconfig;
 
 namespace replication {
 class StateFile;
@@ -126,16 +127,21 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     const underpassconfig::UnderpassConfig &config
 );
 
+struct OsmChangeTask {
+        std::shared_ptr<replication::RemoteURL> remote;
+        std::shared_ptr<replication::Planet> planet;
+        const multipolygon_t poly;
+        std::shared_ptr<Validate> plugin;
+        std::shared_ptr<std::vector<ReplicationTask>> tasks;
+        std::shared_ptr<QueryStats> querystats;
+        std::shared_ptr<QueryValidate> queryvalidate;
+        std::shared_ptr<QueryRaw> queryraw;
+        std::shared_ptr<UnderpassConfig> config;
+        const int &taskIndex;
+};
+
 /// Updates the tables from a changeset file
-void threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
-    std::shared_ptr<replication::Planet> &planet,
-    const multipolygon_t &poly,
-    std::shared_ptr<Validate> &plugin,
-    std::shared_ptr<std::vector<ReplicationTask>> tasks,
-    std::shared_ptr<QueryStats> &querystats,
-    std::shared_ptr<QueryValidate> &queryvalidate,
-    std::shared_ptr<QueryRaw> &queryraw
-);
+void threadOsmChange(OsmChangeTask osmChangeTask);
 
 static std::mutex tasks_change_mutex;
 static std::mutex tasks_changeset_mutex;

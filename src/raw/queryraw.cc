@@ -130,18 +130,20 @@ QueryRaw::applyChange(const OsmWay &way) const
         fmt % way.change_id;
         // type
         fmt % "way";
-        // geometry
-        std::string geometry;
-        if (boost::geometry::num_points(way.linestring) > 0) {
-            std::string geostring = boost::lexical_cast<std::string>(boost::geometry::wkt(way.linestring));
-            geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
-        } else if (boost::geometry::num_points(way.polygon) > 0) {
-            std::string geostring = boost::lexical_cast<std::string>(boost::geometry::wkt(way.polygon));
-            geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
-        } else {
-            geometry = "null";
-        }
+
+        // geometry (not used yet)
+        std::string geometry = "null";
+        // if (boost::geometry::num_points(way.linestring) > 0) {
+        //     std::string geostring = boost::lexical_cast<std::string>(boost::geometry::wkt(way.linestring));
+        //     geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
+        // } else if (boost::geometry::num_points(way.polygon) > 0) {
+        //     std::string geostring = boost::lexical_cast<std::string>(boost::geometry::wkt(way.polygon));
+        //     geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
+        // } else {
+        //     geometry = "null";
+        // }
         fmt % geometry;
+
         // tags
         std::string tags = "";
         if (way.tags.size() > 0) {
@@ -191,6 +193,70 @@ QueryRaw::applyChange(const OsmWay &way) const
     return query;
 }
 
+std::vector<long> arrayStrToVector(std::string &refs_str) {
+    refs_str.erase(0, 1);
+    refs_str.erase(refs_str.size() - 1);
+    std::vector<long> refs;
+    std::stringstream ss(refs_str);
+    std::string token;
+    while (std::getline(ss, token, ',')) {
+        refs.push_back(std::stod(token));
+    }
+    return refs;
+}
+
+std::string
+QueryRaw::applyChange(const std::shared_ptr<std::map<long, std::pair<double, double>>> nodes) const
+{
+#ifdef TIMING_DEBUG_X
+    boost::timer::auto_cpu_timer timer("applyChange(modified nodes): took %w seconds\n");
+#endif
+    // 1. Get all ways that have references to nodes
+    std::string nodeIds;
+    for (auto node = nodes->begin(); node != nodes->end(); ++node) {
+        nodeIds += std::to_string(node->first) + ",";
+    }
+    nodeIds.erase(nodeIds.size() - 1);
+    std::string waysQuery = "SELECT osm_id, refs FROM raw where refs && ARRAY[" + nodeIds + "]::bigint[];";
+    auto ways = dbconn->query(waysQuery);
+
+    // 2. Update ways geometries
+
+    // For each way in results ...
+    std::string query = "";
+    for (auto way_it = ways.begin(); way_it != ways.end(); ++way_it) {
+        std::string queryPoints = "";
+        std::string queryWay = "";
+        // Way OSM id
+        auto osm_id = (*way_it)[0].as<long>();
+        // Way refs
+        std::string refs_str = (*way_it)[1].as<std::string>();
+        // For each way ref ...
+        if (refs_str.size() > 1) {
+            auto refs =  arrayStrToVector(refs_str);
+            // For each ref in way ...
+            int refIndex = 0;
+            queryWay += "UPDATE raw SET geometry = ";
+            for (auto ref_it = refs.begin(); ref_it != refs.end(); ++ref_it) {
+                // If node was modified, update it
+                if (nodes->find(*ref_it) != nodes->end()) {
+                    queryWay += "ST_SetPoint(";
+                    queryPoints += std::to_string(refIndex) + ", ST_MakePoint(";
+                    queryPoints += std::to_string(nodes->at(*ref_it).first) + "," + std::to_string(nodes->at(*ref_it).second);
+                    queryPoints += ")),";
+                }
+                refIndex++;
+            }
+        }
+        queryPoints.erase(queryPoints.size() - 1);
+        queryWay += "geometry, " + queryPoints;
+        queryWay += " WHERE osm_id = " + std::to_string(osm_id) + ";";
+        query += queryWay;
+
+    }
+    // 3. Save ways
+    return query;
+}
 
 } // namespace queryraw
 

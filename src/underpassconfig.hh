@@ -154,6 +154,10 @@ struct UnderpassConfig {
     ptime start_time = not_a_date_time;              ///< Starting time for changesets and OSM changes import
     ptime end_time = not_a_date_time;                ///< Ending time for changesets and OSM changes import
 
+    bool disable_validation = false;
+    bool disable_stats = false;
+    bool disable_raw = false;
+
     ///
     /// \brief getPlanetServer returns either the command line supplied planet server
     ///        replication URL or the first planet server replication URL from the hardcoded

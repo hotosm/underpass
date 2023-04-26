@@ -58,6 +58,8 @@ class QueryRaw {
     std::string applyChange(const OsmNode &node) const;
     /// Build query for processed Way
     std::string applyChange(const OsmWay &way) const;
+  /// Build query for updating modified nodes in ways geometries
+    std::string applyChange(const std::shared_ptr<std::map<long, std::pair<double, double>>> nodes) const;
 
     // Database connection, used for escape strings
     std::shared_ptr<Pq> dbconn;

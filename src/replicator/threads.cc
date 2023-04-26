@@ -83,6 +83,8 @@ using tcp = net::ip::tcp;         // from <boost/asio/ip/tcp.hpp>
 #include "raw/queryraw.hh"
 #include <jemalloc/jemalloc.h>
 #include "data/pq.hh"
+#include "underpassconfig.hh"
+
 
 std::mutex stream_mutex;
 
@@ -90,6 +92,7 @@ using namespace logger;
 using namespace querystats;
 using namespace queryvalidate;
 using namespace queryraw;
+using namespace underpassconfig;
 
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
@@ -127,7 +130,7 @@ getClosest(std::shared_ptr<std::vector<ReplicationTask>> tasks, ptime now) {
 void
 startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
                const multipolygon_t &poly,
-               const underpassconfig::UnderpassConfig &config)
+               const UnderpassConfig &config)
 {
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("startMonitorChangesets: took %w seconds\n");
@@ -189,7 +192,6 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
             std::rotate(planets.begin(), planets.begin()+1, planets.end());
             remote->updateDomain(planets.front()->domain);
         }
-
         pool.join();
         db->query(allTasksQueries(tasks));
 
@@ -224,7 +226,7 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
 void
 startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
             const multipolygon_t &poly,
-            const underpassconfig::UnderpassConfig &config)
+            const UnderpassConfig &config)
 {
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("startMonitorChanges: took %w seconds\n");
@@ -288,9 +290,11 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     auto last_task = std::make_shared<ReplicationTask>();
     bool caughtUpWithNow = false;
     bool monitoring = true;
+    auto underpassConfig = std::make_shared<UnderpassConfig>(config);
+
     while (monitoring) {
-        auto tasks = std::make_shared<std::vector<ReplicationTask>>();
         i = cores*2;
+        auto tasks = std::make_shared<std::vector<ReplicationTask>>(i);
         boost::asio::thread_pool pool(i);
         while (--i) {
             std::this_thread::sleep_for(delay);
@@ -298,7 +302,8 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
                 (last_task->status == reqfile_t::remoteNotFound && !caughtUpWithNow)) {
                 remote->Increment();
             }
-            auto task = boost::bind(threadOsmChange,
+
+            OsmChangeTask osmChangeTask {
                 std::make_shared<replication::RemoteURL>(remote->getURL()),
                 std::ref(planets.front()),
                 std::ref(poly),
@@ -306,12 +311,16 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
                 std::ref(tasks),
                 std::ref(querystats),
                 std::ref(queryvalidate),
-                std::ref(queryraw)
-            );
+                std::ref(queryraw),
+                underpassConfig,
+                i
+            };
+
+            auto task = boost::bind(threadOsmChange, osmChangeTask);
+
             boost::asio::post(pool, task);
             std::rotate(planets.begin(), planets.begin()+1, planets.end());
         }
-        
         pool.join();
         db->query(allTasksQueries(tasks));
 
@@ -381,15 +390,20 @@ threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
 
 // This thread get started for every osmChange file
 void
-threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
-        std::shared_ptr<replication::Planet> &planet,
-        const multipolygon_t &poly,
-        std::shared_ptr<Validate> &plugin,
-        std::shared_ptr<std::vector<ReplicationTask>> tasks,
-        std::shared_ptr<QueryStats> &querystats,
-        std::shared_ptr<QueryValidate> &queryvalidate,
-        std::shared_ptr<QueryRaw> &queryraw)
+threadOsmChange(OsmChangeTask osmChangeTask)
 {
+
+    auto remote = osmChangeTask.remote;
+    auto planet = osmChangeTask.planet;
+    auto poly = osmChangeTask.poly;
+    auto plugin = osmChangeTask.plugin;
+    auto tasks = osmChangeTask.tasks;
+    auto querystats = osmChangeTask.querystats;
+    auto queryvalidate = osmChangeTask.queryvalidate;
+    auto queryraw = osmChangeTask.queryraw;
+    auto config = osmChangeTask.config;
+    auto taskIndex = osmChangeTask.taskIndex;
+
     auto osmchanges = std::make_shared<osmchange::OsmChangeFile>();
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("threadOsmChange: took %w seconds\n");
@@ -434,51 +448,82 @@ threadOsmChange(std::shared_ptr<replication::RemoteURL> &remote,
 
     osmchanges->areaFilter(poly);
 
-    // These stats are for the entire file
-    auto stats = osmchanges->collectStats(poly);
-    for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
-        if (it->second->added.size() == 0 && it->second->modified.size() == 0) {
-            continue;
+    if (!config->disable_stats) {
+        // Statistics
+        auto stats = osmchanges->collectStats(poly);
+        for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
+            if (it->second->added.size() == 0 && it->second->modified.size() == 0) {
+                continue;
+            }
+            task.query += querystats->applyChange(*it->second);
         }
-        task.query += querystats->applyChange(*it->second);
     }
 
     // Existing entries in the validation table that needs to be removed
     auto removals = std::make_shared<std::vector<long>>();
+
+    // Modified nodes to be updated in ways geometries (not used yet)
+    // auto modified = std::make_shared<std::map<long, std::pair<double, double>>>();
     
-    for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
-        osmchange::OsmChange *change = it->get();
-        for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
-            osmobjects::OsmWay *way = wit->get();
-            if (way->action == osmobjects::remove) {
-                removals->push_back(way->id);
+    if (!config->disable_validation && !config->disable_raw) {
+        for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
+            osmchange::OsmChange *change = it->get();
+            for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
+                osmobjects::OsmWay *way = wit->get();
+                if (!config->disable_validation) {
+                    if (way->action == osmobjects::remove) {
+                        removals->push_back(way->id);
+                    }
+                }
+                if (!config->disable_raw) {
+                    // Update ways raw data
+                    task.query += queryraw->applyChange(*way);
+                }
             }
-            // Update raw data database
-            task.query += queryraw->applyChange(*way);
-        }
-        for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
-            osmobjects::OsmNode *node = nit->get();
-            if (node->action == osmobjects::remove) {
-                removals->push_back(node->id);
+            for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
+                osmobjects::OsmNode *node = nit->get();
+                if (!config->disable_validation) {
+                    if (node->action == osmobjects::remove) {
+                        removals->push_back(node->id);
+                    }
+                }
+                // if (!config->disable_raw) {
+                //     // Modified nodes to be updated in ways geometries (not used yet)
+                //     if (node->action == osmobjects::modify) {
+                //         double lat = node->point.x();
+                //         double lon = node->point.y();
+                //         std::pair<double, double> value = std::make_pair(lat, lon);
+                //         modified->insert(std::make_pair(node->id, value));
+                //     }
+                //     // Update nodes raw data
+                //     task.query += queryraw->applyChange(*node);
+                // }
             }
-            // Update raw data database
-            task.query += queryraw->applyChange(*node);
         }
     }
 
-    // Validation & Raw data
-    auto nodeval = osmchanges->validateNodes(poly, plugin);
-    for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
-        task.query += queryvalidate->applyChange(*it->get());
+    // if (!config->disable_raw) {
+    //     // Update modified nodes raw data (not used yet)
+    //     if (modified->size() > 0) {
+    //         task.query += queryraw->applyChange(modified);
+    //     }
+    // }
+
+    if (!config->disable_validation) {
+        // Validation
+        auto nodeval = osmchanges->validateNodes(poly, plugin);
+        for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
+            task.query += queryvalidate->applyChange(*it->get());
+        }
+        auto wayval = osmchanges->validateWays(poly, plugin);
+        for (auto it = wayval->begin(); it != wayval->end(); ++it) {
+            task.query += queryvalidate->applyChange(*it->get());
+        }
+        task.query += queryvalidate->updateValidation(removals);
     }
-    auto wayval = osmchanges->validateWays(poly, plugin);
-    for (auto it = wayval->begin(); it != wayval->end(); ++it) {
-        task.query += queryvalidate->applyChange(*it->get());
-    }
-    task.query += queryvalidate->updateValidation(removals);
 
     const std::lock_guard<std::mutex> lock(tasks_change_mutex);
-    tasks->push_back(task);
+    (*tasks)[taskIndex] = task;
 
 }
 

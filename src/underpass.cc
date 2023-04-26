@@ -119,7 +119,10 @@ main(int argc, char *argv[])
             ("concurrency,c", opts::value<std::string>(), "Concurrency")
             ("changesets", "Changesets only")
             ("osmchanges", "OsmChanges only")
-            ("debug,d", "Enable debug messages for developers");
+            ("debug,d", "Enable debug messages for developers")
+            ("disable-stats", "Disable statistics")
+            ("disable-validation", "Disable validation")
+            ("disable-raw", "Disable raw OSM data");
         // clang-format on
 
         opts::store(opts::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
@@ -146,16 +149,15 @@ main(int argc, char *argv[])
         return 1;
     }
 
+    // Logging
     logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
     if (vm.count("verbose")) {
         dbglogfile.setVerbosity();
     }
-
     if (!vm.count("logstdout")) {
         dbglogfile.setWriteDisk(true);
         dbglogfile.setLogFilename("underpass.log");
     }
-
     if (vm.count("debug")) {
         dbglogfile.setVerbosity();
     }
@@ -175,11 +177,11 @@ main(int argc, char *argv[])
         config.planet_server = config.planet_servers[0].domain;
     }
 
+    // Concurrency
     if (vm.count("concurrency")) {
         const auto concurrency = vm["concurrency"].as<std::string>();
         try {
-            // Set minimum required because we are starting separate threads for monitoring anyway
-            config.concurrency = std::max(3, std::stoi(concurrency));
+            config.concurrency = std::stoi(concurrency);
             log_debug("Hardware threads: %1%", std::thread::hardware_concurrency());
             if (config.concurrency > std::thread::hardware_concurrency()) {
                 log_error("ERROR: concurrency cannot exceed the number of threads supported by hardware (%1%)!", std::thread::hardware_concurrency());
@@ -200,11 +202,24 @@ main(int argc, char *argv[])
         config.underpass_db_url = vm["server"].as<std::string>();
     }
 
+    // Boundary
     geoutil::GeoUtil geou;
     if (!geou.readFile(boundary)) {
         log_debug("Could not find '%1%' area file!", boundary);
     }
 
+    // Features
+    if (vm.count("disable-validation")) {
+        config.disable_validation = true;
+    }
+    if (vm.count("disable-stats")) {
+        config.disable_stats = true;
+    }
+    if (vm.count("disable-raw")) {
+        config.disable_raw = true;
+    }
+
+    // Replication
     planetreplicator::PlanetReplicator replicator;
 
     std::shared_ptr<std::vector<unsigned char>> data;
