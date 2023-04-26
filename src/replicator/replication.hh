@@ -39,7 +39,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-//#include <pqxx/pqxx>
 #include <cstdlib>
 #include <gumbo.h>
 #include <mutex>
