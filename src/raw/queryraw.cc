@@ -62,7 +62,7 @@ QueryRaw::applyChange(const OsmNode &node) const
 #endif
     std::string query;
     if (node.action == osmobjects::create || node.action == osmobjects::modify) {
-        query = "INSERT INTO raw (osm_id, change_id, type, geometry, tags, timestamp) VALUES(";
+        query = "INSERT INTO raw (osm_id, change_id, osm_type, geometry, tags, timestamp) VALUES(";
         std::string format = "%d, %d, \'%s\', ST_GeomFromText(\'%s\', 4326), %s, \'%s\' \
         ) ON CONFLICT (osm_id) DO UPDATE SET change_id = %d, geometry = ST_GeomFromText(\'%s\', \
         4326), tags = %s, timestamp = \'%s\';";
@@ -72,8 +72,8 @@ QueryRaw::applyChange(const OsmNode &node) const
         fmt % node.id;
         // change_id
         fmt % node.change_id;
-        // type
-        fmt % "node";
+        // osm_type
+        fmt % "N";
         // geometry
         auto geometry = boost::geometry::wkt(node.point);
         fmt % geometry;
@@ -120,7 +120,7 @@ QueryRaw::applyChange(const OsmWay &way) const
 #endif
     std::string query = "";
     if (way.action == osmobjects::create || way.action == osmobjects::modify) {
-        query = "INSERT INTO raw (osm_id, change_id, type, geometry, tags, refs, timestamp) VALUES(";
+        query = "INSERT INTO raw (osm_id, change_id, osm_type, geometry, tags, refs, timestamp) VALUES(";
         std::string format = "%d, %d, \'%s\', %s, %s, %s, \'%s\') \
         ON CONFLICT (osm_id) DO UPDATE SET change_id = %d, geometry = %s, tags = %s, refs = %s, timestamp = \'%s\';";
         boost::format fmt(format);
@@ -128,8 +128,8 @@ QueryRaw::applyChange(const OsmWay &way) const
         fmt % way.id;
         // change_id
         fmt % way.change_id;
-        // type
-        fmt % "way";
+        // osm_type
+        fmt % "W";
 
         // geometry (not used yet)
         std::string geometry = "null";
