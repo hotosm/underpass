@@ -17,7 +17,7 @@
 
 -- This is lua script for osm2pgsql in order to create and process custom schema to bootstrap a raw data table
 
--- osm2pgsql --create -H postgis -U underpass -p underpass -P 5432 -d underpass --extra-attributes --output=flex --style ./raw-underpass.lua pokhara_all.osm.pbf
+-- osm2pgsql -H postgis -U underpass -p underpass -P 5432 -d underpass --extra-attributes --output=flex --style ./raw-underpass.lua pokhara_all.osm.pbf
 
 -- Set projection to 4326
 local srid = 4326
@@ -47,7 +47,7 @@ function tags_to_hstore(tags)
 
 function osm2pgsql.process_node(object)
     tables.raw:add_row({
-        change_id = object.changeset, -- FIXME
+        change_id = object.changeset,
         geometry = { create = 'point' },
         tags = tags_to_hstore(object.tags),
         refs = '{}',
@@ -56,24 +56,24 @@ function osm2pgsql.process_node(object)
     })
 end
 
-function osm2pgsql.process_way(object)
-    if object.is_closed and #object.nodes>3 then
-        tables.raw:add_row({
-            change_id = object.changeset, -- FIXME
-            geometry = { create = 'area' },
-            tags = tags_to_hstore(object.tags),
-            timestamp = os.date('!%Y-%m-%dT%H:%M:%SZ', object.timestamp),
-            refs = '{' .. table.concat(object.nodes, ',') .. '}',
-            version = object.version,
-        })
-    else
-        tables.raw:add_row({
-            change_id = object.changeset, -- FIXME
-            geometry = { create = 'line' },
-            tags = tags_to_hstore(object.tags),
-            timestamp = os.date('!%Y-%m-%dT%H:%M:%SZ', object.timestamp),
-            refs = '{' .. table.concat(object.nodes, ',') .. '}',
-            version = object.version,
-        })
-    end
-end
+-- function osm2pgsql.process_way(object)
+--     if object.is_closed and #object.nodes>3 then
+--         tables.raw:add_row({
+--             change_id = object.changeset,
+--             geometry = { create = 'area' },
+--             tags = tags_to_hstore(object.tags),
+--             timestamp = os.date('!%Y-%m-%dT%H:%M:%SZ', object.timestamp),
+--             refs = '{' .. table.concat(object.nodes, ',') .. '}',
+--             version = object.version,
+--         })
+--     else
+--         tables.raw:add_row({
+--             change_id = object.changeset,
+--             geometry = { create = 'line' },
+--             tags = tags_to_hstore(object.tags),
+--             timestamp = os.date('!%Y-%m-%dT%H:%M:%SZ', object.timestamp),
+--             refs = '{' .. table.concat(object.nodes, ',') .. '}',
+--             version = object.version,
+--         })
+--     end
+-- end
