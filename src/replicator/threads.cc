@@ -317,9 +317,9 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
             };
 
             auto task = boost::bind(threadOsmChange, osmChangeTask);
+            std::rotate(planets.begin(), planets.begin()+1, planets.end());
 
             boost::asio::post(pool, task);
-            std::rotate(planets.begin(), planets.begin()+1, planets.end());
         }
         pool.join();
         db->query(allTasksQueries(tasks));
