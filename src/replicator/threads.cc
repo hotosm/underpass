@@ -446,6 +446,10 @@ threadOsmChange(OsmChangeTask osmChangeTask)
         }
     }
 
+    osmchanges->nodecache.clear();
+    if (!config->disable_raw && !poly.empty()) {
+        queryraw->getNodeCache(osmchanges);
+    }
     osmchanges->areaFilter(poly);
 
     if (!config->disable_stats) {
@@ -471,18 +475,27 @@ threadOsmChange(OsmChangeTask osmChangeTask)
             for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
                 osmobjects::OsmWay *way = wit->get();
                 if (!config->disable_validation) {
+                    if (!way->priority) {
+                        continue;
+                    }
                     if (way->action == osmobjects::remove) {
                         removals->push_back(way->id);
                     }
                 }
-                // if (!config->disable_raw) {
-                //     // Update ways raw data
-                //     task.query += queryraw->applyChange(*way);
-                // }
+                if (!config->disable_raw) {
+                    // Update ways raw data
+                    if (!way->priority) {
+                        continue;
+                    }
+                    task.query += queryraw->applyChange(*way);
+                }
             }
             for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
                 osmobjects::OsmNode *node = nit->get();
                 if (!config->disable_validation) {
+                    if (!node->priority) {
+                        continue;
+                    }
                     if (node->action == osmobjects::remove) {
                         removals->push_back(node->id);
                     }
@@ -496,6 +509,9 @@ threadOsmChange(OsmChangeTask osmChangeTask)
                 //         modified->insert(std::make_pair(node->id, value));
                 //     }
                     // Update nodes raw data
+                    if (!node->priority) {
+                        continue;
+                    }
                     task.query += queryraw->applyChange(*node);
                 }
             }

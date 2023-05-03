@@ -35,9 +35,11 @@
 #include <iostream>
 #include "data/pq.hh"
 #include "osm/osmobjects.hh"
+#include "osm/osmchange.hh"
 
 using namespace pq;
 using namespace osmobjects;
+using namespace osmchange;
 
 /// \namespace queryraw
 namespace queryraw {
@@ -58,9 +60,10 @@ class QueryRaw {
     std::string applyChange(const OsmNode &node) const;
     /// Build query for processed Way
     std::string applyChange(const OsmWay &way) const;
-  /// Build query for updating modified nodes in ways geometries
+    /// Build query for updating modified nodes in ways geometries
     std::string applyChange(const std::shared_ptr<std::map<long, std::pair<double, double>>> nodes) const;
-
+    /// Get nodes for filling Node cache
+    void getNodeCache(std::shared_ptr<OsmChangeFile> osmchanges);
     // Database connection, used for escape strings
     std::shared_ptr<Pq> dbconn;
 };
