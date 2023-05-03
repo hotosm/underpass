@@ -486,12 +486,11 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
             } else {
                 way->priority = false;
                 for (auto rit = std::begin(way->refs); rit != std::end(way->refs); ++rit) {
-                    if (boost::geometry::within(nodecache[*rit], poly)) {
+                    if (nodecache.count(*rit) && boost::geometry::within(nodecache[*rit], poly)) {
                         way->priority = true;
                         continue;
                     }
                 }
-
             }
         }
 
@@ -501,14 +500,13 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
             if (poly.empty()) {
                 relation->priority = true;
             } else {
-                // Area Filter for relations is disabled for now
                 relation->priority = false;
-                // for (auto mit = std::begin(relation->members); mit != std::end(relation->members); ++mit) {
-                //     if (nodecache.count(mit->ref)) {
-                //         relation->priority = true;
-                //         continue;
-                //     }
-                // }
+                for (auto mit = std::begin(relation->members); mit != std::end(relation->members); ++mit) {
+                    if (nodecache.count(mit->ref) && boost::geometry::within(nodecache[mit->ref], poly)) {
+                        relation->priority = true;
+                        continue;
+                    }
+                }
             }
         }        
     }
@@ -629,33 +627,33 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
         }
 
         // Stats for Relations
-        // for (auto it = std::begin(change->relations); it != std::end(change->relations); ++it) {
-        //     OsmRelation *relation = it->get();
-        //     if (!relation->priority) {
-        //         continue;
-        //     }
-        //     // If there are no tags, ignore it
-        //     if (relation->tags.size() == 0) {
-        //         continue;
-        //     }
-        //     ostats = (*mstats)[relation->change_id];
-        //     if (ostats.get() == 0) {
-        //         ostats = std::make_shared<ChangeStats>();
-        //         ostats->change_id = relation->change_id;
-        //         ostats->user_id = relation->uid;
-        //         ostats->username = relation->user;
-        //         ostats->closed_at = relation->timestamp;
-        //         (*mstats)[relation->change_id] = ostats;
-        //     }
-        //     auto hits = scanTags(relation->tags, osmchange::relation);
-        //     for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
-        //         if (relation->action == osmobjects::create) {
-        //             ostats->added[*hit]++;
-        //         } else if (relation->action == osmobjects::modify) {
-        //             ostats->modified[*hit]++;
-        //         }
-        //     }
-        // }
+        for (auto it = std::begin(change->relations); it != std::end(change->relations); ++it) {
+            OsmRelation *relation = it->get();
+            if (!relation->priority) {
+                continue;
+            }
+            // If there are no tags, ignore it
+            if (relation->tags.size() == 0) {
+                continue;
+            }
+            ostats = (*mstats)[relation->change_id];
+            if (ostats.get() == 0) {
+                ostats = std::make_shared<ChangeStats>();
+                ostats->change_id = relation->change_id;
+                ostats->user_id = relation->uid;
+                ostats->username = relation->user;
+                ostats->closed_at = relation->timestamp;
+                (*mstats)[relation->change_id] = ostats;
+            }
+            auto hits = scanTags(relation->tags, osmchange::relation);
+            for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
+                if (relation->action == osmobjects::create) {
+                    ostats->added[*hit]++;
+                } else if (relation->action == osmobjects::modify) {
+                    ostats->modified[*hit]++;
+                }
+            }
+        }
     }
     return mstats;
 }

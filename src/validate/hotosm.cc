@@ -256,7 +256,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
         status->status.insert(incomplete);
     }
 #endif
-    // FIXME: centroid was not working good
+    // FIXME: centroid is not always correct
     // boost::geometry::centroid(way.polygon, status->center);
     // boost::geometry::centroid(way.linestring, status->center);
     status->center = way.linestring[0];
