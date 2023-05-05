@@ -66,7 +66,7 @@ QueryRaw::applyChange(const OsmNode &node) const
     if (node.action == osmobjects::create || node.action == osmobjects::modify) {
         query = "INSERT INTO raw (osm_id, change_id, osm_type, geometry, tags, timestamp, version) VALUES(";
         std::string format = "%d, %d, 'N', ST_GeomFromText(\'%s\', 4326), %s, \'%s\', %d \
-        ) ON CONFLICT (osm_id) DO UPDATE SET change_id = %d, geometry = ST_GeomFromText(\'%s\', \
+        ) ON CONFLICT (osm_id, osm_type) DO UPDATE SET change_id = %d, geometry = ST_GeomFromText(\'%s\', \
         4326), tags = %s, timestamp = \'%s\', version = %d WHERE excluded.version < %d;";
         boost::format fmt(format);
 
@@ -110,7 +110,7 @@ QueryRaw::applyChange(const OsmNode &node) const
         query += fmt.str();
 
     } else if (node.action == osmobjects::remove) {
-        query = "DELETE from raw where osm_id = " + std::to_string(node.id) + ";";
+        query = "DELETE from raw where osm_id = " + std::to_string(node.id) + " and osm_type = 'N';";
     }
 
     return query;
@@ -126,7 +126,7 @@ QueryRaw::applyChange(const OsmWay &way) const
     if (way.action == osmobjects::create || way.action == osmobjects::modify) {
         query = "INSERT INTO raw (osm_id, change_id, osm_type, geometry, tags, refs, timestamp, version) VALUES(";
         std::string format = "%d, %d, 'W', %s, %s, %s, \'%s\', %d) \
-        ON CONFLICT (osm_id) DO UPDATE SET change_id = %d, geometry = %s, tags = %s, refs = %s, timestamp = \'%s\', version = %d WHERE excluded.version < %d;";
+        ON CONFLICT (osm_id, osm_type) DO UPDATE SET change_id = %d, geometry = %s, tags = %s, refs = %s, timestamp = \'%s\', version = %d WHERE excluded.version < %d;";
         boost::format fmt(format);
         // osm_id
         fmt % way.id;
@@ -193,7 +193,7 @@ QueryRaw::applyChange(const OsmWay &way) const
         query += fmt.str();
 
     } else if (way.action == osmobjects::remove) {
-        query = "DELETE from raw where osm_id = " + std::to_string(way.id) + ";";
+        query = "DELETE from raw where osm_id = " + std::to_string(way.id) + " and osm_type = 'W';";
     }
     
     return query;
@@ -223,7 +223,7 @@ QueryRaw::applyChange(const std::shared_ptr<std::map<long, std::pair<double, dou
         nodeIds += std::to_string(node->first) + ",";
     }
     nodeIds.erase(nodeIds.size() - 1);
-    std::string waysQuery = "SELECT osm_id, refs FROM raw where refs && ARRAY[" + nodeIds + "]::bigint[];";
+    std::string waysQuery = "SELECT osm_id, refs FROM raw where osm_type = 'W' and refs && ARRAY[" + nodeIds + "]::bigint[];";
     auto ways = dbconn->query(waysQuery);
 
     // 2. Update ways geometries
@@ -256,7 +256,7 @@ QueryRaw::applyChange(const std::shared_ptr<std::map<long, std::pair<double, dou
         }
         queryPoints.erase(queryPoints.size() - 1);
         queryWay += "geometry, " + queryPoints;
-        queryWay += " WHERE osm_id = " + std::to_string(osm_id) + ";";
+        queryWay += " WHERE osm_type = 'W' and osm_id = " + std::to_string(osm_id) + ";";
         query += queryWay;
 
     }
@@ -283,7 +283,7 @@ void QueryRaw::getNodeCache(std::shared_ptr<OsmChangeFile> osmchanges) {
         nodeIds.erase(nodeIds.size() - 1);
 
         // Get Nodes from DB
-        std::string nodesQuery = "SELECT osm_id, st_x(geometry) as lat, st_y(geometry) as lon FROM raw where osm_id in (" + nodeIds + ") and st_x(geometry) is not null and st_y(geometry) is not null;";
+        std::string nodesQuery = "SELECT osm_id, st_x(geometry) as lat, st_y(geometry) as lon FROM raw where osm_type = 'N' and osm_id in (" + nodeIds + ") and st_x(geometry) is not null and st_y(geometry) is not null;";
         auto result = dbconn->query(nodesQuery);
 
         // Fill nodecache

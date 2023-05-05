@@ -17,7 +17,7 @@
 
 -- This is lua script for osm2pgsql in order to create and process custom schema to bootstrap a raw data table
 
--- osm2pgsql -a -H postgis -U underpass -p underpass -P 5432 -d underpass --extra-attributes --output=flex --style ./raw-underpass.lua pokhara_all.osm.pbf
+-- osm2pgsql -H postgis -U underpass -p underpass -P 5432 -d underpass --extra-attributes --output=flex --style ./raw-underpass.lua pokhara_all.osm.pbf
 
 -- Set projection to 4326
 local srid = 4326
