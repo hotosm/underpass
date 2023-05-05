@@ -461,81 +461,54 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
     boost::timer::auto_cpu_timer timer("OsmChangeFile::areaFilter: took %w seconds\n");
 #endif
     std::map<long, bool> priority;
-    // log_debug("Pre filtering size is %1%", changes.size());
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
+
         OsmChange *change = it->get();
 
+        // Filter nodes
         for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
             OsmNode *node = nit->get();
-            if (node->action == osmobjects::remove) {
-                continue;
-            }
             if (poly.empty()) {
                 node->priority = true;
-                continue;
-            }
-            nodecache[node->id] = node->point;
-            // log_debug("ST_GeomFromEWKT(\'SRID=4326; %1%\'))", boost::geometry::wkt(node->point));
-            // std::cerr << "Checking " << boost::geometry::wkt(node->point) << " within " << boost::geometry::wkt(poly) << std::endl;
-            if (!boost::geometry::within(node->point, poly)) {
-                // std::cerr << "Deleting point " << node->point.x() << ", " << node->point.y() << std::endl;
-                // log_debug("Validating Node %1% is not in a priority area", node->change_id);
-                change->nodes.erase(nit--);
+            } else if (!boost::geometry::within(node->point, poly)) {
+                node->priority = false;
             } else {
-                // log_debug("Validating Node %1% is in a priority area", node->change_id);
                 node->priority = true;
-                priority[node->change_id] = true;
+                nodecache[node->id] = node->point;
             }
         }
 
-        //log_debug("Post filtering size is %1%", changes.size());
+        // Filter ways
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
             OsmWay *way = wit->get();
-            if (way->action == osmobjects::remove) {
-                continue;
-            }
             if (poly.empty()) {
                 way->priority = true;
-                continue;
-            }
-            for (auto lit = std::begin(way->refs); lit != std::end(way->refs); ++lit) {
-                if (nodecache.count(*lit)) {
-                    boost::geometry::append(way->linestring, nodecache[*lit]);
-                }
-            }
-            if (way->linestring.size() == 0 && way->action == osmobjects::modify) {
-                if (priority[way->change_id]) {
-                    // log_debug("FIXME: priority is TRUE for way %1%", way->id);
-                    way->priority = true;
-                } else {
-                    change->ways.erase(wit--);
-                    // log_debug("FIXME: priority is FALSE for way %1%", way->id);
-                }
-                continue;
-            }
-            if (way->linestring.size() != 0) {
-                boost::geometry::centroid(way->linestring, way->center);
-                // point_t pt = nodecache.find(way->refs[1])->second;
-                // log_debug("ST_GeomFromEWKT(\'SRID=4326; %1%\'))", boost::geometry::wkt(pt));
-                if (!boost::geometry::within(way->center, poly)) {
-                    // log_debug("Validating Way %1% is not in a priority area", way->id);
-                    change->ways.erase(wit--);
-                } else {
-                    // log_debug("Validating Way %1% is in a priority area", way->id);
-                    way->priority = true;
-                    priority[way->change_id] = true;
-                }
             } else {
-                log_error("Way %1% has no geometry!", way->id);
+                way->priority = false;
+                for (auto rit = std::begin(way->refs); rit != std::end(way->refs); ++rit) {
+                    if (nodecache.count(*rit) && boost::geometry::within(nodecache[*rit], poly)) {
+                        way->priority = true;
+                        continue;
+                    }
+                }
             }
         }
-        // Delete the whole change if no ways or nodes or relations
-        // TODO: check for relations in priority area ?
-        if (change->nodes.empty() && change->ways.empty()) {
-            // log_debug("Deleting empty change %1% after area filtering.", change->obj->id);
-            // std::cerr << "Deleting whole change " << change->obj->id << std::endl;
-            // changes.erase(it--);
-        }
+
+        // Filter relations
+        for (auto rit = std::begin(change->relations); rit != std::end(change->relations); ++rit) {
+            OsmRelation *relation = rit->get();
+            if (poly.empty()) {
+                relation->priority = true;
+            } else {
+                relation->priority = false;
+                for (auto mit = std::begin(relation->members); mit != std::end(relation->members); ++mit) {
+                    if (nodecache.count(mit->ref) && boost::geometry::within(nodecache[mit->ref], poly)) {
+                        relation->priority = true;
+                        continue;
+                    }
+                }
+            }
+        }        
     }
 }
 
@@ -550,13 +523,15 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
         std::make_shared<std::map<long, std::shared_ptr<ChangeStats>>>();
         std::shared_ptr<ChangeStats> ostats;
 
-    nodecache.clear();
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
 
         // Stats for Nodes
         for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
             OsmNode *node = it->get();
+            if (!node->priority) {
+                continue;
+            }
             // If there are no tags, assume it's part of a way
             if (node->tags.size() == 0) {
                 nodecache[node->id] = node->point;
@@ -590,6 +565,9 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
         // Stats for Ways
         for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
             OsmWay *way = it->get();
+            if (!way->priority) {
+                continue;
+            }
             // If there are no tags, assume it's part of a relation
             if (way->tags.size() == 0 && way->action != osmobjects::remove) {
                 continue;
@@ -651,6 +629,9 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
         // Stats for Relations
         for (auto it = std::begin(change->relations); it != std::end(change->relations); ++it) {
             OsmRelation *relation = it->get();
+            if (!relation->priority) {
+                continue;
+            }
             // If there are no tags, ignore it
             if (relation->tags.size() == 0) {
                 continue;

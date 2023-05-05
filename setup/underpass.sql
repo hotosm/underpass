@@ -63,7 +63,8 @@ CREATE TABLE public.raw (
     geometry public.geometry(Geometry,4326),
     tags public.hstore,
     refs bigint[],
-    timestamp timestamp with time zone
+    timestamp timestamp with time zone,
+    version int
 );
 ALTER TABLE ONLY public.raw
     ADD CONSTRAINT raw_pkey PRIMARY KEY (osm_id);

@@ -70,7 +70,7 @@ class Report:
             st_y(location) as lon \
             from validation \
             where 'badgeom' = any (validation.status) \
-            order by osm_id \
+            order by timestamp desc \
             limit {0} offset {1}".format(
                 RESULTS_PER_PAGE,
                 RESULTS_PER_PAGE * page

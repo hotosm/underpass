@@ -317,9 +317,9 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
             };
 
             auto task = boost::bind(threadOsmChange, osmChangeTask);
+            std::rotate(planets.begin(), planets.begin()+1, planets.end());
 
             boost::asio::post(pool, task);
-            std::rotate(planets.begin(), planets.begin()+1, planets.end());
         }
         pool.join();
         db->query(allTasksQueries(tasks));
@@ -446,6 +446,10 @@ threadOsmChange(OsmChangeTask osmChangeTask)
         }
     }
 
+    osmchanges->nodecache.clear();
+    if (!config->disable_raw && !poly.empty()) {
+        queryraw->getNodeCache(osmchanges);
+    }
     osmchanges->areaFilter(poly);
 
     if (!config->disable_stats) {
@@ -465,29 +469,38 @@ threadOsmChange(OsmChangeTask osmChangeTask)
     // Modified nodes to be updated in ways geometries (not used yet)
     // auto modified = std::make_shared<std::map<long, std::pair<double, double>>>();
     
-    if (!config->disable_validation && !config->disable_raw) {
+    if (!config->disable_validation || !config->disable_raw) {
         for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
             osmchange::OsmChange *change = it->get();
             for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
                 osmobjects::OsmWay *way = wit->get();
                 if (!config->disable_validation) {
+                    if (!way->priority) {
+                        continue;
+                    }
                     if (way->action == osmobjects::remove) {
                         removals->push_back(way->id);
                     }
                 }
                 if (!config->disable_raw) {
                     // Update ways raw data
+                    if (!way->priority) {
+                        continue;
+                    }
                     task.query += queryraw->applyChange(*way);
                 }
             }
             for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
                 osmobjects::OsmNode *node = nit->get();
                 if (!config->disable_validation) {
+                    if (!node->priority) {
+                        continue;
+                    }
                     if (node->action == osmobjects::remove) {
                         removals->push_back(node->id);
                     }
                 }
-                // if (!config->disable_raw) {
+                if (!config->disable_raw) {
                 //     // Modified nodes to be updated in ways geometries (not used yet)
                 //     if (node->action == osmobjects::modify) {
                 //         double lat = node->point.x();
@@ -495,9 +508,12 @@ threadOsmChange(OsmChangeTask osmChangeTask)
                 //         std::pair<double, double> value = std::make_pair(lat, lon);
                 //         modified->insert(std::make_pair(node->id, value));
                 //     }
-                //     // Update nodes raw data
-                //     task.query += queryraw->applyChange(*node);
-                // }
+                    // Update nodes raw data
+                    if (!node->priority) {
+                        continue;
+                    }
+                    task.query += queryraw->applyChange(*node);
+                }
             }
         }
     }
