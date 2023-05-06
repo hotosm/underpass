@@ -74,9 +74,13 @@ QueryRaw::applyChange(const OsmNode &node) const
         fmt % node.id;
         // change_id
         fmt % node.change_id;
+
         // geometry
-        auto geometry = boost::geometry::wkt(node.point);
+        std::stringstream ss;
+        ss << std::setprecision(12) << boost::geometry::wkt(node.point);
+        std::string geometry = ss.str();
         fmt % geometry;
+
         // tags
         std::string tags = "";
         if (node.tags.size() > 0) {

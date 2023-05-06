@@ -35,6 +35,9 @@ using namespace boost::posix_time;
 using namespace boost::gregorian;
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
+#include "utils/log.hh"
+using namespace logger;
+
 typedef boost::geometry::model::d2::point_xy<double> point_t;
 typedef boost::geometry::model::polygon<point_t> polygon_t;
 typedef boost::geometry::model::multi_polygon<polygon_t> multipolygon_t;
@@ -114,9 +117,13 @@ class OsmNode : public OsmObject {
         type = node;
     };
     /// Set the latitude of this node
-    void setLatitude(double lat) { point.set<1>(lat); };
+    void setLatitude(double lat) {
+        point.set<1>(lat);
+    };
     /// Set the longitude of this node
-    void setLongitude(double lon) { point.set<0>(lon); };
+    void setLongitude(double lon) {
+        point.set<0>(lon);
+    };
     /// Set the location of this node
     void setPoint(double lat, double lon)
     {

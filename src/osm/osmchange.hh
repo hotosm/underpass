@@ -257,7 +257,7 @@ class OsmChangeFile
     std::map<long, std::shared_ptr<ChangeStats>> userstats; ///< User statistics for this file
 
     std::list<std::shared_ptr<OsmChange>> changes; ///< All the changes in this file
-    std::map<long, point_t> nodecache;           ///< Cache nodes across multiple changesets
+    std::map<double, point_t> nodecache;           ///< Cache nodes across multiple changesets
 
     /// Collect statistics for each user
     std::shared_ptr<std::map<long, std::shared_ptr<ChangeStats>>>
