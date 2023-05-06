@@ -256,10 +256,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
         status->status.insert(incomplete);
     }
 #endif
-    // FIXME: centroid is not always correct
-    // boost::geometry::centroid(way.polygon, status->center);
-    // boost::geometry::centroid(way.linestring, status->center);
-    status->center = way.linestring[0];
+    boost::geometry::centroid(way.linestring, status->center);
     // See if the way is a closed polygon
     if (way.action == osmobjects::create && way.refs.front() == way.refs.back()) {
         // If it's a building, check for square corners

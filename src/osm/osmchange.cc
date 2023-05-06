@@ -208,6 +208,7 @@ OsmChangeFile::readXML(std::istream &xml)
             if (child.first == "node") {
                 double lat = value.second.get("<xmlattr>.lat", 0.0);
                 double lon = value.second.get("<xmlattr>.lon", 0.0);
+
                 auto object = std::make_shared<OsmNode>();
                 object->setLatitude(lat);
                 object->setLongitude(lon);

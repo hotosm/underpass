@@ -144,9 +144,12 @@ QueryValidate::applyChange(const ValidateStatus &validation) const
         fmt % valtmp;
     }
     fmt % to_simple_string(validation.timestamp);
-    // Postgres wants the order of lat,lon reversed from how they
-    // are stored in the WKT.
-    fmt % boost::geometry::wkt(validation.center);
+
+    std::stringstream ss;
+    ss << std::setprecision(12) << boost::geometry::wkt(validation.center);
+    std::string center = ss.str();
+    fmt % center;
+
     if (validation.values.size() > 0) {
         fmt % validation.source;
     }
