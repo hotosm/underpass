@@ -56,10 +56,12 @@ CREATE TABLE public.validation (
 ALTER TABLE ONLY public.validation
     ADD CONSTRAINT validation_pkey PRIMARY KEY (osm_id);
 
+CREATE TYPE public.geotype AS ENUM ('point', 'linestring', 'polygon');
+
 CREATE TABLE public.raw (
     osm_id bigint,
     change_id bigint,
-    type public.objtype,
+    type public.geotype,
     geometry public.geometry(Geometry,4326),
     tags public.hstore,
     refs bigint[],
@@ -67,6 +69,5 @@ CREATE TABLE public.raw (
     version int
 );
 ALTER TABLE ONLY public.raw
-    ADD CONSTRAINT raw_pkey PRIMARY KEY (osm_id);
-
+    ADD CONSTRAINT raw_pkey PRIMARY KEY (osm_id, type);
 

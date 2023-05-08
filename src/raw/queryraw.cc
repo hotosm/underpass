@@ -64,8 +64,8 @@ QueryRaw::applyChange(const OsmNode &node) const
 #endif
     std::string query;
     if (node.action == osmobjects::create || node.action == osmobjects::modify) {
-        query = "INSERT INTO raw (osm_id, change_id, osm_type, geometry, tags, timestamp, version) VALUES(";
-        std::string format = "%d, %d, 'N', ST_GeomFromText(\'%s\', 4326), %s, \'%s\', %d \
+        query = "INSERT INTO raw (osm_id, change_id, osm_type, type, geometry, tags, timestamp, version) VALUES(";
+        std::string format = "%d, %d, 'N', 'point', ST_GeomFromText(\'%s\', 4326), %s, \'%s\', %d \
         ) ON CONFLICT (osm_id, osm_type) DO UPDATE SET change_id = %d, geometry = ST_GeomFromText(\'%s\', \
         4326), tags = %s, timestamp = \'%s\', version = %d WHERE excluded.version < %d;";
         boost::format fmt(format);
@@ -128,26 +128,28 @@ QueryRaw::applyChange(const OsmWay &way) const
 #endif
     std::string query = "";
     if (way.action == osmobjects::create || way.action == osmobjects::modify) {
-        query = "INSERT INTO raw (osm_id, change_id, osm_type, geometry, tags, refs, timestamp, version) VALUES(";
-        std::string format = "%d, %d, 'W', %s, %s, %s, \'%s\', %d) \
-        ON CONFLICT (osm_id, osm_type) DO UPDATE SET change_id = %d, geometry = %s, tags = %s, refs = %s, timestamp = \'%s\', version = %d WHERE excluded.version < %d;";
+        query = "INSERT INTO raw (osm_id, change_id, osm_type, type, geometry, tags, refs, timestamp, version) VALUES(";
+        std::string format = "%d, %d, 'W', %s, %s, %s, %s, \'%s\', %d) \
+        ON CONFLICT (osm_id, osm_type) DO UPDATE SET change_id = %d, type = %s, geometry = %s, tags = %s, refs = %s, timestamp = \'%s\', version = %d WHERE excluded.version < %d;";
         boost::format fmt(format);
         // osm_id
         fmt % way.id;
         // change_id
         fmt % way.change_id;
 
-        // geometry (not used yet)
+        // type and geometry (not used yet)
         std::string geometry = "null";
-        // if (boost::geometry::num_points(way.linestring) > 0) {
-        //     std::string geostring = boost::lexical_cast<std::string>(boost::geometry::wkt(way.linestring));
-        //     geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
-        // } else if (boost::geometry::num_points(way.polygon) > 0) {
+        std::string type;
+        if (way.refs.front() == way.refs.back()) {
         //     std::string geostring = boost::lexical_cast<std::string>(boost::geometry::wkt(way.polygon));
         //     geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
-        // } else {
-        //     geometry = "null";
-        // }
+            type = "'polygon'";
+        } else {
+        //     std::string geostring = boost::lexical_cast<std::string>(boost::geometry::wkt(way.linestring));
+        //     geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
+            type = "'linestring'";
+        }
+        fmt % type;
         fmt % geometry;
 
         // tags
@@ -187,6 +189,7 @@ QueryRaw::applyChange(const OsmWay &way) const
 
         // ON CONFLICT
         fmt % way.change_id;
+        fmt % type;
         fmt % geometry;
         fmt % tags;
         fmt % refs;
