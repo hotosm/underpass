@@ -31,7 +31,8 @@ tables.raw = osm2pgsql.define_table{
         { column = 'change_id', type = 'int' },
         { column = 'geometry', type = 'geometry', projection = srid },
         { column = 'tags', sql_type = 'public.hstore' },
-        { column = 'refs', type= 'text', sql_type = 'bigint[]'},
+        { column = 'type', sql_type = 'public.geotype' },
+        { column = 'refs', type = 'text', sql_type = 'bigint[]'},
         { column = 'version', type = 'int' },
         { column = 'timestamp', sql_type = 'timestamp' },
     }
@@ -51,6 +52,7 @@ function osm2pgsql.process_node(object)
         geometry = { create = 'point' },
         tags = tags_to_hstore(object.tags),
         refs = '{}',
+        type = 'point',
         version = object.version,
         timestamp = os.date('!%Y-%m-%dT%H:%M:%SZ', object.timestamp),
     })
@@ -61,6 +63,7 @@ function osm2pgsql.process_way(object)
         tables.raw:insert({
             change_id = object.changeset,
             geometry = nil,
+            type = 'polygon',
             tags = tags_to_hstore(object.tags),
             timestamp = os.date('!%Y-%m-%dT%H:%M:%SZ', object.timestamp),
             refs = '{' .. table.concat(object.nodes, ',') .. '}',
@@ -70,6 +73,7 @@ function osm2pgsql.process_way(object)
         tables.raw:insert({
             change_id = object.changeset,
             geometry = nil,
+            type = 'linestring',
             tags = tags_to_hstore(object.tags),
             timestamp = os.date('!%Y-%m-%dT%H:%M:%SZ', object.timestamp),
             refs = '{' .. table.concat(object.nodes, ',') .. '}',
