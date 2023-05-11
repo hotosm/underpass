@@ -204,27 +204,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     auto required_tags = tests.get("required_tags");
 #endif
     // These values are in the config section of the YAML file
-    double minangle = 70;
-    double maxangle = 110;
-    double anglethreshold = 19;
     auto config = tests.get("config");
-
-    // This is the minimum angle used to determine rectangular buildings
-    auto configMinAngle = config.get("minangle").children;
-    if (configMinAngle.size() > 0) {
-        minangle =  std::stod(configMinAngle[0].value);
-    }
-    // This is the maximum angle used to determine rectangular buildings
-    auto configMaxAngle = config.get("maxangle").children;
-    if (configMaxAngle.size() > 0) {
-        maxangle = std::stod(configMaxAngle[0].value);
-    }
-
-    // This is the maximum angle used to determine rectangular buildings
-    auto configAngleTreshold = config.get("angletreshold").children;
-    if (configAngleTreshold.size() > 0) {
-        anglethreshold = std::stod(configAngleTreshold[0].value);
-    }
 
     // This enables/disables writing features flagged for not having values
     // in range as defined in the YAML config file. This prevents those
@@ -242,12 +222,6 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
             tagexists++;
         }
 #endif
-        // FIXME: move out special cases to the config file
-        if (!values) {
-            if ((vit->first == "building" && vit->second == "commercial") && !way.tags.count("name")) {
-                status->status.insert(badvalue);
-            }
-        }
     }
 #if 0
     if (tagexists == required_tags.children.size()) {
@@ -256,20 +230,6 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
         status->status.insert(incomplete);
     }
 #endif
-    boost::geometry::centroid(way.linestring, status->center);
-    // See if the way is a closed polygon
-    if (way.action == osmobjects::create && way.refs.front() == way.refs.back()) {
-        // If it's a building, check for square corners
-        if (way.tags.count("building")) {
-            const int num_points =  boost::geometry::num_points(way.linestring) - 1;
-            if (num_points < 4) {
-                log_debug("way is a triangle or has few nodes");
-                status->status.insert(badgeom);
-            } else if (unsquared(way.linestring, minangle, maxangle, anglethreshold)) {
-                status->status.insert(badgeom);
-            }
-        }
-    }
     return status;
 }
 

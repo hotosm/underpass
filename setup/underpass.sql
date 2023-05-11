@@ -47,14 +47,15 @@ CREATE TABLE public.validation (
     user_id bigint,
     change_id bigint,
     type public.objtype,
-    status public.status[],
+    status public.status,
     values text[],
     source text,
+    version bigint,
     timestamp timestamp with time zone,
     location public.geometry(Geometry,4326)
 );
 ALTER TABLE ONLY public.validation
-    ADD CONSTRAINT validation_pkey PRIMARY KEY (osm_id);
+    ADD CONSTRAINT validation_pkey PRIMARY KEY (osm_id, status, source);
 
 CREATE TYPE public.geotype AS ENUM ('point', 'linestring', 'polygon');
 

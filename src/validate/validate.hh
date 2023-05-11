@@ -78,7 +78,7 @@ using namespace logger;
 //   [x] Missing tags
 //   [/] Duplicate object
 
-/// \enum osmtype_t
+/// \enum valerror_t
 /// The data validation values for the status column in the database.
 typedef enum {
     notags,
@@ -89,7 +89,8 @@ typedef enum {
     badgeom,
     orphan,
     overlaping,
-    duplicate
+    duplicate,
+    valid
 } valerror_t;
 
 namespace bg = boost::geometry;
@@ -105,6 +106,7 @@ class ValidateStatus {
         osm_id = node.id;
         user_id = node.uid;
         change_id = node.change_id;
+        version = node.version;
         objtype = osmobjects::node;
         timestamp = node.timestamp;
     }
@@ -113,9 +115,9 @@ class ValidateStatus {
         user_id = way.uid;
         change_id = way.change_id;
         objtype = osmobjects::way;
+        version = way.version;
         timestamp = way.timestamp;
     }
-    //valerror_t operator[](int index){ return status[index]; };
     /// Does this change have a particular status value
     bool hasStatus(const valerror_t &val) const {
         auto match = std::find(status.begin(), status.end(), val);
@@ -156,6 +158,7 @@ class ValidateStatus {
     long osm_id = 0;        ///< The OSM ID of the feature
     long user_id = 0;        ///< The user ID of the mapper creating/modifying this feature
     long change_id = 0;        ///< The changeset ID
+    long version = 0;        ///< The object version
     ptime timestamp;        ///< The timestamp when this validation was performed
     point_t center;        ///< The centroid of the building polygon
     std::unordered_set<std::string> values; ///< The found bad tag values
@@ -279,9 +282,9 @@ class BOOST_SYMBOL_VISIBLE Validate {
 
     bool unsquared(
         const linestring_t &way,
-        double &min_angle,
-        double &max_angle,
-        double &threshold
+        double min_angle = 70,
+        double max_angle = 110,
+        double threshold = 19
     ) {
         const int num_points =  boost::geometry::num_points(way) - 1;
         for(int i = 0; i < num_points; i++) {

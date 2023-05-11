@@ -717,33 +717,18 @@ OsmChangeFile::validateNodes(const multipolygon_t &poly, std::shared_ptr<Validat
         for (auto nit = std::begin(change->nodes);
             nit != std::end(change->nodes); ++nit) {
             OsmNode *node = nit->get();
-            if (!node->priority) {
-                // log_debug("Validating Node %1% is not in a priority area", node->id);
+            if (!node->priority || node->tags.empty() || node->action == osmobjects::remove) {
                 continue;
-            } else {
-                // log_debug("Validating Node %1% is in a priority area", node->id);
-                // A node with no tags is probably part of a way
-                if (node->tags.empty() || node->action == osmobjects::remove) {
-                    continue;
-                }
             }
             std::vector<std::string> node_tests = {"building", "natural", "place", "waterway"};
-            // "wastepoint";
-            for (auto tit = std::begin(node_tests); tit != std::end(node_tests); ++tit) {
-                if (!node->containsKey(*tit)) {
-                    continue;
+            for (auto test_it = std::begin(node_tests); test_it != std::end(node_tests); ++test_it) {
+                if (node->containsKey(*test_it)) {
+                    auto status = plugin->checkPOI(*node, *test_it);
+                    if (status->status.size() > 0) {
+                        status->center = node->point;
+                    }
+                    totals->push_back(status);
                 }
-                auto status = plugin->checkPOI(*node, *tit);
-                if (status->hasStatus(correct) && status->hasStatus(incomplete)) {
-                    // std::cerr << *tit << " Node " << node->id << " is correct but incomplete!" << std::endl;
-                    continue;
-                } else if (status->hasStatus(complete)) {
-                    // std::cerr << *tit << " Node " << node->id << " is complete" << std::endl;
-                } else {
-                    // std::cerr << *tit << " Node " << node->id << " is not complete" << std::endl;
-                    // node->dump();
-                }
-                totals->push_back(status);
             }
         }
     }
@@ -764,24 +749,46 @@ OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate
             if (!way->priority) {
                 continue;
             }
-            std::vector<std::string> way_tests = {"building", "highway", "landuse", "natural", "place", "waterway"};
-            for (auto wit = way_tests.begin(); wit != way_tests.end(); ++wit) {
-                if (!way->containsKey(*wit)) {
-                    continue;
-                }
-                auto status = plugin->checkWay(*way, *wit);
-                // TODO: move to config files
-                if (way->containsKey("building")) {
+
+            // Geometry checks
+            if (way->containsKey("building")) {
+                // See if the way is a closed polygon
+                if (way->action == osmobjects::create && way->refs.front() == way->refs.back()) {
+                    auto status = std::make_shared<ValidateStatus>(*way);
+                    status->timestamp = boost::posix_time::microsec_clock::universal_time();
+                    status->user_id = way->uid;
+
+                    // Overlapping
                     if (plugin->overlaps(change->ways, *way)) {
                         status->status.insert(overlaping);
                     }
+                    // Duplicate
                     if (plugin->duplicate(change->ways, *way)) {
                         status->status.insert(duplicate);
                     }
+                    // Bad geometry
+                    if (boost::geometry::num_points(way->linestring) - 1 < 4 ||
+                        plugin->unsquared(way->linestring)
+                    ) {
+                        status->status.insert(badgeom);
+                    }
+                    if (status->status.size() > 0) {
+                        status->source = "building";
+                        boost::geometry::centroid(way->linestring, status->center);
+                        totals->push_back(status);
+                    }
                 }
-                if (status->status.size() > 0) {
-                    status->source = *wit;
-                    totals->push_back(status);
+            }
+            // Semantic checks
+            std::vector<std::string> way_tests = {"building", "highway", "landuse", "natural", "place", "waterway"};
+            for (auto test_it = way_tests.begin(); test_it != way_tests.end(); ++test_it) {
+                if (way->containsKey(*test_it)) {
+                    auto status = plugin->checkWay(*way, *test_it);
+                    if (status->status.size() > 0) {
+                        status->source = *test_it;
+                        boost::geometry::centroid(way->linestring, status->center);
+                        totals->push_back(status);
+                    }
                 }
             }
         }

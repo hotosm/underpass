@@ -45,7 +45,7 @@ class Report:
             from changesets \
             INNER JOIN validation \
             ON validation.change_id = changesets.id \
-            where 'badgeom' = any (validation.status) \
+            where validation.status = 'badgeom' \
             {0} {1} {2} {3} \
             order by osm_id \
             limit {4} offset {5}".format(
@@ -69,7 +69,7 @@ class Report:
             st_x(location) as lat, \
             st_y(location) as lon \
             from validation \
-            where 'badgeom' = any (validation.status) \
+            where validation.status = 'badgeom' \
             order by timestamp desc \
             limit {0} offset {1}".format(
                 RESULTS_PER_PAGE,
