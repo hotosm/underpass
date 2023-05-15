@@ -537,12 +537,12 @@ threadOsmChange(OsmChangeTask osmChangeTask)
     //     }
     // }
 
-    // Validation table update (remove entries that are not longer invalid)
+    // Update validation table based on modified nodes
     if (!config->disable_validation) {
 
         // Validate ways whose nodes were modified
         if (!config->disable_raw && !poly.empty() && modified->size() > 0) {
-            
+
             // Get ways whose nodes where modified
             auto modifiedWays = queryraw->getWaysByNodesRefs(modified);
             // Update node cache

@@ -128,7 +128,7 @@ QueryValidate::applyChange(const ValidateStatus &validation, const valerror_t &s
 
     std::string format;
     std::string query;
-    
+
     if (validation.values.size() > 0) {
         query = "INSERT INTO validation (osm_id, change_id, user_id, type, status, values, timestamp, location, source, version) VALUES(";
         format = "%d, %d, %g, \'%s\', \'%s\', ARRAY[%s], \'%s\', ST_GeomFromText(\'%s\', 4326), \'%s\', %s) ";

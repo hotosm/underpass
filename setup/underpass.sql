@@ -72,3 +72,9 @@ CREATE TABLE public.raw (
 ALTER TABLE ONLY public.raw
     ADD CONSTRAINT raw_pkey PRIMARY KEY (osm_id, type);
 
+CREATE TABLE public.rawrefs (
+    node_id bigint,
+    way_id bigint
+)
+ALTER TABLE ONLY public.rawrefs 
+    ADD CONSTRAINT rawrefs_pkey PRIMARY KEY (node_id, way_id);
