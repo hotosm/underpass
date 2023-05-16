@@ -33,6 +33,7 @@ function getBBoxString(map) {
 function MapEventHandlers(props) {
   const map = useMap();
   const [area, setArea] = useState(null);
+  const zoom = map.getZoom();
   useMapEvent('moveend', () => {
     setArea(getBBoxString(map));
   });
@@ -53,8 +54,10 @@ function MapEventHandlers(props) {
         }
       );
     }
-    getData();
-  }, [area]);
+    if (zoom > 16) {
+      getData();
+    }
+  }, [area, zoom]);
 
 }
 
@@ -83,17 +86,14 @@ const PopupMarker = ({ data }) => {
           setRefReady(true);
         }}
       >
-        <table>
-          <tbody>
-            <tr>
-              <td>
-                <a target="_blank" href={"https://osm.org/way/" + data.properties.way_id}>
-                 {data.properties.way_id}
-                </a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <h3>
+          { data.properties.status == 'badgeom' ? "Un-squared building" : "Building"} 
+        </h3>
+        <p>
+          <a target="_blank" href={"https://osm.org/way/" + data.properties.way_id}>
+            {data.properties.way_id}
+          </a>
+        </p>
       </Popup>
     </Marker>
   );
