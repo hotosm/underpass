@@ -66,6 +66,7 @@ libunderpass_la_SOURCES = \
 	src/replicator/replication.cc src/replicator/replication.hh \
 	src/replicator/planetreplicator.cc src/replicator/planetreplicator.hh \
 	src/replicator/threads.cc src/replicator/threads.hh \
+	src/bootstrap/bootstrap.cc src/bootstrap/bootstrap.hh \
 	src/utils/geoutil.cc src/utils/geoutil.hh \
 	src/utils/geo.cc src/utils/geo.hh \
 	src/tils/yaml.hh src/utils/yaml.cc \
@@ -104,7 +105,7 @@ AM_CPPFLAGS = \
 	-DBOOST_LOCALE_HIDE_AUTO_PTR
 # Optionally timing can be turned on, which produces volumes of output which adds too much
 # clutter to the output. This should only be enabled when doing performance tuning.
-#	-DTIMING_DEBUG
+	-DTIMING_DEBUG
 
 pkgdata_DATA = $(SQL_FILES) setup/setupdb.sh $(PYTHON_UTILS)
 

@@ -42,6 +42,8 @@
 #include "osm/osmobjects.hh"
 #include "osm/osmchange.hh"
 
+#include <boost/timer/timer.hpp>
+
 using namespace pq;
 using namespace logger;
 using namespace osmobjects;
@@ -59,7 +61,7 @@ QueryRaw::QueryRaw(std::shared_ptr<Pq> db) {
 std::string
 QueryRaw::applyChange(const OsmNode &node) const
 {
-#ifdef TIMING_DEBUG_X
+#ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("applyChange(raw node): took %w seconds\n");
 #endif
     std::string query;
@@ -123,7 +125,7 @@ QueryRaw::applyChange(const OsmNode &node) const
 std::string
 QueryRaw::applyChange(const OsmWay &way) const
 {
-#ifdef TIMING_DEBUG_X
+#ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("applyChange(raw way): took %w seconds\n");
 #endif
     std::string query = "";
@@ -228,7 +230,7 @@ std::vector<long> arrayStrToVector(std::string &refs_str) {
 std::string
 QueryRaw::applyChange(const std::shared_ptr<std::map<long, std::pair<double, double>>> nodes) const
 {
-#ifdef TIMING_DEBUG_X
+#ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("applyChange(modified nodes): took %w seconds\n");
 #endif
     // 1. Get all ways that have references to nodes
@@ -314,6 +316,10 @@ void QueryRaw::getNodeCache(std::shared_ptr<OsmChangeFile> osmchanges) {
 void
 QueryRaw::getNodeCacheFromWays(std::shared_ptr<std::vector<OsmWay>> ways, std::map<double, point_t> &nodecache) const
 {
+#ifdef TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("getNodeCacheFromWays(ways, nodecache): took %w seconds\n");
+#endif
+
     // Get all nodes ids referenced in ways
     std::string nodeIds;
     for (auto wit = ways->begin(); wit != ways->end(); ++wit) {
@@ -365,6 +371,53 @@ QueryRaw::getWaysByNodesRefs(const std::shared_ptr<std::map<long, std::pair<doub
     }
 
     return ways;
+}
+
+int QueryRaw::getWaysCount() {
+    std::string query = "select count(osm_id) from raw where type = 'polygon' and tags -> 'building' = 'yes'";
+    auto result = dbconn->query(query);
+    return result[0][0].as<int>();
+}
+
+std::shared_ptr<std::vector<OsmWay>> 
+QueryRaw::getWaysFromDB(int lastid) {
+#ifdef TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("getWaysFromDB(page): took %w seconds\n");
+#endif
+    std::string waysQuery = "SELECT osm_id, refs, version, change_id FROM raw where type = 'polygon' and tags -> 'building' = 'yes' and osm_id > " + std::to_string(lastid) + " order by osm_id asc limit 100;";
+    auto ways_result = dbconn->query(waysQuery);
+
+    // Fill vector of OsmWay objects
+    auto ways = std::make_shared<std::vector<OsmWay>>();
+    for (auto way_it = ways_result.begin(); way_it != ways_result.end(); ++way_it) {
+        OsmWay way;
+        way.id = (*way_it)[0].as<long>();
+        way.version = (*way_it)[2].as<long>();
+        way.change_id = (*way_it)[3].as<long>();
+        std::string refs_str = (*way_it)[1].as<std::string>();
+        if (refs_str.size() > 1) {
+            way.refs = arrayStrToVector(refs_str);
+        }
+        ways->push_back(way);
+    }
+
+    return ways;
+}
+
+std::shared_ptr<OsmWay> 
+QueryRaw::getWayById(long id) {
+    std::string waysQuery = "SELECT osm_id, refs, version FROM raw where osm_type = 'W' and osm_id=" + std::to_string(id) + ";";
+    auto result = dbconn->query(waysQuery);
+
+    // Fill vector of OsmWay objects
+    OsmWay way;
+    way.id = result[0][0].as<long>();
+    way.version = result[0][2].as<long>();
+    std::string refs_str = result[0][1].as<std::string>();
+    if (refs_str.size() > 1) {
+        way.refs = arrayStrToVector(refs_str);
+    }
+    return std::make_shared<OsmWay>(way);
 }
 
 } // namespace queryraw
