@@ -11,3 +11,5 @@ class OsmchangeValidateRequest(BaseModel):
     osmchange: str
     check: str
     
+class RawRequest(BaseModel):
+    area: str

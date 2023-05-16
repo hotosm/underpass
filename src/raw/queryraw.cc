@@ -200,8 +200,14 @@ QueryRaw::applyChange(const OsmWay &way) const
 
         query += fmt.str();
 
+        // Way refs table
+        for (auto it = way.refs.begin(); it != way.refs.end(); ++it) {
+            query += "INSERT INTO rawrefs (node_id, way_id) VALUES (" + std::to_string(*it) + "," + std::to_string(way.id) + ") ON CONFLICT (node_id, way_id) DO NOTHING;";
+        }
+
     } else if (way.action == osmobjects::remove) {
         query = "DELETE from raw where osm_id = " + std::to_string(way.id) + " and osm_type = 'W';";
+        query += "DELETE from rawrefs where way_id = " + std::to_string(way.id) + ";";
     }
 
     return query;
@@ -307,7 +313,7 @@ void QueryRaw::getNodeCache(std::shared_ptr<OsmChangeFile> osmchanges) {
 
 void
 QueryRaw::getNodeCacheFromWays(std::shared_ptr<std::vector<OsmWay>> ways, std::map<double, point_t> &nodecache) const
-{    
+{
     // Get all nodes ids referenced in ways
     std::string nodeIds;
     for (auto wit = ways->begin(); wit != ways->end(); ++wit) {
@@ -318,7 +324,7 @@ QueryRaw::getNodeCacheFromWays(std::shared_ptr<std::vector<OsmWay>> ways, std::m
     if (nodeIds.size() > 1) {
 
         nodeIds.erase(nodeIds.size() - 1);
-        
+
         // Get Nodes from DB
         std::string nodesQuery = "SELECT osm_id, st_x(geometry) as lat, st_y(geometry) as lon FROM raw where osm_type = 'N' and osm_id in (" + nodeIds + ") and st_x(geometry) is not null and st_y(geometry) is not null;";
         auto result = dbconn->query(nodesQuery);
@@ -345,7 +351,6 @@ QueryRaw::getWaysByNodesRefs(const std::shared_ptr<std::map<long, std::pair<doub
     std::string waysQuery = "SELECT osm_id, refs, version FROM raw where osm_type = 'W' and refs && ARRAY[" + nodeIds + "]::bigint[] and tags -> 'building' = 'yes';";
     auto ways_result = dbconn->query(waysQuery);
 
-
     // Fill vector of OsmWay objects
     auto ways = std::make_shared<std::vector<OsmWay>>();
     for (auto way_it = ways_result.begin(); way_it != ways_result.end(); ++way_it) {
@@ -358,7 +363,7 @@ QueryRaw::getWaysByNodesRefs(const std::shared_ptr<std::map<long, std::pair<doub
         }
         ways->push_back(way);
     }
-    
+
     return ways;
 }
 

@@ -43,7 +43,7 @@ from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from models import * 
-from api import report
+from api import report, raw
 from api import db
 import config
 import json
@@ -68,6 +68,11 @@ app.add_middleware(
 reporter = report.Report()
 if hasattr(config, 'UNDERPASS_DB'):
     reporter.underpassDB = db.UnderpassDB(config.UNDERPASS_DB)
+
+rawer = raw.Raw()
+if hasattr(config, 'UNDERPASS_DB'):
+    rawer.underpassDB = db.UnderpassDB(config.UNDERPASS_DB)
+
 
 @app.get("/")
 def read_root():
@@ -150,3 +155,10 @@ if hasattr(config, 'ENABLE_UNDERPASS_CORE'):
             request.osmchange,
             request.check)
         )
+
+@app.post("/raw/area")
+def dataQualityTag(request: RawRequest):
+    results = rawer.getArea(
+        area = request.area
+    )
+    return results

@@ -170,7 +170,28 @@ const API = (url) => {
                     options.onError && options.onError(error);
                 }
             )
-        }
+        },
+
+        rawArea: async (area, options = {}) => {
+            fetch(API_URL + "/raw/area", {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({
+                    area: area,
+                })
+            })
+            .then(res => {
+                return res.json();
+            })
+            .then(
+                (result) => {
+                    options.onSuccess && options.onSuccess(result);
+                },
+                (error) => {
+                    options.onError && options.onError(error);
+                }
+            )
+        },
     }
 }
 
