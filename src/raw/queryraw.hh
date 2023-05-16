@@ -70,6 +70,13 @@ class QueryRaw {
     std::shared_ptr<std::vector<OsmWay>> getWaysByNodesRefs(const std::shared_ptr<std::map<long, std::pair<double, double>>> nodes) const;
     // Database connection
     std::shared_ptr<Pq> dbconn;
+    // Get ways count
+    int getWaysCount();
+    // Get ways by page
+    std::shared_ptr<std::vector<OsmWay>> getWaysFromDB(int page);
+    // Get single way by id
+    std::shared_ptr<OsmWay> getWayById(long id);
+
 };
 
 } // namespace queryraw

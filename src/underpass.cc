@@ -63,6 +63,7 @@ namespace opts = boost::program_options;
 #include "osm/changeset.hh"
 #include "osm/osmchange.hh"
 #include "replicator/threads.hh"
+#include "bootstrap/bootstrap.hh"
 #include "underpassconfig.hh"
 
 using namespace querystats;
@@ -122,7 +123,8 @@ main(int argc, char *argv[])
             ("debug,d", "Enable debug messages for developers")
             ("disable-stats", "Disable statistics")
             ("disable-validation", "Disable validation")
-            ("disable-raw", "Disable raw OSM data");
+            ("disable-raw", "Disable raw OSM data")
+            ("bootstrap", "Bootstrap data tables");
         // clang-format on
 
         opts::store(opts::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
@@ -162,19 +164,8 @@ main(int argc, char *argv[])
         dbglogfile.setVerbosity();
     }
 
-    // Planet server
-    if (vm.count("planet")) {
-        config.planet_server = vm["planet"].as<std::string>();
-        // Strip https://
-        if (config.planet_server.find("https://") == 0) {
-            config.planet_server = config.planet_server.substr(8);
-        }
-
-        if (boost::algorithm::ends_with(config.planet_server, "/")) {
-            config.planet_server.resize(config.planet_server.size() - 1);
-        }
-    } else {
-        config.planet_server = config.planet_servers[0].domain;
+    if (vm.count("server")) {
+        config.underpass_db_url = vm["server"].as<std::string>();
     }
 
     // Concurrency
@@ -193,139 +184,160 @@ main(int argc, char *argv[])
     } else {
         config.concurrency = std::thread::hardware_concurrency();
     }
-
-    if (vm.count("boundary")) {
-        boundary = vm["boundary"].as<std::string>();
-    }
-
-    if (vm.count("server")) {
-        config.underpass_db_url = vm["server"].as<std::string>();
-    }
-
-    // Boundary
-    geoutil::GeoUtil geou;
-    if (!geou.readFile(boundary)) {
-        log_debug("Could not find '%1%' area file!", boundary);
-    }
-
-    // Features
-    if (vm.count("disable-validation")) {
-        config.disable_validation = true;
-    }
-    if (vm.count("disable-stats")) {
-        config.disable_stats = true;
-    }
-    if (vm.count("disable-raw")) {
-        config.disable_raw = true;
-    }
-
-    // Replication
-    planetreplicator::PlanetReplicator replicator;
-
-    std::shared_ptr<std::vector<unsigned char>> data;
-
-    if (!starting_url_path.empty() && vm.count("timestamp")) {
-        log_debug("ERROR: 'url' takes precedence over 'timestamp' arguments are mutually exclusive!");
-        exit(-1);
-    }
-
-    // This is the default data directory on that server
-    if (vm.count("datadir")) {
-        datadir = vm["datadir"].as<std::string>();
-    }
-    const char *tmp = std::getenv("DATADIR");
-    if (tmp != 0) {
-        datadir = tmp;
-    }
-
-    // Add datadir to config
-    config.datadir = datadir;
-
-    if (vm.count("frequency")) {
-        const auto strfreq = vm["frequency"].as<std::string>();
-        if (strfreq[0] == 'm') {
-            config.frequency = replication::minutely;
-        } else if (strfreq[0] == 'h') {
-            config.frequency = replication::hourly;
-        } else if (strfreq[0] == 'd') {
-            config.frequency = replication::daily;
-        } else {
-            log_debug("Invalid frequency!");
-            exit(-1);
-        }
-    }
-
-    auto osmchange = std::make_shared<RemoteURL>();
-    // Specify a timestamp used by other options
-    if (vm.count("timestamp")) {
-        try {
-            auto timestamps = vm["timestamp"].as<std::vector<std::string>>();
-            if (timestamps[0] == "now") {
-                config.start_time = boost::posix_time::second_clock::universal_time();
-            } else {
-                config.start_time = from_iso_extended_string(timestamps[0]);
-                if (timestamps.size() > 1) {
-                    config.end_time = from_iso_extended_string(timestamps[1]);
-                }
+    
+    if (!vm.count("bootstrap")) {
+        // Planet server
+        if (vm.count("planet")) {
+            config.planet_server = vm["planet"].as<std::string>();
+            // Strip https://
+            if (config.planet_server.find("https://") == 0) {
+                config.planet_server = config.planet_server.substr(8);
             }
-            osmchange = replicator.findRemotePath(config, config.start_time);
-        } catch (const std::exception &ex) {
-            log_error("could not parse timestamps!");
+
+            if (boost::algorithm::ends_with(config.planet_server, "/")) {
+                config.planet_server.resize(config.planet_server.size() - 1);
+            }
+        } else {
+            config.planet_server = config.planet_servers[0].domain;
+        }
+
+        if (vm.count("boundary")) {
+            boundary = vm["boundary"].as<std::string>();
+        }
+
+        // Boundary
+        geoutil::GeoUtil geou;
+        if (!geou.readFile(boundary)) {
+            log_debug("Could not find '%1%' area file!", boundary);
+        }
+
+        // Features
+        if (vm.count("disable-validation")) {
+            config.disable_validation = true;
+        }
+        if (vm.count("disable-stats")) {
+            config.disable_stats = true;
+        }
+        if (vm.count("disable-raw")) {
+            config.disable_raw = true;
+        }
+
+        // Replication
+        planetreplicator::PlanetReplicator replicator;
+
+        std::shared_ptr<std::vector<unsigned char>> data;
+
+        if (!starting_url_path.empty() && vm.count("timestamp")) {
+            log_debug("ERROR: 'url' takes precedence over 'timestamp' arguments are mutually exclusive!");
             exit(-1);
         }
-    } else if (vm.count("url")) {
-        replicator.connectServer("https://" + config.planet_server);
-        // This is the changesets path part (ex. 000/075/000), takes precedence over 'timestamp'
-        // option. This only applies to the osm change files, as it's timestamp is used to
-        // start the changesets.
-        std::string fullurl = "https://" + config.planet_server + "/replication/" + StateFile::freq_to_string(config.frequency);
-        std::vector<std::string> parts;
-        boost::split(parts, vm["url"].as<std::string>(), boost::is_any_of("/"));
-        // fullurl += "/" + vm["url"].as<std::string>() + "/" + parts[2] + ".state.txt";
-        fullurl += "/" + vm["url"].as<std::string>() + ".state.txt";
-        osmchange->parse(fullurl);
-        auto data = replicator.downloadFile(*osmchange).data;
-        StateFile start(osmchange->filespec, false);
-        //start.dump();
-        config.start_time = start.timestamp;
-        boost::algorithm::replace_all(osmchange->filespec, ".state.txt", ".osc.gz");
-    }
 
-    std::thread changesetThread;
-    std::thread osmChangeThread;
-    multipolygon_t poly;
-    if (!vm.count("changesets")) {
-        multipolygon_t * osmboundary = &poly;
-        if (!vm.count("osmnoboundary")) {
-            osmboundary = &geou.boundary;
+        // This is the default data directory on that server
+        if (vm.count("datadir")) {
+            datadir = vm["datadir"].as<std::string>();
         }
-        osmChangeThread = std::thread(threads::startMonitorChanges, std::ref(osmchange),
-                        std::ref(*osmboundary), std::ref(config));
-    }
-    config.frequency = replication::changeset;
-    auto changeset = replicator.findRemotePath(config, config.start_time);
-    if (vm.count("changeseturl")) {
-        std::vector<std::string> parts;
-        boost::split(parts, vm["changeseturl"].as<std::string>(), boost::is_any_of("/"));
-        changeset->updatePath(stoi(parts[0]),stoi(parts[1]),stoi(parts[2]));
-    }
-    if (!vm.count("osmchanges")) {
-        multipolygon_t * oscboundary = &poly;
-        if (!vm.count("oscnoboundary")) {
-            oscboundary = &geou.boundary;
+        const char *tmp = std::getenv("DATADIR");
+        if (tmp != 0) {
+            datadir = tmp;
         }
-        changesetThread = std::thread(threads::startMonitorChangesets, std::ref(changeset),
-                        std::ref(*oscboundary), std::ref(config));
-    }
-    log_info("Waiting...");
-    if (changesetThread.joinable()) {
-        changesetThread.join();
-    }
-    if (osmChangeThread.joinable()) {
-        osmChangeThread.join();
-    }
 
-    exit(0);
+        // Add datadir to config
+        config.datadir = datadir;
+
+        if (vm.count("frequency")) {
+            const auto strfreq = vm["frequency"].as<std::string>();
+            if (strfreq[0] == 'm') {
+                config.frequency = replication::minutely;
+            } else if (strfreq[0] == 'h') {
+                config.frequency = replication::hourly;
+            } else if (strfreq[0] == 'd') {
+                config.frequency = replication::daily;
+            } else {
+                log_debug("Invalid frequency!");
+                exit(-1);
+            }
+        }
+
+        auto osmchange = std::make_shared<RemoteURL>();
+        // Specify a timestamp used by other options
+        if (vm.count("timestamp")) {
+            try {
+                auto timestamps = vm["timestamp"].as<std::vector<std::string>>();
+                if (timestamps[0] == "now") {
+                    config.start_time = boost::posix_time::second_clock::universal_time();
+                } else {
+                    config.start_time = from_iso_extended_string(timestamps[0]);
+                    if (timestamps.size() > 1) {
+                        config.end_time = from_iso_extended_string(timestamps[1]);
+                    }
+                }
+                osmchange = replicator.findRemotePath(config, config.start_time);
+            } catch (const std::exception &ex) {
+                log_error("could not parse timestamps!");
+                exit(-1);
+            }
+        } else if (vm.count("url")) {
+            replicator.connectServer("https://" + config.planet_server);
+            // This is the changesets path part (ex. 000/075/000), takes precedence over 'timestamp'
+            // option. This only applies to the osm change files, as it's timestamp is used to
+            // start the changesets.
+            std::string fullurl = "https://" + config.planet_server + "/replication/" + StateFile::freq_to_string(config.frequency);
+            std::vector<std::string> parts;
+            boost::split(parts, vm["url"].as<std::string>(), boost::is_any_of("/"));
+            // fullurl += "/" + vm["url"].as<std::string>() + "/" + parts[2] + ".state.txt";
+            fullurl += "/" + vm["url"].as<std::string>() + ".state.txt";
+            osmchange->parse(fullurl);
+            auto data = replicator.downloadFile(*osmchange).data;
+            StateFile start(osmchange->filespec, false);
+            //start.dump();
+            config.start_time = start.timestamp;
+            boost::algorithm::replace_all(osmchange->filespec, ".state.txt", ".osc.gz");
+        }
+
+        std::thread changesetThread;
+        std::thread osmChangeThread;
+
+        multipolygon_t poly;
+        if (!vm.count("changesets")) {
+            multipolygon_t * osmboundary = &poly;
+            if (!vm.count("osmnoboundary")) {
+                osmboundary = &geou.boundary;
+            }
+            osmChangeThread = std::thread(threads::startMonitorChanges, std::ref(osmchange),
+                            std::ref(*osmboundary), std::ref(config));
+        }
+        config.frequency = replication::changeset;
+        auto changeset = replicator.findRemotePath(config, config.start_time);
+        if (vm.count("changeseturl")) {
+            std::vector<std::string> parts;
+            boost::split(parts, vm["changeseturl"].as<std::string>(), boost::is_any_of("/"));
+            changeset->updatePath(stoi(parts[0]),stoi(parts[1]),stoi(parts[2]));
+        }
+        if (!vm.count("osmchanges")) {
+            multipolygon_t * oscboundary = &poly;
+            if (!vm.count("oscnoboundary")) {
+                oscboundary = &geou.boundary;
+            }
+            changesetThread = std::thread(threads::startMonitorChangesets, std::ref(changeset),
+                            std::ref(*oscboundary), std::ref(config));
+        }
+        if (changesetThread.joinable()) {
+            changesetThread.join();
+        }
+        if (osmChangeThread.joinable()) {
+            osmChangeThread.join();
+        }
+
+        exit(0);
+
+    } else {
+        std::thread bootstrapThread;
+        bootstrapThread = std::thread(bootstrap::startProcessingWays, std::ref(config));
+        log_info("Waiting...");
+        if (bootstrapThread.joinable()) {
+            bootstrapThread.join();
+        }
+    }
 
 }
 
