@@ -64,7 +64,11 @@ class QueryRaw {
     std::string applyChange(const std::shared_ptr<std::map<long, std::pair<double, double>>> nodes) const;
     /// Get nodes for filling Node cache
     void getNodeCache(std::shared_ptr<OsmChangeFile> osmchanges);
-    // Database connection, used for escape strings
+    /// Get nodes for filling Node cache
+    void getNodeCacheFromWays(std::shared_ptr<std::vector<OsmWay>> ways, std::map<double, point_t> &nodecache) const;
+    // Get ways by refs
+    std::shared_ptr<std::vector<OsmWay>> getWaysByNodesRefs(const std::shared_ptr<std::map<long, std::pair<double, double>>> nodes) const;
+    // Database connection
     std::shared_ptr<Pq> dbconn;
 };
 

@@ -414,6 +414,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
     auto file = planet->downloadFile(*remote.get());
     task.status = file.status;
 
+    // Read OsmChange
     if (file.status == replication::success) {
         try {
             std::istringstream changes_xml;
@@ -446,12 +447,16 @@ threadOsmChange(OsmChangeTask osmChangeTask)
         }
     }
 
+    // Fill node cache
     osmchanges->nodecache.clear();
     if (!config->disable_raw && !poly.empty()) {
         queryraw->getNodeCache(osmchanges);
     }
+
+    // Filter data by priority polygon
     osmchanges->areaFilter(poly);
 
+    // Collect stats
     if (!config->disable_stats) {
         // Statistics
         auto stats = osmchanges->collectStats(poly);
@@ -463,15 +468,46 @@ threadOsmChange(OsmChangeTask osmChangeTask)
         }
     }
 
-    // Existing entries in the validation table that needs to be removed
+    // Removed objects
     auto removals = std::make_shared<std::vector<long>>();
 
-    // Modified nodes to be updated in ways geometries (not used yet)
-    // auto modified = std::make_shared<std::map<long, std::pair<double, double>>>();
+    // Modified nodes
+    auto modified = std::make_shared<std::map<long, std::pair<double, double>>>();
     
+    // Raw data and validation
     if (!config->disable_validation || !config->disable_raw) {
         for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
             osmchange::OsmChange *change = it->get();
+
+            // Nodes
+            for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
+                osmobjects::OsmNode *node = nit->get();
+                if (!config->disable_validation) {
+                    if (!node->priority) {
+                        continue;
+                    }
+                    if (node->action == osmobjects::remove) {
+                        removals->push_back(node->id);
+                    }
+                }
+                if (!config->disable_raw) {
+                    // Save node in nodecache for later use
+                    osmchanges->nodecache[node->id] = node->point;
+                    if (node->action == osmobjects::modify) {
+                        double lat = node->point.x();
+                        double lon = node->point.y();
+                        std::pair<double, double> value = std::make_pair(lat, lon);
+                        modified->insert(std::make_pair(node->id, value));
+                    }
+                    // Update nodes raw data
+                    if (!node->priority) {
+                        continue;
+                    }
+                    task.query += queryraw->applyChange(*node);
+                }
+            }
+
+            // Ways
             for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
                 osmobjects::OsmWay *way = wit->get();
                 if (!config->disable_validation) {
@@ -490,31 +526,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
                     task.query += queryraw->applyChange(*way);
                 }
             }
-            for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
-                osmobjects::OsmNode *node = nit->get();
-                if (!config->disable_validation) {
-                    if (!node->priority) {
-                        continue;
-                    }
-                    if (node->action == osmobjects::remove) {
-                        removals->push_back(node->id);
-                    }
-                }
-                if (!config->disable_raw) {
-                //     // Modified nodes to be updated in ways geometries (not used yet)
-                //     if (node->action == osmobjects::modify) {
-                //         double lat = node->point.x();
-                //         double lon = node->point.y();
-                //         std::pair<double, double> value = std::make_pair(lat, lon);
-                //         modified->insert(std::make_pair(node->id, value));
-                //     }
-                    // Update nodes raw data
-                    if (!node->priority) {
-                        continue;
-                    }
-                    task.query += queryraw->applyChange(*node);
-                }
-            }
+
         }
     }
 
@@ -525,16 +537,69 @@ threadOsmChange(OsmChangeTask osmChangeTask)
     //     }
     // }
 
+    // Validation table update (remove entries that are not longer invalid)
     if (!config->disable_validation) {
-        // Validation
-        auto nodeval = osmchanges->validateNodes(poly, plugin);
-        for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
-            task.query += queryvalidate->applyChange(*it->get());
+
+        // Validate ways whose nodes were modified
+        if (!config->disable_raw && !poly.empty() && modified->size() > 0) {
+            
+            // Get ways whose nodes where modified
+            auto modifiedWays = queryraw->getWaysByNodesRefs(modified);
+            // Update node cache
+            queryraw->getNodeCacheFromWays(modifiedWays, osmchanges->nodecache);
+
+            // Validate ways
+            for (auto way = modifiedWays->begin(); way != modifiedWays->end(); ++way) {
+
+                // Build ways geometries using nodecache
+                for (auto rit = way->refs.begin(); rit != way->refs.end(); ++rit) {
+                    if (osmchanges->nodecache.find(*rit) != osmchanges->nodecache.end()) {
+                        boost::geometry::append(way->linestring, osmchanges->nodecache.at(*rit));
+                    }
+                }
+
+                // Geometry checks
+                // See if the way is a closed polygon and it's a building
+                if (way->refs.front() == way->refs.back()) {
+
+                    // Bad geometry
+                    if (boost::geometry::num_points(way->linestring) - 1 < 4 ||
+                        plugin->unsquared(way->linestring)
+                    ) {
+                        auto status = ValidateStatus(*way);
+                        status.timestamp = boost::posix_time::microsec_clock::universal_time();
+                        status.source = "building";
+                        boost::geometry::centroid(way->linestring, status.center);
+                        task.query += queryvalidate->applyChange(status, badgeom);
+                    } else {
+                        task.query += queryvalidate->updateValidation(way->id, badgeom, "building", way->version);
+                    }
+                }
+            }
         }
+
+        // Validate ways
         auto wayval = osmchanges->validateWays(poly, plugin);
         for (auto it = wayval->begin(); it != wayval->end(); ++it) {
-            task.query += queryvalidate->applyChange(*it->get());
+            if (it->get()->status.size() > 0) {
+                for (auto status_it = it->get()->status.begin(); status_it != it->get()->status.end(); ++status_it) {
+                    task.query += queryvalidate->applyChange(*it->get(), *status_it);
+                }
+                if (!it->get()->hasStatus(overlaping)) {
+                    task.query += queryvalidate->updateValidation(it->get()->osm_id, overlaping, "building", it->get()->version);
+                }
+                if (!it->get()->hasStatus(duplicate)) {
+                    task.query += queryvalidate->updateValidation(it->get()->osm_id, duplicate, "building", it->get()->version);
+                }
+                if (!it->get()->hasStatus(badgeom)) {
+                    task.query += queryvalidate->updateValidation(it->get()->osm_id, badgeom, "building", it->get()->version);
+                }
+            } else {
+                removals->push_back(it->get()->osm_id);
+            }
         }
+
+        // Remove older validations
         task.query += queryvalidate->updateValidation(removals);
     }
 

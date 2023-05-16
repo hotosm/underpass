@@ -62,6 +62,25 @@ using namespace logger;
 /// \namespace queryvalidate
 namespace queryvalidate {
 
+std::map<valerror_t, std::string> status_list = {
+    {notags, "notags"},
+    {complete, "complete"},
+    {incomplete, "incomplete"},
+    {badvalue, "badvalue"},
+    {correct, "correct"},
+    {orphan, "orphan"},
+    {overlaping, "overlaping"},
+    {duplicate, "duplicate"},
+    {badgeom, "badgeom"}
+};
+
+std::map<osmobjects::osmtype_t, std::string> objtypes = {
+    {osmobjects::empty, "empty"},
+    {osmobjects::node, "node"},
+    {osmobjects::way, "way"},
+    {osmobjects::relation, "relation"}
+};
+
 QueryValidate::QueryValidate(void) {}
 
 QueryValidate::QueryValidate(std::shared_ptr<Pq> db) {
@@ -87,53 +106,44 @@ QueryValidate::updateValidation(std::shared_ptr<std::vector<long>> removals)
 }
 
 std::string
-QueryValidate::applyChange(const ValidateStatus &validation) const
+QueryValidate::updateValidation(long osm_id, const valerror_t &status, const std::string &source, long version) const
+{
+    std::string format = "DELETE FROM validation WHERE osm_id = %d and source = '%s' and status = '%s' and version <= %d;";
+    boost::format fmt(format);
+    fmt % osm_id;
+    fmt % source;
+    fmt % status_list[status];
+    fmt % version;
+    std::string query = fmt.str();
+    return query;
+}
+
+std::string
+QueryValidate::applyChange(const ValidateStatus &validation, const valerror_t &status) const
 {
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("applyChange(validation): took %w seconds\n");
 #endif
     log_debug("Applying Validation data");
 
-    if (validation.status.size() == 0) {
-        return "";
-    }
-    std::map<osmobjects::osmtype_t, std::string> objtypes = {
-        {osmobjects::empty, "empty"},
-        {osmobjects::node, "node"},
-        {osmobjects::way, "way"},
-        {osmobjects::relation, "relation"}};
-    std::map<valerror_t, std::string> status = {
-        {notags, "notags"},
-        {complete, "complete"},
-        {incomplete, "incomplete"},
-        {badvalue, "badvalue"},
-        {correct, "correct"},
-        {orphan, "orphan"},
-        {overlaping, "overlaping"},
-        {duplicate, "duplicate"},
-        {badgeom, "badgeom"}};
     std::string format;
     std::string query;
+    
     if (validation.values.size() > 0) {
-        query = "INSERT INTO validation (osm_id, change_id, user_id, type, status, values, timestamp, location, source) VALUES(";
-        format = "%d, %d, %g, \'%s\', ARRAY[%s]::status[], ARRAY[%s], \'%s\', ST_GeomFromText(\'%s\', 4326), \'%s\'";
+        query = "INSERT INTO validation (osm_id, change_id, user_id, type, status, values, timestamp, location, source, version) VALUES(";
+        format = "%d, %d, %g, \'%s\', \'%s\', ARRAY[%s], \'%s\', ST_GeomFromText(\'%s\', 4326), \'%s\', %s) ";
     } else {
-        query = "INSERT INTO validation (osm_id, change_id, user_id, type, status, timestamp, location) VALUES(";
-        format = "%d, %d, %g, \'%s\', ARRAY[%s]::status[], \'%s\', ST_GeomFromText(\'%s\', 4326)";
+        query = "INSERT INTO validation (osm_id, change_id, user_id, type, status, timestamp, location, source, version) VALUES(";
+        format = "%d, %d, %g, \'%s\', \'%s\', \'%s\', ST_GeomFromText(\'%s\', 4326), \'%s\', %s) ";
     }
+    format += "ON CONFLICT (osm_id, status, source) DO UPDATE SET version = %d,  timestamp = \'%s\' WHERE excluded.version < %d;";
     boost::format fmt(format);
     fmt % validation.osm_id;
     fmt % validation.change_id;
     fmt % validation.user_id;
     fmt % objtypes[validation.objtype];
-    std::string stattmp, valtmp;
-    for (const auto &_stat: std::as_const(validation.status)) {
-        stattmp += " \'" + status[_stat] + "\',";
-    }
-    if (!stattmp.empty()) {
-        stattmp.pop_back();
-    }
-    fmt % stattmp;
+    std::string valtmp;
+    fmt % status_list[status];
     if (validation.values.size() > 0) {
         for (const auto &tag: std::as_const(validation.values)) {
             valtmp += + "'" + dbconn->escapedString(tag) + "',";
@@ -150,17 +160,16 @@ QueryValidate::applyChange(const ValidateStatus &validation) const
     std::string center = ss.str();
     fmt % center;
 
-    if (validation.values.size() > 0) {
-        fmt % validation.source;
-    }
-    query += fmt.str();
-    query += ") ON CONFLICT (osm_id) DO UPDATE ";
-    query += " SET status = ARRAY[" + stattmp + " ]::status[]";
-    if (validation.values.size() > 0) {
-        query += ", values = ARRAY[" + valtmp + " ], source = \'" + validation.source + "\'";
-    }
+    fmt % validation.source;
+    fmt % validation.version;
 
-    return query + ";";
+    // ON CONFLICT
+    fmt % validation.version;
+    fmt % to_simple_string(validation.timestamp);
+    fmt % validation.version;
+    query += fmt.str();
+
+    return query;
 }
 
 } // namespace queryvalidate

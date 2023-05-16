@@ -64,10 +64,10 @@ QueryRaw::applyChange(const OsmNode &node) const
 #endif
     std::string query;
     if (node.action == osmobjects::create || node.action == osmobjects::modify) {
-        query = "INSERT INTO raw (osm_id, change_id, osm_type, type, geometry, tags, timestamp, version) VALUES(";
+        query = "INSERT INTO raw as r (osm_id, change_id, osm_type, type, geometry, tags, timestamp, version) VALUES(";
         std::string format = "%d, %d, 'N', 'point', ST_GeomFromText(\'%s\', 4326), %s, \'%s\', %d \
         ) ON CONFLICT (osm_id, osm_type) DO UPDATE SET change_id = %d, geometry = ST_GeomFromText(\'%s\', \
-        4326), tags = %s, timestamp = \'%s\', version = %d WHERE excluded.version < %d;";
+        4326), tags = %s, timestamp = \'%s\', version = %d WHERE r.version < %d;";
         boost::format fmt(format);
 
         // osm_id
@@ -127,10 +127,11 @@ QueryRaw::applyChange(const OsmWay &way) const
     boost::timer::auto_cpu_timer timer("applyChange(raw way): took %w seconds\n");
 #endif
     std::string query = "";
+
     if (way.action == osmobjects::create || way.action == osmobjects::modify) {
-        query = "INSERT INTO raw (osm_id, change_id, osm_type, type, geometry, tags, refs, timestamp, version) VALUES(";
+        query = "INSERT INTO raw as r (osm_id, change_id, osm_type, type, geometry, tags, refs, timestamp, version) VALUES(";
         std::string format = "%d, %d, 'W', %s, %s, %s, %s, \'%s\', %d) \
-        ON CONFLICT (osm_id, osm_type) DO UPDATE SET change_id = %d, type = %s, geometry = %s, tags = %s, refs = %s, timestamp = \'%s\', version = %d WHERE excluded.version < %d;";
+        ON CONFLICT (osm_id, osm_type) DO UPDATE SET change_id = %d, type = %s, geometry = %s, tags = %s, refs = %s, timestamp = \'%s\', version = %d WHERE r.version < %d;";
         boost::format fmt(format);
         // osm_id
         fmt % way.id;
@@ -202,7 +203,7 @@ QueryRaw::applyChange(const OsmWay &way) const
     } else if (way.action == osmobjects::remove) {
         query = "DELETE from raw where osm_id = " + std::to_string(way.id) + " and osm_type = 'W';";
     }
-    
+
     return query;
 }
 
@@ -302,6 +303,63 @@ void QueryRaw::getNodeCache(std::shared_ptr<OsmChangeFile> osmchanges) {
             osmchanges->nodecache[node_id] = node.point;
         }
     }
+}
+
+void
+QueryRaw::getNodeCacheFromWays(std::shared_ptr<std::vector<OsmWay>> ways, std::map<double, point_t> &nodecache) const
+{    
+    // Get all nodes ids referenced in ways
+    std::string nodeIds;
+    for (auto wit = ways->begin(); wit != ways->end(); ++wit) {
+        for (auto rit = std::begin(wit->refs); rit != std::end(wit->refs); ++rit) {
+            nodeIds += std::to_string(*rit) + ",";
+        }
+    }
+    if (nodeIds.size() > 1) {
+
+        nodeIds.erase(nodeIds.size() - 1);
+        
+        // Get Nodes from DB
+        std::string nodesQuery = "SELECT osm_id, st_x(geometry) as lat, st_y(geometry) as lon FROM raw where osm_type = 'N' and osm_id in (" + nodeIds + ") and st_x(geometry) is not null and st_y(geometry) is not null;";
+        auto result = dbconn->query(nodesQuery);
+        // Fill nodecache
+        for (auto node_it = result.begin(); node_it != result.end(); ++node_it) {
+            auto node_id = (*node_it)[0].as<long>();
+            auto node_lat = (*node_it)[1].as<double>();
+            auto node_lon = (*node_it)[2].as<double>();
+            auto point = point_t(node_lat, node_lon);
+            nodecache.insert(std::make_pair(node_id, point));
+        }
+    }
+}
+
+std::shared_ptr<std::vector<OsmWay>>
+QueryRaw::getWaysByNodesRefs(const std::shared_ptr<std::map<long, std::pair<double, double>>> nodes) const
+{
+    // Get all ways that have references to nodes
+    std::string nodeIds;
+    for (auto node = nodes->begin(); node != nodes->end(); ++node) {
+        nodeIds += std::to_string(node->first) + ",";
+    }
+    nodeIds.erase(nodeIds.size() - 1);
+    std::string waysQuery = "SELECT osm_id, refs, version FROM raw where osm_type = 'W' and refs && ARRAY[" + nodeIds + "]::bigint[] and tags -> 'building' = 'yes';";
+    auto ways_result = dbconn->query(waysQuery);
+
+
+    // Fill vector of OsmWay objects
+    auto ways = std::make_shared<std::vector<OsmWay>>();
+    for (auto way_it = ways_result.begin(); way_it != ways_result.end(); ++way_it) {
+        OsmWay way;
+        way.id = (*way_it)[0].as<long>();
+        way.version = (*way_it)[2].as<long>();
+        std::string refs_str = (*way_it)[1].as<std::string>();
+        if (refs_str.size() > 1) {
+            way.refs = arrayStrToVector(refs_str);
+        }
+        ways->push_back(way);
+    }
+    
+    return ways;
 }
 
 } // namespace queryraw
