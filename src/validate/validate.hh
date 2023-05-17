@@ -286,15 +286,15 @@ class BOOST_SYMBOL_VISIBLE Validate {
         double max_angle = 110,
         double threshold = 19
     ) {
-        const int num_points =  boost::geometry::num_points(way) - 1;
-        for(int i = 0; i < num_points; i++) {
+        const int num_points =  boost::geometry::num_points(way);
+        for(int i = 0; i < num_points - 1; i++) {
             // Three points
             int a,b,c;
-            if (i < num_points - 2) {
+            if (i < num_points - 3) {
                 a = i;
                 b = i + 1;
                 c = i + 2;
-            } else if (i == num_points - 2) {
+            } else if (i == num_points - 3) {
                 a = i;
                 b = i + 1;
                 c = 0;
