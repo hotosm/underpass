@@ -30,35 +30,46 @@ function getBBoxString(map) {
     return bbox;
 }
 
+const getData = async (area, onGetData) => {
+  if (area) {
+    await API()["rawArea"](
+      area,
+      {
+        onSuccess: (data) => {
+          if (data.length > 0) {
+            const features = data[0].jsonb_build_object;
+            onGetData(features, area);
+          }
+        },
+        onError: (error) => {
+          console.log(error)
+        }
+      }
+    );
+  }
+}
+
+function OnLoadMap(props) {
+  const map = useMap();
+  
+  useEffect(() => {
+    props.onGetData(getBBoxString(map));
+  }, []);
+}
+
 function MapEventHandlers(props) {
   const map = useMap();
   const [area, setArea] = useState(null);
   const zoom = map.getZoom();
   useMapEvent('moveend', () => {
+    props.onGetData(area);
     setArea(getBBoxString(map));
   });
   useEffect(() => {
-    const getData = async () => {
-      await API()["rawArea"](
-        area,
-        {
-          onSuccess: (data) => {
-            if (data.length > 0) {
-              const features = data[0].jsonb_build_object;
-              props.onGetData(features);
-            }
-          },
-          onError: (error) => {
-            console.log(error)
-          }
-        }
-      );
-    }
     if (zoom > 16) {
-      getData();
+      props.onGetData(area);
     }
   }, [area, zoom]);
-
 }
 
 const grayOptions = { color: 'gray' }
@@ -104,14 +115,39 @@ export const DQMap = ({
     className
   }) => {
     const [data, setData] = useState([]);
+    const [area, setArea] = useState(null);
     const [selectedFeature, setSelectedFeature] = useState(null);
-    const dataHandler = (result) => {
-      setData(result.features);
+    const timeoutRef = useRef();
+
+    const mapMoveHandler = (area) => {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = setInterval(() => {
+        getData(area, (result) => {
+          setData(result.features);
+        });
+      }, 5000);
+      setArea(area);
     }
+
+    const loadHandler = (area) => {
+      setArea(area);
+      timeoutRef.current = setInterval(() => {
+        getData(area, (result) => {
+          setData(result.features);
+        });
+      }, 5000);
+    }
+
+    useEffect(() => {
+        getData(area, (result) => {
+          setData(result.features);
+        });
+    }, [area]);
+    
     return <div className={className || "Map"}>
         <MapContainer 
           style={{height: 500}}
-          center={[14.99184, -90.811215]}
+          center={[-16.35444, 34.67687]}
           zoom={17}
           scrollWheelZoom={false}
         >
@@ -153,10 +189,14 @@ export const DQMap = ({
             }}
           />
         )}
-        <MapEventHandlers onGetData={dataHandler} />
+        <MapEventHandlers onGetData={mapMoveHandler} />
         { selectedFeature &&
           <PopupMarker data={selectedFeature} />
         }
+        { area == null && 
+          <OnLoadMap onGetData={loadHandler} 
+          />
+        }        
       </MapContainer>
     </div>
   }
