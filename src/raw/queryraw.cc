@@ -61,9 +61,6 @@ QueryRaw::QueryRaw(std::shared_ptr<Pq> db) {
 std::string
 QueryRaw::applyChange(const OsmNode &node) const
 {
-#ifdef TIMING_DEBUG
-    boost::timer::auto_cpu_timer timer("applyChange(raw node): took %w seconds\n");
-#endif
     std::string query;
     if (node.action == osmobjects::create || node.action == osmobjects::modify) {
         query = "INSERT INTO raw_node as r (osm_id,  geometry, tags, timestamp, version) VALUES(";
@@ -122,9 +119,6 @@ QueryRaw::applyChange(const OsmNode &node) const
 std::string
 QueryRaw::applyChange(const OsmWay &way) const
 {
-#ifdef TIMING_DEBUG
-    boost::timer::auto_cpu_timer timer("applyChange(raw poly): took %w seconds\n");
-#endif
     std::string query = "";
 
     if (way.refs.front() == way.refs.back() && (way.action == osmobjects::create || way.action == osmobjects::modify)) {
@@ -359,9 +353,6 @@ int QueryRaw::getWaysCount() {
 
 std::shared_ptr<std::vector<OsmWay>> 
 QueryRaw::getWaysFromDB(int lastid) {
-#ifdef TIMING_DEBUG
-    boost::timer::auto_cpu_timer timer("getWaysFromDB(page): took %w seconds\n");
-#endif
     std::string waysQuery = "SELECT osm_id, refs, version FROM raw_poly where tags -> 'building' = 'yes' and osm_id > " + std::to_string(lastid) + " order by osm_id asc limit 100;";
     auto ways_result = dbconn->query(waysQuery);
 
