@@ -113,8 +113,8 @@ const PopupMarker = ({ data }) => {
 // DQMap component
 export const DQMap = ({
     className,
-    center = [14.7919, -90.8070],
-    realtime = false
+    center = [14.70884, -90.47560],
+    realtime = true
   }) => {
     const [data, setData] = useState([]);
     const [area, setArea] = useState(null);
