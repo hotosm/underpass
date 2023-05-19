@@ -18,7 +18,6 @@
 #     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 
 from .db import UnderpassDB
-from .queryHelper import bbox as bboxQueryBuilder
 
 class Raw:
     def __init__(self):
@@ -31,85 +30,14 @@ class Raw:
         area = None,
         responseType = "json"
     ):
-        query = "with t0 as ( \
-                    select osm_id as node_id from raw \
-                    where osm_type = 'N' \
-                    and ST_Intersects(\"geometry\", ST_GeomFromText('POLYGON(({0}))', 4326)) \
-                    limit 2000 \
-                ), t1 as ( \
-                    select osm_id as way_id from raw where \
-                \"type\" = 'polygon' \
-                and refs && array(select * from t0)::bigint[] \
-                ),  \
-                t2 AS ( \
-                select status, way_id, unnest(refs) AS node_id from raw left join validation on validation.osm_id = raw.osm_id, t1 where raw.osm_id = t1.way_id \
-                and raw.type = 'polygon' \
-                and tags -> 'building' = 'yes' \
-                ), \
-                t3 as ( \
-                    select status, way_id, node_id, ROW_NUMBER () OVER (ORDER BY NULL) as rn from t2 \
-                ), \
-                t4 AS ( \
-                select status, rn, way_id, node_id, geometry from t3 inner join raw on node_id = osm_id and type = 'point' order by rn desc \
-                ), \
-                t5 AS ( \
-                SELECT  status, way_id, ST_MakePolygon(ST_MakeLine(geometry)) AS polygon FROM t4 group by way_id, status \
-                ), \
-                t6 as ( \
-                    SELECT jsonb_build_object( \
-                        'type',       'Feature', \
-                        'id',         t5.way_id, \
-                        'properties', to_jsonb(t5) - 'polygon' , \
-                        'geometry',   ST_AsGeoJSON(polygon)::jsonb \
-                ) AS feature from t5 \
-                ) SELECT jsonb_build_object( \
-                    'type',     'FeatureCollection', \
-                    'features', jsonb_agg(t6.feature) \
-                ) from t6;".format(area)
+        query = "with t0 AS ( SELECT osm_id AS node_id FROM raw_node WHERE ST_Intersects(\"geometry\", ST_GeomFromText('POLYGON(({0}))', 4326)) LIMIT 3000 ), \
+            t1 AS (SELECT osm_id AS way_id, unnest(refs) AS node_id FROM raw_poly WHERE tags -> 'building' = 'yes' AND refs && array(SELECT * FROM t0)::bigint[] ), \
+            t2 AS (SELECT way_id, osm_id, geometry FROM t1 JOIN raw_node ON node_id = raw_node.osm_id), \
+            t3 AS (SELECT way_id, ST_MakeLine(geometry) AS linestring FROM t2 GROUP BY way_id), \
+            t4 AS (SELECT way_id, status, ST_MakePolygON(ST_AddPoint(t3.linestring, ST_StartPoint(t3.linestring))) AS polygON FROM t3 LEFT JOIN validatiON ON validatiON.osm_id = way_id), \
+            t5 AS ( SELECT jsONb_build_object( 'type', 'Feature', 'id', t4.way_id, 'properties', to_jsONb(t4) - 'polygON' , 'geometry', ST_AsGeoJSON(polygON)::jsONb ) AS feature FROM t4 ) \
+            SELECT jsONb_build_object( 'type', 'FeatureCollectiON', 'features', jsONb_agg(t5.feature) ) FROM t5 ; \
+            ".format(area)
         return self.underpassDB.run(query, responseType)
 
-
-
-    def getAreaByHashtag(
-        self, 
-        area = None,
-        responseType = "json"
-    ):
-        query = "with t0 as ( \
-                    select osm_id as node_id from raw join changesets on changesets.id = raw.change_id \
-                    where EXISTS ( SELECT * from unnest(hashtags) as h where h ~* '^hotosm-project' ) \
-                    and osm_type = 'N' \
-                    and ST_Intersects(\"geometry\", ST_GeomFromText('POLYGON(({0}))', 4326)) \
-                    limit 2000 \
-                ), t1 as ( \
-                    select osm_id as way_id from raw where \
-                \"type\" = 'polygon' \
-                and refs && array(select * from t0)::bigint[] \
-                ),  \
-                t2 AS ( \
-                select status, way_id, unnest(refs) AS node_id from raw left join validation on validation.osm_id = raw.osm_id, t1 where raw.osm_id = t1.way_id \
-                and raw.type = 'polygon' \
-                and tags -> 'building' = 'yes' \
-                ), \
-                t3 as ( \
-                    select status, way_id, node_id, ROW_NUMBER () OVER (ORDER BY NULL) as rn from t2 \
-                ), \
-                t4 AS ( \
-                select status, rn, way_id, node_id, geometry from t3 inner join raw on node_id = osm_id and type = 'point' order by rn desc \
-                ), \
-                t5 AS ( \
-                SELECT  status, way_id, ST_MakePolygon(ST_MakeLine(geometry)) AS polygon FROM t4 group by way_id, status \
-                ), \
-                t6 as ( \
-                    SELECT jsonb_build_object( \
-                        'type',       'Feature', \
-                        'id',         t5.way_id, \
-                        'properties', to_jsonb(t5) - 'polygon' , \
-                        'geometry',   ST_AsGeoJSON(polygon)::jsonb \
-                ) AS feature from t5 \
-                ) SELECT jsonb_build_object( \
-                    'type',     'FeatureCollection', \
-                    'features', jsonb_agg(t6.feature) \
-                ) from t6;".format(area)
-        return self.underpassDB.run(query, responseType)
 

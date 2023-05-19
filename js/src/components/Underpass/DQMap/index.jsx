@@ -112,7 +112,9 @@ const PopupMarker = ({ data }) => {
 
 // DQMap component
 export const DQMap = ({
-    className
+    className,
+    center = [14.7919, -90.8070],
+    realtime = false
   }) => {
     const [data, setData] = useState([]);
     const [area, setArea] = useState(null);
@@ -121,21 +123,25 @@ export const DQMap = ({
 
     const mapMoveHandler = (area) => {
       clearTimeout(timeoutRef.current);
-      timeoutRef.current = setInterval(() => {
-        getData(area, (result) => {
-          setData(result.features);
-        });
-      }, 5000);
+      if (realtime) {
+        timeoutRef.current = setInterval(() => {
+          getData(area, (result) => {
+            setData(result.features);
+          });
+        }, 5000);  
+      }
       setArea(area);
     }
 
     const loadHandler = (area) => {
       setArea(area);
-      timeoutRef.current = setInterval(() => {
-        getData(area, (result) => {
-          setData(result.features);
-        });
-      }, 5000);
+      if (realtime) {
+        timeoutRef.current = setInterval(() => {
+          getData(area, (result) => {
+            setData(result.features);
+          });
+        }, 5000);  
+      }
     }
 
     useEffect(() => {
@@ -147,7 +153,7 @@ export const DQMap = ({
     return <div className={className || "Map"}>
         <MapContainer 
           style={{height: 500}}
-          center={[-16.35444, 34.67687]}
+          center={center}
           zoom={17}
           scrollWheelZoom={false}
         >
