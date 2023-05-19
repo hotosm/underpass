@@ -45,8 +45,9 @@ class UnderpassDB():
             cur = self.conn.cursor()
             try:
                 cur.execute(query)
-            except:
+            except Exception as e: 
                 print("*******" + "\n" + query + "\n")
+                print(e)
                 cur.close()
                 return {"Error": "There was an error running the query."}
 
