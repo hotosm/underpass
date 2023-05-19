@@ -130,7 +130,7 @@ QueryRaw::applyChange(const OsmWay &way) const
     if (way.refs.front() == way.refs.back() && (way.action == osmobjects::create || way.action == osmobjects::modify)) {
         query = "INSERT INTO raw_poly as r (osm_id, tags, refs, timestamp, version) VALUES(";
         std::string format = "%d, %s, %s, \'%s\', %d) \
-        ON CONFLICT (osm_id) DO UPDATE SET geometry = %s, tags = %s, refs = %s, timestamp = \'%s\', version = %d WHERE r.version < %d;";
+        ON CONFLICT (osm_id) DO UPDATE SET tags = %s, refs = %s, timestamp = \'%s\', version = %d WHERE r.version < %d;";
         boost::format fmt(format);
         // osm_id
         fmt % way.id;
