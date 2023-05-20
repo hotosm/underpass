@@ -130,13 +130,13 @@ QueryValidate::applyChange(const ValidateStatus &validation, const valerror_t &s
     std::string query;
 
     if (validation.values.size() > 0) {
-        query = "INSERT INTO validation (osm_id, change_id, user_id, type, status, values, timestamp, location, source, version) VALUES(";
+        query = "INSERT INTO validation as v (osm_id, change_id, user_id, type, status, values, timestamp, location, source, version) VALUES(";
         format = "%d, %d, %g, \'%s\', \'%s\', ARRAY[%s], \'%s\', ST_GeomFromText(\'%s\', 4326), \'%s\', %s) ";
     } else {
-        query = "INSERT INTO validation (osm_id, change_id, user_id, type, status, timestamp, location, source, version) VALUES(";
+        query = "INSERT INTO validation as v (osm_id, change_id, user_id, type, status, timestamp, location, source, version) VALUES(";
         format = "%d, %d, %g, \'%s\', \'%s\', \'%s\', ST_GeomFromText(\'%s\', 4326), \'%s\', %s) ";
     }
-    format += "ON CONFLICT (osm_id, status, source) DO UPDATE SET version = %d,  timestamp = \'%s\' WHERE excluded.version < %d;";
+    format += "ON CONFLICT (osm_id, status, source) DO UPDATE SET version = %d,  timestamp = \'%s\' WHERE v.version < %d;";
     boost::format fmt(format);
     fmt % validation.osm_id;
     fmt % validation.change_id;
