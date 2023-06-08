@@ -22,7 +22,7 @@ version: "3"
 services:
   # PostGIS stock image
   postgis:
-    image: postgis/postgis:11-2.5-alpine
+    image: postgis/postgis:15-3.3
     container_name: "underpass_postgis"
     ports:
       - "5439:5432"

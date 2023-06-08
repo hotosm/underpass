@@ -35,16 +35,10 @@ RUN apt-get update \
         vim \
         wait-for-it \
         cmake \
-        doxygen \
-    && mkdir /libpqxx && cd /libpqxx \
-    && wget https://github.com/jtv/libpqxx/archive/7.6.0.zip \
-    && unzip 7.6.0.zip \
-    && cd libpqxx-7.6.0 \
-    && ./configure --enable-shared \
-    && make \
-    && make install \
-    && cd .. \
-    && rm -rf libpqxx-7.6.0 \
-    && rm 7.6.0.zip
+        doxygen
+
+RUN apt-get update && apt-get -y install libpqxx-dev
+
+RUN apt-get update && apt-get -y install postgresql
 
 COPY docker/bzip2.pc /usr/lib/x86_64-linux-gnu/pkgconfig/bzip2.pc

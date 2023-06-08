@@ -59,22 +59,34 @@ ALTER TABLE ONLY public.validation
 
 CREATE TYPE public.geotype AS ENUM ('point', 'linestring', 'polygon');
 
-CREATE TABLE public.raw (
+CREATE TABLE public.raw_poly (
     osm_id bigint,
     change_id bigint,
-    type public.geotype,
-    geometry public.geometry(Geometry,4326),
-    tags public.hstore,
     refs bigint[],
+    tags public.hstore,
     timestamp timestamp with time zone,
     version int
 );
-ALTER TABLE ONLY public.raw
-    ADD CONSTRAINT raw_pkey PRIMARY KEY (osm_id, type);
+
+CREATE TABLE public.raw_node (
+    osm_id bigint,
+    change_id bigint,
+    geometry public.geometry(Geometry,4326),
+    tags public.hstore,
+    timestamp timestamp with time zone,
+    version int
+);
+
+CREATE UNIQUE INDEX raw_osm_id_idx ON public.raw_node (osm_id);
+CREATE UNIQUE INDEX raw_poly_osm_id_idx ON public.raw_poly (osm_id);
+CREATE INDEX raw_node_timestamp_idx ON public.raw_node ("timestamp" DESC);
+CREATE INDEX raw_poly_timestamp_idx ON public.raw_poly ("timestamp" DESC);
+CREATE INDEX idx_poly_ref on public.raw_poly USING GIN ("refs");
 
 CREATE TABLE public.rawrefs (
     node_id bigint,
     way_id bigint
-)
+);
+
 ALTER TABLE ONLY public.rawrefs 
     ADD CONSTRAINT rawrefs_pkey PRIMARY KEY (node_id, way_id);
