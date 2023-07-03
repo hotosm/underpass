@@ -506,7 +506,7 @@ Planet::connectServer(const std::string &planet)
     boost::asio::io_context ioc;
 
     try {
-    tcp::resolver resolver{ioc};
+        tcp::resolver resolver{ioc};
         auto const dns = resolver.resolve(tmp, std::to_string(port));
         boost::asio::connect(stream.next_layer(), dns.begin(), dns.end(), ec);
         if (ec) {

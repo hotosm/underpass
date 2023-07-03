@@ -72,6 +72,7 @@ class Pq {
     //protected:
     pqxx::result result;  ///< The result from a query
     std::string host;  ///< The database host
+    std::string port;  ///< The database port
     std::string user;  ///< The database user
     std::string passwd;  ///< The database password
     std::string dbname;  ///< The database name

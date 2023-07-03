@@ -44,7 +44,8 @@ tables.raw_poly = osm2pgsql.define_table{
         { column = 'version', type = 'int' },
         { column = 'timestamp', sql_type = 'timestamp' },
         { column = 'tags', sql_type = 'public.hstore' },
-        { column = 'refs', type= 'text', sql_type = 'bigint[]'}
+        { column = 'refs', type= 'text', sql_type = 'bigint[]'},
+        { column = 'geometry', type = 'polygon', projection = srid }
     }
 }
 
@@ -84,6 +85,7 @@ function osm2pgsql.process_way(object)
             tags = tags_to_hstore(object.tags),
             timestamp = os.date('!%Y-%m-%dT%H:%M:%SZ', object.timestamp),
             refs = '{' .. table.concat(object.nodes, ',') .. '}',
+            geometry = { create = 'area' },
         })
     --else
     --    tables.raw_line:add_row({

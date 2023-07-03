@@ -18,7 +18,7 @@
 
 # AUTOMAKE_OPTIONS =  -Wno-portability dejagnu subdir-objects
 
-lib_LTLIBRARIES = libhotosm.la
+lib_LTLIBRARIES = libunderpass.la
 
 BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
 	$(BOOST_SYSTEM_LIB) \
@@ -31,11 +31,11 @@ BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
 	$(BOOST_SERIALIZATION_LIB) \
 	$(BOOST_LOCALE_LIB)
 
-libhotosm_la_SOURCES = \
+libunderpass_la_SOURCES = \
 	hotosm.cc hotosm.hh \
 	validate.hh
 
-libhotosm_la_LDFLAGS = -module -avoid-version
+libunderpass_la_LDFLAGS = -module -avoid-version
 
 AM_CXXFLAGS = \
 	-rdynamic \
@@ -49,6 +49,6 @@ AM_CPPFLAGS = \
 
 install-data-hook:
 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
-	cp -uvp .libs/libhotosm.so $(DESTDIR)/$(pkglibdir)
+	cp -vp .libs/libunderpass.so $(DESTDIR)/$(pkglibdir)
 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)/config/validate
-	cp -ruvp $(top_srcdir)/config/validate/*.yaml $(DESTDIR)/$(pkglibdir)/config/validate
+	cp -rvp $(top_srcdir)/config/validate/*.yaml $(DESTDIR)/$(pkglibdir)/config/validate

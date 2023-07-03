@@ -66,7 +66,9 @@ typedef enum { empty, node, way, relation, member } osmtype_t;
 class OsmObject {
   public:
     /// Add a metadata tag to an OSM object
-    void addTag(const std::string &key, const std::string &value) { tags[key] = value; };
+    void addTag(const std::string &key, const std::string &value) {
+        tags[key] = value;
+    };
 
     void setAction(action_t act) { action = act; };
     void setUID(long val) { uid = val; };

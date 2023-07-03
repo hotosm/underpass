@@ -139,7 +139,8 @@ OsmChangeFile::readXML(std::istream &xml)
     // On non-english numeric locales using decimal separator different than '.'
     // this is necessary to parse lat-lon with std::stod correctly without
     // loosing precision
-    std::setlocale(LC_NUMERIC, "C");
+    // std::setlocale(LC_NUMERIC, "C");
+    setlocale(LC_NUMERIC, "C");
     // log_debug("OsmChangeFile::readXML(): " << xml.rdbuf());
     std::ofstream myfile;
 #ifdef LIBXML
@@ -197,11 +198,9 @@ OsmChangeFile::readXML(std::istream &xml)
                 if (tag.first == "tag") {
                     std::string key = tag.second.get("<xmlattr>.k", "");
                     std::string val = tag.second.get("<xmlattr>.v", "");
-                    // static_cast<OsmNode *>(object)->addTag(key, val);
                 } else if (tag.first == "nd") {
                     long ref = tag.second.get("<xmlattr>.ref", 0);
                     change.addRef(ref);
-                    boost::geometry::append(way->linestring, nodecache[ref]);
                 }
             }
             // Only nodes have coordinates
@@ -323,13 +322,6 @@ OsmChangeFile::on_start_element(const Glib::ustring &name,
     } else if (name == "nd") {
         long ref = std::stol(attributes[0].value);
         changes.back()->addRef(ref);
-        if (nodecache.count(ref)) {
-            auto way = reinterpret_cast<OsmWay *>(change->obj.get());
-            boost::geometry::append(way->linestring, nodecache[ref]);
-            if (way->isClosed()) {
-                way->polygon = { {std::begin(way->linestring), std::end(way->linestring)} };
-            }
-        }
     }
 
     // process the attributes
@@ -339,7 +331,6 @@ OsmChangeFile::on_start_element(const Glib::ustring &name,
         // std::wcout << "\tPAIR: " << attr_pair.name << " = " << attr_pair.value);
         // tags use a 'k' for the key, and 'v' for the value
         if (attr_pair.name == "ref") {
-            //static_cast<OsmWay *>(object)->refs.push_back(std::stol(attr_pair.value));
         } else if (attr_pair.name == "k") {
             cache = attr_pair.value;
             continue;
@@ -348,11 +339,9 @@ OsmChangeFile::on_start_element(const Glib::ustring &name,
                 std::string tmp = attr_pair.value;
                 tmp[10] = ' '; // Drop the 'T' in the middle
                 tmp.erase(19); // Drop the final 'Z'
-                // change->setTimestamp(tmp);
                 change->obj->timestamp = time_from_string(tmp);
                 change->final_entry = change->obj->timestamp;
             } else {
-                // obj->tags[cache] = attr_pair.value;
                 cache.clear();
             }
         } else if (attr_pair.name == "timestamp") {
@@ -362,21 +351,15 @@ OsmChangeFile::on_start_element(const Glib::ustring &name,
             tmp.erase(19); // Drop the final 'Z'
             change->obj->timestamp = time_from_string(tmp);
             change->final_entry = change->obj->timestamp;
-            // change->setTimestamp(tmp);
         } else if (attr_pair.name == "id") {
-            // change->setChangeID(std::stol(attr_pair.value));
             change->obj->id = std::stol(attr_pair.value);
         } else if (attr_pair.name == "uid") {
-            // change->setUID(std::stol(attr_pair.value));
             change->obj->uid = std::stol(attr_pair.value);
         } else if (attr_pair.name == "version") {
-            // change->setVersion(std::stod(attr_pair.value));
             change->obj->version = std::stod(attr_pair.value);
         } else if (attr_pair.name == "user") {
-            // change->setUser(attr_pair.value);
             change->obj->user = attr_pair.value;
         } else if (attr_pair.name == "changeset") {
-            // change->setChangeID(std::stol(attr_pair.value));
             change->obj->change_id = std::stol(attr_pair.value);
         } else if (attr_pair.name == "lat") {
             auto lat = reinterpret_cast<OsmNode *>(change->obj.get());
@@ -526,16 +509,10 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
 
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
         OsmChange *change = it->get();
-
         // Stats for Nodes
         for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
             OsmNode *node = it->get();
             if (!node->priority) {
-                continue;
-            }
-            // If there are no tags, assume it's part of a way
-            if (node->tags.size() == 0) {
-                nodecache[node->id] = node->point;
                 continue;
             }
             // Some older nodes in a way wound up with this one tag, which nobody noticed,
@@ -611,7 +588,8 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                         if (x != 0 && y != 0) {
                             globe.push_back(sphere_t(x,y));
                             boost::geometry::append(way->linestring, nodecache[*lit]);
-                        }                    }
+                        }
+                    }
                     std::string tag;
                     if (*hit == "highway") {
                         tag = "highway_km";
@@ -751,10 +729,10 @@ OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate
             }
 
             // Geometry checks
+            auto status = std::make_shared<ValidateStatus>(*way);
             if (way->containsKey("building")) {
                 // See if the way is a closed polygon
-                if (way->action == osmobjects::create && way->refs.front() == way->refs.back()) {
-                    auto status = std::make_shared<ValidateStatus>(*way);
+                if (way->refs.front() == way->refs.back()) {
                     status->timestamp = boost::posix_time::microsec_clock::universal_time();
                     status->user_id = way->uid;
 
@@ -775,22 +753,21 @@ OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate
                     if (status->status.size() > 0) {
                         status->source = "building";
                         boost::geometry::centroid(way->linestring, status->center);
-                        totals->push_back(status);
                     }
                 }
             }
+            totals->push_back(status);
+
             // Semantic checks
-            std::vector<std::string> way_tests = {"building", "highway", "landuse", "natural", "place", "waterway"};
-            for (auto test_it = way_tests.begin(); test_it != way_tests.end(); ++test_it) {
-                if (way->containsKey(*test_it)) {
-                    auto status = plugin->checkWay(*way, *test_it);
-                    if (status->status.size() > 0) {
-                        status->source = *test_it;
-                        boost::geometry::centroid(way->linestring, status->center);
-                        totals->push_back(status);
-                    }
-                }
-            }
+            // std::vector<std::string> way_tests = {"building", "highway", "landuse", "natural", "place", "waterway"};
+            // for (auto test_it = way_tests.begin(); test_it != way_tests.end(); ++test_it) {
+            //     if (way->containsKey(*test_it)) {
+            //         auto status = plugin->checkWay(*way, *test_it);
+            //         status->source = *test_it;
+            //         boost::geometry::centroid(way->linestring, status->center);
+            //         totals->push_back(status);
+            //     }
+            // }
         }
     }
     return totals;

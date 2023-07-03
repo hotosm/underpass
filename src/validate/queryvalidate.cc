@@ -106,14 +106,13 @@ QueryValidate::updateValidation(std::shared_ptr<std::vector<long>> removals)
 }
 
 std::string
-QueryValidate::updateValidation(long osm_id, const valerror_t &status, const std::string &source, long version) const
+QueryValidate::updateValidation(long osm_id, const valerror_t &status, const std::string &source) const
 {
-    std::string format = "DELETE FROM validation WHERE osm_id = %d and source = '%s' and status = '%s' and version <= %d;";
+    std::string format = "DELETE FROM validation WHERE osm_id = %d and source = '%s' and status = '%s';";
     boost::format fmt(format);
     fmt % osm_id;
     fmt % source;
     fmt % status_list[status];
-    fmt % version;
     std::string query = fmt.str();
     return query;
 }

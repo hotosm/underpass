@@ -57,7 +57,7 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
     boost::dll::fs::path lib_path(plugins);
     boost::function<plugin_t> creator;
     try {
-        creator = boost::dll::import_alias<plugin_t>(lib_path / "libhotosm", "create_plugin", boost::dll::load_mode::append_decorations);
+        creator = boost::dll::import_alias<plugin_t>(lib_path / "libunderpass.so", "create_plugin", boost::dll::load_mode::append_decorations);
         log_debug("Loaded plugin hotosm!");
     } catch (std::exception &e) {
         log_debug("Couldn't load plugin! %1%", e.what());
@@ -105,20 +105,8 @@ processWays(WayTask &wayTask)
     auto lastid = wayTask.lastid;
 
     auto ways = queryraw->getWaysFromDB(lastid);
-
-    std::map<double, point_t> nodecache;
-    queryraw->getNodeCacheFromWays(ways, nodecache);
-
     // Validate ways
     for (auto way = ways->begin(); way != ways->end(); ++way) {
-
-        // Build ways geometries using nodecache
-        for (auto rit = way->refs.begin(); rit != way->refs.end(); ++rit) {
-            if (nodecache.find(*rit) != nodecache.end()) {
-                boost::geometry::append(way->linestring, nodecache.at(*rit));
-            }
-        }
-
         if (way->refs.front() == way->refs.back()) {
             log_debug("Way Id: %1%", way->id);
             // Bad geometry

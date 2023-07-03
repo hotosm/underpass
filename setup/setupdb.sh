@@ -36,7 +36,6 @@ EOF
 }
 
 dropdb="yes"
-datahost="https://www.senecass.com/projects/Mapping/underpass/"
 
 # This file is created at install time with all the database
 # connection parameters
