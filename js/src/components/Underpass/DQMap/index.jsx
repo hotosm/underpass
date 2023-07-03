@@ -36,7 +36,7 @@ const getData = async (area, onGetData) => {
       area,
       {
         onSuccess: (data) => {
-          if (data.length > 0) {
+          if (data && data.length > 0) {
             const features = data[0].jsonb_build_object;
             onGetData(features, area);
           }

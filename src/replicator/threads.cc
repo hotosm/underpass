@@ -142,6 +142,8 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     if (!db->connect(config.underpass_db_url)) {
         log_error("Could not connect to Underpass DB, aborting monitoring thread!");
         return;
+    } else {
+        log_debug("Connected to database: %1%", config.underpass_db_url);
     }
     auto querystats = std::make_shared<QueryStats>(db);
 
@@ -260,6 +262,8 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     if (!db->connect(config.underpass_db_url)) {
         log_error("Could not connect to Underpass DB, aborting monitoring thread!");
         return;
+    } else {
+        log_debug("Connected to database: %1%", config.underpass_db_url);
     }
     auto querystats = std::make_shared<QueryStats>(db);
     auto queryvalidate = std::make_shared<QueryValidate>(db);
