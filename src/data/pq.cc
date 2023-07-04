@@ -64,6 +64,7 @@ Pq::parseURL(const std::string &dburl)
     }
 
     host.clear();
+    port.clear();
     user.clear();
     passwd.clear();
     dbname.clear();
@@ -89,6 +90,7 @@ Pq::parseURL(const std::string &dburl)
     }
 
     std::string host_tmp;
+    std::string port_tmp;
     if (result.size() == 1) {
         if (apos == std::string::npos) {
             dbname = "dbname=" + result[0];
@@ -96,16 +98,27 @@ Pq::parseURL(const std::string &dburl)
             host_tmp = result[0];
         }
     } else if (result.size() == 2) {
-        host_tmp = result[0];
+        std::size_t colon_pos = result[0].find(':');
+        if (colon_pos != std::string::npos) {
+            host_tmp = result[0].substr(0, colon_pos);
+            port_tmp = result[0].substr(colon_pos + 1);
+        } else {
+            host_tmp = result[0];
+        }
         dbname = "dbname=" + result[1];
     }
 
-    if (!host_tmp.empty() && host_tmp != "localhost") {
+    if (!host_tmp.empty()) {
         host = "host=" + host_tmp;
+    }
+
+    if (!port_tmp.empty()) {
+        host += " port=" + port_tmp;
     }
 
     return true;
 }
+
 
 bool
 Pq::connect(const std::string &dburl)
@@ -113,7 +126,7 @@ Pq::connect(const std::string &dburl)
     std::string args;
 
     if (parseURL(dburl)) {
-        args = host + " " + dbname + " " + user + " " + passwd;
+        args = host + " " + port + " " + dbname + " " + user + " " + passwd;
     } else {
         return false;
     }

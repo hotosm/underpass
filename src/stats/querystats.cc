@@ -73,77 +73,81 @@ QueryStats::applyChange(const osmchange::ChangeStats &change) const
 #endif
     // std::cout << "Applying OsmChange data" << std::endl;
 
-    std::string ahstore;
-    std::string mhstore;
+    if (change.closed_at != not_a_date_time) {
 
-    if (change.added.size() > 0) {
-        ahstore = "HSTORE(ARRAY[";
-        for (const auto &added: std::as_const(change.added)) {
-            if (added.second > 0) {
-                ahstore += " ARRAY['" + dbconn->escapedString(added.first) + "','" +
-                           dbconn->escapedString(std::to_string(added.second)) + "'],";
+        std::string ahstore;
+        std::string mhstore;
+
+        if (change.added.size() > 0) {
+            ahstore = "HSTORE(ARRAY[";
+            for (const auto &added: std::as_const(change.added)) {
+                if (added.second > 0) {
+                    ahstore += " ARRAY['" + dbconn->escapedString(added.first) + "','" +
+                            dbconn->escapedString(std::to_string(added.second)) + "'],";
+                }
             }
+            ahstore.erase(ahstore.size() - 1);
+            ahstore += "])";
         }
-        ahstore.erase(ahstore.size() - 1);
-        ahstore += "])";
-    }
 
-    if (change.modified.size() > 0) {
-        mhstore = "HSTORE(ARRAY[";
-        for (const auto &modified: std::as_const(change.modified)) {
-            if (modified.second > 0) {
-                mhstore += " ARRAY['" + dbconn->escapedString(modified.first) + "','" +
-                           dbconn->escapedString(std::to_string(modified.second)) + "'],";
+        if (change.modified.size() > 0) {
+            mhstore = "HSTORE(ARRAY[";
+            for (const auto &modified: std::as_const(change.modified)) {
+                if (modified.second > 0) {
+                    mhstore += " ARRAY['" + dbconn->escapedString(modified.first) + "','" +
+                            dbconn->escapedString(std::to_string(modified.second)) + "'],";
+                }
             }
+            mhstore.erase(mhstore.size() - 1);
+            mhstore += "])";
         }
-        mhstore.erase(mhstore.size() - 1);
-        mhstore += "])";
-    }
 
-    // Some of the data field in the changset come from a different file,
-    // which may not be downloaded yet.
-    ptime now = boost::posix_time::microsec_clock::universal_time();
-    std::string aquery = "INSERT INTO changesets (id, user_id, closed_at, updated_at, ";
+        // Some of the data field in the changset come from a different file,
+        // which may not be downloaded yet.
+        ptime now = boost::posix_time::microsec_clock::universal_time();
+        std::string aquery = "INSERT INTO changesets (id, user_id, closed_at, updated_at, ";
 
-    if (change.added.size() > 0) {
-        aquery += "added, ";
-    }
-    if (change.modified.size() > 0) {
-        aquery += "modified, ";
-    }
-    aquery.erase(aquery.size() - 2);
-    aquery += ")";
+        if (change.added.size() > 0) {
+            aquery += "added, ";
+        }
+        if (change.modified.size() > 0) {
+            aquery += "modified, ";
+        }
+        aquery.erase(aquery.size() - 2);
+        aquery += ")";
 
-    aquery += " VALUES(" + std::to_string(change.change_id) + ", ";
-    aquery += std::to_string(change.user_id) + ", ";
-    aquery += "\'" + to_simple_string(change.closed_at) + "\', ";
-    aquery += "\'" + to_simple_string(now) + "\', ";
+        aquery += " VALUES(" + std::to_string(change.change_id) + ", ";
+        aquery += std::to_string(change.user_id) + ", ";
+        aquery += "\'" + to_simple_string(change.closed_at) + "\', ";
+        aquery += "\'" + to_simple_string(now) + "\', ";
 
-    if (change.added.size() > 0) {
-        aquery += ahstore + ", ";
-    }
-    if (change.modified.size() > 0) {
-        aquery += mhstore + ", ";
-    }
+        if (change.added.size() > 0) {
+            aquery += ahstore + ", ";
+        }
+        if (change.modified.size() > 0) {
+            aquery += mhstore + ", ";
+        }
 
-    aquery.erase(aquery.size() - 2);
-    aquery += ") ON CONFLICT (id) DO UPDATE SET";
+        aquery.erase(aquery.size() - 2);
+        aquery += ") ON CONFLICT (id) DO UPDATE SET";
 
-    aquery += " closed_at = \'" + to_simple_string(change.closed_at) + "\', ";
-    aquery += " updated_at = \'" + to_simple_string(now) + "\', ";
-    if (change.added.size() > 0) {
-        aquery += "added = " + ahstore + ", ";
-    } else {
-        aquery += "added = null, ";
-    }
-    if (change.modified.size() > 0) {
-        aquery += "modified = " + mhstore + ", ";
-    } else {
-        aquery += "modified = null, ";
-    }
-    aquery.erase(aquery.size() - 2);
+        aquery += " closed_at = \'" + to_simple_string(change.closed_at) + "\', ";
+        aquery += " updated_at = \'" + to_simple_string(now) + "\', ";
+        if (change.added.size() > 0) {
+            aquery += "added = " + ahstore + ", ";
+        } else {
+            aquery += "added = null, ";
+        }
+        if (change.modified.size() > 0) {
+            aquery += "modified = " + mhstore + ", ";
+        } else {
+            aquery += "modified = null, ";
+        }
+        aquery.erase(aquery.size() - 2);
 
-    return aquery + ";";
+        return aquery + ";";
+    }
+    return "";
 
 }
 

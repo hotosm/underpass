@@ -87,8 +87,8 @@ class RemoteURL;
 
 typedef std::shared_ptr<Validate>(plugin_t)();
 
-/// \namespace threads
-namespace threads {
+/// \namespace replicatorthreads
+namespace replicatorthreads {
 
 /// \struct ReplicationTask
 /// \brief Represents a replication task
@@ -146,7 +146,7 @@ void threadOsmChange(OsmChangeTask osmChangeTask);
 static std::mutex tasks_change_mutex;
 static std::mutex tasks_changeset_mutex;
 
-} // namespace threads
+} // namespace replicatorthreads
 
 #endif // EOF __THREADS_HH__
 

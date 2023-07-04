@@ -171,7 +171,8 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     // On non-english numeric locales using decimal separator different than '.'
     // this is necessary to parse double strings with std::stod correctly
     // without loosing precision
-    std::setlocale(LC_NUMERIC, "C");
+    // std::setlocale(LC_NUMERIC, "C");
+    setlocale(LC_NUMERIC, "C");
 
     auto status = std::make_shared<ValidateStatus>(way);
     status->timestamp = boost::posix_time::microsec_clock::universal_time();

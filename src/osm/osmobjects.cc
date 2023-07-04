@@ -120,6 +120,19 @@ OsmWay::dump(void) const
     }
     std::cerr << boost::geometry::wkt(linestring) << std::endl;
     std::cerr << boost::geometry::wkt(polygon) << std::endl;
+    if (tags.size() > 0) {
+        std::cerr << "\tTags: " << tags.size() << std::endl;
+        for (auto const& [key, val] : tags)
+        {
+            std::cerr << key
+                    << ':'
+                    << val
+                    << ", ";
+        }
+        std::cerr << std::endl;
+    } else {
+        std::cerr << "No tags." << std::endl;
+    }
 };
 
 void

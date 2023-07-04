@@ -77,7 +77,7 @@ class QueryValidate  {
     std::string applyChange(const ValidateStatus &validation, const valerror_t &status) const;
     /// Update the validation table, delete any feature that has been fixed.
     std::string updateValidation(std::shared_ptr<std::vector<long>> removals);
-    std::string updateValidation(long osm_id, const valerror_t &status, const std::string &source, long version) const;
+    std::string updateValidation(long osm_id, const valerror_t &status, const std::string &source) const;
     // Database connection, used for escape strings
     std::shared_ptr<Pq> dbconn;
   };

@@ -11,7 +11,6 @@ Also, `gdb` for debugging:
 And it's very useful to have an alias for `gdb` in your bash profile.
 Just add the following line add the bottom of `~/.bashrc`:
 
-
 `alias lg='libtool --mode=execute gdb'`
 
 And you'll be able to run the debugger, for example:

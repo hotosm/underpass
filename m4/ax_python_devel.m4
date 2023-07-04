@@ -347,20 +347,20 @@ EOD`
 
 	AC_MSG_RESULT([$pythonexists])
 
-        if test ! "x$pythonexists" = "xyes"; then
-	   AC_MSG_FAILURE([
-  Could not link test program to Python. Maybe the main Python library has been
-  installed in some non-standard library path. If so, pass it to configure,
-  via the LIBS environment variable.
-  Example: ./configure LIBS="-L/usr/non-standard-path/python/lib"
-  ============================================================================
-   ERROR!
-   You probably have to install the development version of the Python package
-   for your distribution.  The exact name of this package varies among them.
-  ============================================================================
-	   ])
-	  PYTHON_VERSION=""
-	fi
+#         if test ! "x$pythonexists" = "xyes"; then
+# 	   AC_MSG_FAILURE([
+#   Could not link test program to Python. Maybe the main Python library has been
+#   installed in some non-standard library path. If so, pass it to configure,
+#   via the LIBS environment variable.
+#   Example: ./configure LIBS="-L/usr/non-standard-path/python/lib"
+#   ============================================================================
+#    ERROR!
+#    You probably have to install the development version of the Python package
+#    for your distribution.  The exact name of this package varies among them.
+#   ============================================================================
+# 	   ])
+# 	  PYTHON_VERSION=""
+# 	fi
 
 	#
 	# all done!

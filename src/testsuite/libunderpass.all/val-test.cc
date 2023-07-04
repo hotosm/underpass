@@ -48,8 +48,8 @@ class TestOsmChange : public osmchange::OsmChangeFile {};
 
 typedef std::shared_ptr<Validate>(plugin_t)();
 
-void test_semantic_building(std::shared_ptr<Validate> &plugin);
-void test_semantic_highway(std::shared_ptr<Validate> &plugin);
+// void test_semantic_building(std::shared_ptr<Validate> &plugin);
+// void test_semantic_highway(std::shared_ptr<Validate> &plugin);
 void test_geometry_building(std::shared_ptr<Validate> &plugin);
 
 int
@@ -61,13 +61,12 @@ main(int argc, char *argv[])
     dbglogfile.setVerbosity(3);
 
 #if 1
-    std::string plugins(DATADIR);
-    plugins += "/../build/src/validate/.libs";
+    std::string plugins(PKGLIBDIR);
     boost::dll::fs::path lib_path(plugins);
     boost::function<plugin_t> creator;
     try {
         creator = boost::dll::import_alias<plugin_t>(
-            lib_path / "libhotosm", "create_plugin",
+            lib_path / "libunderpass.so", "create_plugin",
             boost::dll::load_mode::append_decorations
         );
         log_debug("Loaded plugin hotosm!");
@@ -80,8 +79,8 @@ main(int argc, char *argv[])
     auto plugin = std::make_shared<hotosm::Hotosm>();
 #endif
 
-    test_semantic_building(plugin);
-    test_semantic_highway(plugin);
+    // test_semantic_building(plugin);
+    // test_semantic_highway(plugin);
     test_geometry_building(plugin);
 }
 

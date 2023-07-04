@@ -7,7 +7,7 @@ export default (
   <div>
     <div style={styles.report}>
       <DQMap
-        center={[14.70884, -90.47560]}
+        center={[28.20784, 83.99706]}
         realtime={true}
           />
     </div>

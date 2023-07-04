@@ -36,7 +36,7 @@ const getData = async (area, onGetData) => {
       area,
       {
         onSuccess: (data) => {
-          if (data.length > 0) {
+          if (data && data.length > 0) {
             const features = data[0].jsonb_build_object;
             onGetData(features, area);
           }
@@ -66,7 +66,7 @@ function MapEventHandlers(props) {
     setArea(getBBoxString(map));
   });
   useEffect(() => {
-    if (zoom > 16) {
+    if (zoom > 13) {
       props.onGetData(area);
     }
   }, [area, zoom]);
@@ -101,8 +101,8 @@ const PopupMarker = ({ data }) => {
           { data.properties.status == 'badgeom' ? "Un-squared building" : "Building"} 
         </h3>
         <p>
-          <a target="_blank" href={"https://osm.org/way/" + data.properties.way_id}>
-            {data.properties.way_id}
+          <a target="_blank" href={"https://osm.org/way/" + data.properties.osm_id}>
+            {data.properties.osm_id}
           </a>
         </p>
       </Popup>

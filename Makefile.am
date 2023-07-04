@@ -128,8 +128,8 @@ EXT := $(shell python3-config --extension-suffix)
 DIR := $(shell python3-config --configdir)
 noinst_LTLIBRARIES = underpass.la
 underpass_la_SOURCES = src/wrappers/python.cc $(libunderpass_la_SOURCES)
-underpass_la_LDFADD = $(BOOST_LIBS) libunderpass.la src/validate/libhotosm.la
-underpass_la_LDFLAGS = -module -avoid-version -no-undefined -rpath /usr/lib64/ src/validate/libhotosm.la $(BOOST_LIBS)
+underpass_la_LDFADD = $(BOOST_LIBS) libunderpass.la src/validate/libunderpass.la
+underpass_la_LDFLAGS = -module -avoid-version -no-undefined -rpath /usr/lib64/ src/validate/libunderpass.la $(BOOST_LIBS)
 PY_OBJECTS = $(libunderpass_la_OBJECTS:.lo=.o)
 # /usr/lib/python3.9/lib-dynload/underpass.cpython-39-x86_64-linux-gnu.so
 install-python: underpass.la
@@ -153,16 +153,16 @@ endif
 install-data-hook:
 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)/config
-	cp -ruvp $(srcdir)/config/priority.geojson $(DESTDIR)/$(pkglibdir)/config
+	cp -rvp $(srcdir)/config/priority.geojson $(DESTDIR)/$(pkglibdir)/config
 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)/config/replicator
-	cp -uvp $(srcdir)/config/replicator/planetreplicator.yaml $(DESTDIR)/$(pkglibdir)/config/replicator
-	cp -ruvp $(srcdir)/config/stats $(DESTDIR)/$(pkglibdir)/config
+	cp -vp $(srcdir)/config/replicator/planetreplicator.yaml $(DESTDIR)/$(pkglibdir)/config/replicator
+	cp -rvp $(srcdir)/config/stats $(DESTDIR)/$(pkglibdir)/config
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
-	cp -ruvp $(srcdir)/docs/*.md $(DESTDIR)/$(docdir)
+	cp -rvp $(srcdir)/docs/*.md $(DESTDIR)/$(docdir)
 
 dist-hook: apidoc
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
-	cp -ruvp docs/html $(DESTDIR)/$(docdir)
+	cp -rvp docs/html $(DESTDIR)/$(docdir)
 
 if ENABLE_PCH
 # yes, a little consistency on the suffix would be nice.

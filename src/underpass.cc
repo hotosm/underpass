@@ -303,7 +303,7 @@ main(int argc, char *argv[])
             if (!vm.count("osmnoboundary")) {
                 osmboundary = &geou.boundary;
             }
-            osmChangeThread = std::thread(threads::startMonitorChanges, std::ref(osmchange),
+            osmChangeThread = std::thread(replicatorthreads::startMonitorChanges, std::ref(osmchange),
                             std::ref(*osmboundary), std::ref(config));
         }
         config.frequency = replication::changeset;
@@ -318,7 +318,7 @@ main(int argc, char *argv[])
             if (!vm.count("oscnoboundary")) {
                 oscboundary = &geou.boundary;
             }
-            changesetThread = std::thread(threads::startMonitorChangesets, std::ref(changeset),
+            changesetThread = std::thread(replicatorthreads::startMonitorChangesets, std::ref(changeset),
                             std::ref(*oscboundary), std::ref(config));
         }
         if (changesetThread.joinable()) {

@@ -96,7 +96,7 @@ using namespace underpassconfig;
 
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
-namespace threads {
+namespace replicatorthreads {
 
 std::string
 allTasksQueries(std::shared_ptr<std::vector<ReplicationTask>> tasks) {
@@ -142,6 +142,8 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     if (!db->connect(config.underpass_db_url)) {
         log_error("Could not connect to Underpass DB, aborting monitoring thread!");
         return;
+    } else {
+        log_debug("Connected to database: %1%", config.underpass_db_url);
     }
     auto querystats = std::make_shared<QueryStats>(db);
 
@@ -245,7 +247,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     boost::dll::fs::path lib_path(plugins);
     boost::function<plugin_t> creator;
     try {
-        creator = boost::dll::import_alias<plugin_t>(lib_path / "libhotosm", "create_plugin", boost::dll::load_mode::append_decorations);
+        creator = boost::dll::import_alias<plugin_t>(lib_path / "libunderpass.so", "create_plugin", boost::dll::load_mode::append_decorations);
         log_debug("Loaded plugin hotosm!");
     } catch (std::exception &e) {
         log_debug("Couldn't load plugin! %1%", e.what());
@@ -260,6 +262,8 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     if (!db->connect(config.underpass_db_url)) {
         log_error("Could not connect to Underpass DB, aborting monitoring thread!");
         return;
+    } else {
+        log_debug("Connected to database: %1%", config.underpass_db_url);
     }
     auto querystats = std::make_shared<QueryStats>(db);
     auto queryvalidate = std::make_shared<QueryValidate>(db);
@@ -288,6 +292,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     auto delay = std::chrono::seconds{0};
     ReplicationTask closest;
     auto last_task = std::make_shared<ReplicationTask>();
+    last_task->status = reqfile_t::success;
     bool caughtUpWithNow = false;
     bool monitoring = true;
     auto underpassConfig = std::make_shared<UnderpassConfig>(config);
@@ -429,6 +434,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
             }
 
             try {
+                osmchanges->nodecache.clear();
                 osmchanges->readXML(changes_xml);  
                 if (osmchanges->changes.size() > 0) {
                     task.timestamp = osmchanges->changes.back()->final_entry;
@@ -447,10 +453,10 @@ threadOsmChange(OsmChangeTask osmChangeTask)
         }
     }
 
-    // Fill node cache
-    osmchanges->nodecache.clear();
-    if (!config->disable_raw && !poly.empty()) {
-        queryraw->getNodeCache(osmchanges);
+    // Finish filling node cache with nodes referenced in modified
+    // or created ways and also ways affected by modified nodes
+    if (!config->disable_raw) {
+        queryraw->getNodeCache(osmchanges, poly);
     }
 
     // Filter data by priority polygon
@@ -458,7 +464,6 @@ threadOsmChange(OsmChangeTask osmChangeTask)
 
     // Collect stats
     if (!config->disable_stats) {
-        // Statistics
         auto stats = osmchanges->collectStats(poly);
         for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
             if (it->second->added.size() == 0 && it->second->modified.size() == 0) {
@@ -468,11 +473,9 @@ threadOsmChange(OsmChangeTask osmChangeTask)
         }
     }
 
-    // Removed objects
-    auto removals = std::make_shared<std::vector<long>>();
-
-    // Modified nodes
-    auto modified = std::make_shared<std::map<long, std::pair<double, double>>>();
+    auto removed_nodes = std::make_shared<std::vector<long>>();
+    auto removed_ways = std::make_shared<std::vector<long>>();
+    auto validation_removals = std::make_shared<std::vector<long>>();
     
     // Raw data and validation
     if (!config->disable_validation || !config->disable_raw) {
@@ -482,27 +485,18 @@ threadOsmChange(OsmChangeTask osmChangeTask)
             // Nodes
             for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
                 osmobjects::OsmNode *node = nit->get();
-                if (!config->disable_validation) {
-                    if (!node->priority) {
-                        continue;
-                    }
-                    if (node->action == osmobjects::remove) {
-                        removals->push_back(node->id);
-                    }
+
+                if (!node->priority) {
+                    continue;
                 }
+
+                // Remove deleted nodes from validation table
+                if (!config->disable_validation && node->action == osmobjects::remove) {
+                    removed_nodes->push_back(node->id);
+                }
+
+                //  Update nodes, ignore new ones outside priority area
                 if (!config->disable_raw) {
-                    // Save node in nodecache for later use
-                    osmchanges->nodecache[node->id] = node->point;
-                    if (node->action == osmobjects::modify) {
-                        double lat = node->point.x();
-                        double lon = node->point.y();
-                        std::pair<double, double> value = std::make_pair(lat, lon);
-                        modified->insert(std::make_pair(node->id, value));
-                    }
-                    // Update nodes raw data
-                    if (!node->priority) {
-                        continue;
-                    }
                     task.query += queryraw->applyChange(*node);
                 }
             }
@@ -510,19 +504,18 @@ threadOsmChange(OsmChangeTask osmChangeTask)
             // Ways
             for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
                 osmobjects::OsmWay *way = wit->get();
-                if (!config->disable_validation) {
-                    if (!way->priority) {
-                        continue;
-                    }
-                    if (way->action == osmobjects::remove) {
-                        removals->push_back(way->id);
-                    }
+
+                if (!way->priority) {
+                    continue;
                 }
+
+                // Remove deleted ways from validation table
+                if (!config->disable_validation && way->action == osmobjects::remove) {
+                    removed_ways->push_back(way->id);
+                }
+
+                //  Update ways, ignore new ones outside priority area
                 if (!config->disable_raw) {
-                    // Update ways raw data
-                    if (!way->priority) {
-                        continue;
-                    }
                     task.query += queryraw->applyChange(*way);
                 }
             }
@@ -530,77 +523,37 @@ threadOsmChange(OsmChangeTask osmChangeTask)
         }
     }
 
-    // if (!config->disable_raw) {
-    //     // Update modified nodes raw data (not used yet)
-    //     if (modified->size() > 0) {
-    //         task.query += queryraw->applyChange(modified);
-    //     }
-    // }
-
-    // Update validation table based on modified nodes
+    // // Update validation table
+    bool is_there = false;
     if (!config->disable_validation) {
-
-        // Validate ways whose nodes were modified
-        if (!config->disable_raw && !poly.empty() && modified->size() > 0) {
-
-            // Get ways whose nodes where modified
-            auto modifiedWays = queryraw->getWaysByNodesRefs(modified);
-            // Update node cache
-            queryraw->getNodeCacheFromWays(modifiedWays, osmchanges->nodecache);
-
-            // Validate ways
-            for (auto way = modifiedWays->begin(); way != modifiedWays->end(); ++way) {
-
-                // Build ways geometries using nodecache
-                for (auto rit = way->refs.begin(); rit != way->refs.end(); ++rit) {
-                    if (osmchanges->nodecache.find(*rit) != osmchanges->nodecache.end()) {
-                        boost::geometry::append(way->linestring, osmchanges->nodecache.at(*rit));
-                    }
-                }
-
-                // Geometry checks
-                // See if the way is a closed polygon and it's a building
-                if (way->refs.front() == way->refs.back()) {
-
-                    // Bad geometry
-                    if (boost::geometry::num_points(way->linestring) - 1 < 4 ||
-                        plugin->unsquared(way->linestring)
-                    ) {
-                        auto status = ValidateStatus(*way);
-                        status.timestamp = boost::posix_time::microsec_clock::universal_time();
-                        status.source = "building";
-                        boost::geometry::centroid(way->linestring, status.center);
-                        task.query += queryvalidate->applyChange(status, badgeom);
-                    } else {
-                        task.query += queryvalidate->updateValidation(way->id, badgeom, "building", way->version);
-                    }
-                }
-            }
-        }
 
         // Validate ways
         auto wayval = osmchanges->validateWays(poly, plugin);
         for (auto it = wayval->begin(); it != wayval->end(); ++it) {
+
             if (it->get()->status.size() > 0) {
                 for (auto status_it = it->get()->status.begin(); status_it != it->get()->status.end(); ++status_it) {
                     task.query += queryvalidate->applyChange(*it->get(), *status_it);
                 }
                 if (!it->get()->hasStatus(overlaping)) {
-                    task.query += queryvalidate->updateValidation(it->get()->osm_id, overlaping, "building", it->get()->version);
+                    task.query += queryvalidate->updateValidation(it->get()->osm_id, overlaping, "building");
                 }
                 if (!it->get()->hasStatus(duplicate)) {
-                    task.query += queryvalidate->updateValidation(it->get()->osm_id, duplicate, "building", it->get()->version);
+                    task.query += queryvalidate->updateValidation(it->get()->osm_id, duplicate, "building");
                 }
                 if (!it->get()->hasStatus(badgeom)) {
-                    task.query += queryvalidate->updateValidation(it->get()->osm_id, badgeom, "building", it->get()->version);
+                    task.query += queryvalidate->updateValidation(it->get()->osm_id, badgeom, "building");
                 }
             } else {
-                removals->push_back(it->get()->osm_id);
+                validation_removals->push_back(it->get()->osm_id);
             }
         }
 
-        // Remove older validations
-        task.query += queryvalidate->updateValidation(removals);
+        // Remove validation entries for removed objects
+        task.query += queryvalidate->updateValidation(validation_removals);
+        task.query += queryvalidate->updateValidation(removed_nodes);
+        task.query += queryvalidate->updateValidation(removed_ways);
+
     }
 
     const std::lock_guard<std::mutex> lock(tasks_change_mutex);
@@ -608,7 +561,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
 
 }
 
-} // namespace threads
+} // namespace replicatorthreads
 
 // local Variables:
 // mode: C++
