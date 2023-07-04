@@ -251,9 +251,6 @@ void QueryRaw::getNodeCache(std::shared_ptr<OsmChangeFile> osmchanges, const mul
                    referencedNodeIds += std::to_string(*rit) + ",";
                }
            }
-           if (way->id == 1177968096) {
-            std::cout << "** WAY 1177968096 is an indirectly modified way" << std::endl;
-           }
            way->action = osmobjects::modify;
            change->ways.push_back(way);
         }
