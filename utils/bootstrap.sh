@@ -41,9 +41,15 @@ done
 REGION=${region}
 COUNTRY=${country}
 HOST=${host:-localhost}
-USER=${user:-underpass}
 PORT=${port:-5439}
 DB=${database:-underpass}
+
+if [ -n "${user}" ] 
+then
+    USER=${user}
+else
+    USER=$(whoami)
+fi
 
 if [ -n "${REGION}" ] && [ -n "${COUNTRY}" ] 
 then
@@ -88,7 +94,7 @@ then
         PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB < raw-underpass.sql
 
         echo "Configuring Underpass ..."
-        wget python3 poly2geojson.py $COUNTRY.poly && \
+        python3 poly2geojson.py $COUNTRY.poly && \
         cp $COUNTRY.geojson ../config/priority.geojson && \
         cd ../build && \
         make install && \
@@ -111,7 +117,7 @@ else
     echo " -r region (Region for bootstrapping)"
     echo "  africa, antartica, asia, australia, central-america,"
     echo "  europe, north-america or south-america"
-    echo " -r country (Country inside the region)"
+    echo " -c country (Country inside the region)"
     echo " -h host (Database host)"
     echo " -u user (Database user)"
     echo " -p port (Database port)"
