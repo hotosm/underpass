@@ -217,9 +217,6 @@ void QueryRaw::getNodeCache(std::shared_ptr<OsmChangeFile> osmchanges, const mul
         OsmChange *change = it->get();
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
             OsmWay *way = wit->get();
-            if (way->action == osmobjects::remove) {
-                continue;
-            }
             // Save referenced nodes for later use
             for (auto rit = std::begin(way->refs); rit != std::end(way->refs); ++rit) {
                 if (!osmchanges->nodecache.count(*rit)) {

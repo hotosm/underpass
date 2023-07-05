@@ -72,20 +72,22 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
     int count = 0;
     long lastid = 0;
     
-    while (count <= total) {
-        std::cout << "Processing : " << (count * 100) / total << " %" << std::endl;
-        std::cout << "Last ID : " << lastid << std::endl;
-        auto task = std::make_shared<BootstrapTask>();
-        WayTask wayTask;
-        wayTask.plugin = validator;
-        wayTask.queryvalidate = queryvalidate;
-        wayTask.queryraw = queryraw;
-        wayTask.task = task;
-        wayTask.lastid = lastid;
-        processWays(wayTask);
-        db->query(task->query);
-        lastid = wayTask.lastid;
-        count += 100;
+    if (total > 0) {
+        while (count <= total) {
+            std::cout << "Processing : " << (count * 100) / total << " %" << std::endl;
+            std::cout << "Last ID : " << lastid << std::endl;
+            auto task = std::make_shared<BootstrapTask>();
+            WayTask wayTask;
+            wayTask.plugin = validator;
+            wayTask.queryvalidate = queryvalidate;
+            wayTask.queryraw = queryraw;
+            wayTask.task = task;
+            wayTask.lastid = lastid;
+            processWays(wayTask);
+            db->query(task->query);
+            lastid = wayTask.lastid;
+            count += 100;
+        }
     }
 
 }

@@ -505,7 +505,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
             for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
                 osmobjects::OsmWay *way = wit->get();
 
-                if (!way->priority) {
+                if (way->action != osmobjects::remove && !way->priority) {
                     continue;
                 }
 
@@ -524,7 +524,6 @@ threadOsmChange(OsmChangeTask osmChangeTask)
     }
 
     // // Update validation table
-    bool is_there = false;
     if (!config->disable_validation) {
 
         // Validate ways
