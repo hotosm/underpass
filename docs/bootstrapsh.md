@@ -15,7 +15,7 @@ Having Underpass installed with the database ready to use, run the script
 passing region, country and DB username as arguments, for example:
 
 ```sh
-    ./bootstrap.sh -r south-america -c ecuador -u underpass
+./bootstrap.sh -r south-america -c ecuador -u underpass
 ```
 
 This will:
