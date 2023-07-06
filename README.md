@@ -16,9 +16,9 @@ rendering buildings and highlighting the ones identified as "un-squared":
 
 ## Getting started
 
-### 1. Install
-
 If you want to get started really quick and easy, use the [Docker installation](https://github.com/hotosm/underpass/blob/master/docs/install-docker.md) and skip the next steps.
+
+### 1. Install
 
 Install the software on your platform of preference.
 
