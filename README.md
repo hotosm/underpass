@@ -18,14 +18,12 @@ rendering buildings and highlighting the ones identified as "un-squared":
 
 ### 1. Install
 
+If you want to get started really quick and easy, use the [Docker installation](https://github.com/hotosm/underpass/blob/master/docs/install-docker.md) and skip the next steps.
+
 Install the software on your platform of preference.
 
 * [Linux](https://github.com/hotosm/underpass/blob/master/docs/install.md)
 * MacOS (docs in progress ...)
-
-If you want to get started really quick and easy, use the Docker installation and skip the next steps.
-
-* [Docker](https://github.com/hotosm/underpass/blob/master/docs/install-docker.md)
 
 ### 2. Setup
 
@@ -43,7 +41,7 @@ On MacOS, the date command works different:
 
 `./underpass -t $(date -v -2d +%Y-%m-%dT%H:%M:%S)`
 
-A a process will start downloading and processing OSM data until lastest data
+A process will start downloading and processing OSM data until lastest data
 is reached, and then it will continue updating data every minute.
 
 ## Using the data
