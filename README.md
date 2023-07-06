@@ -71,7 +71,7 @@ where we need help, some of them are:
 ### Documentation
 
 * Check the [docs](https://github.com/hotosm/underpass/tree/master/docs) folder.
-* For for internal documentation of all the C++ classes: [docs](https://hotosm.github.io/underpass/annotated.html) 
+* For internal documentation of all the C++ classes: [docs](https://hotosm.github.io/underpass/annotated.html) 
 
 ### License
 
