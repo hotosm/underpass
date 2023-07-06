@@ -4,7 +4,7 @@ You can run the components playground following these steps.
 
 ## Requirements
 
-First, install and run the [Install & run the Underpass Python REST API](https://github.com/hotosm/underpass/blob/master/docs)
+First, install and run the [Underpass Python REST API](https://github.com/hotosm/underpass/blob/master/docs/python-rest-api.md)
 
 Then, for running the playground, you'll need:
 
