@@ -5,65 +5,51 @@
 
 Underpass is a customizable **data engine** that processes **OpenStreetMap** data.
 
-It provides customizable **statistics** and **validation** reports and it can also be used to
-**update a local copy of the OSM database**. It is designed to be **high performance** on modest hardware.
+It **updates a local copy of the OSM database** and provides customizable **statistics** and **validation** reports. It is designed to be **high performance** on modest hardware.
 
-## Quick start
+## Demo
 
-```sh
-git clone https://github.com/hotosm/underpass.git
-sh docker/install.sh
-```
+We've deployed a rudimentary demo that keeps a database up-to-date for (some country),
+rendering buildings and highlighting the ones identified as "un-squared":
 
-After installation is done, a process will start downloading and processing
-OSM data from a week ago, storing the results in the database and keep running
-for updating data every minute.
+[https://underpass.live:5000](https://underpass.live:5000)
 
-You can start/stop the replication process:
+## Getting started
 
-```sh
-sh docker/services-start.sh
-sh docker/services-stop.sh
-```
+### 1. Install
 
-If you want to avoid using Docker and build Underpass on your system, check
-the [install](https://github.com/hotosm/underpass/blob/master/docs/install.md) 
-documentation.
+Install the software on your platform of preference:
+
+* [Linux](https://github.com/hotosm/underpass/blob/master/docs/install.md)
+* [Docker](https://github.com/hotosm/underpass/blob/master/docs/install-docker.md)
+* MacOS (docs in progress ...)
+
+### 2. Setup
+
+Select the region you want to work with and bootstrap the database with data.
+
+* [Using the bootstrap.sh script](https://github.com/hotosm/underpass/blob/master/docs/bootstrapsh.md)
+
+### 3. Run
+
+For keeping the database up-to-date, you must run underpass:
+
+`./underpass -t $(date +%Y-%m-%dT%H:%M:%S -d "2 days ago")'`
+
+On MacOS, the date command works different:
+
+`./underpass -t $(date -v -2d +%Y-%m-%dT%H:%M:%S)`
+
+A a process will start downloading and processing OSM data until lastest data
+is reached, and then it will continue updating data every minute.
 
 ## Using the data
 
-### Reports on your browser
+Aside of querying the database, there are two utilities that will make your live
+easier.
 
-Open http://127.0.0.1:5000 on your browser and you'll see a set of UI components
-for OSM data analysis.
-
-### REST API
-
-You can request the REST API directly:
-
-```sh
-curl --location 'http://127.0.0.1:8000/report/dataQualityTag/csv' \
---header 'Content-Type: application/json' \
---data '{
-    "fromDate": "2023-01-01T00:00:00",
-    "hashtags": []
-}'
-```
-
-### DB API
-
-See an example of how generate reports using the DB API:
-
-`docker exec -w /code/util/python/dbapi/example -t underpass python csv-report.py`
-
-### Python API
-
-Use the Python example for download and analyze a Changeset:
-
-```sh
-docker exec -w /code/util/python/examples -t underpass \
-python validation.py -u https://www.openstreetmap.org/api/0.6/changeset/133637588/download -c place
-```
+* [Install & run the Underpass Python REST API](https://github.com/hotosm/underpass/blob/master/docs/python-rest-api.md)
+* [Use the Underpass UI components](https://github.com/hotosm/underpass/blob/master/docs/ui-components.md)
 
 ## Get involved!
 
@@ -79,8 +65,12 @@ where we need help, some of them are:
 * Data models for semantic validation
 * Tests for everything
 
-### Core documentation
+### Documentation
 
-Check the [docs](https://hotosm.github.io/underpass/annotated.html) for
-internal documentation of all the C++ classes.
+* Check the [docs](https://github.com/hotosm/underpass/tree/master/docs) folder.
+* For for internal documentation of all the C++ classes: [docs](https://hotosm.github.io/underpass/annotated.html) 
 
+### License
+
+Underpass is free software! you may use any Underpass project under the terms of
+the GNU General Public License (GPL) Version 3.

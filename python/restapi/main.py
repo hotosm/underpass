@@ -68,11 +68,12 @@ app.add_middleware(
 reporter = report.Report()
 if hasattr(config, 'UNDERPASS_DB'):
     reporter.underpassDB = db.UnderpassDB(config.UNDERPASS_DB)
+    reporter.underpassDB.connect()
 
 rawer = raw.Raw()
 if hasattr(config, 'UNDERPASS_DB'):
     rawer.underpassDB = db.UnderpassDB(config.UNDERPASS_DB)
-
+    rawer.underpassDB.connect()
 
 @app.get("/")
 def read_root():

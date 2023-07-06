@@ -123,10 +123,9 @@ statistics are calculated, and written to the database.
 
 ## Output Databases
 
-Underpass currently writes to 2 primary databases. The main one is the
-*underpass* database, which stores all the calculated statistics and data
-validation results. The other database is a mirror of the raw OSM data
-that also gets updated every minute.
+Underpass currently writes to 1 primary database: the
+*underpass* database, which stores all the calculated statistics, data
+validation results and raw OSM data that also gets updated every minute.
 
 &nbsp;
 ![Flow Chart](https://raw.githubusercontent.com/hotosm/underpass/master/docs/dataflow.png)
