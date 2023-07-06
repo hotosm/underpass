@@ -12,7 +12,7 @@ It **updates a local copy of the OSM database** and provides customizable **stat
 We've deployed a rudimentary demo that keeps a database up-to-date for (some country),
 rendering buildings and highlighting the ones identified as "un-squared":
 
-[http://underpass.live:5000](http://underpass.live:5000)
+[http://underpass.live:5000](http://underpass.live:5000/?fixtureId={"path"%3A"src%2Ffixtures%2FDQMap.fixture.jsx"})
 
 ## Getting started
 
