@@ -41,7 +41,7 @@ done
 REGION=${region}
 COUNTRY=${country}
 HOST=${host:-localhost}
-PORT=${port:-5439}
+PORT=${port:-5432}
 DB=${database:-underpass}
 
 if [ -n "${user}" ] 

@@ -27,7 +27,6 @@ class UnderpassDB():
     
     def __init__(self, connectionString = None):
         self.connectionString = connectionString or "postgresql://underpass:underpass@postgis/underpass"
-        self.connect()
 
     def connect(self):
         """ Connect to the database """
