@@ -32,9 +32,13 @@ Select the region you want to work with and bootstrap the database with data.
 
 ### 3. Run
 
-For keeping the database up-to-date, you must run underpass.
+For keeping the database up-to-date, you must run underpass:
 
-`./underpass -t last`
+`./underpass -t $(date +%Y-%m-%dT%H:%M:%S -d "2 days ago")'`
+
+On MacOS, the date command works different:
+
+`./underpass -t $(date -v -2d +%Y-%m-%dT%H:%M:%S)`
 
 A a process will start downloading and processing OSM data until lastest data
 is reached, and then it will continue updating data every minute.
