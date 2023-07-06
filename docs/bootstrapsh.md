@@ -45,7 +45,7 @@ you don't want to download them again. The script will look for those files
 using the `-r` and `-c` arguments, for example
 
 ```sh
-    ./bootstrap.sh -r south-america -c ecuador -u underpass -l
+./bootstrap.sh -r south-america -c ecuador -u underpass -l
 ```
 
 Will look for these files:
