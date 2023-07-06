@@ -51,6 +51,6 @@ using the `-r` and `-c` arguments, for example
 Will look for these files:
 
 ```
-argentina-latests.osm.pbf
-argentina.poly
+ecuador-latests.osm.pbf
+ecuador.poly
 ```
