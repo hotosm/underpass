@@ -14,6 +14,8 @@ rendering buildings and highlighting the ones identified as "un-squared":
 
 [http://underpass.live:5000](http://underpass.live:5000/?fixtureId={"path"%3A"src%2Ffixtures%2FDQMap.fixture.jsx"})
 
+<img width="872" alt="Screenshot 2023-07-06 at 00 06 53" src="https://github.com/hotosm/underpass/assets/1226194/04f507cb-6479-4a41-8cf9-2e320e3759ff">
+
 ## Getting started
 
 If you want to get started really quick and easy, use the [Docker installation](https://github.com/hotosm/underpass/blob/master/docs/install-docker.md) and skip the next steps.
