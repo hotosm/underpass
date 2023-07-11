@@ -21,7 +21,7 @@ COMMENT ON EXTENSION postgis IS 'PostGIS geometry, geography, and raster spatial
 SET default_tablespace = '';
 
 CREATE TABLE public.changesets (
-    id bigint NOT NULL,
+    id int8 NOT NULL,
     editor text,
     user_id integer NOT NULL,
     created_at timestamptz,
@@ -43,9 +43,9 @@ CREATE TYPE public.objtype AS ENUM ('node', 'way', 'relation');
 CREATE TYPE public.status AS ENUM ('notags', 'complete', 'incomplete', 'badvalue', 'correct', 'badgeom', 'orphan', 'overlaping', 'duplicate');
 
 CREATE TABLE public.validation (
-    osm_id bigint,
-    user_id bigint,
-    change_id bigint,
+    osm_id int8,
+    user_id int8,
+    change_id int8,
     type public.objtype,
     status public.status,
     values text[],
@@ -58,26 +58,28 @@ ALTER TABLE ONLY public.validation
     ADD CONSTRAINT validation_pkey PRIMARY KEY (osm_id, status, source);
 
 CREATE TABLE public.raw_poly (
-    osm_id bigint,
-    change_id bigint,
+    osm_id int8,
+    change_id int8,
     geometry public.geometry(Polygon,4326),
     tags public.hstore,
-    refs bigint[],
+    refs int8[],
     timestamp timestamp with time zone,
     version int
 );
 
 CREATE TABLE public.raw_node (
-    osm_id bigint,
-    change_id bigint,
+    osm_id int8,
+    change_id int8,
     geometry public.geometry(Point,4326),
     tags public.hstore,
     timestamp timestamp with time zone,
     version int
 );
 
+CREATE TABLE way_refs (
+    way_id int8,
+    node_id int8
+)
+
 CREATE UNIQUE INDEX raw_osm_id_idx ON public.raw_node (osm_id);
 CREATE UNIQUE INDEX raw_poly_osm_id_idx ON public.raw_poly (osm_id);
-CREATE INDEX raw_node_timestamp_idx ON public.raw_node ("timestamp" DESC);
-CREATE INDEX raw_poly_timestamp_idx ON public.raw_poly ("timestamp" DESC);
-

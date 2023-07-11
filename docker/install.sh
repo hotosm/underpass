@@ -100,6 +100,7 @@ then
         docker exec -w /code/build -t underpass ./underpass --bootstrap && \
         echo "Starting replicator service ..." && \
         docker exec -t underpass tmux new-session -d -s replicator 'cd /code/build && ./underpass -t $(date +%Y-%m-%dT%H:%M:%S -d "2 days ago")' && \
+        docker exec -w /code/python/rest/api -t underpass cp config-docker.py config.py && \
         docker exec -t underpass tmux new-session -d -s rest-api 'cd /code/python/restapi && uvicorn main:app --reload --host 0.0.0.0' && \
         docker exec -t underpass tmux new-session -d -s react-cosmos 'cd /code/js && echo export const center=[$(psql -f ../utils/randombuildingcentroid.sql | grep ,)] > src/fixtures/center.js && yarn cosmos' && \
         echo "Done! 🚀" && \

@@ -28,8 +28,8 @@
 #include <boost/dll/shared_library.hpp>
 #include <boost/function.hpp>
 #include <boost/dll/import.hpp>
-
 #include <boost/timer/timer.hpp>
+#include <string.h>
 
 #include "utils/log.hh"
 
@@ -69,13 +69,12 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
     auto queryraw = std::make_shared<QueryRaw>(db);
     
     int total = queryraw->getWaysCount();
-    int count = 0;
-    long lastid = 0;
     
     if (total > 0) {
+        int count = 0;
+        long lastid = 0;
         while (count <= total) {
-            std::cout << "Processing : " << (count * 100) / total << " %" << std::endl;
-            std::cout << "Last ID : " << lastid << std::endl;
+            std::cout << "\r" << "Processing : " << count << "/" << total << " (" << ((count * 100) / total) << "%)                                             ";
             auto task = std::make_shared<BootstrapTask>();
             WayTask wayTask;
             wayTask.plugin = validator;
@@ -86,7 +85,7 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
             processWays(wayTask);
             db->query(task->query);
             lastid = wayTask.lastid;
-            count += 100;
+            count += wayTask.processed;
         }
     }
 
@@ -107,19 +106,27 @@ processWays(WayTask &wayTask)
     auto lastid = wayTask.lastid;
 
     auto ways = queryraw->getWaysFromDB(lastid);
-    // Validate ways
+    wayTask.processed = ways->size();
+
+    // Proccesing ways
     for (auto way = ways->begin(); way != ways->end(); ++way) {
         if (way->refs.front() == way->refs.back()) {
             log_debug("Way Id: %1%", way->id);
+
             // Bad geometry
-            if (boost::geometry::num_points(way->linestring) - 1 < 4 ||
-                plugin->unsquared(way->linestring)
+            if (way->containsKey("building") && (boost::geometry::num_points(way->linestring) - 1 < 4 ||
+                plugin->unsquared(way->linestring))
             ) {
                 auto status = ValidateStatus(*way);
                 status.timestamp = boost::posix_time::microsec_clock::universal_time();
                 status.source = "building";
                 boost::geometry::centroid(way->linestring, status.center);
                 task->query += queryvalidate->applyChange(status, badgeom);
+            }
+
+            // Fill the way_refs table
+            for (auto ref = way->refs.begin(); ref != way->refs.end(); ++ref) {
+                task->query += "INSERT INTO way_refs (way_id, node_id) VALUES (" + std::to_string(way->id) + "," + std::to_string(*ref) + "); ";
             }
         }
     }
