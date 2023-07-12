@@ -36,8 +36,8 @@ const getData = async (area, onGetData) => {
       area,
       {
         onSuccess: (data) => {
-          if (data && data.length > 0) {
-            const features = data[0].jsonb_build_object;
+          if (data) {
+            const features = data;
             onGetData(features, area);
           }
         },
@@ -101,8 +101,8 @@ const PopupMarker = ({ data }) => {
           { data.properties.status == 'badgeom' ? "Un-squared building" : "Building"} 
         </h3>
         <p>
-          <a target="_blank" href={"https://osm.org/way/" + data.properties.osm_id}>
-            {data.properties.osm_id}
+          <a target="_blank" href={"https://osm.org/way/" + data.id}>
+            {data.id}
           </a>
         </p>
       </Popup>

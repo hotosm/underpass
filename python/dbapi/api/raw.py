@@ -39,8 +39,8 @@ class Raw:
             ) \
         ), \
         t_features AS (  \
-            SELECT jsonb_build_object( 'type', 'Feature', 'id', t_ways.osm_id, 'properties', to_jsonb(t_ways) - 'polygon' , 'geometry', ST_AsGeoJSON(geometry)::jsonb ) AS feature FROM t_ways  \
-        ) SELECT jsonb_build_object( 'type', 'FeatureCollection', 'features', jsonb_agg(t_features.feature) ) FROM t_features;".format(area)
-        return self.underpassDB.run(query, responseType)
+            SELECT jsonb_build_object( 'type', 'Feature', 'id', t_ways.osm_id, 'properties', to_jsonb(t_ways) - 'geometry' - 'osm_id' , 'geometry', ST_AsGeoJSON(geometry)::jsonb ) AS feature FROM t_ways  \
+        ) SELECT jsonb_build_object( 'type', 'FeatureCollection', 'features', jsonb_agg(t_features.feature) ) as result FROM t_features;".format(area)
+        return self.underpassDB.run(query, responseType, True)
 
 

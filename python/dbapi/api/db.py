@@ -39,7 +39,7 @@ class UnderpassDB():
         if self.conn is not None:
             self.conn.close()
 
-    def run(self, query, responseType = 'json'):
+    def run(self, query, responseType = 'json', singleObject = False):
         if self.conn:
             cur = self.conn.cursor()
             try:
@@ -68,4 +68,6 @@ class UnderpassDB():
                         item[column] = row[index]
                     results.append(item)
             cur.close()
+            if singleObject:
+                return results[0]['result']
             return results
