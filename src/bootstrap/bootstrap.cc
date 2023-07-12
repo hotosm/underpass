@@ -73,7 +73,7 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
     if (total > 0) {
         int count = 0;
         long lastid = 0;
-        while (count <= total) {
+        while (count < total) {
             int percentage = (count * 100) / total;
             std::cout << "\r" << "Processing : " << count << "/" << total << " (" << percentage << "%)";
             auto task = std::make_shared<BootstrapTask>();
