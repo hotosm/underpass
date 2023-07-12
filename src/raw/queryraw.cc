@@ -337,7 +337,6 @@ std::map<std::string, std::string> parseTagsString(const std::string& input) {
     return result;
 }
 
-
 std::list<std::shared_ptr<OsmWay>>
 QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
 {
@@ -347,7 +346,7 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
     // Get all ways that have references to nodes
     std::list<std::shared_ptr<osmobjects::OsmWay>> ways;
 
-    std::string waysQuery = "SELECT osm_id, refs, ST_AsText(ST_ExteriorRing(geometry)), version, tags FROM raw_poly where refs && ARRAY[" + nodeIds + "]::bigint[];";
+    std::string waysQuery = "SELECT osm_id, refs, ST_AsText(ST_ExteriorRing(geometry)), version, tags from way_refs join raw_poly rp on rp.osm_id  = way_id where node_id = any(ARRAY[" + nodeIds + "]);";
     auto ways_result = dbconn->query(waysQuery);
 
     // Fill vector of OsmWay objects
@@ -375,14 +374,14 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
 }
 
 int QueryRaw::getWaysCount() {
-    std::string query = "select count(osm_id) from raw_poly where tags ? 'building'";
+    std::string query = "select count(osm_id) from raw_poly";
     auto result = dbconn->query(query);
     return result[0][0].as<int>();
 }
 
-std::shared_ptr<std::vector<OsmWay>> 
+std::shared_ptr<std::vector<OsmWay>>
 QueryRaw::getWaysFromDB(int lastid) {
-    std::string waysQuery = "SELECT osm_id, refs, ST_AsText(ST_ExteriorRing(geometry), 4326), version FROM raw_poly where tags ? 'building' and osm_id > " + std::to_string(lastid) + " group by osm_id, geometry, refs, version order by osm_id asc limit 100;";
+    std::string waysQuery = "SELECT osm_id, refs, ST_AsText(ST_ExteriorRing(geometry), 4326), version, tags FROM raw_poly where osm_id > " + std::to_string(lastid) + " order by osm_id asc limit 500;";
     auto ways_result = dbconn->query(waysQuery);
 
     // Fill vector of OsmWay objects
@@ -398,6 +397,14 @@ QueryRaw::getWaysFromDB(int lastid) {
         boost::geometry::read_wkt(poly, way.linestring);
         way.polygon = { {std::begin(way.linestring), std::end(way.linestring)} };
         way.version = (*way_it)[3].as<long>();
+        auto tags = (*way_it)[4];
+        if (!tags.is_null()) {
+            auto tags = parseTagsString((*way_it)[4].as<std::string>());
+            for (auto const& [key, val] : tags)
+            {
+                way.addTag(key, val);
+            }
+        }
         ways->push_back(way);
     }
 

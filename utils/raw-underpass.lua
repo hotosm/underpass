@@ -44,7 +44,7 @@ tables.raw_poly = osm2pgsql.define_table{
         { column = 'version', type = 'int' },
         { column = 'timestamp', sql_type = 'timestamp' },
         { column = 'tags', sql_type = 'public.hstore' },
-        { column = 'refs', type= 'text', sql_type = 'bigint[]'},
+        { column = 'refs', type= 'text', sql_type = 'int8[]'},
         { column = 'geometry', type = 'polygon', projection = srid }
     }
 }
@@ -57,7 +57,7 @@ tables.raw_poly = osm2pgsql.define_table{
 --        { column = 'version', type = 'int' },
 --        { column = 'timestamp', sql_type = 'timestamp' },
 --        { column = 'tags', sql_type = 'public.hstore' },
---        { column = 'refs', type= 'text', sql_type = 'bigint[]'},
+--        { column = 'refs', type= 'text', sql_type = 'int8[]'},
 --    }
 --}
 

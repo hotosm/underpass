@@ -40,6 +40,7 @@ struct WayTask {
     std::shared_ptr<QueryValidate> queryvalidate;
     std::shared_ptr<QueryRaw> queryraw;
     std::shared_ptr<BootstrapTask> task;
+    int processed = 0;
     long lastid = 0;
 };
 

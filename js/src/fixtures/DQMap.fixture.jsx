@@ -9,7 +9,7 @@ export default (
     <div style={styles.report}>
       <DQMap
         center={center}
-        realtime={true}
+        realtime={false}
           />
     </div>
   </div>
