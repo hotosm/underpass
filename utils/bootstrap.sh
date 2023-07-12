@@ -78,7 +78,8 @@ then
         PASS=$REPLY
         echo " "
         echo "Cleaning database ..."
-        PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB -c 'delete from raw_poly; delete from raw_node; delete from validation; delete from changesets'
+        PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB -c 'drop table raw_poly; drop table raw_node; drop table validation; drop table changesets;'
+        PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB --file '../setup/underpass.sql'
 
         if [ -z "${localfiles}" ]
         then
@@ -102,8 +103,7 @@ then
         ./underpass --bootstrap
         echo "Done."
         echo " "
-        echo "Now you can run the Underpass replicator for keeping the"
-        echo "database up-to-date"
+        echo "Now you can run the Underpass replicator for keeping the database up-to-date"
     fi
 
 else
