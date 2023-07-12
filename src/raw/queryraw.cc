@@ -228,6 +228,7 @@ void QueryRaw::getNodeCache(std::shared_ptr<OsmChangeFile> osmchanges, const mul
         for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
             OsmNode *node = nit->get();
             if (node->action == osmobjects::modify) {
+                // Get only modified nodes inside priority area
                 if (boost::geometry::within(node->point, poly)) {
                     modifiedNodesIds += std::to_string(node->id) + ",";
                 }
@@ -258,7 +259,7 @@ void QueryRaw::getNodeCache(std::shared_ptr<OsmChangeFile> osmchanges, const mul
     if (referencedNodeIds.size() > 1) {
         referencedNodeIds.erase(referencedNodeIds.size() - 1);
         // Get Nodes from DB
-        std::string nodesQuery = "SELECT osm_id, st_x(geometry) as lat, st_y(geometry) as lon FROM raw_node where  osm_id in (" + referencedNodeIds + ") and st_x(geometry) is not null and st_y(geometry) is not null;";
+        std::string nodesQuery = "SELECT osm_id, st_x(geometry) as lat, st_y(geometry) as lon FROM raw_node where osm_id in (" + referencedNodeIds + ");";
         auto result = dbconn->query(nodesQuery);
         // Fill nodecache
         for (auto node_it = result.begin(); node_it != result.end(); ++node_it) {
@@ -346,7 +347,7 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
     // Get all ways that have references to nodes
     std::list<std::shared_ptr<osmobjects::OsmWay>> ways;
 
-    std::string waysQuery = "SELECT osm_id, refs, ST_AsText(ST_ExteriorRing(geometry)), version, tags from way_refs join raw_poly rp on rp.osm_id  = way_id where node_id = any(ARRAY[" + nodeIds + "]);";
+    std::string waysQuery = "SELECT distinct(osm_id), refs, version, tags from way_refs join raw_poly rp on rp.osm_id  = way_id where node_id = any(ARRAY[" + nodeIds + "]);";
     auto ways_result = dbconn->query(waysQuery);
 
     // Fill vector of OsmWay objects
@@ -357,12 +358,10 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
         if (refs_str.size() > 1) {
             way->refs = arrayStrToVector(refs_str);
         }
-        std::string poly = (*way_it)[2].as<std::string>();
-        boost::geometry::read_wkt(poly, way->linestring);
-        way->version = (*way_it)[3].as<long>();
-        auto tags = (*way_it)[4];
+        way->version = (*way_it)[2].as<long>();
+        auto tags = (*way_it)[3];
         if (!tags.is_null()) {
-            auto tags = parseTagsString((*way_it)[4].as<std::string>());
+            auto tags = parseTagsString((*way_it)[3].as<std::string>());
             for (auto const& [key, val] : tags)
             {
                 way->addTag(key, val);

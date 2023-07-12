@@ -452,13 +452,11 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
         // Filter nodes
         for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
             OsmNode *node = nit->get();
-            if (poly.empty()) {
-                node->priority = true;
-            } else if (!boost::geometry::within(node->point, poly)) {
-                node->priority = false;
-            } else {
+            if (poly.empty() || boost::geometry::within(node->point, poly)) {
                 node->priority = true;
                 nodecache[node->id] = node->point;
+            } if (!boost::geometry::within(node->point, poly)) {
+                node->priority = false;
             }
         }
 
@@ -479,20 +477,20 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
         }
 
         // Filter relations
-        for (auto rit = std::begin(change->relations); rit != std::end(change->relations); ++rit) {
-            OsmRelation *relation = rit->get();
-            if (poly.empty()) {
-                relation->priority = true;
-            } else {
-                relation->priority = false;
-                for (auto mit = std::begin(relation->members); mit != std::end(relation->members); ++mit) {
-                    if (nodecache.count(mit->ref) && boost::geometry::within(nodecache[mit->ref], poly)) {
-                        relation->priority = true;
-                        continue;
-                    }
-                }
-            }
-        }        
+        // for (auto rit = std::begin(change->relations); rit != std::end(change->relations); ++rit) {
+        //     OsmRelation *relation = rit->get();
+        //     if (poly.empty()) {
+        //         relation->priority = true;
+        //     } else {
+        //         relation->priority = false;
+        //         for (auto mit = std::begin(relation->members); mit != std::end(relation->members); ++mit) {
+        //             if (nodecache.count(mit->ref) && boost::geometry::within(nodecache[mit->ref], poly)) {
+        //                 relation->priority = true;
+        //                 continue;
+        //             }
+        //         }
+        //     }
+        // }
     }
 }
 
