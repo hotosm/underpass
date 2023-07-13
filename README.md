@@ -5,7 +5,7 @@
 
 Underpass is a customizable **data engine** that processes **OpenStreetMap** data.
 
-It **updates a local copy of the OSM database** and provides customizable **statistics** and **validation** reports. It is designed to be **high performance** on modest hardware.
+It **updates a local copy of the OSM database** in near real-time, and provides customizable **statistics** and **validation** reports. It is designed to be **high performance** on modest hardware.
 
 ## Demo
 
