@@ -172,12 +172,35 @@ const API = (url) => {
             )
         },
 
-        rawArea: async (area, options = {}) => {
-            fetch(API_URL + "/raw/area", {
+        rawPolygons: async (area, tag, options = {}) => {
+            fetch(API_URL + "/raw/polygons", {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({
                     area: area,
+                    tag: tag
+                })
+            })
+            .then(res => {
+                return res.json();
+            })
+            .then(
+                (result) => {
+                    options.onSuccess && options.onSuccess(result);
+                },
+                (error) => {
+                    options.onError && options.onError(error);
+                }
+            )
+        },
+
+        rawNodes: async (area, tag, options = {}) => {
+            fetch(API_URL + "/raw/nodes", {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({
+                    area: area,
+                    tag: tag
                 })
             })
             .then(res => {

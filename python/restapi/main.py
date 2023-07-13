@@ -157,9 +157,18 @@ if hasattr(config, 'ENABLE_UNDERPASS_CORE'):
             request.check)
         )
 
-@app.post("/raw/area")
-def dataQualityTag(request: RawRequest):
-    results = rawer.getArea(
-        area = request.area
+@app.post("/raw/polygons")
+def getPolygons(request: RawRequest):
+    results = rawer.getPolygons(
+        area = request.area,
+        tag = request.tag or ""
+    )
+    return results
+
+@app.post("/raw/nodes")
+def getNodes(request: RawRequest):
+    results = rawer.getNodes(
+        area = request.area,
+        tag = request.tag or ""
     )
     return results

@@ -13,3 +13,4 @@ class OsmchangeValidateRequest(BaseModel):
     
 class RawRequest(BaseModel):
     area: str
+    tag: str = None
