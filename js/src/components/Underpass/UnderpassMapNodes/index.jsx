@@ -95,14 +95,16 @@ const PopupMarker = ({ data }) => {
           setRefReady(true);
         }}
       >
-        <h3>
-          { } 
-        </h3>
         <p>
-          <a target="_blank" href={"https://osm.org/node/" + data.id}>
-            {data.id}
+        Node: <a target="_blank" href={"https://osm.org/node/" + data.id}>
+             {data.id}
           </a>
         </p>
+        <table>
+          { Object.keys(data.properties.tags).map(tag => <tr>
+            <td><strong>{tag}</strong>:</td><td>{data.properties.tags[tag]}</td>
+            </tr>) } 
+        </table>
       </Popup>
     </Marker>
   );
