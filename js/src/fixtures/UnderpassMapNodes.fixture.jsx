@@ -1,5 +1,5 @@
 import React from 'react';
-import { DQMap } from '../components/Underpass/DQMap';
+import { UnderpassMapNodes } from '../components/Underpass/UnderpassMapNodes';
 import { center } from './center';
 
 const styles = {}
@@ -7,10 +7,11 @@ const styles = {}
 export default (
   <div>
     <div style={styles.report}>
-      <DQMap
+      <UnderpassMapNodes
         center={center}
-        realtime={false}
-          />
+        tag="amenity"
+        greyscaleMap
+      />
     </div>
   </div>
 )

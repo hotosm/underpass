@@ -1,0 +1,14 @@
+
+.Map, .MapGrayscale {
+    border-collapse: collapse;
+    width: 100%;
+    font-family: Roboto, Helvetica, Arial, sans-serif;
+}
+
+.MapGrayscale .leaflet-tile-pane {
+    filter: brightness(1.05) grayscale(1);
+}
+
+.Map .button {
+    margin-top: 10px;
+}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, useMap, useMapEvent, Polygon, Popup, Marker } from 'react-leaflet'
+import { MapContainer, TileLayer, useMap, useMapEvent, Circle, Popup, Marker } from 'react-leaflet'
 import API from '../api';
 import "./styles.css";
 import 'leaflet/dist/leaflet.css';
@@ -30,10 +30,11 @@ function getBBoxString(map) {
     return bbox;
 }
 
-const getData = async (area, onGetData) => {
+const getData = async (area, tag, onGetData) => {
   if (area) {
-    await API()["rawArea"](
+    await API()["rawNodes"](
       area,
+      tag,
       {
         onSuccess: (data) => {
           if (data) {
@@ -72,9 +73,6 @@ function MapEventHandlers(props) {
   }, [area, zoom]);
 }
 
-const grayOptions = { color: 'gray' }
-const redOptions = { color: 'red' }
-
 const PopupMarker = ({ data }) => {
   const map = useMap();
   const [refReady, setRefReady] = useState(false);
@@ -88,8 +86,8 @@ const PopupMarker = ({ data }) => {
 
   return (
     <Marker position={
-      [data.geometry.coordinates[0][0][1],
-      data.geometry.coordinates[0][0][0]]
+      [data.geometry.coordinates[1],
+      data.geometry.coordinates[0]]
     }>
       <Popup
         ref={(r) => {
@@ -98,10 +96,10 @@ const PopupMarker = ({ data }) => {
         }}
       >
         <h3>
-          { data.properties.status == 'badgeom' ? "Un-squared building" : "Building"} 
+          { } 
         </h3>
         <p>
-          <a target="_blank" href={"https://osm.org/way/" + data.id}>
+          <a target="_blank" href={"https://osm.org/node/" + data.id}>
             {data.id}
           </a>
         </p>
@@ -110,11 +108,19 @@ const PopupMarker = ({ data }) => {
   );
 };
 
-// DQMap component
-export const DQMap = ({
+// UnderpassMapNodes component
+export const UnderpassMapNodes = ({
     className,
     center = [14.70884, -90.47560],
-    realtime = true
+    tag,
+    realtime = false,
+    nodeStyles = {
+      color: 'rgba(71,159,248)',
+      fillColor: 'rgba(71,159,248)',
+      fillOpacity: .2,
+      weight: 1.5
+    },
+    greyscaleMap = true
   }) => {
     const [data, setData] = useState([]);
     const [area, setArea] = useState(null);
@@ -125,10 +131,10 @@ export const DQMap = ({
       clearTimeout(timeoutRef.current);
       if (realtime) {
         timeoutRef.current = setInterval(() => {
-          getData(area, (result) => {
+          getData(area, tag, (result) => {
             setData(result.features);
           });
-        }, 5000);  
+        }, 5000);
       }
       setArea(area);
     }
@@ -137,24 +143,24 @@ export const DQMap = ({
       setArea(area);
       if (realtime) {
         timeoutRef.current = setInterval(() => {
-          getData(area, (result) => {
+          getData(area, tag, (result) => {
             setData(result.features);
           });
-        }, 5000);  
+        }, 5000);
       }
     }
 
     useEffect(() => {
-        getData(area, (result) => {
+        getData(area, tag, (result) => {
           setData(result.features);
         });
     }, [area]);
     
-    return <div className={className || "Map"}>
+    return <div className={className || greyscaleMap ? "MapGrayscale" : "Map"}>
         <MapContainer 
           style={{height: 500}}
           center={center}
-          zoom={17}
+          zoom={19}
           scrollWheelZoom={false}
         >
         <TileLayer
@@ -163,38 +169,21 @@ export const DQMap = ({
           maxNativeZoom={19}
           maxZoom={25}
         />
-        { data && data.filter(x => x.properties.status != 'badgeom').map(x =>
-          <Polygon 
-            key={x.properties.way_id}
-            pathOptions={grayOptions}
-            positions={x.geometry.coordinates[0].map(coord => 
-              [coord[1], coord[0]]
-            )
-            } 
-            clickable={true}
-            eventHandlers={{
-              click: (e) => {
-                setSelectedFeature(x);
-              }
-            }}
-          />
-        )}
-        { data && data.filter(x => x.properties.status == 'badgeom').map(x =>
-          <Polygon 
-            key={x.properties.way_id}
-            pathOptions={redOptions}
-            positions={x.geometry.coordinates[0].map(coord => 
-              [coord[1], coord[0]]
-            )
-            } 
-            clickable={true}
-            eventHandlers={{
-              click: (e) => {
-                setSelectedFeature(x);
-              }
-            }}
-          />
-        )}
+          { data && data.map(item =>
+            <Circle
+              key={item.properties.way_id}
+              center={{lat: item.geometry.coordinates[1], lng: item.geometry.coordinates[0]}}
+              radius={3}
+              clickable={true}
+              eventHandlers={{
+                click: (e) => {
+                  setSelectedFeature(item);
+                }
+              }}
+              {...nodeStyles}
+            />
+          )
+        }
         <MapEventHandlers onGetData={mapMoveHandler} />
         { selectedFeature &&
           <PopupMarker data={selectedFeature} />

@@ -25,15 +25,16 @@ class Raw:
 
     underpassDB = UnderpassDB()
 
-    def getArea(
+    def getPolygons(
         self, 
         area = None,
+        tag = None,
         responseType = "json"
     ):
         query = "with t_ways AS ( \
             SELECT raw_poly.osm_id, geometry, tags, status FROM raw_poly \
             LEFT JOIN validation ON validation.osm_id = raw_poly.osm_id \
-            WHERE raw_poly.tags ? 'building' and \
+            WHERE raw_poly.tags ? '" + tag + "' and \
             ST_Intersects(\"geometry\", \
             ST_GeomFromText('POLYGON(({0}))', 4326) \
             ) \
@@ -43,4 +44,23 @@ class Raw:
         ) SELECT jsonb_build_object( 'type', 'FeatureCollection', 'features', jsonb_agg(t_features.feature) ) as result FROM t_features;".format(area)
         return self.underpassDB.run(query, responseType, True)
 
+
+    def getNodes(
+        self,
+        area = None,
+        tag = None,
+        responseType = "json"
+    ):
+        query = "with t_nodes AS ( \
+            SELECT raw_node.osm_id, geometry, tags, status FROM raw_node \
+            LEFT JOIN validation ON validation.osm_id = raw_node.osm_id \
+            WHERE raw_node.tags ? '" + tag + "' and \
+            ST_Intersects(\"geometry\", \
+            ST_GeomFromText('POLYGON(({0}))', 4326) \
+            ) \
+        ), \
+        t_features AS (  \
+            SELECT jsonb_build_object( 'type', 'Feature', 'id', t_nodes.osm_id, 'properties', to_jsonb(t_nodes) - 'geometry' - 'osm_id' , 'geometry', ST_AsGeoJSON(geometry)::jsonb ) AS feature FROM t_nodes  \
+        ) SELECT jsonb_build_object( 'type', 'FeatureCollection', 'features', jsonb_agg(t_features.feature) ) as result FROM t_features;".format(area)
+        return self.underpassDB.run(query, responseType, True)
 
