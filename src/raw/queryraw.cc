@@ -121,7 +121,7 @@ QueryRaw::applyChange(const OsmWay &way) const
 {
     std::string query = "";
 
-    if (way.refs.size() > 1 && (way.refs.front() == way.refs.back())
+    if (way.refs.size() > 3 && (way.refs.front() == way.refs.back())
         && (way.action == osmobjects::create || way.action == osmobjects::modify)) {
 
         if (way.refs.size() == boost::geometry::num_points(way.linestring)) {
