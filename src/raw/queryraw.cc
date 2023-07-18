@@ -185,8 +185,13 @@ QueryRaw::applyChange(const OsmWay &way) const
 
             query += fmt.str();
 
+            query += "DELETE FROM way_refs WHERE way_id=" + std::to_string(way.id) + ";";
+            for (auto ref = way.refs.begin(); ref != way.refs.end(); ++ref) {
+                query += "INSERT INTO way_refs (way_id, node_id) VALUES (" + std::to_string(way.id) + "," + std::to_string(*ref) + ");";
+            }
         }
     } else if (way.action == osmobjects::remove) {
+        query += "DELETE FROM way_refs WHERE way_id=" + std::to_string(way.id) + ";";
         query += "DELETE from raw_poly where osm_id = " + std::to_string(way.id) + ";";
     }
 
@@ -247,6 +252,7 @@ void QueryRaw::getNodeCache(std::shared_ptr<OsmChangeFile> osmchanges, const mul
            for (auto rit = std::begin(way->refs); rit != std::end(way->refs); ++rit) {
                if (!osmchanges->nodecache.count(*rit)) {
                    referencedNodeIds += std::to_string(*rit) + ",";
+               } else {
                }
            }
            way->action = osmobjects::modify;

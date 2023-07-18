@@ -75,7 +75,6 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
         long lastid = 0;
         while (count < total) {
             int percentage = (count * 100) / total;
-            std::cout << "\r" << "Processing : " << count << "/" << total << " (" << percentage << "%)";
             auto task = std::make_shared<BootstrapTask>();
             WayTask wayTask;
             wayTask.plugin = validator;
@@ -87,6 +86,7 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
             db->query(task->query);
             lastid = wayTask.lastid;
             count += wayTask.processed;
+            std::cout << "\r" << "Processing : " << count << "/" << total << " (" << percentage << "%)";
         }
     }
 

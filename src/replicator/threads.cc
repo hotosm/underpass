@@ -102,6 +102,11 @@ std::string
 allTasksQueries(std::shared_ptr<std::vector<ReplicationTask>> tasks) {
     std::string queries = "";
     for (auto it = tasks->begin(); it != tasks->end(); ++it) {
+        std::cout << "[task url] " << it->url << std::endl;
+        if (it->query.find("1189765980") != std::string::npos) {
+            std::cout << "[allTasksQueries DEBUG] " << "1189765980 is in query" << '\n';
+            // std::cout << it->query << std::endl;
+        }
         queries += it->query;
     }
     return queries;
@@ -296,12 +301,13 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     bool caughtUpWithNow = false;
     bool monitoring = true;
     auto underpassConfig = std::make_shared<UnderpassConfig>(config);
+    int concurrentTasks = cores*2;
 
     while (monitoring) {
-        i = cores*2;
-        auto tasks = std::make_shared<std::vector<ReplicationTask>>(i);
-        boost::asio::thread_pool pool(i);
-        while (--i) {
+        auto tasks = std::make_shared<std::vector<ReplicationTask>>(concurrentTasks);
+        boost::asio::thread_pool pool(concurrentTasks);
+        i = concurrentTasks;
+        do {
             std::this_thread::sleep_for(delay);
             if (last_task->status == reqfile_t::success ||
                 (last_task->status == reqfile_t::remoteNotFound && !caughtUpWithNow)) {
@@ -318,14 +324,14 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
                 std::ref(queryvalidate),
                 std::ref(queryraw),
                 underpassConfig,
-                (cores*2) - i
+                concurrentTasks - i
             };
 
             auto task = boost::bind(threadOsmChange, osmChangeTask);
             std::rotate(planets.begin(), planets.begin()+1, planets.end());
 
             boost::asio::post(pool, task);
-        }
+        } while (--i);
         pool.join();
         db->query(allTasksQueries(tasks));
 
@@ -349,7 +355,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
                     std::stoi(closest.url.substr(4, 3)),
                     std::stoi(closest.url.substr(8, 3))
                 );
-                cores = 1;
+                concurrentTasks = 1;
                 delay = std::chrono::seconds{45};
             }
         }
