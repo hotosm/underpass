@@ -85,4 +85,5 @@ CREATE TABLE IF NOT EXISTS public.way_refs (
 
 CREATE UNIQUE INDEX IF NOT EXISTS raw_osm_id_idx ON public.raw_node (osm_id);
 CREATE UNIQUE INDEX IF NOT EXISTS raw_poly_osm_id_idx ON public.raw_poly (osm_id);
-CREATE INDEX IF NOT EXISTS way_refs_idx ON public.way_refs (node_id);
+CREATE INDEX IF NOT EXISTS way_refs_nodes_idx ON public.way_refs (node_id);
+CREATE INDEX IF NOT EXISTS way_refs_ways_idx ON public.way_refs (way_id);
