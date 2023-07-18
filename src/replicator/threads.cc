@@ -102,11 +102,6 @@ std::string
 allTasksQueries(std::shared_ptr<std::vector<ReplicationTask>> tasks) {
     std::string queries = "";
     for (auto it = tasks->begin(); it != tasks->end(); ++it) {
-        std::cout << "[task url] " << it->url << std::endl;
-        if (it->query.find("1189765980") != std::string::npos) {
-            std::cout << "[allTasksQueries DEBUG] " << "1189765980 is in query" << '\n';
-            // std::cout << it->query << std::endl;
-        }
         queries += it->query;
     }
     return queries;
