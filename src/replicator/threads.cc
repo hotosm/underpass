@@ -318,7 +318,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
                 std::ref(queryvalidate),
                 std::ref(queryraw),
                 underpassConfig,
-                i
+                (cores*2) - i
             };
 
             auto task = boost::bind(threadOsmChange, osmChangeTask);

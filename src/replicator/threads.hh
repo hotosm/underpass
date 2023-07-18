@@ -137,7 +137,7 @@ struct OsmChangeTask {
         std::shared_ptr<QueryValidate> queryvalidate;
         std::shared_ptr<QueryRaw> queryraw;
         std::shared_ptr<UnderpassConfig> config;
-        const int &taskIndex;
+        const int taskIndex;
 };
 
 /// Updates the tables from a changeset file
