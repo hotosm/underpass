@@ -1,8 +1,12 @@
 import React from 'react';
+
 import DQMap from '../components/Underpass/DQMap';
 import { center } from './center';
 
-// import hottheme from '../components/HOTTheme';
-// hottheme.colors.primary = "green";
+const theme = {
+  polygon: {
+    outlineWidth: 1.5,
+  },
+};
 
-export default <DQMap center={center} /*theme={hottheme}*/ realtime={true} />;
+export default <DQMap center={center} theme={theme} realtime={true} />;

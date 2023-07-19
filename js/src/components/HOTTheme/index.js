@@ -1,6 +1,10 @@
 export default {
-    colors: {
-        primary: "#D73F3F",
-        secondary: "#0080ff"
-    }
-}
+  colors: {
+    primary: '215, 63, 63',
+    secondary: '64, 172, 140',
+  },
+  polygon: {
+    fillOpacity: 0.2,
+    outlineWidth: 1.5,
+  }
+};

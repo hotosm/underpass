@@ -2,16 +2,13 @@ import React, { useEffect, useState, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import hottheme from '../../HOTTheme';
 
+import hottheme from '../../HOTTheme';
 import API from '../api';
 import { mapStyle } from './mapStyle';
 import './styles.css';
 
-export default function UnderpassMap({
-  center,
-  ...props
-}) {
+export default function UnderpassMap({ center, theme: propTheme = {} }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
@@ -19,7 +16,20 @@ export default function UnderpassMap({
     new maplibregl.Popup({ closeOnMove: true, closeButton: false })
   );
 
-  const theme = props.theme || hottheme;
+  const theme = {
+    colors: {
+      ...hottheme.colors,
+      ...propTheme.colors,
+    },
+    polygon: {
+      ...hottheme.polygon,
+      ...propTheme.polygon,
+    },
+  };
+
+  const themeFromProp = {
+    '--primary': theme.colors.primary,
+  };
 
   useEffect(() => {
     if (mapRef.current) return;
@@ -56,10 +66,10 @@ export default function UnderpassMap({
                   'match',
                   ['get', 'status'],
                   'badgeom',
-                  theme.colors.primary,
-                  theme.colors.secondary
+                  `rgb(${theme.colors.primary})`,
+                  `rgb(${theme.colors.secondary})`,
                 ],
-                'fill-opacity': 0.2,
+                'fill-opacity': theme.polygon.fillOpacity,
               },
             });
             map.addLayer({
@@ -72,10 +82,10 @@ export default function UnderpassMap({
                   'match',
                   ['get', 'status'],
                   'badgeom',
-                  theme.colors.primary,
-                  theme.colors.secondary
+                  `rgb(${theme.colors.primary})`,
+                  `rgb(${theme.colors.secondary})`,
                 ],
-                'line-width': 1.5,
+                'line-width': theme.polygon.outlineWidth,
               },
             });
           }
@@ -108,10 +118,11 @@ export default function UnderpassMap({
     map.on('mouseleave', 'buildings', () => {
       map.getCanvas().style.cursor = '';
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map]);
 
   return (
-    <div className='map-wrap'>
+    <div style={themeFromProp} className='map-wrap'>
       <div ref={mapContainer} className='map' />
     </div>
   );
