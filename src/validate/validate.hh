@@ -282,9 +282,8 @@ class BOOST_SYMBOL_VISIBLE Validate {
 
     bool unsquared(
         const linestring_t &way,
-        double min_angle = 70,
-        double max_angle = 110,
-        double threshold = 19
+        double min_angle = 89,
+        double max_angle = 91
     ) {
         const int num_points =  boost::geometry::num_points(way);
         for(int i = 0; i < num_points - 1; i++) {
@@ -312,10 +311,7 @@ class BOOST_SYMBOL_VISIBLE Validate {
 
             double angle = geo::Geo::calculateAngle(x1,y1,x2,y2,x3,y3);
 
-            if (
-                (angle > max_angle - threshold && angle < max_angle)
-                || (angle > min_angle && angle < min_angle + threshold)
-            ) {
+            if (angle > max_angle || angle < min_angle) {
                 return true;
             }
         }
