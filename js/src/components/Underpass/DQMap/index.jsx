@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import hottheme from '../../HOTTheme';
 
 import API from '../api';
 import { mapStyle } from './mapStyle';
@@ -9,6 +10,7 @@ import './styles.css';
 
 export default function UnderpassMap({
   center,
+  ...props
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -16,6 +18,8 @@ export default function UnderpassMap({
   const popUpRef = useRef(
     new maplibregl.Popup({ closeOnMove: true, closeButton: false })
   );
+
+  const theme = props.theme || hottheme;
 
   useEffect(() => {
     if (mapRef.current) return;
@@ -52,8 +56,8 @@ export default function UnderpassMap({
                   'match',
                   ['get', 'status'],
                   'badgeom',
-                  '#D73F3F',
-                  '#0080ff',
+                  theme.colors.primary,
+                  theme.colors.secondary
                 ],
                 'fill-opacity': 0.2,
               },
@@ -68,8 +72,8 @@ export default function UnderpassMap({
                   'match',
                   ['get', 'status'],
                   'badgeom',
-                  '#D73F3F',
-                  '#0080ff',
+                  theme.colors.primary,
+                  theme.colors.secondary
                 ],
                 'line-width': 1.5,
               },
