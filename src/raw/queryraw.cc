@@ -192,7 +192,7 @@ QueryRaw::applyChange(const OsmWay &way) const
         }
     } else if (way.action == osmobjects::remove) {
         query += "DELETE FROM way_refs WHERE way_id=" + std::to_string(way.id) + ";";
-        query += "DELETE from raw_poly where osm_id = " + std::to_string(way.id) + ";";
+        query += "DELETE FROM raw_poly where osm_id = " + std::to_string(way.id) + ";";
     }
 
     return query;
@@ -217,16 +217,23 @@ void QueryRaw::getNodeCache(std::shared_ptr<OsmChangeFile> osmchanges, const mul
 #endif
     std::string referencedNodeIds;
     std::string modifiedNodesIds;
+    std::vector<long> removedWays;
 
     for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); it++) {
         OsmChange *change = it->get();
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
             OsmWay *way = wit->get();
-            // Save referenced nodes for later use
-            for (auto rit = std::begin(way->refs); rit != std::end(way->refs); ++rit) {
-                if (!osmchanges->nodecache.count(*rit)) {
-                    referencedNodeIds += std::to_string(*rit) + ",";
+            if (way->action != osmobjects::remove) {
+                // Save referenced nodes for later use
+                for (auto rit = std::begin(way->refs); rit != std::end(way->refs); ++rit) {
+                    if (way->action != osmobjects::remove) {
+                        if (!osmchanges->nodecache.count(*rit)) {
+                            referencedNodeIds += std::to_string(*rit) + ",";
+                        }
+                    }
                 }
+            } else {
+                removedWays.push_back(way->id);
             }
         }
         // Save modified nodes for later use
@@ -252,11 +259,12 @@ void QueryRaw::getNodeCache(std::shared_ptr<OsmChangeFile> osmchanges, const mul
            for (auto rit = std::begin(way->refs); rit != std::end(way->refs); ++rit) {
                if (!osmchanges->nodecache.count(*rit)) {
                    referencedNodeIds += std::to_string(*rit) + ",";
-               } else {
                }
            }
-           way->action = osmobjects::modify;
-           change->ways.push_back(way);
+           if (std::find(removedWays.begin(), removedWays.end(), way->id) == removedWays.end()) {
+                way->action = osmobjects::modify;
+                change->ways.push_back(way);
+           }
         }
         osmchanges->changes.push_back(change);
     }
