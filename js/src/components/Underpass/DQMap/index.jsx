@@ -99,7 +99,8 @@ export default function UnderpassMap({ center, theme: propTheme = {} }) {
     }
 
     map.on('load', () => {
-      fetchBuildings();
+      fetchBuildings(); // Run immediately on the first time
+      setInterval(fetchBuildings, 5000);
     });
 
     map.on('moveend', () => {
