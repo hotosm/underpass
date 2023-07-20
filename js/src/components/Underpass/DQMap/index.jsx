@@ -8,6 +8,8 @@ import API from '../api';
 import { mapStyle } from './mapStyle';
 import './styles.css';
 
+const MIN_ZOOM = 13;
+
 export default function UnderpassMap({ center, theme: propTheme = {} }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -101,7 +103,8 @@ export default function UnderpassMap({ center, theme: propTheme = {} }) {
     });
 
     map.on('moveend', () => {
-      fetchBuildings();
+      const zoom = map.getZoom();
+      zoom > MIN_ZOOM && fetchBuildings();
     });
 
     map.on('click', 'buildings', (e) => {
