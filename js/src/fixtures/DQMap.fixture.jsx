@@ -9,4 +9,4 @@ const theme = {
   },
 };
 
-export default <DQMap center={center} theme={theme} realtime={true} />;
+export default <DQMap center={center} theme={theme} isRealTime />;

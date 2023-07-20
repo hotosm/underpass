@@ -10,7 +10,11 @@ import './styles.css';
 
 const MIN_ZOOM = 13;
 
-export default function UnderpassMap({ center, theme: propTheme = {} }) {
+export default function UnderpassMap({
+  center,
+  isRealTime = false,
+  theme: propTheme = {},
+}) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
@@ -100,7 +104,7 @@ export default function UnderpassMap({ center, theme: propTheme = {} }) {
 
     map.on('load', () => {
       fetchBuildings(); // Run immediately on the first time
-      setInterval(fetchBuildings, 5000);
+      isRealTime && setInterval(fetchBuildings, 5000);
     });
 
     map.on('moveend', () => {
