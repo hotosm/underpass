@@ -6,7 +6,7 @@ headers.append("Content-Type", "application/json");
 const API = (url) => {
     const API_URL = url ||
         process.env.REACT_APP_UNDERPASS_API
-        || "http://localhost:8000";
+        || "http://underpass.live:8000";
     return {
         reportDataQualityTag: async (fromDate, toDate, hashtags, page = 0, options = {}) => {
             fetch(API_URL + "/report/dataQualityTag", {

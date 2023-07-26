@@ -14,6 +14,11 @@ export const mapStyle = {
       id: 'osm',
       type: 'raster',
       source: 'osm',
+      paint:  {
+        'raster-opacity': 0.72,
+        'raster-brightness-max': 1,
+        'raster-saturation': -1,
+      }
     },
   ],
 };
