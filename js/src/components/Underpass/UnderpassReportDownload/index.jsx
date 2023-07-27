@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import API from '../api';
 import "./styles.css";
 
-// DQReportDownload component
-export const DQReportDownload = ({
+// UnderpassReportDownload component
+export const UnderpassReportDownload = ({
     fromDate,
     toDate,
     hashtags,

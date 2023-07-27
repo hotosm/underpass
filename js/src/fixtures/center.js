@@ -1,1 +1,1 @@
-export const center=[ 28.097356645050688,81.68971691424653]
+export const center=[-79.65260, 0.96201]
