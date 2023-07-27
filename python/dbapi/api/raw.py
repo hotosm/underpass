@@ -47,7 +47,7 @@ class Raw:
         ) SELECT jsonb_build_object( 'type', 'FeatureCollection', 'features', jsonb_agg(t_features.feature) ) as result FROM t_features;".format(
             area,
             "and raw_poly.tags ? '{0}'".format(key) if key and not value else "",
-            "and raw_poly.tags->'{0}' LIKE '%{1}%'".format(key, value) if key and value else "",
+            "and raw_poly.tags->'{0}' ~* '^{1}'".format(key, value) if key and value else "",
         )
         return self.underpassDB.run(query, responseType, True)
 
@@ -72,7 +72,7 @@ class Raw:
         ) SELECT jsonb_build_object( 'type', 'FeatureCollection', 'features', jsonb_agg(t_features.feature) ) as result FROM t_features;".format(
             area,
             "and raw_node.tags ? '{0}'".format(key) if key and not value else "",
-            "and raw_node.tags->'{0}' LIKE '%{1}%'".format(key, value) if key and value else "",
+            "and raw_node.tags->'{0}' ~* '^{1}'".format(key, value) if key and value else "",
         )
         return self.underpassDB.run(query, responseType, True)
 
