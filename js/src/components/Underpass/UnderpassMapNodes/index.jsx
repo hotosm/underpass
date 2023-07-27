@@ -1,200 +1,189 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, useMap, useMapEvent, Circle, Popup, Marker } from 'react-leaflet'
+import React, { useEffect, useState, useRef } from 'react';
+import { createRoot } from 'react-dom/client';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+
+import HOTTheme from '../../HOTTheme';
 import API from '../api';
-import "./styles.css";
-import 'leaflet/dist/leaflet.css';
+import { mapStyle } from './mapStyle';
+import './styles.css';
+
+export default function UnderpassMapNodes({
+  center,
+  isRealTime = false,
+  theme: propsTheme = {},
+  defaultZoom = 18,
+  minZoom = 13,
+  mapClassName,
+  tag,
+}) {
+  const mapContainer = useRef(null);
+  const mapRef = useRef(null);
+  const [theme, setTheme] = useState(null);
+  const [map, setMap] = useState(null);
+  const popUpRef = useRef(
+    new maplibregl.Popup({ closeOnMove: true, closeButton: false })
+  );
+
+  useEffect(() => {
+    if (mapRef.current) return;
+
+    const hottheme = HOTTheme();
+    const theme = {...hottheme, ...propsTheme};
+
+    theme.map.nodesFill = {
+      'fill-color': `rgb(${theme.colors.primary})`,
+      ...theme.map.nodesFill,
+    };
+
+    theme.map.nodesLine = {
+      'line-color': `rgb(${theme.colors.primary})`,
+      ...theme.map.nodesLine,
+    };
+
+    setTheme(theme);
+
+    let rasterStyle = mapStyle;
+    if (theme.map.raster) {
+      rasterStyle.layers[0].paint = theme.map.raster;
+    }
+    mapRef.current = new maplibregl.Map({
+      container: mapContainer.current,
+      style: rasterStyle,
+      center: center,
+      zoom: defaultZoom,
+    });
+    mapRef.current.addControl(new maplibregl.NavigationControl());
+    setMap(mapRef.current);
+  }, [center]);
+
+  useEffect(() => {
+    if (!map) return;
+    async function fetchNodes() {
+      await API()['rawNodes'](getBBoxString(map), tag, {
+        onSuccess: (data) => {
+          if (map.getSource('nodes')) {
+            map.getSource('nodes').setData(data);
+          } else {
+            map.addSource('nodes', {
+              type: 'geojson',
+              data: data,
+            });
+            map.addLayer({
+              id: 'nodesFill',
+              type: 'symbol',
+              source: 'nodes',
+              layout: {
+                'icon-image': 'custom-marker',
+              }
+            });
+          }
+        },
+        onError: (error) => {
+          console.log(error);
+        },
+      });
+    }
+
+    map.on('load', () => {
+      fetchNodes(); // Run immediately on the first time
+      isRealTime && setInterval(fetchNodes, 5000);
+      map.loadImage(theme.map.nodesSymbol || '/images/blue-circle.png',
+        (error, image) => {
+          map.addImage('custom-marker', image);
+        }
+      );
+    });
+
+    map.on('moveend', () => {
+      const zoom = map.getZoom();
+      zoom > minZoom && fetchNodes();
+    });
+
+    map.on('click', 'nodesFill', (e) => {
+      const popupNode = document.createElement('div');
+      createRoot(popupNode).render(<Popup feature={e.features[0]} />);
+      popUpRef.current.setLngLat(e.lngLat).setDOMContent(popupNode).addTo(map);
+    });
+
+    // Display pointer cursor for polygons
+    map.on('mouseenter', 'nodesFill', () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+
+    map.on('mouseleave', 'nodesFill', () => {
+      map.getCanvas().style.cursor = '';
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map]);
+
+
+  return (
+    <div className={mapClassName || 'underpassMap-wrap'}>
+      <div ref={mapContainer} className='underpassMap' />
+    </div>
+  );
+}
+
+const Popup = ({ feature }) => {
+  const tags = JSON.parse(feature.properties.tags);
+
+  return (
+    <div className='popup'>
+      <table>
+        <tbody>
+          <tr>
+            <td colSpan='2'>
+              <b>Way:</b>&nbsp;
+              <a
+                target='blank'
+                href={`https://www.openstreetmap.org/node/${feature.id}`}
+              >
+                {feature.id}
+              </a>
+            </td>
+          </tr>
+          {Object.keys(tags).map((tag) => (
+            <tr key={tag}>
+              <td>{tag}</td>
+              <td>{tags[tag]}</td>
+            </tr>
+          ))}
+          {feature.properties.status && (
+            <tr>
+              <td colSpan='2'>
+                <strong className='status'>{feature.properties.status}</strong>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
 function getBBoxString(map) {
   let bbox = [
     [
       map.getBounds().getNorthEast().lng,
-      map.getBounds().getNorthEast().lat
-    ].join(" "),
+      map.getBounds().getNorthEast().lat,
+    ].join(' '),
     [
       map.getBounds().getNorthWest().lng,
-      map.getBounds().getNorthWest().lat
-    ].join(" "),
+      map.getBounds().getNorthWest().lat,
+    ].join(' '),
     [
       map.getBounds().getSouthWest().lng,
-      map.getBounds().getSouthWest().lat
-    ].join(" "),
+      map.getBounds().getSouthWest().lat,
+    ].join(' '),
     [
       map.getBounds().getSouthEast().lng,
-      map.getBounds().getSouthEast().lat
-    ].join(" "),
+      map.getBounds().getSouthEast().lat,
+    ].join(' '),
     [
       map.getBounds().getNorthEast().lng,
-      map.getBounds().getNorthEast().lat
-    ].join(" ")
-    ].join(",")
-    return bbox;
+      map.getBounds().getNorthEast().lat,
+    ].join(' '),
+  ].join(',');
+  return bbox;
 }
-
-const getData = async (area, tag, onGetData) => {
-  if (area) {
-    await API()["rawNodes"](
-      area,
-      tag,
-      {
-        onSuccess: (data) => {
-          if (data) {
-            const features = data;
-            onGetData(features, area);
-          }
-        },
-        onError: (error) => {
-          console.log(error)
-        }
-      }
-    );
-  }
-}
-
-function OnLoadMap(props) {
-  const map = useMap();
-  
-  useEffect(() => {
-    props.onGetData(getBBoxString(map));
-  }, []);
-}
-
-function MapEventHandlers(props) {
-  const map = useMap();
-  const [area, setArea] = useState(null);
-  const zoom = map.getZoom();
-  useMapEvent('moveend', () => {
-    props.onGetData(area);
-    setArea(getBBoxString(map));
-  });
-  useEffect(() => {
-    if (zoom > 13) {
-      props.onGetData(area);
-    }
-  }, [area, zoom]);
-}
-
-const PopupMarker = ({ data }) => {
-  const map = useMap();
-  const [refReady, setRefReady] = useState(false);
-  let popupRef = useRef();
-
-  useEffect(() => {
-    if (refReady) {
-      popupRef.openOn(map);
-    }
-  }, [refReady, map]);
-
-  return (
-    <Marker position={
-      [data.geometry.coordinates[1],
-      data.geometry.coordinates[0]]
-    }>
-      <Popup
-        ref={(r) => {
-          popupRef = r;
-          setRefReady(true);
-        }}
-      >
-        <p>
-        Node: <a target="_blank" href={"https://osm.org/node/" + data.id}>
-             {data.id}
-          </a>
-        </p>
-        <table>
-          { Object.keys(data.properties.tags).map(tag => <tr>
-            <td><strong>{tag}</strong>:</td><td>{data.properties.tags[tag]}</td>
-            </tr>) } 
-        </table>
-      </Popup>
-    </Marker>
-  );
-};
-
-// UnderpassMapNodes component
-export const UnderpassMapNodes = ({
-    className,
-    center = [14.70884, -90.47560],
-    tag,
-    realtime = false,
-    nodeStyles = {
-      color: 'rgba(71,159,248)',
-      fillColor: 'rgba(71,159,248)',
-      fillOpacity: .2,
-      weight: 1.5
-    },
-    greyscaleMap = true
-  }) => {
-    const [data, setData] = useState([]);
-    const [area, setArea] = useState(null);
-    const [selectedFeature, setSelectedFeature] = useState(null);
-    const timeoutRef = useRef();
-
-    const mapMoveHandler = (area) => {
-      clearTimeout(timeoutRef.current);
-      if (realtime) {
-        timeoutRef.current = setInterval(() => {
-          getData(area, tag, (result) => {
-            setData(result.features);
-          });
-        }, 5000);
-      }
-      setArea(area);
-    }
-
-    const loadHandler = (area) => {
-      setArea(area);
-      if (realtime) {
-        timeoutRef.current = setInterval(() => {
-          getData(area, tag, (result) => {
-            setData(result.features);
-          });
-        }, 5000);
-      }
-    }
-
-    useEffect(() => {
-        getData(area, tag, (result) => {
-          setData(result.features);
-        });
-    }, [area]);
-    
-    return <div className={className || greyscaleMap ? "MapGrayscale" : "Map"}>
-        <MapContainer 
-          style={{height: 500}}
-          center={center}
-          zoom={19}
-          scrollWheelZoom={false}
-        >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maxNativeZoom={19}
-          maxZoom={25}
-        />
-          { data && data.map(item =>
-            <Circle
-              key={item.properties.way_id}
-              center={{lat: item.geometry.coordinates[1], lng: item.geometry.coordinates[0]}}
-              radius={3}
-              clickable={true}
-              eventHandlers={{
-                click: (e) => {
-                  setSelectedFeature(item);
-                }
-              }}
-              {...nodeStyles}
-            />
-          )
-        }
-        <MapEventHandlers onGetData={mapMoveHandler} />
-        { selectedFeature &&
-          <PopupMarker data={selectedFeature} />
-        }
-        { area == null && 
-          <OnLoadMap onGetData={loadHandler} 
-          />
-        }        
-      </MapContainer>
-    </div>
-  }
-

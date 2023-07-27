@@ -1,5 +1,5 @@
 import React from 'react';
-import { DQReportDownload } from '../components/Underpass/DQReportDownload';
+import { UnderpassReportDownload } from '../components/Underpass/UnderpassReportDownload';
 
 const fromDate = () => {
   const now = new Date();
@@ -11,26 +11,26 @@ const fromDate = () => {
 
 export default (
     <div>
-      <DQReportDownload
+      <UnderpassReportDownload 
+        fromDate={fromDate()}
+        hashtags={[]}
+        report="geo"
+        text="Download Geo Report"
+      />
+      {/* <br /><br />
+      <UnderpassReportDownload
         fromDate={fromDate()}
         hashtags={[]}
         report="tag"
         text="Download Tag Report"
       />
       <br /><br />
-      <DQReportDownload 
-        fromDate={fromDate()}
-        hashtags={[]}
-        report="geo"
-        text="Download Geo Report"
-      />
-      <br /><br />
-      <DQReportDownload
+      <UnderpassReportDownload
         fromDate={fromDate()}
         hashtags={[]}
         report="tagStats"
         text="Download Tag Stats Report"
-      />
+      /> */}
     </div>
     )
 

@@ -32,6 +32,5 @@ export default <UnderpassMap
   mapClassName={"customMap"}
   center={center}
   theme={theme}
-  isRealTime
   tag="building"
 />;
