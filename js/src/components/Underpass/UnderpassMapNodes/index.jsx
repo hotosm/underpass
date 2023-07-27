@@ -15,7 +15,8 @@ export default function UnderpassMapNodes({
   defaultZoom = 18,
   minZoom = 13,
   mapClassName,
-  tag,
+  tagKey,
+  tagValue
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -60,7 +61,7 @@ export default function UnderpassMapNodes({
   useEffect(() => {
     if (!map) return;
     async function fetchNodes() {
-      await API()['rawNodes'](getBBoxString(map), tag, {
+      await API()['rawNodes'](getBBoxString(map), tagKey, tagValue, {
         onSuccess: (data) => {
           if (map.getSource('nodes')) {
             map.getSource('nodes').setData(data);

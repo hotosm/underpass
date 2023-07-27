@@ -32,5 +32,6 @@ export default <UnderpassMap
   mapClassName={"customMap"}
   center={center}
   theme={theme}
-  tag="building"
+  tagKey="building"
+  tagValue="yes"
 />;

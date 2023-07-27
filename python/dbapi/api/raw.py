@@ -28,39 +28,51 @@ class Raw:
     def getPolygons(
         self, 
         area = None,
-        tag = None,
+        key = None,
+        value = None,
+        hashtag = None,
         responseType = "json"
     ):
+        print(key, value)
         query = "with t_ways AS ( \
             SELECT raw_poly.osm_id, geometry, tags, status FROM raw_poly \
             LEFT JOIN validation ON validation.osm_id = raw_poly.osm_id \
-            WHERE raw_poly.tags ? '" + tag + "' and \
+            WHERE \
             ST_Intersects(\"geometry\", \
             ST_GeomFromText('POLYGON(({0}))', 4326) \
-            ) \
+            ) {1} {2} \
         ), \
         t_features AS (  \
             SELECT jsonb_build_object( 'type', 'Feature', 'id', t_ways.osm_id, 'properties', to_jsonb(t_ways) - 'geometry' - 'osm_id' , 'geometry', ST_AsGeoJSON(geometry)::jsonb ) AS feature FROM t_ways  \
-        ) SELECT jsonb_build_object( 'type', 'FeatureCollection', 'features', jsonb_agg(t_features.feature) ) as result FROM t_features;".format(area)
+        ) SELECT jsonb_build_object( 'type', 'FeatureCollection', 'features', jsonb_agg(t_features.feature) ) as result FROM t_features;".format(
+            area,
+            "and raw_poly.tags ? '{0}'".format(key) if key and not value else "",
+            "and raw_poly.tags->'{0}' LIKE '%{1}%'".format(key, value) if key and value else "",
+        )
         return self.underpassDB.run(query, responseType, True)
-
 
     def getNodes(
         self,
         area = None,
-        tag = None,
+        key = None,
+        value = None,
+        hashtag = None,
         responseType = "json"
     ):
         query = "with t_nodes AS ( \
             SELECT raw_node.osm_id, geometry, tags, status FROM raw_node \
             LEFT JOIN validation ON validation.osm_id = raw_node.osm_id \
-            WHERE raw_node.tags ? '" + tag + "' and \
+            WHERE \
             ST_Intersects(\"geometry\", \
             ST_GeomFromText('POLYGON(({0}))', 4326) \
-            ) \
+            ) {1} {2} \
         ), \
         t_features AS (  \
             SELECT jsonb_build_object( 'type', 'Feature', 'id', t_nodes.osm_id, 'properties', to_jsonb(t_nodes) - 'geometry' - 'osm_id' , 'geometry', ST_AsGeoJSON(geometry)::jsonb ) AS feature FROM t_nodes  \
-        ) SELECT jsonb_build_object( 'type', 'FeatureCollection', 'features', jsonb_agg(t_features.feature) ) as result FROM t_features;".format(area)
+        ) SELECT jsonb_build_object( 'type', 'FeatureCollection', 'features', jsonb_agg(t_features.feature) ) as result FROM t_features;".format(
+            area,
+            "and raw_node.tags ? '{0}'".format(key) if key and not value else "",
+            "and raw_node.tags->'{0}' LIKE '%{1}%'".format(key, value) if key and value else "",
+        )
         return self.underpassDB.run(query, responseType, True)
 

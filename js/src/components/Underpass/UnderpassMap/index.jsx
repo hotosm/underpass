@@ -15,7 +15,8 @@ export default function UnderpassMap({
   defaultZoom = 18,
   minZoom = 13,
   mapClassName,
-  tag,
+  tagKey,
+  tagValue,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -72,7 +73,7 @@ export default function UnderpassMap({
   useEffect(() => {
     if (!map) return;
     async function fetchWays() {
-      await API()['rawPolygons'](getBBoxString(map), tag, {
+      await API()['rawPolygons'](getBBoxString(map), tagKey, tagValue, {
         onSuccess: (data) => {
           if (map.getSource('ways')) {
             map.getSource('ways').setData(data);

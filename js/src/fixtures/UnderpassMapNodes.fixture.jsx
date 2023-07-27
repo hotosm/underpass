@@ -4,5 +4,6 @@ import { center } from './center';
 
 export default <UnderpassMapNodes 
   center={center}
-  tag="amenity"
+  tagKey="amenity"
+  tagValue=""
 />;

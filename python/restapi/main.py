@@ -161,7 +161,8 @@ if hasattr(config, 'ENABLE_UNDERPASS_CORE'):
 def getPolygons(request: RawRequest):
     results = rawer.getPolygons(
         area = request.area,
-        tag = request.tag or ""
+        key = request.key or "",
+        value = request.value or ""
     )
     return results
 
@@ -169,6 +170,7 @@ def getPolygons(request: RawRequest):
 def getNodes(request: RawRequest):
     results = rawer.getNodes(
         area = request.area,
-        tag = request.tag or ""
+        key = request.key or "",
+        value = request.value or ""
     )
     return results
