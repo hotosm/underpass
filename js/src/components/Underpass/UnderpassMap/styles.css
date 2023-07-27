@@ -53,6 +53,8 @@ from https://github.com/mapbox/mapbox-gl-js/issues/8368#issuecomment-537597959*/
   position: absolute;
   width: 100%;
   height: 100%;
+  top: 0;
+  left: 0;
 }
 
 .popup {
