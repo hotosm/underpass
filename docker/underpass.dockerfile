@@ -1,44 +1,52 @@
 FROM ubuntu:kinetic
 
 # This image is available as quay.io/hotosm/underpass:kinetic
-LABEL maintainer="Humanitarian OpenStreetMap Team" Description="This image provides build deps for underpass" Vendor="HOT" Version="dev"
-
+LABEL maintainer="Humanitarian OpenStreetMap Team" Description="This image provides a build for Underpass" Vendor="HOT" Version="dev"
 ENV DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /code
+
+COPY ./src /code/src
+COPY ./config /code/config
+COPY ./setup /code/setup
 
 RUN apt-get update \
     && apt-get install -y software-properties-common \
     && apt-get update && apt-get install -y \
-        git \
         libboost-dev \
         autotools-dev \
         swig \
-        python3 \
-        python3-dev \
-        libgdal-dev \
         pkg-config \
         gcc \
         build-essential \
         ccache \
-        libosmium2-dev \
-        libgumbo-dev \
-        libwebkit2gtk-4.0-dev \
-        libopenmpi-dev \
         libboost-all-dev \
-        librange-v3-dev \
-        libyaml-cpp-dev \
         dejagnu \
         libjemalloc-dev \
-        wget \
-        unzip \
-        libxml++2.6-dev && rm -rf /var/lib/apt/lists/* \
-        liblua5.3-dev \
-        vim \
-        wait-for-it \
-        cmake \
-        doxygen
+        libxml++2.6-dev \
+        doxygen \
+        libgdal-dev \
+        libosmium2-dev \
+        libpqxx-dev \
+        postgresql \
+        libgumbo-dev \
+        librange-v3-dev
 
-RUN apt-get update && apt-get -y install libpqxx-dev
+COPY ./docker/bzip2.pc /usr/lib/x86_64-linux-gnu/pkgconfig/bzip2.pc
+COPY ./autogen.sh /code/autogen.sh
+COPY ./configure.ac /code/configure.ac
+COPY ./Makefile.am /code/Makefile.am
+COPY ./m4 /code/m4
+COPY ./dist /code/dist
+COPY ./docs /code/docs
+COPY ./ABOUT-NLS /code/ABOUT-NLS
+COPY ./config.rpath /code/config.rpath
 
-RUN apt-get update && apt-get -y install postgresql
+WORKDIR /code
+RUN ./autogen.sh 
 
-COPY docker/bzip2.pc /usr/lib/x86_64-linux-gnu/pkgconfig/bzip2.pc
+WORKDIR /code/build 
+RUN ../configure && \
+    make -j $(nproc) && \
+    make install
+

@@ -41,14 +41,14 @@ done
 REGION=${region}
 COUNTRY=${country}
 HOST=${host:-localhost}
-PORT=${port:-5432}
+PORT=${port:-5439}
 DB=${database:-underpass}
 
 if [ -n "${user}" ] 
 then
     USER=${user}
 else
-    USER=$(whoami)
+    USER=underpass
 fi
 
 if [ -n "${REGION}" ] && [ -n "${COUNTRY}" ] 
@@ -69,7 +69,7 @@ then
     echo " "
     echo "*** WARNING: THIS ACTION WILL OVERWRITE DATA IN THE CURRENT DATABASE ***"
     echo " "
-    read -p "Are you sure? Y/N" -n 1 -r
+    read -p "Are you sure? Y/N: " -n 1 -r
     echo " "
     if [[ $REPLY =~ ^[Yy]$ ]]
     then
@@ -78,16 +78,16 @@ then
         PASS=$REPLY
         echo " "
         echo "Cleaning database ..."
-        PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB -c 'drop table raw_poly; drop table raw_node; drop table way_refs; drop table validation; drop table changesets;'
+        PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB -c 'DROP TABLE IF EXISTS raw_poly; DROP TABLE IF EXISTS raw_node; DROP TABLE IF EXISTS way_refs; DROP TABLE IF EXISTS validation; DROP TABLE IF EXISTS changesets;'
         PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB --file '../setup/underpass.sql'
 
         if [ -z "${localfiles}" ]
         then
             echo "(Using local files)"
         else
-            echo "Downloading updated map data ..." && \
-            wget https://download.geofabrik.de/$REGION/$COUNTRY-latest.osm.pbf && \
-            wget https://download.geofabrik.de/$REGION/$COUNTRY.poly
+            echo "Downloading updated map data from geofabrik.de ..." && \
+            curl -O https://download.geofabrik.de/$REGION/$COUNTRY-latest.osm.pbf && \
+            curl -O https://download.geofabrik.de/$REGION/$COUNTRY.poly
         fi
 
         echo "Importing data (this will take some time) ..."
@@ -96,16 +96,12 @@ then
 
         echo "Configuring Underpass ..."
         python3 poly2geojson.py $COUNTRY.poly && \
-        cp $COUNTRY.geojson ../config/priority.geojson && \
-        cd ../build && \
-        make install && \
+        docker cp $COUNTRY.geojson underpass:/usr/local/lib/underpass/config/
+        docker cp $COUNTRY.geojson underpass:/code/config
         echo "Bootstrapping validation database ..."
-        ./underpass --bootstrap
+        docker exec -w /code/build -t underpass ./underpass --bootstrap
         echo "Done."
         echo " "
-        echo "Next steps:"
-        echo "* You can run the Underpass replicator for keeping the database up-to-date"
-        echo "* Setup and run the API and UI for displaying data on your browser"
     fi
 
 else
