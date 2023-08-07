@@ -20,7 +20,7 @@
 
 #    -----
 #    This is a utility script for bootstrapping an Underpass
-#    database with a full country OSM data.
+#    database with OSM data for a country
 #    -----
 
 localfiles='false'
@@ -74,9 +74,13 @@ then
     if [[ $REPLY =~ ^[Yy]$ ]]
     then
 
-        read -s -p "Enter your database password: " -r
-        PASS=$REPLY
-        echo " "
+        PASS="underpass"
+        read -s -p "Enter your database password [underpass]: " -r
+        if [[ $REPLY != "" ]]
+        then
+            PASS=$REPLY
+        fi
+
         echo "Cleaning database ..."
         PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB -c 'DROP TABLE IF EXISTS raw_poly; DROP TABLE IF EXISTS raw_node; DROP TABLE IF EXISTS way_refs; DROP TABLE IF EXISTS validation; DROP TABLE IF EXISTS changesets;'
         PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB --file '../setup/underpass.sql'
@@ -85,9 +89,9 @@ then
         then
             echo "(Using local files)"
         else
-            echo "Downloading updated map data from geofabrik.de ..." && \
-            curl -O https://download.geofabrik.de/$REGION/$COUNTRY-latest.osm.pbf && \
-            curl -O https://download.geofabrik.de/$REGION/$COUNTRY.poly
+            echo "Downloading updated map data from geofabrik.de ..."
+            wget https://download.geofabrik.de/$REGION/$COUNTRY-latest.osm.pbf
+            wget https://download.geofabrik.de/$REGION/$COUNTRY.poly
         fi
 
         echo "Importing data (this will take some time) ..."
@@ -113,7 +117,7 @@ else
     echo " "
     echo "[Options]"
     echo " -r region (Region for bootstrapping)"
-    echo "  africa, antartica, asia, australia, central-america,"
+    echo "  africa, asia, australia, central-america,"
     echo "  europe, north-america or south-america"
     echo " -c country (Country inside the region)"
     echo " -h host (Database host)"

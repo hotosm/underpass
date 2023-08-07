@@ -20,10 +20,8 @@
 from .db import UnderpassDB
 
 class Raw:
-    def __init__(self):
-        pass
-
-    underpassDB = UnderpassDB()
+    def __init__(self, db):
+        self.underpassDB = db
 
     def getPolygons(
         self, 
@@ -33,7 +31,6 @@ class Raw:
         hashtag = None,
         responseType = "json"
     ):
-        print(key, value)
         query = "with t_ways AS ( \
             SELECT raw_poly.osm_id, geometry, tags, status FROM raw_poly \
             LEFT JOIN validation ON validation.osm_id = raw_poly.osm_id \

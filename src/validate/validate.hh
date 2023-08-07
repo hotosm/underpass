@@ -311,7 +311,10 @@ class BOOST_SYMBOL_VISIBLE Validate {
 
             double angle = geo::Geo::calculateAngle(x1,y1,x2,y2,x3,y3);
 
-            if (angle > max_angle || angle < min_angle) {
+            if (
+                (angle > max_angle || angle < min_angle) &&
+                (angle < 179 || angle > 181)
+            ) {
                 return true;
             }
         }

@@ -30,7 +30,7 @@ This will:
 
 ```
 -r region (Region for bootstrapping)
-   africa, antartica, asia, australia, central-america
+   africa, asia, australia, central-america
    europe, north-america or south-america
 -c country (Country inside the region)
 -h host (Database host)

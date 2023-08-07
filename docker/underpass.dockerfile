@@ -43,10 +43,12 @@ COPY ./ABOUT-NLS /code/ABOUT-NLS
 COPY ./config.rpath /code/config.rpath
 
 WORKDIR /code
-RUN ./autogen.sh 
+RUN ./autogen.sh
 
-WORKDIR /code/build 
+WORKDIR /code/build
 RUN ../configure && \
     make -j $(nproc) && \
     make install
 
+WORKDIR /code/setup
+RUN psql postgresql://$(REPLICATOR_UNDERPASS_DB_URL) --file underpass.sql
