@@ -206,8 +206,8 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
                 monitoring = false;
             }
         }
+        // Check if caught up with now
         if (!caughtUpWithNow) {
-            // Check if caught up with now
             boost::posix_time::time_duration delta_closest = now - closest.timestamp;
             if (delta_closest.hours() * 60 + delta_closest.minutes() <= 2) {
                 caughtUpWithNow = true;

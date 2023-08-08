@@ -23,10 +23,8 @@ from .queryHelper import bbox as bboxQueryBuilder
 from .queryHelper import RESULTS_PER_PAGE
 
 class Report:
-    def __init__(self):
-        pass
-
-    underpassDB = UnderpassDB()
+    def __init__(self, db):
+        self.underpassDB = db
 
     def getDataQualityGeo(
         self, 

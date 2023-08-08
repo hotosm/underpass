@@ -4,18 +4,18 @@ This script is prepared for a quick bootstrap of the Underpass database.
 
 ## Install requirements
 
-```sh
-pip install fiona
-pip install shapely
+- fiona (pip install fiona)
+- shapely (pip install shapely)
+- osm2pgsql (https://osm2pgsql.org/doc/install.html)
+- psql (https://www.postgresql.org/download/)
 ```
 
 ## Quick start
 
-Having Underpass installed with the database ready to use, run the script
-passing region, country and DB username as arguments, for example:
+Run the script passing region, country and DB username as arguments, for example:
 
 ```sh
-./bootstrap.sh -r south-america -c ecuador -u underpass
+./bootstrap.sh -r south-america -c ecuador
 ```
 
 This will:
@@ -30,7 +30,7 @@ This will:
 
 ```
 -r region (Region for bootstrapping)
-   africa, antartica, asia, australia, central-america
+   africa, asia, australia, central-america
    europe, north-america or south-america
 -c country (Country inside the region)
 -h host (Database host)
