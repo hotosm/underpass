@@ -30,6 +30,8 @@ services:
       - POSTGRES_DB=underpass
       - POSTGRES_USER=underpass
       - POSTGRES_PASSWORD=underpass
+    volumes:
+      - ./data:/var/lib/postgresql/data
     restart: on-failure
     logging:
       driver: "json-file"
@@ -49,6 +51,7 @@ services:
       - REPLICATOR_UNDERPASS_DB_URL=underpass:underpass@postgis/underpass
     command: tail -f /dev/null
     volumes:
+  #   - ./:/code
       - ./replication:/code/build/replication
     depends_on:
       - postgis
@@ -61,6 +64,8 @@ services:
     build:
      context: .
      dockerfile: docker/underpass-api.dockerfile
+    # volumes:
+    #   - ./python:/code/api
     ports:
       - "8000:8000"
     networks:
@@ -74,6 +79,8 @@ services:
     build:
      context: .
      dockerfile: docker/underpass-ui.dockerfile
+    # volumes:
+    #   - js:/code
     ports:
       - "5000:5000"
     networks:

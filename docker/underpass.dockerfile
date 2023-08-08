@@ -49,6 +49,3 @@ WORKDIR /code/build
 RUN ../configure && \
     make -j $(nproc) && \
     make install
-
-WORKDIR /code/setup
-RUN psql postgresql://$(REPLICATOR_UNDERPASS_DB_URL) --file underpass.sql

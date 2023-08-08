@@ -30,9 +30,11 @@ class UnderpassDB():
 
     def connect(self):
         """ Connect to the database """
+        print("Connecting to",self.connectionString,"...")
         try:
             self.conn = psycopg2.connect(self.connectionString)
         except (Exception, psycopg2.DatabaseError) as error:
+            print("Can't connect!")
             print(error)
 
     def close(self):
@@ -40,6 +42,8 @@ class UnderpassDB():
             self.conn.close()
 
     def run(self, query, responseType = 'json', singleObject = False):
+        if self.conn is None:
+            self.connect()
         if self.conn:
             cur = self.conn.cursor()
             try:

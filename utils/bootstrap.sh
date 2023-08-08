@@ -102,7 +102,7 @@ then
         python3 poly2geojson.py $COUNTRY.poly && \
         docker cp $COUNTRY.geojson underpass:/usr/local/lib/underpass/config/
         docker cp $COUNTRY.geojson underpass:/code/config
-        echo "Bootstrapping validation database ..."
+        echo "Bootstrapping database ..."
         docker exec -w /code/build -t underpass ./underpass --bootstrap
         echo "Done."
         echo " "
