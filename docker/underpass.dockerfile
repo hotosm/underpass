@@ -49,3 +49,5 @@ WORKDIR /code/build
 RUN ../configure && \
     make -j $(nproc) && \
     make install
+
+WORKDIR /code

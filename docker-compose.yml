@@ -23,6 +23,7 @@ services:
   # Database
   postgis:
     image: postgis/postgis:15-3.3
+    # image: arm64v8/postgres:15.3-alpine3.18
     container_name: "underpass_postgis"
     ports:
       - "5439:5432"
@@ -51,10 +52,8 @@ services:
       - REPLICATOR_UNDERPASS_DB_URL=underpass:underpass@postgis/underpass
     command: tail -f /dev/null
     volumes:
-  #   - ./:/code
       - ./replication:/code/build/replication
-    depends_on:
-      - postgis
+  #   - ./:/code
     networks:
       internal:
 

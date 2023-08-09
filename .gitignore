@@ -42,3 +42,5 @@ unconfig.h.in
 **/.DS_Store
 **/__pycache__/
 .vscode
+data
+replication
