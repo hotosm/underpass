@@ -1,7 +1,5 @@
 # Underpass UI components
 
-You can run the components playground following these steps.
-
 ## Requirements
 
 First, install and run the [Underpass Python REST API](https://github.com/hotosm/underpass/blob/master/docs/python-rest-api.md)
@@ -23,7 +21,8 @@ npm install --global yarn
 ## Run
 
 ```sh
-cd js
+git clone https://github.com/hotosm/underpass-ui.git
+cd underpass-ui
 yarn install
 yarn cosmos
 ```
@@ -34,7 +33,6 @@ using an environment variable:
 ```sh
 REACT_APP_UNDERPASS_API=http:://underpass.live:8000 yarn cosmos
 ```
-
 
 ## UnderpassMap component
 
@@ -53,12 +51,13 @@ It will show a map with all buildings highlighted, as “building” is the defa
 <img width="689" alt="Screenshot 2023-07-13 at 21 20 22" src="https://github.com/hotosm/underpass/assets/1226194/a9ce1a9c-d5ae-4205-a7f8-927e6ebe60df">
 
 
-If you want to highlight other feature, like “natural”, just pass the “tag” property:
+If you want to highlight other features, like “amenity=hospital”, just pass the “tagKey” and "tagValue" properties:
 
 ```js
 <UnderpassMap 
 	center={[-0.74293, -90.31972]}
-	tag=“natural”
+	tagKey="amenity"
+	tagValue="hospital"
 />
 ```
 

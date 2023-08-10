@@ -46,12 +46,9 @@ On MacOS, the date command works different:
 `./underpass -t $(date -v -2d +%Y-%m-%dT%H:%M:%S)`
 
 A process will start downloading and processing OSM data until lastest data
-is reached, and then it will continue updating data every minute.
+is reached, and then it will continue updating every minute.
 
 ## Using the data
-
-Aside of querying the database, there are two utilities that will make your live
-easier.
 
 * [Install & run the Underpass Python REST API](https://github.com/hotosm/underpass/blob/master/docs/python-rest-api.md)
 * [Use the Underpass UI components](https://github.com/hotosm/underpass/blob/master/docs/ui-components.md)
