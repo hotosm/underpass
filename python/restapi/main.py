@@ -155,9 +155,10 @@ if hasattr(config, 'ENABLE_UNDERPASS_CORE'):
 @app.post("/raw/polygons")
 def getPolygons(request: RawRequest):
     results = rawer.getPolygons(
-        area = request.area,
+        area = request.area or None,
         key = request.key or "",
-        value = request.value or ""
+        value = request.value or "",
+        page = request.page
     )
     return results
 
@@ -167,5 +168,25 @@ def getNodes(request: RawRequest):
         area = request.area,
         key = request.key or "",
         value = request.value or ""
+    )
+    return results
+
+@app.post("/raw/polygonsList")
+def getPolygonsList(request: RawRequest):
+    results = rawer.getPolygonsList(
+        area = request.area or None,
+        key = request.key or "",
+        value = request.value or "",
+        page = request.page
+    )
+    return results
+
+@app.post("/raw/nodesList")
+def getNodesList(request: RawRequest):
+    results = rawer.getNodesList(
+        area = request.area or None,
+        key = request.key or "",
+        value = request.value or "",
+        page = request.page
     )
     return results
