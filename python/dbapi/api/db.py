@@ -72,6 +72,7 @@ class UnderpassDB():
                         item[column] = row[index]
                     results.append(item)
             cur.close()
+
             if singleObject:
                 return results[0]['result']
             return results

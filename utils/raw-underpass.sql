@@ -5,3 +5,6 @@ CREATE INDEX way_refs_way_id_idx ON public.way_refs (way_id);
 
 CREATE INDEX node_version_idx ON public.raw_node (version);
 CREATE INDEX way_version_idx ON public.raw_poly (version);
+
+CREATE INDEX node_timestamp_idx ON public.raw_node(timestamp DESC);
+CREATE INDEX way_timestamp_idx ON public.raw_poly(timestamp DESC);

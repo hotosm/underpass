@@ -12,6 +12,7 @@ class OsmchangeValidateRequest(BaseModel):
     check: str
     
 class RawRequest(BaseModel):
-    area: str
+    area: str = None
     key: str = None
     value: str = None
+    page: int = None
