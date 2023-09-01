@@ -7,16 +7,14 @@ Underpass is a customizable **data engine** that processes **OpenStreetMap** dat
 
 It **updates a local copy of the OSM database** in near real-time, and provides customizable **statistics** and **validation** reports. It is designed to be **high performance** on modest hardware.
 
+<img width="1483" alt="Screenshot 2023-09-01 at 07 44 19" src="https://github.com/hotosm/underpass/assets/1226194/09a942a0-9f03-49d1-9cfe-7359b764441b">
+
 ## Demo
 
 We've deployed a rudimentary demo that keeps a database up-to-date for (some country),
 rendering buildings and highlighting the ones identified as "un-squared":
 
 [http://underpass.live:5000](http://underpass.live:5000/?fixtureId=%7B%22path%22%3A%22src%2Ffixtures%2FUnderpassMap.fixture.jsx%22%7D)
-
-<img width="870" alt="Screenshot 2023-07-12 at 22 28 23" src="https://github.com/hotosm/underpass/assets/1226194/19f90e7a-d51c-4aa0-8f76-5155966587c5">
-
-<img width="872" alt="Screenshot 2023-07-12 at 22 31 02" src="https://github.com/hotosm/underpass/assets/1226194/612894d5-4988-45fb-9aa0-4618b1a6e67e">
 
 ## Getting started
 
