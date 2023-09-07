@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS public.ways_poly (
 CREATE TABLE IF NOT EXISTS public.ways_line (
     osm_id int8,
     changeset int8,
-    geom public.geometry(Line,4326),
+    geom public.geometry(LineString,4326),
     tags public.hstore,
     refs int8[],
     timestamp timestamp with time zone,
