@@ -212,7 +212,8 @@ QueryRaw::applyChange(const OsmWay &way) const
         }
     } else if (way.action == osmobjects::remove) {
         query += "DELETE FROM way_refs WHERE way_id=" + std::to_string(way.id) + ";";
-        query += "DELETE FROM " + *tableName + " where osm_id = " + std::to_string(way.id) + ";";
+        query += "DELETE FROM " + QueryRaw::polyTable + " where osm_id = " + std::to_string(way.id) + ";";
+        query += "DELETE FROM " + QueryRaw::lineTable + " where osm_id = " + std::to_string(way.id) + ";";
     }
 
     return query;
