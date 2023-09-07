@@ -65,7 +65,7 @@ class TestStats {
             std::string jsonstr = "";
             for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
                 auto changestats = it->second;
-                jsonstr += "{\"changeset_id\":" + std::to_string(changestats->change_id) + ", ";
+                jsonstr += "{\"changeset_id\":" + std::to_string(changestats->changeset) + ", ";
                 jsonstr += "\"filespec\": \"" + filespec + "\" ";
 
                 if (changestats->added.size() > 0) {
@@ -233,9 +233,9 @@ class TestStats {
 
             for (auto it = std::begin(*stats); it != std::end(*stats); ++it) {
                 auto changestats = it->second;
-                if (changestats->change_id == validation.at("change_id")) {
+                if (changestats->changeset == validation.at("changeset")) {
                     if (this->verbose) {
-                        std::cout << "change_id: " << changestats->change_id << std::endl;
+                        std::cout << "changeset: " << changestats->changeset << std::endl;
                     }
                     // TODO: get values to test from YAML validation file
                     testStat(changestats, validation, "highway");

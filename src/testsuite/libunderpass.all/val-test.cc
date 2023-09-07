@@ -159,7 +159,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
 
     osmobjects::OsmNode node;
     node.id = 11111;
-    node.change_id = 22222;
+    node.changeset = 22222;
 
     // Node with no tags
     status = plugin->checkPOI(node, "building");
@@ -171,7 +171,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
 
     osmobjects::OsmNode node_place;
     node_place.id = 11111;
-    node_place.change_id = 22222;
+    node_place.changeset = 22222;
 
     // Has valid tags, but it's incomplete
     node_place.addTag("place", "city");

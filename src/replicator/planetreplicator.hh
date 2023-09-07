@@ -53,7 +53,7 @@ class PlanetReplicator : public replication::Planet {
     private:
         std::vector<StateFile> default_minutes;
         std::vector<StateFile> default_changesets;
-        std::shared_ptr<changeset::ChangeSetFile> changes;  ///< All the changes in the file
+        std::shared_ptr<changesets::ChangeSetFile> changes;  ///< All the changes in the file
         std::shared_ptr<std::map<std::string, int>> hashes; ///< Existing hashtags
 };
 

@@ -61,8 +61,8 @@ namespace geoutil {
 class GeoUtil;
 };
 
-/// \namespace changeset
-namespace changeset {
+/// \namespace changesets
+namespace changesets {
 
 
 /// \file changeset.hh
@@ -179,7 +179,7 @@ class ChangeSetFile
 
     ptime last_closed_at = not_a_date_time;
 };
-} // namespace changeset
+} // namespace changesets
 
 #endif // EOF __CHANGESET_HH__
 

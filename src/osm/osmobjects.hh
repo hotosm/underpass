@@ -72,7 +72,7 @@ class OsmObject {
 
     void setAction(action_t act) { action = act; };
     void setUID(long val) { uid = val; };
-    void setChangeID(long val) { change_id = val; };
+    void setChangeID(long val) { changeset = val; };
 
     action_t action = none;                  ///< the action that contains this object
     osmtype_t type = empty;                  ///< The type of this object, node, way, or relation
@@ -81,7 +81,7 @@ class OsmObject {
     ptime timestamp;                         ///< The timestamp of this object's creation or modification
     long uid = 0;                            ///< The User ID of the mapper of this object
     std::string user;                        ///< The User name  of the mapper of this object
-    long change_id = 0;                      ///< The changeset ID this object is contained in
+    long changeset = 0;                      ///< The changeset ID this object is contained in
     std::map<std::string, std::string> tags; ///< OSM metadata tags
 
     bool priority = false; ///< Whether it's in the priority area

@@ -28,7 +28,7 @@ TestState runtest;
 
 using namespace logger;
 
-class TestChangeset : public changeset::ChangeSetFile {};
+class TestChangeset : public changesets::ChangeSetFile {};
 
 int
 main(int argc, char *argv[])
@@ -38,7 +38,7 @@ main(int argc, char *argv[])
     std::string changesetFile(DATADIR);
     changesetFile += "/testsuite/testdata/hashtags-test.osc";
     TestChangeset changeset;
-    changeset::ChangeSet *change;
+    changesets::ChangeSet *change;
     changeset.readChanges(changesetFile);
     multipolygon_t polyEmpty;
     changeset.areaFilter(polyEmpty);

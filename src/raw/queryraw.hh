@@ -56,6 +56,9 @@ class QueryRaw {
     ~QueryRaw(void){};
     QueryRaw(std::shared_ptr<Pq> db);
 
+    static const std::string polyTable;
+    static const std::string lineTable;
+
     /// Build query for processed Node
     std::string applyChange(const OsmNode &node) const;
     /// Build query for processed Way

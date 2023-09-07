@@ -51,6 +51,7 @@ import json
 origins = [
     "http://localhost",
     "http://localhost:5000",
+    "http://localhost:3000",
     "http://127.0.0.1",
     "http://127.0.0.1:5000"
 ]
@@ -165,6 +166,15 @@ def getPolygons(request: RawRequest):
 @app.post("/raw/nodes")
 def getNodes(request: RawRequest):
     results = rawer.getNodes(
+        area = request.area,
+        key = request.key or "",
+        value = request.value or ""
+    )
+    return results
+
+@app.post("/raw/lines")
+def getLines(request: RawRequest):
+    results = rawer.getLines(
         area = request.area,
         key = request.key or "",
         value = request.value or ""

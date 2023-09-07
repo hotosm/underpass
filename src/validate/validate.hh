@@ -104,16 +104,16 @@ class ValidateStatus {
     ValidateStatus(void){};
     ValidateStatus(const osmobjects::OsmNode &node) {
         osm_id = node.id;
-        user_id = node.uid;
-        change_id = node.change_id;
+        uid = node.uid;
+        changeset = node.changeset;
         version = node.version;
         objtype = osmobjects::node;
         timestamp = node.timestamp;
     }
     ValidateStatus(const osmobjects::OsmWay &way) {
         osm_id = way.id;
-        user_id = way.uid;
-        change_id = way.change_id;
+        uid = way.uid;
+        changeset = way.changeset;
         objtype = osmobjects::way;
         version = way.version;
         timestamp = way.timestamp;
@@ -130,8 +130,8 @@ class ValidateStatus {
     void dump(void) const {
         std::cerr << "Dumping Validation Statistics" << std::endl;
         std::cerr << "\tOSM ID: " << osm_id << std::endl;
-        std::cerr << "\tUser ID: " << user_id << std::endl;
-        std::cerr << "\tChange ID: " << change_id << std::endl;
+        std::cerr << "\tUser ID: " << uid << std::endl;
+        std::cerr << "\tChangeset: " << changeset << std::endl;
 
         std::map<valerror_t, std::string> results;
         results[notags] = "No tags";
@@ -156,8 +156,8 @@ class ValidateStatus {
     std::unordered_set<valerror_t> status;
     osmobjects::osmtype_t objtype;
     long osm_id = 0;        ///< The OSM ID of the feature
-    long user_id = 0;        ///< The user ID of the mapper creating/modifying this feature
-    long change_id = 0;        ///< The changeset ID
+    long uid = 0;        ///< The user ID of the mapper creating/modifying this feature
+    long changeset = 0;        ///< The changeset ID
     long version = 0;        ///< The object version
     ptime timestamp;        ///< The timestamp when this validation was performed
     point_t center;        ///< The centroid of the building polygon

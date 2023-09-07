@@ -217,7 +217,7 @@ StateFile::isValid() const
 bool
 Replication::readChanges(const std::string &file)
 {
-    changeset::ChangeSetFile changeset;
+    changesets::ChangeSetFile changeset;
     std::ifstream stream;
     stream.open(file, std::ifstream::in);
     changeset.readXML(stream);

@@ -28,7 +28,7 @@ TestState runtest;
 
 using namespace logger;
 
-class TestChangeset : public changeset::ChangeSetFile {};
+class TestChangeset : public changesets::ChangeSetFile {};
 class TestOsmChange : public osmchange::OsmChangeFile {};
 
 int
@@ -92,7 +92,7 @@ main(int argc, char *argv[])
     osmchangeFile += "/testsuite/testdata/areafilter-test.osm";
     TestChangeset changeset;
     TestOsmChange osmchange;
-    changeset::ChangeSet *testChangeset;
+    changesets::ChangeSet *testChangeset;
 
     // ChangeSet - Whole world
     changeset.readChanges(changesetFile);

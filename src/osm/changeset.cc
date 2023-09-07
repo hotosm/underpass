@@ -84,8 +84,8 @@ using namespace boost::gregorian;
 #include "utils/log.hh"
 using namespace logger;
 
-/// \namespace changeset
-namespace changeset {
+/// \namespace changesets
+namespace changesets {
 
 bool
 ChangeSetFile::readChanges(const std::vector<unsigned char> &buffer)
@@ -305,7 +305,7 @@ ChangeSetFile::readXML(std::istream &xml)
 
     for (auto value: pt.get_child("osm")) {
         if (value.first == "changeset") {
-            changeset::ChangeSet change;
+            changesets::ChangeSet change;
             // Process the tags. These don't exist for every element
             for (auto tag: value.second) {
                 if (tag.first == "tag") {
@@ -349,7 +349,7 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
 {
     // log_debug("Element %1%", name);
     if (name == "changeset") {
-        auto change = std::make_shared<changeset::ChangeSet>(attributes);
+        auto change = std::make_shared<changesets::ChangeSet>(attributes);
         changes.push_back(change);
         if (change->closed_at != not_a_date_time && (last_closed_at == not_a_date_time || change->closed_at > last_closed_at)) {
             last_closed_at = change->closed_at;
@@ -436,4 +436,4 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
 }
 #endif // EOF LIBXML
 
-} // namespace changeset
+} // namespace changesets

@@ -42,7 +42,7 @@ class Report:
             st_y(location) as lon \
             from changesets \
             INNER JOIN validation \
-            ON validation.change_id = changesets.id \
+            ON validation.changeset = changesets.id \
             where validation.status = 'badgeom' \
             {0} {1} {2} {3} \
             order by osm_id \
@@ -91,16 +91,16 @@ class Report:
                 {0} {1} {2} {3} \
             ), \
             t1 AS ( \
-                SELECT change_id, source, osm_id, type, \
+                SELECT changeset, source, osm_id, type, \
                 unnest(values) as unnest_values \
                 from validation, t2 \
-                where change_id = t2.id \
+                where changeset = t2.id \
             ) \
             select \
                 'https://osm.org/' || t1.type || '/' || t1.osm_id as link, \
                 t1.unnest_values as tag, t1.source \
                 FROM t1, t2 \
-                where t1.change_id = t2.id \
+                where t1.changeset = t2.id \
                 limit {4} offset {5}".format(
                     "and closed_at >= '{0}'".format(fromDate) if fromDate else "",
                     "and closed_at <= '{0}'".format(toDate) if toDate else "",
@@ -127,15 +127,15 @@ class Report:
                 {0} {1} {2} {3} \
             ), \
             t1 AS ( \
-                SELECT change_id, source, \
+                SELECT changeset, source, \
                 unnest(values) as unnest_values \
                 from validation, t2 \
-                where change_id = t2.id \
+                where changeset = t2.id \
             ) \
             SELECT \
                 t1.unnest_values as tag, t1.source, count(t1.unnest_values) \
                 FROM t1, t2  \
-                where t1.change_id = t2.id  \
+                where t1.changeset = t2.id  \
                 group by t1.unnest_values, t1.source \
                 order by count desc  \
                 limit {4} offset {5}".format(
