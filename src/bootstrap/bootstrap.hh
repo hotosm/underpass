@@ -47,6 +47,7 @@ struct WayTask {
 void startProcessingWays(const underpassconfig::UnderpassConfig &config);
 
 // This thread get started for every page of way
-void processWays(WayTask &wayTask);
+void processWaysPoly(WayTask &wayTask);
+void processWaysLine(WayTask &wayTask);
 
 }

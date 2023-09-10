@@ -25,7 +25,7 @@
 
 localfiles='false'
 
-while getopts r:c:h::u:p:d:l flag
+while getopts r:c:h::u:p:d:l:k flag
 do
     case "${flag}" in
         r) region=${OPTARG};;
@@ -35,6 +35,7 @@ do
         p) port=${OPTARG};;
         d) database=${OPTARG};;
         l) localfiles=${OPTARG};;
+        k) use_docker=${OPTARG};;
     esac
 done
 
@@ -64,6 +65,10 @@ then
     if [ -z "${localfiles}" ]
     then
         echo "Use local files?: yes"
+    fi
+    if [ -z "${use_docker}" ]
+    then
+        echo "Use Docker?: yes"
     fi
 
     echo " "
@@ -99,11 +104,20 @@ then
         PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB < raw-underpass.sql
 
         echo "Configuring Underpass ..."
-        python3 poly2geojson.py $COUNTRY.poly && \
-        docker cp $COUNTRY.geojson underpass:/usr/local/lib/underpass/config/
-        docker cp $COUNTRY.geojson underpass:/code/config
+        python3 poly2geojson.py $COUNTRY.poly
+        if [ -z "${use_docker}" ]
+            docker cp $COUNTRY.geojson underpass:/usr/local/lib/underpass/config/priority.geojson
+            docker cp $COUNTRY.geojson underpass:/code/config/priority.geojson
+        then
+            cp $COUNTRY.geojson underpass:/usr/local/lib/underpass/config/priority.geojson
+            cp $COUNTRY.geojson underpass:/code/config/priority.geojson
+        fi
         echo "Bootstrapping database ..."
-        docker exec -w /code/build -t underpass ./underpass --bootstrap
+        if [ -z "${use_docker}" ]
+            docker exec -w /code/build -t underpass ./underpass --bootstrap
+        then
+            cd ../build ./underpass --bootstrap
+        fi
         echo "Done."
         echo " "
     fi
@@ -125,4 +139,5 @@ else
     echo " -p port (Database port)"
     echo " -d database (Database name)"
     echo " -l (Use local files instead of download them)"
+    echo " -k (Use Docker Underpass installation)"
 fi

@@ -317,7 +317,9 @@ void QueryRaw::getNodeCache(std::shared_ptr<OsmChangeFile> osmchanges, const mul
                     boost::geometry::append(way->linestring, osmchanges->nodecache.at(*rit));
                 }
             }
-            way->polygon = { {std::begin(way->linestring), std::end(way->linestring)} };
+            if (way->isClosed()) {
+                way->polygon = { {std::begin(way->linestring), std::end(way->linestring)} };
+            }
         }
     }
 
@@ -382,7 +384,8 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
     // Get all ways that have references to nodes
     std::list<std::shared_ptr<osmobjects::OsmWay>> ways;
 
-    std::string waysQuery = "SELECT distinct(osm_id), refs, version, tags from way_refs join ways_poly rp on rp.osm_id  = way_id where node_id = any(ARRAY[" + nodeIds + "]);";
+    // TODO: add ways_line to the query
+    std::string waysQuery = "SELECT distinct(osm_id), refs, version, tags from way_refs join ways_poly rp on rp.osm_id = way_id where node_id = any(ARRAY[" + nodeIds + "]);";
     auto ways_result = dbconn->query(waysQuery);
 
     // Fill vector of OsmWay objects
@@ -407,15 +410,15 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
     return ways;
 }
 
-int QueryRaw::getWaysCount() {
-    std::string query = "select count(osm_id) from ways_poly";
+int QueryRaw::getWaysCount(const std::string &tableName) {
+    std::string query = "select count(osm_id) from " + tableName;
     auto result = dbconn->query(query);
     return result[0][0].as<int>();
 }
 
 std::shared_ptr<std::vector<OsmWay>>
-QueryRaw::getWaysFromDB(int lastid) {
-    std::string waysQuery = "SELECT osm_id, refs, ST_AsText(ST_ExteriorRing(geom), 4326), version, tags FROM ways_poly where osm_id > " + std::to_string(lastid) + " order by osm_id asc limit 500;";
+QueryRaw::getWaysFromDB(int lastid, const std::string &tableName) {
+    std::string waysQuery = "SELECT osm_id, refs, ST_AsText(ST_ExteriorRing(geom), 4326), version, tags FROM " + tableName + " where osm_id > " + std::to_string(lastid) + " order by osm_id asc limit 500;";
     auto ways_result = dbconn->query(waysQuery);
 
     // Fill vector of OsmWay objects
@@ -443,22 +446,6 @@ QueryRaw::getWaysFromDB(int lastid) {
     }
 
     return ways;
-}
-
-std::shared_ptr<OsmWay> 
-QueryRaw::getWayById(long id) {
-    std::string waysQuery = "SELECT osm_id, refs, version FROM ways_poly where osm_id=" + std::to_string(id) + ";";
-    auto result = dbconn->query(waysQuery);
-
-    // Fill vector of OsmWay objects
-    OsmWay way;
-    way.id = result[0][0].as<long>();
-    way.version = result[0][2].as<long>();
-    std::string refs_str = result[0][1].as<std::string>();
-    if (refs_str.size() > 1) {
-        way.refs = arrayStrToVector(refs_str);
-    }
-    return std::make_shared<OsmWay>(way);
 }
 
 } // namespace queryraw
