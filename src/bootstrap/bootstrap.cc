@@ -71,25 +71,25 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
     // TODO: improve duplicate code
     int total = queryraw->getWaysCount(QueryRaw::polyTable);
     std::cout << "Processing polygons (" + std::to_string(total) + ")..." << std::endl;
-    // if (total > 0) {
-    //     int count = 0;
-    //     long lastid = 0;
-    //     while (count < total) {
-    //         int percentage = (count * 100) / total;
-    //         auto task = std::make_shared<BootstrapTask>();
-    //         WayTask wayTask;
-    //         wayTask.plugin = validator;
-    //         wayTask.queryvalidate = queryvalidate;
-    //         wayTask.queryraw = queryraw;
-    //         wayTask.task = task;
-    //         wayTask.lastid = lastid;
-    //         processWaysPoly(wayTask);
-    //         db->query(task->query);
-    //         lastid = wayTask.lastid;
-    //         count += wayTask.processed;
-    //         std::cout << "\r" << "Processing : " << count << "/" << total << " (" << percentage << "%)";
-    //     }
-    // }
+    if (total > 0) {
+        int count = 0;
+        long lastid = 0;
+        while (count < total) {
+            int percentage = (count * 100) / total;
+            auto task = std::make_shared<BootstrapTask>();
+            WayTask wayTask;
+            wayTask.plugin = validator;
+            wayTask.queryvalidate = queryvalidate;
+            wayTask.queryraw = queryraw;
+            wayTask.task = task;
+            wayTask.lastid = lastid;
+            processWaysPoly(wayTask);
+            db->query(task->query);
+            lastid = wayTask.lastid;
+            count += wayTask.processed;
+            std::cout << "\r" << "Processing : " << count << "/" << total << " (" << percentage << "%)";
+        }
+    }
 
     total = queryraw->getWaysCount(QueryRaw::lineTable);
     std::cout << "Processing lines (" + std::to_string(total) + ")..." << std::endl;

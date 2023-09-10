@@ -111,15 +111,15 @@ then
             docker cp $COUNTRY.geojson underpass:/usr/local/lib/underpass/config/priority.geojson
             docker cp $COUNTRY.geojson underpass:/code/config/priority.geojson
         else
-            cp $COUNTRY.geojson underpass:/usr/local/lib/underpass/config/priority.geojson
-            cp $COUNTRY.geojson underpass:/code/config/priority.geojson
+            cp $COUNTRY.geojson /usr/local/lib/underpass/config/priority.geojson
+            cp $COUNTRY.geojson ../config/priority.geojson
         fi
         echo "Bootstrapping database ..."
         if [ -z "${use_docker}" ]
         then
             docker exec -w /code/build -t underpass ./underpass --bootstrap
         else
-            cd ../build ./underpass --bootstrap
+            cd ../build && ./underpass --bootstrap
         fi
         echo "Done."
         echo " "
