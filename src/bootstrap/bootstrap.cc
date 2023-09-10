@@ -69,30 +69,30 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
     auto queryraw = std::make_shared<QueryRaw>(db);
     
     // TODO: improve duplicate code
-    std::cout << "Processing polygons ..." << std::endl;
     int total = queryraw->getWaysCount(QueryRaw::polyTable);
-    if (total > 0) {
-        int count = 0;
-        long lastid = 0;
-        while (count < total) {
-            int percentage = (count * 100) / total;
-            auto task = std::make_shared<BootstrapTask>();
-            WayTask wayTask;
-            wayTask.plugin = validator;
-            wayTask.queryvalidate = queryvalidate;
-            wayTask.queryraw = queryraw;
-            wayTask.task = task;
-            wayTask.lastid = lastid;
-            processWaysPoly(wayTask);
-            db->query(task->query);
-            lastid = wayTask.lastid;
-            count += wayTask.processed;
-            std::cout << "\r" << "Processing : " << count << "/" << total << " (" << percentage << "%)";
-        }
-    }
+    std::cout << "Processing polygons (" + std::to_string(total) + ")..." << std::endl;
+    // if (total > 0) {
+    //     int count = 0;
+    //     long lastid = 0;
+    //     while (count < total) {
+    //         int percentage = (count * 100) / total;
+    //         auto task = std::make_shared<BootstrapTask>();
+    //         WayTask wayTask;
+    //         wayTask.plugin = validator;
+    //         wayTask.queryvalidate = queryvalidate;
+    //         wayTask.queryraw = queryraw;
+    //         wayTask.task = task;
+    //         wayTask.lastid = lastid;
+    //         processWaysPoly(wayTask);
+    //         db->query(task->query);
+    //         lastid = wayTask.lastid;
+    //         count += wayTask.processed;
+    //         std::cout << "\r" << "Processing : " << count << "/" << total << " (" << percentage << "%)";
+    //     }
+    // }
 
-    std::cout << "Processing lines ..." << std::endl;
     total = queryraw->getWaysCount(QueryRaw::lineTable);
+    std::cout << "Processing lines (" + std::to_string(total) + ")..." << std::endl;
     if (total > 0) {
         int count = 0;
         long lastid = 0;
@@ -176,12 +176,10 @@ processWaysLine(WayTask &wayTask)
 
     // Proccesing ways
     for (auto way = ways->begin(); way != ways->end(); ++way) {
-        if (way->refs.front() == way->refs.back()) {
-            log_debug("Way Id: %1%", way->id);
-            // Fill the way_refs table
-            for (auto ref = way->refs.begin(); ref != way->refs.end(); ++ref) {
-                task->query += "INSERT INTO way_refs (way_id, node_id) VALUES (" + std::to_string(way->id) + "," + std::to_string(*ref) + "); ";
-            }
+        log_debug("Way Id: %1%", way->id);
+        // Fill the way_refs table
+        for (auto ref = way->refs.begin(); ref != way->refs.end(); ++ref) {
+            task->query += "INSERT INTO way_refs (way_id, node_id) VALUES (" + std::to_string(way->id) + "," + std::to_string(*ref) + "); ";
         }
     }
     wayTask.lastid = ways->back().id;
