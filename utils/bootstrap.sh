@@ -24,6 +24,7 @@
 #    -----
 
 localfiles='false'
+use_docker='false'
 
 while getopts r:c:h::u:p:d:l:k flag
 do
@@ -87,7 +88,7 @@ then
         fi
 
         echo "Cleaning database ..."
-        PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB -c 'DROP TABLE IF EXISTS raw_poly; DROP TABLE IF EXISTS raw_node; DROP TABLE IF EXISTS way_refs; DROP TABLE IF EXISTS validation; DROP TABLE IF EXISTS changesets;'
+        PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB -c 'DROP TABLE IF EXISTS ways_poly; DROP TABLE IF EXISTS ways_line; DROP TABLE IF EXISTS nodes; DROP TABLE IF EXISTS way_refs; DROP TABLE IF EXISTS validation; DROP TABLE IF EXISTS changesets;'
         PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB --file '../setup/underpass.sql'
 
         if [ -z "${localfiles}" ]
