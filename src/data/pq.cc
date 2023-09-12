@@ -167,6 +167,8 @@ Pq::escapedString(std::string text)
             newstr += "&apos;";
         } else if (text[i] == '\"') {
             newstr += "&quot;";
+        } else if (text[i] == '\'') {
+            newstr += "&quot;";
         } else if (text[i] == ')') {
             newstr += "&#41;";
         } else if (text[i] == '(') {

@@ -100,7 +100,7 @@ QueryRaw::applyChange(const OsmNode &node) const
         // version
         fmt % node.version;
         // user
-        fmt % node.user;
+        fmt % dbconn->escapedString(node.user);
         // uid
         fmt % node.uid;
         // changeset
@@ -111,7 +111,7 @@ QueryRaw::applyChange(const OsmNode &node) const
         fmt % tags;
         fmt % timestamp;
         fmt % node.version;
-        fmt % node.user;
+        fmt % dbconn->escapedString(node.user);
         fmt % node.uid;
         fmt % node.changeset;
         fmt % node.version;
@@ -149,9 +149,9 @@ QueryRaw::applyChange(const OsmWay &way) const
         && (way.action == osmobjects::create || way.action == osmobjects::modify)) {
         if (way.refs.size() == boost::geometry::num_points(way.linestring)) {
 
-            query = "INSERT INTO " + *tableName + " as r (osm_id, tags, refs, geom, timestamp, version) VALUES(";
-            std::string format = "%d, %s, %s, %s, \'%s\', %d) \
-            ON CONFLICT (osm_id) DO UPDATE SET tags = %s, refs = %s, geom = %s, timestamp = \'%s\', version = %d WHERE r.version <= %d;";
+            query = "INSERT INTO " + *tableName + " as r (osm_id, tags, refs, geom, timestamp, version, \"user\", uid, changeset) VALUES(";
+            std::string format = "%d, %s, %s, %s, \'%s\', %d, \'%s\', %d, %d) \
+            ON CONFLICT (osm_id) DO UPDATE SET tags = %s, refs = %s, geom = %s, timestamp = \'%s\', version = %d, \"user\" = \'%s\', uid = %d, changeset = %d WHERE r.version <= %d;";
             boost::format fmt(format);
 
             // osm_id
@@ -194,6 +194,12 @@ QueryRaw::applyChange(const OsmWay &way) const
             fmt % timestamp;
             // version
             fmt % way.version;
+            // user
+            fmt % dbconn->escapedString(way.user);
+            // uid
+            fmt % way.uid;
+            // changeset
+            fmt % way.changeset;
 
             // ON CONFLICT
             fmt % tags;
@@ -201,6 +207,9 @@ QueryRaw::applyChange(const OsmWay &way) const
             fmt % geometry;
             fmt % timestamp;
             fmt % way.version;
+            fmt % dbconn->escapedString(way.user);
+            fmt % way.uid;
+            fmt % way.changeset;
             fmt % way.version;
 
             query += fmt.str();
