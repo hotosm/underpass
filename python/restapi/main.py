@@ -168,7 +168,8 @@ def getNodes(request: RawRequest):
     results = rawer.getNodes(
         area = request.area,
         key = request.key or "",
-        value = request.value or ""
+        value = request.value or "",
+        page = request.page
     )
     return results
 
@@ -177,7 +178,18 @@ def getLines(request: RawRequest):
     results = rawer.getLines(
         area = request.area,
         key = request.key or "",
-        value = request.value or ""
+        value = request.value or "",
+        page = request.page
+    )
+    return results
+
+@app.post("/raw/all")
+def getLines(request: RawRequest):
+    results = rawer.getAll(
+        area = request.area,
+        key = request.key or "",
+        value = request.value or "",
+        page = request.page
     )
     return results
 
@@ -194,6 +206,16 @@ def getPolygonsList(request: RawRequest):
 @app.post("/raw/nodesList")
 def getNodesList(request: RawRequest):
     results = rawer.getNodesList(
+        area = request.area or None,
+        key = request.key or "",
+        value = request.value or "",
+        page = request.page
+    )
+    return results
+
+@app.post("/raw/allList")
+def getAllList(request: RawRequest):
+    results = rawer.getAllList(
         area = request.area or None,
         key = request.key or "",
         value = request.value or "",

@@ -70,7 +70,6 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
     
     // TODO: improve duplicate code
     int total = queryraw->getWaysCount(QueryRaw::polyTable);
-    std::cout << "Processing polygons (" + std::to_string(total) + ")..." << std::endl;
     if (total > 0) {
         int count = 0;
         long lastid = 0;
@@ -87,12 +86,11 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
             db->query(task->query);
             lastid = wayTask.lastid;
             count += wayTask.processed;
-            std::cout << "\r" << "Processing : " << count << "/" << total << " (" << percentage << "%)";
+            std::cout << "\r" << "Processing polygons: " << count << "/" << total << " (" << percentage << "%)";
         }
     }
 
     total = queryraw->getWaysCount(QueryRaw::lineTable);
-    std::cout << "Processing lines (" + std::to_string(total) + ")..." << std::endl;
     if (total > 0) {
         int count = 0;
         long lastid = 0;
@@ -109,7 +107,7 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
             db->query(task->query);
             lastid = wayTask.lastid;
             count += wayTask.processed;
-            std::cout << "\r" << "Processing : " << count << "/" << total << " (" << percentage << "%)";
+            std::cout << "\r" << "Processing lines: " << count << "/" << total << " (" << percentage << "%)";
         }
     }
 
