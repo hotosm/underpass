@@ -89,7 +89,7 @@ class Raw:
         page = None
     ):
         query = "with t_nodes AS ( \
-            SELECT 'Point' as type, nodes.osm_id as id, geom as geometry, tags, status FROM nodes \
+            SELECT 'Point' as type, nodes.osm_id as id, nodes.timestamp, geom as geometry, tags, status FROM nodes \
             LEFT JOIN validation ON validation.osm_id = nodes.osm_id \
             WHERE \
             {0} {1} {2} {3} \
@@ -166,7 +166,7 @@ class Raw:
             page = 1
 
         query = "with t_ways AS ( \
-            SELECT 'way' as type, ways_poly.osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, ways_poly.timestamp, tags, status FROM ways_poly \
+            SELECT 'way' as type, 'Polygon' as geotype, ways_poly.osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, ways_poly.timestamp, tags, status FROM ways_poly \
             LEFT JOIN validation ON validation.osm_id = ways_poly.osm_id \
             WHERE \
             {0} {1} {2} {3} \
@@ -193,7 +193,7 @@ class Raw:
             page = 1
 
         query = "with t_lines AS ( \
-            SELECT 'way' as type, ways_line.osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, ways_line.timestamp, tags, status FROM ways_line \
+            SELECT 'way' as type, 'LineString' as geotype, ways_line.osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, ways_line.timestamp, tags, status FROM ways_line \
             LEFT JOIN validation ON validation.osm_id = ways_line.osm_id \
             WHERE \
             {0} {1} {2} {3} \
@@ -220,7 +220,7 @@ class Raw:
             page = 1
 
         query = "with t_nodes AS ( \
-            SELECT 'node' as type, nodes.osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, tags, status FROM nodes \
+            SELECT 'node' as type, 'Point' as geotype, nodes.osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, nodes.timestamp, tags, status FROM nodes \
             LEFT JOIN validation ON validation.osm_id = nodes.osm_id \
             WHERE {0} {1} {2} {3} \
         ), \
