@@ -63,7 +63,7 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
 
 db = UnderpassDB(config.UNDERPASS_DB)
@@ -157,8 +157,7 @@ if hasattr(config, 'ENABLE_UNDERPASS_CORE'):
 def getPolygons(request: RawRequest):
     results = rawer.getPolygons(
         area = request.area or None,
-        key = request.key or "",
-        value = request.value or "",
+        tags = request.tags or "",
         page = request.page
     )
     return results
@@ -167,8 +166,7 @@ def getPolygons(request: RawRequest):
 def getNodes(request: RawRequest):
     results = rawer.getNodes(
         area = request.area,
-        key = request.key or "",
-        value = request.value or "",
+        tags = request.tags or "",
         page = request.page
     )
     return results
@@ -177,8 +175,7 @@ def getNodes(request: RawRequest):
 def getLines(request: RawRequest):
     results = rawer.getLines(
         area = request.area,
-        key = request.key or "",
-        value = request.value or "",
+        tags = request.tags or "",
         page = request.page
     )
     return results
@@ -187,8 +184,7 @@ def getLines(request: RawRequest):
 def getLines(request: RawRequest):
     results = rawer.getAll(
         area = request.area,
-        key = request.key or "",
-        value = request.value or "",
+        tags = request.tags or "",
         page = request.page
     )
     return results
@@ -197,8 +193,7 @@ def getLines(request: RawRequest):
 def getPolygonsList(request: RawRequest):
     results = rawer.getPolygonsList(
         area = request.area or None,
-        key = request.key or "",
-        value = request.value or "",
+        tags = request.tags or "",
         page = request.page
     )
     return results
@@ -207,8 +202,7 @@ def getPolygonsList(request: RawRequest):
 def getNodesList(request: RawRequest):
     results = rawer.getNodesList(
         area = request.area or None,
-        key = request.key or "",
-        value = request.value or "",
+        tags = request.tags or "",
         page = request.page
     )
     return results
@@ -217,8 +211,7 @@ def getNodesList(request: RawRequest):
 def getAllList(request: RawRequest):
     results = rawer.getAllList(
         area = request.area or None,
-        key = request.key or "",
-        value = request.value or "",
-        page = request.page
+        tags = request.tags or "",        
+        page = request.page,
     )
     return results
