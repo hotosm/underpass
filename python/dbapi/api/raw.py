@@ -19,7 +19,8 @@
 
 from .db import UnderpassDB
 
-RESULTS_PER_PAGE = 100
+RESULTS_PER_PAGE = 500
+RESULTS_PER_PAGE_LIST = 100
 
 # TODO: improve this code
 def tagsQueryFilter(tagsQuery, table):
@@ -181,7 +182,7 @@ class Raw:
         ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;".format(
             "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
             "AND (" + tagsQueryFilter(tags, "ways_poly") + ")" if tags else "",
-            "ORDER BY ways_poly.timestamp DESC LIMIT " + str(RESULTS_PER_PAGE),
+            "ORDER BY ways_poly.timestamp DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + " OFFSET {0}".format(page * RESULTS_PER_PAGE_LIST) if page else "",
         )
         return self.underpassDB.run(query, responseType, True)
 
@@ -206,7 +207,7 @@ class Raw:
         ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;".format(
             "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
             "AND (" + tagsQueryFilter(tags, "ways_line") + ")" if tags else "",
-            "ORDER BY ways_line.timestamp DESC LIMIT " + str(RESULTS_PER_PAGE) + " OFFSET {0}".format(page * RESULTS_PER_PAGE) if page else "",
+            "ORDER BY ways_line.timestamp DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + " OFFSET {0}".format(page * RESULTS_PER_PAGE_LIST) if page else "",
         )
         return self.underpassDB.run(query, responseType, True)
 
@@ -231,7 +232,7 @@ class Raw:
         ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;".format(
             "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
             "AND (" + tagsQueryFilter(tags, "nodes") + ")" if tags else "",
-            "ORDER BY nodes.timestamp DESC LIMIT " + str(RESULTS_PER_PAGE) + " OFFSET {0}".format(page * RESULTS_PER_PAGE) if page else "",
+            "ORDER BY nodes.timestamp DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + " OFFSET {0}".format(page * RESULTS_PER_PAGE_LIST) if page else "",
         )
         return self.underpassDB.run(query, responseType, True)
         
