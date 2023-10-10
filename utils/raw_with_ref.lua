@@ -1,20 +1,21 @@
 -- Copyright (c) 2020, 2021, 2023 Humanitarian OpenStreetMap Team
---
--- This file is part of Underpass.
---
---     Underpass is free software: you can redistribute it and/or modify
---     it under the terms of the GNU General Public License as published by
---     the Free Software Foundation, either version 3 of the License, or
---     (at your option) any later version.
---
---     Underpass is distributed in the hope that it will be useful,
---     but WITHOUT ANY WARRANTY; without even the implied warranty of
---     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
---     GNU General Public License for more details.
---
---     You should have received a copy of the GNU General Public License
---     along with Underpass.  If not, see <https:--www.gnu.org/licenses/>.
 
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU Affero General Public License as
+-- published by the Free Software Foundation, either version 3 of the
+-- License, or (at your option) any later version.
+
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU Affero General Public License for more details.
+
+-- You should have received a copy of the GNU Affero General Public License
+-- along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+-- Humanitarian OpenStreetmap Team
+-- 1100 13th Street NW Suite 800 Washington, D.C. 20005
+-- <info@hotosm.org>
 -- This is lua script for osm2pgsql in order to create and process custom schema to store incoming osm data efficiently
 
 -- osm2pgsql --create -H localhost -U admin -P 5432 -d postgres -W --extra-attributes --output=flex --style ./raw.lua nepal-latest-internal.osm.pbf 
@@ -37,7 +38,7 @@ tables.nodes = osm2pgsql.define_table{
         { column = 'timestamp', sql_type = 'timestamp' },
         { column = 'tags', type = 'jsonb' },
         { column = 'geom', type = 'point', projection = srid },
-        { column = 'country', type= 'int', create_only = true },
+        { column = 'country', sql_type= 'int[]', create_only = true },
         
     }
 
@@ -77,7 +78,7 @@ tables.ways_poly = osm2pgsql.define_table{
         { column = 'refs', type= 'text', sql_type = 'bigint[]'},
         { column = 'geom', type = 'polygon', projection = srid },
         { column = 'grid', type = 'int', create_only = true },
-        { column = 'country', type= 'int', create_only = true },
+        { column = 'country', sql_type= 'int[]', create_only = true },
     }
 
 }
@@ -99,17 +100,14 @@ tables.rels = osm2pgsql.define_table{
         { column = 'geom', type = 'geometry', projection = srid },
         { column = 'country',sql_type= 'int[]', create_only = true },
         
-
     }
 }
 
 -- Returns true if there are no tags left.
 function clean_tags(tags)
     tags.odbl = nil
-    tags.created_by = nil
-    tags.source = nil
+    -- tags.created_by = nil
     tags['source:ref'] = nil
-
     return next(tags) == nil
 end
 

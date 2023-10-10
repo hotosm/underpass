@@ -23,8 +23,8 @@
 #    database with OSM data for a country
 #    -----
 
-localfiles='false'
-use_docker='false'
+localfiles=false
+use_docker=false
 
 while getopts r:c:h::u:p:d:l:k flag
 do
@@ -35,8 +35,8 @@ do
         u) user=${OPTARG};;
         p) port=${OPTARG};;
         d) database=${OPTARG};;
-        l) localfiles=${OPTARG};;
-        k) use_docker=${OPTARG};;
+        l) localfiles=true;;
+        k) use_docker=true;;
     esac
 done
 
@@ -53,6 +53,7 @@ else
     USER=underpass
 fi
 
+
 if [ -n "${REGION}" ] && [ -n "${COUNTRY}" ] 
 then
 
@@ -63,11 +64,12 @@ then
     echo Port: $PORT
     echo Database: $DB
 
-    if [ -z "${localfiles}" ]
+    if "$localfiles";
     then
         echo "Use local files?: yes"
     fi
-    if [ -z "${use_docker}" ]
+
+    if "$use_docker";
     then
         echo "Use Docker?: yes"
     fi
@@ -91,7 +93,7 @@ then
         PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB -c 'DROP TABLE IF EXISTS ways_poly; DROP TABLE IF EXISTS ways_line; DROP TABLE IF EXISTS nodes; DROP TABLE IF EXISTS way_refs; DROP TABLE IF EXISTS validation; DROP TABLE IF EXISTS changesets;'
         PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB --file '../setup/underpass.sql'
 
-        if [ -z "${localfiles}" ]
+        if "$localfiles";
         then
             echo "(Using local files)"
         else
@@ -106,7 +108,7 @@ then
 
         echo "Configuring Underpass ..."
         python3 poly2geojson.py $COUNTRY.poly
-        if [ -z "${use_docker}" ]
+        if "$use_docker";
         then
             docker cp $COUNTRY.geojson underpass:/usr/local/lib/underpass/config/priority.geojson
             docker cp $COUNTRY.geojson underpass:/code/config/priority.geojson
@@ -114,15 +116,15 @@ then
             cp $COUNTRY.geojson /usr/local/lib/underpass/config/priority.geojson
             cp $COUNTRY.geojson ../config/priority.geojson
         fi
-        echo "Bootstrapping database ..."
-        if [ -z "${use_docker}" ]
-        then
-            docker exec -w /code/build -t underpass ./underpass --bootstrap
-        else
-            cd ../build && ./underpass --bootstrap
-        fi
-        echo "Done."
-        echo " "
+        # echo "Bootstrapping database ..."
+        # if "$use_docker";
+        # then
+        #     docker exec -w /code/build -t underpass ./underpass --bootstrap
+        # else
+        #     cd ../build && ./underpass --bootstrap
+        # fi
+        # echo "Done."
+        # echo " "
     fi
 
 else
@@ -141,6 +143,6 @@ else
     echo " -u user (Database user)"
     echo " -p port (Database port)"
     echo " -d database (Database name)"
-    echo " -l (Use local files instead of download them)"
-    echo " -k (Use Docker Underpass installation)"
+    echo " -l yes (Use local files instead of download them)"
+    echo " -k yes (Use Docker Underpass installation)"
 fi

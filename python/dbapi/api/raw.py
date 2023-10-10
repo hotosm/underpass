@@ -22,23 +22,22 @@ from .db import UnderpassDB
 RESULTS_PER_PAGE = 500
 RESULTS_PER_PAGE_LIST = 100
 
-# TODO: improve this code
 def tagsQueryFilter(tagsQuery, table):
     query = ""
     tags = tagsQuery.split(",")
     keyValue = tags[0].split("=")
 
     if len(keyValue) == 2:
-        query += "{0}.tags->'{1}' ~* '^{2}'".format(table, keyValue[0], keyValue[1])
+        query += "{0}.tags->>'{1}' ~* '^{2}'".format(table, keyValue[0], keyValue[1])
     else:
-        query += "{0}.tags ? '{1}'".format(table, keyValue[0])
+        query += "{0}.tags->>'{1}' IS NOT NULL".format(table, keyValue[0])
 
     for tag in tags[1:]:
         keyValue = tag.split("=")
         if len(keyValue) == 2:
-            query += "OR {0}.tags->'{!}' ~* '^{2}'".format(table, keyValue[0], keyValue[1])
+            query += "OR {0}.tags->>'{1}' ~* '^{2}'".format(table, keyValue[0], keyValue[1])
         else:
-            query += "OR {0}.tags ? '{1}'".format(table, keyValue[0])
+            query += "OR {0}.tags->>'{1}' IS NOT NULL".format(table, keyValue[0])
     return query
 
 class Raw:
