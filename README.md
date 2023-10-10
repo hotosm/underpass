@@ -14,7 +14,7 @@ It **updates a local copy of the OSM database** in near real-time, and provides 
 We've deployed a rudimentary demo that keeps a database up-to-date for (some country),
 rendering buildings and highlighting the ones identified as "un-squared":
 
-[See the demo](https://underpass.hotosm.org/_renderer.html?_fixtureId=%7B%22path%22%3A%22src%2Ffixtures%2FDemo.fixture.jsx%22%7D)
+[See the demo](http://underpass.hotosm.org:5000/_renderer.html?_fixtureId=%7B%22path%22%3A%22src%2Ffixtures%2FDemo.fixture.jsx%22%7D)
 
 ## Getting started
 
