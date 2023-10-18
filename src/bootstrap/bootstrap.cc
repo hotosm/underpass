@@ -67,7 +67,7 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
 
     auto queryvalidate = std::make_shared<QueryValidate>(db);
     auto queryraw = std::make_shared<QueryRaw>(db);
-    std::vector<const std::string> tables = {
+    std::vector<std::string> tables = {
         QueryRaw::polyTable,
         QueryRaw::lineTable
     };
