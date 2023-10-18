@@ -57,7 +57,7 @@ buildings_modified | This value is updated by counting the existing buildings mo
 pois_added | This value is updated by counting the POIs added by the user in the change file
 pois_modified | This value is updated by counting the existing POIs modified by the user in the change file
 editor | The editor used, and comes from the changeset
-user_id | The user ID, comes from the changeset
+uid | The user ID, comes from the changeset
 created_at | The timestamp this changeset was created, comes from the changeset
 closed_at | The timestamp this changeset was closed, comes from the changeset
 verified | Whether this data has been validated
@@ -128,7 +128,7 @@ level | The badge level
 
 Keyword | Description
 --------|------------
-user_id | The OSM user ID
+uid | The OSM user ID
 badge_id | The badge ID
 updated_at | The timestamp of the user receiving this badge
 

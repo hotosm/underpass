@@ -23,7 +23,7 @@ SET default_tablespace = '';
 CREATE TABLE IF NOT EXISTS public.changesets (
     id int8 NOT NULL,
     editor text,
-    user_id integer NOT NULL,
+    uid integer NOT NULL,
     created_at timestamptz,
     closed_at timestamptz,
     updated_at timestamptz,
@@ -46,8 +46,8 @@ CREATE TYPE public.status AS ENUM ('notags', 'complete', 'incomplete', 'badvalue
 
 CREATE TABLE IF NOT EXISTS public.validation (
     osm_id int8,
-    user_id int8,
-    change_id int8,
+    uid int8,
+    changeset int8,
     type public.objtype,
     status public.status,
     values text[],
@@ -59,23 +59,39 @@ CREATE TABLE IF NOT EXISTS public.validation (
 ALTER TABLE ONLY public.validation
     ADD CONSTRAINT validation_pkey PRIMARY KEY (osm_id, status, source);
 
-CREATE TABLE IF NOT EXISTS public.raw_poly (
+CREATE TABLE IF NOT EXISTS public.ways_poly (
     osm_id int8,
-    change_id int8,
-    geometry public.geometry(Polygon,4326),
-    tags public.hstore,
+    changeset int8,
+    geom public.geometry(Polygon,4326),
+    tags JSONB,
     refs int8[],
     timestamp timestamp with time zone,
-    version int
+    version int,
+    "user" text,
+    uid int8
 );
 
-CREATE TABLE IF NOT EXISTS public.raw_node (
+CREATE TABLE IF NOT EXISTS public.ways_line (
     osm_id int8,
-    change_id int8,
-    geometry public.geometry(Point,4326),
-    tags public.hstore,
+    changeset int8,
+    geom public.geometry(LineString,4326),
+    tags JSONB,
+    refs int8[],
     timestamp timestamp with time zone,
-    version int
+    version int,
+    "user" text,
+    uid int8
+);
+
+CREATE TABLE IF NOT EXISTS public.nodes (
+    osm_id int8,
+    changeset int8,
+    geom public.geometry(Point,4326),
+    tags JSONB,
+    timestamp timestamp with time zone,
+    version int,
+    "user" text,
+    uid int8
 );
 
 CREATE TABLE IF NOT EXISTS public.way_refs (
@@ -83,7 +99,16 @@ CREATE TABLE IF NOT EXISTS public.way_refs (
     node_id int8
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS raw_osm_id_idx ON public.raw_node (osm_id);
-CREATE UNIQUE INDEX IF NOT EXISTS raw_poly_osm_id_idx ON public.raw_poly (osm_id);
-CREATE INDEX IF NOT EXISTS way_refs_nodes_idx ON public.way_refs (node_id);
-CREATE INDEX IF NOT EXISTS way_refs_ways_idx ON public.way_refs (way_id);
+CREATE UNIQUE INDEX nodes_id_idx ON public.nodes (osm_id);
+CREATE UNIQUE INDEX ways_poly_id_idx ON public.ways_poly (osm_id);
+CREATE UNIQUE INDEX ways_line_id_idx ON public.ways_line(osm_id);
+CREATE INDEX way_refs_node_id_idx ON public.way_refs (node_id);
+CREATE INDEX way_refs_way_id_idx ON public.way_refs (way_id);
+
+CREATE INDEX nodes_version_idx ON public.nodes (version);
+CREATE INDEX ways_poly_version_idx ON public.ways_poly (version);
+CREATE INDEX ways_line_version_idx ON public.ways_line (version);
+
+CREATE INDEX nodes_timestamp_idx ON public.nodes(timestamp DESC);
+CREATE INDEX ways_poly_timestamp_idx ON public.ways_poly(timestamp DESC);
+CREATE INDEX ways_line_timestamp_idx ON public.ways_line(timestamp DESC);

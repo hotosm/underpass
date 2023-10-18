@@ -167,6 +167,8 @@ Pq::escapedString(std::string text)
             newstr += "&apos;";
         } else if (text[i] == '\"') {
             newstr += "&quot;";
+        } else if (text[i] == '\'') {
+            newstr += "&quot;";
         } else if (text[i] == ')') {
             newstr += "&#41;";
         } else if (text[i] == '(') {
@@ -178,7 +180,7 @@ Pq::escapedString(std::string text)
         }
         i++;
     }
-    return sdb->esc(boost::locale::conv::to_utf<char>(newstr, "Latin1"));
+    return sdb->esc(newstr);
 }
 
 } // namespace pq

@@ -67,26 +67,32 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
 
     auto queryvalidate = std::make_shared<QueryValidate>(db);
     auto queryraw = std::make_shared<QueryRaw>(db);
+    std::vector<const std::string> tables = {
+        QueryRaw::polyTable,
+        QueryRaw::lineTable
+    };
     
-    int total = queryraw->getWaysCount();
-    
-    if (total > 0) {
-        int count = 0;
-        long lastid = 0;
-        while (count < total) {
-            int percentage = (count * 100) / total;
-            auto task = std::make_shared<BootstrapTask>();
-            WayTask wayTask;
-            wayTask.plugin = validator;
-            wayTask.queryvalidate = queryvalidate;
-            wayTask.queryraw = queryraw;
-            wayTask.task = task;
-            wayTask.lastid = lastid;
-            processWays(wayTask);
-            db->query(task->query);
-            lastid = wayTask.lastid;
-            count += wayTask.processed;
-            std::cout << "\r" << "Processing : " << count << "/" << total << " (" << percentage << "%)";
+    for (auto table_it = tables.begin(); table_it != tables.end(); ++table_it) {
+        int total = queryraw->getWaysCount(*table_it);
+        if (total > 0) {
+            int count = 0;
+            long lastid = 0;
+            while (count < total) {
+                int percentage = (count * 100) / total;
+                auto task = std::make_shared<BootstrapTask>();
+                WayTask wayTask;
+                wayTask.plugin = validator;
+                wayTask.queryvalidate = queryvalidate;
+                wayTask.queryraw = queryraw;
+                wayTask.task = task;
+                wayTask.lastid = lastid;
+                
+                processWays(wayTask, *table_it);
+                db->query(task->query);
+                lastid = wayTask.lastid;
+                count += wayTask.processed;
+                std::cout << "\r" << "Processing " << *table_it << ": " << count << "/" << total << " (" << percentage << "%)";
+            }
         }
     }
 
@@ -94,7 +100,7 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
 
 // This thread get started for every page of way
 void
-processWays(WayTask &wayTask)
+processWays(WayTask &wayTask, const std::string &tableName)
 {
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("bootstrap::processWays(wayTask): took %w seconds\n");
@@ -106,23 +112,26 @@ processWays(WayTask &wayTask)
     auto queryraw = wayTask.queryraw;
     auto lastid = wayTask.lastid;
 
-    auto ways = queryraw->getWaysFromDB(lastid);
+    auto ways = queryraw->getWaysFromDB(lastid, tableName);
     wayTask.processed = ways->size();
+    if (wayTask.processed > 0) {
+        // Proccesing ways
+        for (auto way = ways->begin(); way != ways->end(); ++way) {
 
-    // Proccesing ways
-    for (auto way = ways->begin(); way != ways->end(); ++way) {
-        if (way->refs.front() == way->refs.back()) {
-            log_debug("Way Id: %1%", way->id);
+            // If it's closed polygon
+            if (way->refs.front() == way->refs.back()) {
+                log_debug("Way Id: %1%", way->id);
 
-            // Bad geometry
-            if (way->containsKey("building") && (boost::geometry::num_points(way->linestring) - 1 < 4 ||
-                plugin->unsquared(way->linestring))
-            ) {
-                auto status = ValidateStatus(*way);
-                status.timestamp = boost::posix_time::microsec_clock::universal_time();
-                status.source = "building";
-                boost::geometry::centroid(way->linestring, status.center);
-                task->query += queryvalidate->applyChange(status, badgeom);
+                // Bad geometry
+                if (way->containsKey("building") && (boost::geometry::num_points(way->linestring) - 1 < 4 ||
+                    plugin->unsquared(way->linestring))
+                ) {
+                    auto status = ValidateStatus(*way);
+                    status.timestamp = boost::posix_time::microsec_clock::universal_time();
+                    status.source = "building";
+                    boost::geometry::centroid(way->linestring, status.center);
+                    task->query += queryvalidate->applyChange(status, badgeom);
+                }
             }
 
             // Fill the way_refs table
@@ -130,8 +139,8 @@ processWays(WayTask &wayTask)
                 task->query += "INSERT INTO way_refs (way_id, node_id) VALUES (" + std::to_string(way->id) + "," + std::to_string(*ref) + "); ";
             }
         }
+        wayTask.lastid = ways->back().id;
     }
-    wayTask.lastid = ways->back().id;
 
 }
 

@@ -68,8 +68,8 @@ typedef enum { empty, node, way, relation, member } osmtype_t;
 /// which later gets added to the database statistics.
 class ChangeStats {
   public:
-    long change_id = 0;   ///< The ID of this change
-    long user_id = 0;     ///< The User ID
+    long changeset = 0;   ///< The ID of this change
+    long uid = 0;     ///< The User ID
     std::string username; ///< The User Name
     ptime created_at;     ///< The starting timestamp
     ptime closed_at;      ///< The finished timestamp

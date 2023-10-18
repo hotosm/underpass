@@ -13,6 +13,8 @@ class OsmchangeValidateRequest(BaseModel):
     
 class RawRequest(BaseModel):
     area: str = None
-    key: str = None
-    value: str = None
+    tags: str = None
+    hashtag: str = None
+    dateFrom: str = None
+    dateTo: str = None
     page: int = None

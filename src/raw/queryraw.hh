@@ -56,6 +56,9 @@ class QueryRaw {
     ~QueryRaw(void){};
     QueryRaw(std::shared_ptr<Pq> db);
 
+    static const std::string polyTable;
+    static const std::string lineTable;
+
     /// Build query for processed Node
     std::string applyChange(const OsmNode &node) const;
     /// Build query for processed Way
@@ -71,11 +74,9 @@ class QueryRaw {
     // DB connection
     std::shared_ptr<Pq> dbconn;
     // Get ways count
-    int getWaysCount();
+    int getWaysCount(const std::string &tableName);
     // Get ways by page
-    std::shared_ptr<std::vector<OsmWay>> getWaysFromDB(int page);
-    // Get single way by id
-    std::shared_ptr<OsmWay> getWayById(long id);
+    std::shared_ptr<std::vector<OsmWay>> getWaysFromDB(int page, const std::string &tableName);
 
 };
 

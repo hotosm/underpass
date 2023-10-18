@@ -1,98 +1,169 @@
 -- Copyright (c) 2020, 2021, 2023 Humanitarian OpenStreetMap Team
---
--- This file is part of Underpass.
---
---     Underpass is free software: you can redistribute it and/or modify
---     it under the terms of the GNU General Public License as published by
---     the Free Software Foundation, either version 3 of the License, or
---     (at your option) any later version.
---
---     Underpass is distributed in the hope that it will be useful,
---     but WITHOUT ANY WARRANTY; without even the implied warranty of
---     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
---     GNU General Public License for more details.
---
---     You should have received a copy of the GNU General Public License
---     along with Underpass.  If not, see <https:--www.gnu.org/licenses/>.
 
+-- This program is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU Affero General Public License as
+-- published by the Free Software Foundation, either version 3 of the
+-- License, or (at your option) any later version.
+
+-- This program is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU Affero General Public License for more details.
+
+-- You should have received a copy of the GNU Affero General Public License
+-- along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+-- Humanitarian OpenStreetmap Team
+-- 1100 13th Street NW Suite 800 Washington, D.C. 20005
+-- <info@hotosm.org>
 -- This is lua script for osm2pgsql in order to create and process custom schema to store incoming osm data efficiently
 
--- osm2pgsql -H postgis -U underpass -p underpass -P 5432 -d underpass --extra-attributes --output=flex --style ./raw-underpass.lua pokhara_all.osm.pbf
+-- osm2pgsql --create -H localhost -U admin -P 5432 -d postgres -W --extra-attributes --output=flex --style ./raw.lua nepal-latest-internal.osm.pbf 
+
 
 -- Set projection to 4326 
 local srid = 4326
 
 local tables = {}
 
-tables.raw_node = osm2pgsql.define_table{
-    name="raw_node", 
+tables.nodes = osm2pgsql.define_table{
+    name="nodes", 
     -- This will generate a derived nodes table which stores all the nodes feature with their point geometry 
-    ids = {type='node',id_column = 'osm_id'},
+    ids = {type='node',id_column = 'osm_id' },
     columns = {
+        { column = 'uid', type = 'int' },
+        { column = 'user', type = 'text' },
         { column = 'version', type = 'int' },
+        { column = 'changeset', type = 'int' },
         { column = 'timestamp', sql_type = 'timestamp' },
-        { column = 'tags', sql_type = 'public.hstore' },
-        { column = 'geometry', type = 'point', projection = srid },
+        { column = 'tags', type = 'jsonb' },
+        { column = 'geom', type = 'point', projection = srid },
     }
 }
 
-tables.raw_poly = osm2pgsql.define_table{
-    name="raw_poly", 
-    -- This will generate a derived polygon table which stores all the ways feature without their geometry 
-    ids = {type='way',id_column = 'osm_id'},
+tables.ways_line = osm2pgsql.define_table{
+    name="ways_line", 
+    -- This will generate a derived ways line table which stores all the ways feature with linestring geometry 
+    ids = {type='way',id_column = 'osm_id' },
     columns = {
+        { column = 'uid', type = 'int' },
+        { column = 'user', type = 'text' },
         { column = 'version', type = 'int' },
+        { column = 'changeset', type = 'int' },
         { column = 'timestamp', sql_type = 'timestamp' },
-        { column = 'tags', sql_type = 'public.hstore' },
-        { column = 'refs', type= 'text', sql_type = 'int8[]'},
-        { column = 'geometry', type = 'polygon', projection = srid }
+        { column = 'tags', type = 'jsonb' },
+        { column = 'refs', type= 'text', sql_type = 'bigint[]'},
+        { column = 'geom', type = 'linestring', projection = srid },
+        { column = 'country', sql_type= 'int[]', create_only = true },
     }
+
 }
 
---tables.raw_line = osm2pgsql.define_table{
---    name="raw_line", 
-    -- This will generate a derived nodes table which stores all the nodes feature with their point geometry 
---    ids = {type='way',id_column = 'osm_id'},
---    columns = {
---        { column = 'version', type = 'int' },
---        { column = 'timestamp', sql_type = 'timestamp' },
---        { column = 'tags', sql_type = 'public.hstore' },
---        { column = 'refs', type= 'text', sql_type = 'int8[]'},
---    }
---}
+tables.ways_poly = osm2pgsql.define_table{
+    name="ways_poly", 
+    -- This will generate a derived ways poly table which stores all the ways feature with polygon geometry 
+    ids = {type='way',id_column = 'osm_id' },
+    columns = {
+        { column = 'uid', type = 'int' },
+        { column = 'user', type = 'text' },
+        { column = 'version', type = 'int' },
+        { column = 'changeset', type = 'int' },
+        { column = 'timestamp', sql_type = 'timestamp' },
+        { column = 'tags', type = 'jsonb' },
+        { column = 'refs', type= 'text', sql_type = 'bigint[]'},
+        { column = 'geom', type = 'polygon', projection = srid },
+        { column = 'grid', type = 'int', create_only = true },
+        { column = 'country', sql_type= 'int[]', create_only = true },
+    }
 
-function tags_to_hstore(tags)
-    local hstore = ''
-    for k,v in pairs(tags) do
-       hstore = hstore .. string.format('%s=>%s,', string.format('%q', k), string.format('%q', v))
-    end
-    return hstore:sub(1, -2)
- end
+}
+
+tables.rels = osm2pgsql.define_table{
+    name="relations", 
+    -- This will generate a derived realtion  table which stores all the relation feature to query without storing meta data parts and members
+
+    ids = {type='relation', id_column = 'osm_id' },
+    columns = {
+
+        { column = 'uid', type = 'int' },
+        { column = 'user', type = 'text' },
+        { column = 'version', type = 'int' },
+        { column = 'changeset', type = 'int' },
+        { column = 'timestamp', sql_type = 'timestamp' },
+        { column = 'tags', type = 'jsonb' },
+        { column = 'refs', type = 'jsonb'},
+        { column = 'geom', type = 'geometry', projection = srid },
+        { column = 'country',sql_type= 'int[]', create_only = true },
+    }
+}
 
 function osm2pgsql.process_node(object)
-    tables.raw_node:add_row({
+
+    tables.nodes:add_row({
+        uid = object.uid,
+        user = object.user,
         version = object.version,
-        tags = tags_to_hstore(object.tags),
+        changeset = object.changeset,
         timestamp = os.date('!%Y-%m-%dT%H:%M:%SZ', object.timestamp),
-        geometry = { create = 'point' },
+        tags = object.tags,
+        geom = { create = 'point' }
     })
 end
 
-function osm2pgsql.process_way(object) 
+function osm2pgsql.process_way(object)
+ 
     if object.is_closed and #object.nodes>3 then
-        tables.raw_poly:add_row({
+        tables.ways_poly:add_row({
+            uid = object.uid,
+            user = object.user,
             version = object.version,
-            tags = tags_to_hstore(object.tags),
+            changeset = object.changeset,
             timestamp = os.date('!%Y-%m-%dT%H:%M:%SZ', object.timestamp),
+            tags = object.tags,
             refs = '{' .. table.concat(object.nodes, ',') .. '}',
-            geometry = { create = 'area' },
+            geom = { create = 'area' },
+            
         })
-    --else
-    --    tables.raw_line:add_row({
-    --        version = object.version,
-    --        tags = tags_to_hstore(object.tags),
-    --        timestamp = os.date('!%Y-%m-%dT%H:%M:%SZ', object.timestamp),
-    --        refs = '{' .. table.concat(object.nodes, ',') .. '}',
-    --    })
+    else
+        tables.ways_line:add_row({
+            uid = object.uid,
+            user = object.user,
+            version = object.version,
+            changeset = object.changeset,
+            timestamp = os.date('!%Y-%m-%dT%H:%M:%SZ', object.timestamp),
+            tags = object.tags,
+            refs = '{' .. table.concat(object.nodes, ',') .. '}',
+            geom = { create = 'line' },
+            
+        })
     end
 end
+
+function osm2pgsql.process_relation(object)
+    if object.tags.type == 'multipolygon' or object.tags.type == 'boundary' then
+        tables.rels:add_row({
+            uid = object.uid,
+            user = object.user,
+            version = object.version,
+            changeset = object.changeset,
+            timestamp = os.date('!%Y-%m-%dT%H:%M:%SZ', object.timestamp),
+            tags = object.tags,
+            geom = { create = 'area' },
+            refs = object.members
+
+        })
+    else
+        tables.rels:add_row({
+            uid = object.uid,
+            user = object.user,
+            version = object.version,
+            changeset = object.changeset,
+            timestamp = os.date('!%Y-%m-%dT%H:%M:%SZ', object.timestamp),
+            tags = object.tags,
+            geom = { create = 'line' },
+            refs = object.members
+
+        })
+    end
+end
+

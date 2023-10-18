@@ -39,7 +39,7 @@
 namespace opts = boost::program_options;
 
 using namespace logger;
-using namespace changeset;
+using namespace changesets;
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
@@ -67,7 +67,7 @@ using namespace boost::gregorian;
 
 TestState runtest;
 
-class TestCS : public changeset::ChangeSetFile {
+class TestCS : public changesets::ChangeSetFile {
 };
 
 class TestCO : public osmchange::OsmChangeFile {
@@ -110,7 +110,7 @@ main(int argc, char *argv[])
     if (vm.count("changefile")) {
         std::string file = vm["changefile"].as<std::string>();
         std::cout << "Importing change file " << file << std::endl;
-        auto changeset = std::make_shared<changeset::ChangeSetFile>();
+        auto changeset = std::make_shared<changesets::ChangeSetFile>();
         changeset->readChanges(file);
         changeset->dump();
         exit(0);
@@ -174,13 +174,13 @@ main(int argc, char *argv[])
     std::map<long, long> changeset_ids_found;
     for (const auto &change: testco.changes) {
         for (const auto &node: change->nodes) {
-            changeset_ids_found.insert(std::pair<long, long>(node->change_id, node->change_id));
+            changeset_ids_found.insert(std::pair<long, long>(node->changeset, node->changeset));
         }
         for (const auto &way: change->ways) {
-            changeset_ids_found.insert(std::pair<long, long>(way->change_id, way->change_id));
+            changeset_ids_found.insert(std::pair<long, long>(way->changeset, way->changeset));
         }
         for (const auto &relation: change->relations) {
-            changeset_ids_found.insert(std::pair<long, long>(relation->change_id, relation->change_id));
+            changeset_ids_found.insert(std::pair<long, long>(relation->changeset, relation->changeset));
         }
     }
     bool all_changesets_tracked = true;
@@ -198,14 +198,14 @@ main(int argc, char *argv[])
 
     auto tf = testco.changes.front();
     auto tnf = tf->nodes.front();
-    if (tnf->change_id == 99069702 && tnf->id == 5776216755) {
+    if (tnf->changeset == 99069702 && tnf->id == 5776216755) {
         runtest.pass("ChangeSetFile::readChanges(first change, first node)");
     } else {
         runtest.fail("ChangeSetFile::readChanges(first change, first node)");
     }
     auto twf = tf->ways.front();
     // twf->dump();
-    if (twf->change_id == 99069879L && twf->id == 474556695L &&
+    if (twf->changeset == 99069879L && twf->id == 474556695L &&
         twf->uid == 1041828L) {
         runtest.pass("ChangeSetFile::readChanges(first change, first way)");
     } else {
@@ -213,14 +213,14 @@ main(int argc, char *argv[])
     }
     auto tnb = tf->nodes.back();
     // tnb->dump();
-    if (tnb->change_id == 94802322L && tnb->id == 289112823L) {
+    if (tnb->changeset == 94802322L && tnb->id == 289112823L) {
         runtest.pass("ChangeSetFile::readChanges(first change, last node)");
     } else {
         runtest.fail("ChangeSetFile::readChanges(first change, last node)");
     }
     auto twb = tf->ways.back();
     // twb->dump();
-    if (twb->change_id == 99063443L && twb->id == 67365141L &&
+    if (twb->changeset == 99063443L && twb->id == 67365141L &&
         twb->uid == 1137406L) {
         runtest.pass("ChangeSetFile::readChanges(first change, last way)");
     } else {

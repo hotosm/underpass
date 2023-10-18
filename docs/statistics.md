@@ -211,7 +211,7 @@ backend and the frontend, without having modify the database schema.
 An example query to count the total number of buildings added by the
 user **4321** for a Tasking Manager project **1234** would be this:
 > SELECT SUM(CAST(added::hstore->'building' AS DOUBLE precision)) FROM
-changesets WHERE 'hotosm-project-1234' = ANY(hashtags) AND user_id=4321;
+changesets WHERE 'hotosm-project-1234' = ANY(hashtags) AND uid=4321;
 
 The source is the satellite imagery used for remote mapping.
 
@@ -221,7 +221,7 @@ Keyword | Description
 --------|------------
 id | The ID of this changeset
 editor | The editor used for this changeset
-user_id | The OSM User ID of the mapper
+uid | The OSM User ID of the mapper
 created_at | The timestamp when this changes was uploaded
 closed_at | The timestamp when this uploaded change completed processing
 updated_at | The timestamp when this last had data updated

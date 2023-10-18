@@ -23,9 +23,10 @@
 #    database with OSM data for a country
 #    -----
 
-localfiles='false'
+localfiles=false
+use_docker=false
 
-while getopts r:c:h::u:p:d:l flag
+while getopts r:c:h::u:p:d:l:k flag
 do
     case "${flag}" in
         r) region=${OPTARG};;
@@ -34,7 +35,8 @@ do
         u) user=${OPTARG};;
         p) port=${OPTARG};;
         d) database=${OPTARG};;
-        l) localfiles=${OPTARG};;
+        l) localfiles=true;;
+        k) use_docker=true;;
     esac
 done
 
@@ -51,6 +53,7 @@ else
     USER=underpass
 fi
 
+
 if [ -n "${REGION}" ] && [ -n "${COUNTRY}" ] 
 then
 
@@ -61,9 +64,14 @@ then
     echo Port: $PORT
     echo Database: $DB
 
-    if [ -z "${localfiles}" ]
+    if "$localfiles";
     then
         echo "Use local files?: yes"
+    fi
+
+    if "$use_docker";
+    then
+        echo "Use Docker?: yes"
     fi
 
     echo " "
@@ -82,10 +90,10 @@ then
         fi
 
         echo "Cleaning database ..."
-        PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB -c 'DROP TABLE IF EXISTS raw_poly; DROP TABLE IF EXISTS raw_node; DROP TABLE IF EXISTS way_refs; DROP TABLE IF EXISTS validation; DROP TABLE IF EXISTS changesets;'
+        PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB -c 'DROP TABLE IF EXISTS ways_poly; DROP TABLE IF EXISTS ways_line; DROP TABLE IF EXISTS nodes; DROP TABLE IF EXISTS way_refs; DROP TABLE IF EXISTS validation; DROP TABLE IF EXISTS changesets;'
         PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB --file '../setup/underpass.sql'
 
-        if [ -z "${localfiles}" ]
+        if "$localfiles";
         then
             echo "(Using local files)"
         else
@@ -99,11 +107,22 @@ then
         PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB < raw-underpass.sql
 
         echo "Configuring Underpass ..."
-        python3 poly2geojson.py $COUNTRY.poly && \
-        docker cp $COUNTRY.geojson underpass:/usr/local/lib/underpass/config/
-        docker cp $COUNTRY.geojson underpass:/code/config
+        python3 poly2geojson.py $COUNTRY.poly
+        if "$use_docker";
+        then
+            docker cp $COUNTRY.geojson underpass:/usr/local/lib/underpass/config/priority.geojson
+            docker cp $COUNTRY.geojson underpass:/code/config/priority.geojson
+        else
+            cp $COUNTRY.geojson /usr/local/lib/underpass/config/priority.geojson
+            cp $COUNTRY.geojson ../config/priority.geojson
+        fi
         echo "Bootstrapping database ..."
-        docker exec -w /code/build -t underpass ./underpass --bootstrap
+        if "$use_docker";
+        then
+            docker exec -w /code/build -t underpass ./underpass --bootstrap
+        else
+            cd ../build && ./underpass --bootstrap
+        fi
         echo "Done."
         echo " "
     fi
@@ -124,5 +143,6 @@ else
     echo " -u user (Database user)"
     echo " -p port (Database port)"
     echo " -d database (Database name)"
-    echo " -l (Use local files instead of download them)"
+    echo " -l yes (Use local files instead of download them)"
+    echo " -k yes (Use Docker Underpass installation)"
 fi

@@ -79,8 +79,8 @@ OsmObject::dump(void) const
     } else {
         std::cerr << "\tNot in Priority area" << std::endl;
     }
-    if (change_id > 0) {
-        std::cerr << "\tChange ID: " << std::to_string(change_id) << std::endl;
+    if (changeset > 0) {
+        std::cerr << "\tChange ID: " << std::to_string(changeset) << std::endl;
     }
     if (tags.size() > 0) {
         std::cerr << "\tTags: " << tags.size() << std::endl;

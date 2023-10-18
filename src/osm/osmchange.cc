@@ -360,7 +360,7 @@ OsmChangeFile::on_start_element(const Glib::ustring &name,
         } else if (attr_pair.name == "user") {
             change->obj->user = attr_pair.value;
         } else if (attr_pair.name == "changeset") {
-            change->obj->change_id = std::stol(attr_pair.value);
+            change->obj->changeset = std::stol(attr_pair.value);
         } else if (attr_pair.name == "lat") {
             auto lat = reinterpret_cast<OsmNode *>(change->obj.get());
             lat->setLatitude(std::stod(attr_pair.value));
@@ -519,14 +519,14 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                 node->tags.find("created_at") != node->tags.end()) {
                 continue;
             }
-            ostats = (*mstats)[node->change_id];
+            ostats = (*mstats)[node->changeset];
             if (ostats.get() == 0) {
                 ostats = std::make_shared<ChangeStats>();
-                ostats->change_id = node->change_id;
-                ostats->user_id = node->uid;
+                ostats->changeset = node->changeset;
+                ostats->uid = node->uid;
                 ostats->username = node->user;
                 ostats->closed_at = node->timestamp;
-                (*mstats)[node->change_id] = ostats;
+                (*mstats)[node->changeset] = ostats;
             }
             auto hits = scanTags(node->tags, osmchange::node);
             for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
@@ -557,14 +557,14 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
             if (way->tags.size() == 1 && way->tags.find("created_at") != way->tags.end()) {
                 continue;
             }
-            ostats = (*mstats)[way->change_id];
+            ostats = (*mstats)[way->changeset];
             if (ostats.get() == 0) {
                 ostats = std::make_shared<ChangeStats>();
-                ostats->change_id = way->change_id;
-                ostats->user_id = way->uid;
+                ostats->changeset = way->changeset;
+                ostats->uid = way->uid;
                 ostats->username = way->user;
                 ostats->closed_at = way->timestamp;
-                (*mstats)[way->change_id] = ostats;
+                (*mstats)[way->changeset] = ostats;
             }
 
             auto hits = scanTags(way->tags, osmchange::way);
@@ -597,7 +597,7 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
                     }
                     double length = boost::geometry::length(globe,
                             boost::geometry::strategy::distance::haversine<float>(6371.0));
-                    // log_debug("LENGTH: %1% %2%", std::to_string(length), way->change_id);
+                    // log_debug("LENGTH: %1% %2%", std::to_string(length), way->changeset);
                     ostats->added[tag] += length;
                 }
             }
@@ -613,14 +613,14 @@ OsmChangeFile::collectStats(const multipolygon_t &poly)
             if (relation->tags.size() == 0) {
                 continue;
             }
-            ostats = (*mstats)[relation->change_id];
+            ostats = (*mstats)[relation->changeset];
             if (ostats.get() == 0) {
                 ostats = std::make_shared<ChangeStats>();
-                ostats->change_id = relation->change_id;
-                ostats->user_id = relation->uid;
+                ostats->changeset = relation->changeset;
+                ostats->uid = relation->uid;
                 ostats->username = relation->user;
                 ostats->closed_at = relation->timestamp;
-                (*mstats)[relation->change_id] = ostats;
+                (*mstats)[relation->changeset] = ostats;
             }
             auto hits = scanTags(relation->tags, osmchange::relation);
             for (auto hit = std::begin(*hits); hit != std::end(*hits); ++hit) {
@@ -663,8 +663,8 @@ OsmChangeFile::scanTags(std::map<std::string, std::string> tags, osmchange::osmt
 void
 ChangeStats::dump(void)
 {
-    std::cerr << "Dumping ChangeStats for: \t " << change_id << std::endl;
-    std::cerr << "\tUser ID: \t\t " << user_id << std::endl;
+    std::cerr << "Dumping ChangeStats for: \t " << changeset << std::endl;
+    std::cerr << "\tUser ID: \t\t " << uid << std::endl;
     std::cerr << "\tUser Name: \t\t " << username << std::endl;
     std::cerr << "\tAdded features: " << added.size() << std::endl;
     for (auto it = std::begin(added); it != std::end(added); ++it) {
@@ -732,7 +732,7 @@ OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate
                 // See if the way is a closed polygon
                 if (way->refs.front() == way->refs.back()) {
                     status->timestamp = boost::posix_time::microsec_clock::universal_time();
-                    status->user_id = way->uid;
+                    status->uid = way->uid;
 
                     // Overlapping
                     if (plugin->overlaps(change->ways, *way)) {

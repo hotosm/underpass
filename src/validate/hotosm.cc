@@ -110,7 +110,7 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
 {
     auto status = std::make_shared<ValidateStatus>(node);
     status->timestamp = boost::posix_time::microsec_clock::universal_time();
-    status->user_id = node.uid;
+    status->uid = node.uid;
 
     if (yamls.size() == 0) {
         log_error("No config files!");
@@ -176,7 +176,7 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 
     auto status = std::make_shared<ValidateStatus>(way);
     status->timestamp = boost::posix_time::microsec_clock::universal_time();
-    status->user_id = way.uid;
+    status->uid = way.uid;
 
     if (yamls.size() == 0) {
         log_error("No config files!");

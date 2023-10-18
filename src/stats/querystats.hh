@@ -51,7 +51,7 @@ using namespace boost::gregorian;
 using namespace pq;
 
 // Forward declarations
-namespace changeset {
+namespace changesets {
   class ChangeSet;
 };
 namespace osmchange {
@@ -74,7 +74,7 @@ class QueryStats {
     ~QueryStats(void){};
     QueryStats(std::shared_ptr<Pq> db);
     /// Build query for processed ChangeSet
-    std::string applyChange(const changeset::ChangeSet &change) const;
+    std::string applyChange(const changesets::ChangeSet &change) const;
     /// Build query for processed OsmChange
     std::string applyChange(const osmchange::ChangeStats &change) const;
     // Database connection, used for escape strings

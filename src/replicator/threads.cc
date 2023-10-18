@@ -374,7 +374,7 @@ threadChangeSet(std::shared_ptr<replication::RemoteURL> &remote,
     task.status = file.status;
 
     if (file.status == reqfile_t::success) {
-        auto changeset = std::make_unique<changeset::ChangeSetFile>();
+        auto changeset = std::make_unique<changesets::ChangeSetFile>();
         log_debug("Processing ChangeSet: %1%", remote->filespec);
         auto xml = planet->processData(remote->filespec, *file.data);
         std::istream& input(xml);

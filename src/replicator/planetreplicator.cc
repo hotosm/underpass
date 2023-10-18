@@ -75,7 +75,7 @@ using namespace underpassconfig;
 using namespace logger;
 
 // Forward declarations
-namespace changeset {
+namespace changesets {
 class ChangeSet;
 };
 

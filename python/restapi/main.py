@@ -51,6 +51,7 @@ import json
 origins = [
     "http://localhost",
     "http://localhost:5000",
+    "http://localhost:3000",
     "http://127.0.0.1",
     "http://127.0.0.1:5000"
 ]
@@ -62,7 +63,7 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
 
 db = UnderpassDB(config.UNDERPASS_DB)
@@ -156,8 +157,10 @@ if hasattr(config, 'ENABLE_UNDERPASS_CORE'):
 def getPolygons(request: RawRequest):
     results = rawer.getPolygons(
         area = request.area or None,
-        key = request.key or "",
-        value = request.value or "",
+        tags = request.tags or "",
+        hashtag = request.hashtag or "",
+        dateFrom = request.dateFrom or "",
+        dateTo = request.dateTo or "",
         page = request.page
     )
     return results
@@ -166,8 +169,35 @@ def getPolygons(request: RawRequest):
 def getNodes(request: RawRequest):
     results = rawer.getNodes(
         area = request.area,
-        key = request.key or "",
-        value = request.value or ""
+        tags = request.tags or "",
+        hashtag = request.hashtag or "",
+        dateFrom = request.dateFrom or "",
+        dateTo = request.dateTo or "",
+        page = request.page
+    )
+    return results
+
+@app.post("/raw/lines")
+def getLines(request: RawRequest):
+    results = rawer.getLines(
+        area = request.area,
+        tags = request.tags or "",
+        hashtag = request.hashtag or "",
+        dateFrom = request.dateFrom or "",
+        dateTo = request.dateTo or "",
+        page = request.page
+    )
+    return results
+
+@app.post("/raw/all")
+def getLines(request: RawRequest):
+    results = rawer.getAll(
+        area = request.area,
+        tags = request.tags or "",
+        hashtag = request.hashtag or "",
+        dateFrom = request.dateFrom or "",
+        dateTo = request.dateTo or "",
+        page = request.page
     )
     return results
 
@@ -175,8 +205,10 @@ def getNodes(request: RawRequest):
 def getPolygonsList(request: RawRequest):
     results = rawer.getPolygonsList(
         area = request.area or None,
-        key = request.key or "",
-        value = request.value or "",
+        tags = request.tags or "",
+        hashtag = request.hashtag or "",
+        dateFrom = request.dateFrom or "",
+        dateTo = request.dateTo or "",
         page = request.page
     )
     return results
@@ -185,8 +217,22 @@ def getPolygonsList(request: RawRequest):
 def getNodesList(request: RawRequest):
     results = rawer.getNodesList(
         area = request.area or None,
-        key = request.key or "",
-        value = request.value or "",
+        tags = request.tags or "",
+        hashtag = request.hashtag or "",
+        dateFrom = request.dateFrom or "",
+        dateTo = request.dateTo or "",
         page = request.page
+    )
+    return results
+
+@app.post("/raw/allList")
+def getAllList(request: RawRequest):
+    results = rawer.getAllList(
+        area = request.area or None,
+        tags = request.tags or "",
+        hashtag = request.hashtag or "",
+        dateFrom = request.dateFrom or "",
+        dateTo = request.dateTo or "",
+        page = request.page,
     )
     return results

@@ -105,7 +105,7 @@ QueryStats::applyChange(const osmchange::ChangeStats &change) const
         // Some of the data field in the changset come from a different file,
         // which may not be downloaded yet.
         ptime now = boost::posix_time::microsec_clock::universal_time();
-        std::string aquery = "INSERT INTO changesets (id, user_id, closed_at, updated_at, ";
+        std::string aquery = "INSERT INTO changesets (id, uid, closed_at, updated_at, ";
 
         if (change.added.size() > 0) {
             aquery += "added, ";
@@ -116,8 +116,8 @@ QueryStats::applyChange(const osmchange::ChangeStats &change) const
         aquery.erase(aquery.size() - 2);
         aquery += ")";
 
-        aquery += " VALUES(" + std::to_string(change.change_id) + ", ";
-        aquery += std::to_string(change.user_id) + ", ";
+        aquery += " VALUES(" + std::to_string(change.changeset) + ", ";
+        aquery += std::to_string(change.uid) + ", ";
         aquery += "\'" + to_simple_string(change.closed_at) + "\', ";
         aquery += "\'" + to_simple_string(now) + "\', ";
 
@@ -152,13 +152,13 @@ QueryStats::applyChange(const osmchange::ChangeStats &change) const
 }
 
 std::string
-QueryStats::applyChange(const changeset::ChangeSet &change) const
+QueryStats::applyChange(const changesets::ChangeSet &change) const
 {
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("applyChange(changeset): took %w seconds\n");
 #endif
 
-    std::string query = "INSERT INTO changesets (id, editor, user_id, created_at, closed_at, updated_at";
+    std::string query = "INSERT INTO changesets (id, editor, uid, created_at, closed_at, updated_at";
 
     if (change.hashtags.size() > 0) {
         query += ", hashtags ";
