@@ -40,6 +40,75 @@ def tagsQueryFilter(tagsQuery, table):
             query += "OR {0}.tags->>'{1}' IS NOT NULL".format(table, keyValue[0])
     return query
 
+def getGeoType(table):
+    if table == "ways_poly":
+        return "Polygon"
+    elif table == "ways_line":
+        return "LineString"
+    return "Node"
+
+def geoFeaturesQuery(
+        area = None,
+        tags = None,
+        hashtag = None,
+        dateTo = None,
+        dateFrom = None,
+        page = 0,
+        table = None):
+
+        geoType = getGeoType(table)
+        query = "with t_ways AS ( \
+            SELECT '" + geoType + "' as type, " + table + ".osm_id as id, " + table + ".timestamp, geom as geometry, tags, status, hashtags, editor, created_at FROM " + table + " \
+            LEFT JOIN validation ON validation.osm_id = " + table + ".osm_id \
+            LEFT JOIN changesets c ON c.id = " + table + ".changeset \
+            WHERE \
+            {0} {1} {2} {3} {4} \
+        ), \
+        t_features AS (  \
+            SELECT jsonb_build_object( 'type', 'Feature', 'id', id, 'properties', to_jsonb(t_ways) \
+            - 'geometry' , 'geometry', ST_AsGeoJSON(geometry)::jsonb ) AS feature FROM t_ways  \
+        ) SELECT jsonb_build_object( 'type', 'FeatureCollection', 'features', jsonb_agg(t_features.feature) ) \
+        as result FROM t_features;".format(
+            "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
+            "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
+            "AND " + table + ".changeset IN (SELECT c.id FROM changesets c where jsonb_path_exists(to_jsonb(hashtags), '$[*] ? (@ like_regex \"^{0}\")') GROUP BY C.id)".format(hashtag) if hashtag else "",
+            "AND created at >= {0} AND created_at <= {1}".format(dateFrom, dateTo) if dateFrom and dateTo else "",
+            "LIMIT " + str(RESULTS_PER_PAGE),
+        )
+        return query
+
+def listFeaturesQuery(
+        area = None,
+        tags = None,
+        hashtag = None,
+        page = 0,
+        dateFrom = None,
+        dateTo = None,
+        table = None):
+
+        geoType = getGeoType(table)
+        if table == "nodes":
+            osmType = "node"
+        else:
+            osmType = "way"
+
+        query = "with t_ways AS ( \
+            SELECT '" + osmType + "' as type, '" + geoType + "' as geotype, " + table + ".osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, " + table + ".timestamp, tags, status, created_at FROM " + table + " \
+            LEFT JOIN validation ON validation.osm_id = " + table + ".osm_id \
+            LEFT JOIN changesets c ON c.id = " + table + ".changeset \
+            WHERE \
+            {0} {1} {2} {3} {4} \
+        ), t_features AS ( \
+            SELECT to_jsonb(t_ways) as feature from t_ways \
+        ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;".format(
+            "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
+            "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
+            "AND " + table + ".changeset IN (SELECT c.id FROM changesets c where jsonb_path_exists(to_jsonb(hashtags), '$[*] ? (@ like_regex \"^{0}\")') GROUP BY C.id)".format(hashtag) if hashtag else "",
+            "AND created_at >= '{0}' AND created_at <= '{1}'".format(dateFrom, dateTo) if (dateFrom and dateTo) else "",
+            "AND created_at IS NOT NULL ORDER BY created_at DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + (" OFFSET {0}".format(page * RESULTS_PER_PAGE_LIST) if page else ""),
+        )
+        return query
+
 class Raw:
     def __init__(self, db):
         self.underpassDB = db
@@ -50,24 +119,19 @@ class Raw:
         tags = None,
         hashtag = None,
         responseType = "json",
+        dateFrom = None,
+        dateTo = None,
         page = None
     ):
-        query = "with t_ways AS ( \
-            SELECT 'Polygon' as type, ways_poly.osm_id as id, ways_poly.timestamp, geom as geometry, tags, status FROM ways_poly \
-            LEFT JOIN validation ON validation.osm_id = ways_poly.osm_id \
-            WHERE \
-            {0} {1} {2} \
-        ), \
-        t_features AS (  \
-            SELECT jsonb_build_object( 'type', 'Feature', 'id', id, 'properties', to_jsonb(t_ways) \
-            - 'geometry' , 'geometry', ST_AsGeoJSON(geometry)::jsonb ) AS feature FROM t_ways  \
-        ) SELECT jsonb_build_object( 'type', 'FeatureCollection', 'features', jsonb_agg(t_features.feature) ) \
-        as result FROM t_features;".format(
-            "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
-            "AND (" + tagsQueryFilter(tags, "ways_poly") + ")" if tags else "",
-            "ORDER BY ways_poly.timestamp DESC LIMIT " + str(RESULTS_PER_PAGE),
-        )
-        return self.underpassDB.run(query, responseType, True)
+        return self.underpassDB.run(geoFeaturesQuery(
+            area,
+            tags,
+            hashtag,
+            page,
+            dateFrom,
+            dateTo,
+            "ways_poly"
+        ), responseType, True)
 
     def getLines(
         self, 
@@ -75,24 +139,19 @@ class Raw:
         tags = None,
         hashtag = None,
         responseType = "json",
+        dateFrom = None,
+        dateTo = None,
         page = None
     ):
-        query = "with t_ways AS ( \
-            SELECT 'LineString' as type, ways_line.osm_id as id, ways_line.timestamp, geom as geometry, tags, status FROM ways_line \
-            LEFT JOIN validation ON validation.osm_id = ways_line.osm_id \
-            WHERE \
-            {0} {1} {2} \
-        ), \
-        t_features AS (  \
-            SELECT jsonb_build_object( 'type', 'Feature', 'id', id, 'properties', to_jsonb(t_ways) \
-            - 'geometry' , 'geometry', ST_AsGeoJSON(geometry)::jsonb ) AS feature FROM t_ways  \
-        ) SELECT jsonb_build_object( 'type', 'FeatureCollection', 'features', jsonb_agg(t_features.feature) ) \
-        as result FROM t_features;".format(
-            "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
-            "AND (" + tagsQueryFilter(tags, "ways_line") + ")" if tags else "",
-            "ORDER BY ways_line.timestamp DESC LIMIT " + str(RESULTS_PER_PAGE),
-        )
-        return self.underpassDB.run(query, responseType, True)
+        return self.underpassDB.run(geoFeaturesQuery(
+            area,
+            tags,
+            hashtag,
+            page,
+            dateFrom,
+            dateTo,
+            "ways_line"
+        ), responseType, True)
 
     def getNodes(
         self,
@@ -100,24 +159,20 @@ class Raw:
         tags = None,
         hashtag = None,
         responseType = "json",
+        dateFrom = None,
+        dateTo = None,
         page = None
     ):
-        query = "with t_nodes AS ( \
-            SELECT 'Point' as type, nodes.osm_id as id, nodes.timestamp, geom as geometry, tags, status FROM nodes \
-            LEFT JOIN validation ON validation.osm_id = nodes.osm_id \
-            WHERE \
-            {0} {1} {2} \
-        ), \
-        t_features AS (  \
-            SELECT jsonb_build_object( 'type', 'Feature', 'id', id, 'properties', to_jsonb(t_nodes) \
-            - 'geometry' - 'osm_id' , 'geometry', ST_AsGeoJSON(geometry)::jsonb ) AS feature FROM t_nodes  \
-        ) SELECT jsonb_build_object( 'type', 'FeatureCollection', 'features', jsonb_agg(t_features.feature) ) \
-        as result FROM t_features;".format(
-            "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
-            "AND (" + tagsQueryFilter(tags, "nodes") + ")" if tags else "",
-            "ORDER BY nodes.timestamp DESC LIMIT " + str(RESULTS_PER_PAGE),
-        )
-        return self.underpassDB.run(query, responseType, True)
+        return self.underpassDB.run(geoFeaturesQuery(
+            area,
+            tags,
+            hashtag,
+            page,
+            dateFrom,
+            dateTo,
+            "nodes"
+        ), responseType, True)
+
 
     def getAll(
         self, 
@@ -125,6 +180,8 @@ class Raw:
         tags = None,
         hashtag = None,
         responseType = "json",
+        dateFrom = None,
+        dateTo = None,
         page = None
     ):
 
@@ -133,6 +190,8 @@ class Raw:
         tags,
         hashtag,
         responseType,
+        dateFrom,
+        dateTo,
         page)
 
         lines = self.getLines( 
@@ -140,6 +199,8 @@ class Raw:
         tags,
         hashtag,
         responseType,
+        dateFrom,
+        dateTo,
         page)
 
         nodes = self.getNodes( 
@@ -147,6 +208,8 @@ class Raw:
         tags,
         hashtag,
         responseType,
+        dateFrom,
+        dateTo,
         page)
 
         result = {'type': 'FeatureCollection', 'features': []}
@@ -168,22 +231,19 @@ class Raw:
         tags = None,
         hashtag = None,
         responseType = "json",
+        dateFrom = None,
+        dateTo = None,
         page = None
     ):
-
-        query = "with t_ways AS ( \
-            SELECT 'way' as type, 'Polygon' as geotype, ways_poly.osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, ways_poly.timestamp, tags, status FROM ways_poly \
-            LEFT JOIN validation ON validation.osm_id = ways_poly.osm_id \
-            WHERE \
-            {0} {1} {2} \
-        ), t_features AS ( \
-            SELECT to_jsonb(t_ways) as feature from t_ways \
-        ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;".format(
-            "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
-            "AND (" + tagsQueryFilter(tags, "ways_poly") + ")" if tags else "",
-            "ORDER BY ways_poly.timestamp DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + " OFFSET {0}".format(page * RESULTS_PER_PAGE_LIST) if page else "",
-        )
-        return self.underpassDB.run(query, responseType, True)
+        return self.underpassDB.run(listFeaturesQuery(
+            area,
+            tags,
+            hashtag,
+            page,
+            dateFrom,
+            dateTo,
+            "ways_poly"
+        ), responseType, True)
 
     def getLinesList(
         self, 
@@ -191,24 +251,20 @@ class Raw:
         tags = None,
         hashtag = None,
         responseType = "json",
+        dateFrom = None,
+        dateTo = None,
         page = None
     ):
-        if page == 0:
-            page = 1
+        return self.underpassDB.run(listFeaturesQuery(
+            area,
+            tags,
+            hashtag,
+            page,
+            dateFrom,
+            dateTo,
+            "ways_line"
+        ), responseType, True)
 
-        query = "with t_lines AS ( \
-            SELECT 'way' as type, 'LineString' as geotype, ways_line.osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, ways_line.timestamp, tags, status FROM ways_line \
-            LEFT JOIN validation ON validation.osm_id = ways_line.osm_id \
-            WHERE \
-            {0} {1} {2} \
-        ), t_features AS ( \
-            SELECT to_jsonb(t_lines) as feature from t_lines \
-        ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;".format(
-            "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
-            "AND (" + tagsQueryFilter(tags, "ways_line") + ")" if tags else "",
-            "ORDER BY ways_line.timestamp DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + " OFFSET {0}".format(page * RESULTS_PER_PAGE_LIST) if page else "",
-        )
-        return self.underpassDB.run(query, responseType, True)
 
     def getNodesList(
         self, 
@@ -216,24 +272,20 @@ class Raw:
         tags = None,
         hashtag = None,
         responseType = "json",
+        dateFrom = None,
+        dateTo = None,
         page = None
     ):
-        if page == 0:
-            page = 1
+        return self.underpassDB.run(listFeaturesQuery(
+            area,
+            tags,
+            hashtag,
+            page,
+            dateFrom,
+            dateTo,
+            "nodes"
+        ), responseType, True)
 
-        query = "with t_nodes AS ( \
-            SELECT 'node' as type, 'Point' as geotype, nodes.osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, nodes.timestamp, tags, status FROM nodes \
-            LEFT JOIN validation ON validation.osm_id = nodes.osm_id \
-            WHERE {0} {1} {2} \
-        ), \
-        t_features AS (  \
-            SELECT to_jsonb(t_nodes) AS feature FROM t_nodes  \
-        ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;".format(
-            "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
-            "AND (" + tagsQueryFilter(tags, "nodes") + ")" if tags else "",
-            "ORDER BY nodes.timestamp DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + " OFFSET {0}".format(page * RESULTS_PER_PAGE_LIST) if page else "",
-        )
-        return self.underpassDB.run(query, responseType, True)
         
     def getAllList(
         self, 
@@ -241,6 +293,8 @@ class Raw:
         tags = None,
         hashtag = None,
         responseType = "json",
+        dateFrom = None,
+        dateTo = None,
         page = None
     ):
 
@@ -249,6 +303,8 @@ class Raw:
         tags,
         hashtag,
         responseType,
+        dateFrom,
+        dateTo,
         page)
 
         lines = self.getLinesList( 
@@ -256,6 +312,8 @@ class Raw:
         tags,
         hashtag,
         responseType,
+        dateFrom,
+        dateTo,
         page)
 
         nodes = self.getNodesList( 
@@ -263,6 +321,8 @@ class Raw:
         tags,
         hashtag,
         responseType,
+        dateFrom,
+        dateTo,
         page)
 
         result = []

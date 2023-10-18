@@ -158,6 +158,9 @@ def getPolygons(request: RawRequest):
     results = rawer.getPolygons(
         area = request.area or None,
         tags = request.tags or "",
+        hashtag = request.hashtag or "",
+        dateFrom = request.dateFrom or "",
+        dateTo = request.dateTo or "",
         page = request.page
     )
     return results
@@ -167,6 +170,9 @@ def getNodes(request: RawRequest):
     results = rawer.getNodes(
         area = request.area,
         tags = request.tags or "",
+        hashtag = request.hashtag or "",
+        dateFrom = request.dateFrom or "",
+        dateTo = request.dateTo or "",
         page = request.page
     )
     return results
@@ -176,6 +182,9 @@ def getLines(request: RawRequest):
     results = rawer.getLines(
         area = request.area,
         tags = request.tags or "",
+        hashtag = request.hashtag or "",
+        dateFrom = request.dateFrom or "",
+        dateTo = request.dateTo or "",
         page = request.page
     )
     return results
@@ -185,6 +194,9 @@ def getLines(request: RawRequest):
     results = rawer.getAll(
         area = request.area,
         tags = request.tags or "",
+        hashtag = request.hashtag or "",
+        dateFrom = request.dateFrom or "",
+        dateTo = request.dateTo or "",
         page = request.page
     )
     return results
@@ -194,6 +206,9 @@ def getPolygonsList(request: RawRequest):
     results = rawer.getPolygonsList(
         area = request.area or None,
         tags = request.tags or "",
+        hashtag = request.hashtag or "",
+        dateFrom = request.dateFrom or "",
+        dateTo = request.dateTo or "",
         page = request.page
     )
     return results
@@ -203,6 +218,9 @@ def getNodesList(request: RawRequest):
     results = rawer.getNodesList(
         area = request.area or None,
         tags = request.tags or "",
+        hashtag = request.hashtag or "",
+        dateFrom = request.dateFrom or "",
+        dateTo = request.dateTo or "",
         page = request.page
     )
     return results
@@ -211,7 +229,10 @@ def getNodesList(request: RawRequest):
 def getAllList(request: RawRequest):
     results = rawer.getAllList(
         area = request.area or None,
-        tags = request.tags or "",        
+        tags = request.tags or "",
+        hashtag = request.hashtag or "",
+        dateFrom = request.dateFrom or "",
+        dateTo = request.dateTo or "",
         page = request.page,
     )
     return results
