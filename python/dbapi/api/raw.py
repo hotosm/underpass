@@ -40,6 +40,9 @@ def tagsQueryFilter(tagsQuery, table):
             query += "OR {0}.tags->>'{1}' IS NOT NULL".format(table, keyValue[0])
     return query
 
+def hashtagQueryFilter(hashtag, table):
+    return table + ".changeset IN (SELECT c.id FROM changesets c where jsonb_path_exists(to_jsonb(hashtags), '$[*] ? (@ like_regex \"^{0}\")') GROUP BY C.id)".format(hashtag)
+
 def getGeoType(table):
     if table == "ways_poly":
         return "Polygon"
@@ -71,7 +74,7 @@ def geoFeaturesQuery(
         as result FROM t_features;".format(
             "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
             "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
-            "AND " + table + ".changeset IN (SELECT c.id FROM changesets c where jsonb_path_exists(to_jsonb(hashtags), '$[*] ? (@ like_regex \"^{0}\")') GROUP BY C.id)".format(hashtag) if hashtag else "",
+            "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
             "AND created at >= {0} AND created_at <= {1}".format(dateFrom, dateTo) if dateFrom and dateTo else "",
             "LIMIT " + str(RESULTS_PER_PAGE),
         )
@@ -103,7 +106,7 @@ def listFeaturesQuery(
         ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;".format(
             "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
             "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
-            "AND " + table + ".changeset IN (SELECT c.id FROM changesets c where jsonb_path_exists(to_jsonb(hashtags), '$[*] ? (@ like_regex \"^{0}\")') GROUP BY C.id)".format(hashtag) if hashtag else "",
+            "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
             "AND created_at >= '{0}' AND created_at <= '{1}'".format(dateFrom, dateTo) if (dateFrom and dateTo) else "",
             "AND created_at IS NOT NULL ORDER BY created_at DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + (" OFFSET {0}".format(page * RESULTS_PER_PAGE_LIST) if page else ""),
         )
