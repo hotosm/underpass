@@ -15,7 +15,7 @@ This script is prepared for a quick bootstrap of the Underpass database.
 Run the script passing region, country and DB username as arguments, for example:
 
 ```sh
-./bootstrap.sh -r south-america -c ecuador
+./bootstrap.sh -r south-america -c ecuador -l yes
 ```
 
 This will:
@@ -37,15 +37,15 @@ This will:
 -u user (Database user)
 -p port (Database port)
 -d database (Database name)
--l (Use local files instead of download them)
+-l yes (Use local files instead of download them)
 ```
 
-Use the `-l` when you have your .pbf and .poly files already downloaded and
+Use the `-l yes` when you have your .pbf and .poly files already downloaded and
 you don't want to download them again. The script will look for those files
 using the `-r` and `-c` arguments, for example
 
 ```sh
-./bootstrap.sh -r south-america -c ecuador -u underpass -l
+./bootstrap.sh -r south-america -c ecuador -u underpass -l yes
 ```
 
 Will look for these files:

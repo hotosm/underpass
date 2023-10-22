@@ -1,0 +1,85 @@
+site_name: Underpass
+site_description: A customizable data engine that processes mapping data.
+site_url: "https://underpass.hotosm.org"
+
+repo_name: "hotosm/underpass"
+repo_url: "https://github.com/hotosm/underpass/"
+edit_uri: "edit/main/docs/"
+
+extra:
+  social:
+    - icon: "fontawesome/brands/github"
+      link: "https://github.com/hotosm/"
+    - icon: "fontawesome/brands/twitter"
+      link: "https://twitter.com/hotosm"
+    - icon: "fontawesome/solid/globe"
+      link: "https://www.hotosm.org"
+
+theme:
+  name: material
+  palette:
+    primary: custom
+
+extra_css:
+  - css/extra.css
+
+markdown_extensions:
+  - tables
+  - toc:
+      permalink: true
+      title: Page contents
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.extra
+  - pymdownx.emoji:
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+  - exclude:
+      glob:
+        - plugins/*
+        - __pycache__/*
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            members_order: source
+            separate_signature: true
+            filters: ["!^_"]
+            docstring_options:
+              ignore_init_summary: true
+            merge_init_into_class: true
+
+nav:
+  - Home: index.md
+  - Get Started:
+      - Install: get-started/Install.md
+      - Setup: get-started/Setup.md
+      - Next steps: get-started/NextSteps.md
+  - Replication:
+      - Run: Replication/Run.md
+      - Advanced: Replication/Advanced.md
+  - API:
+      - Python (DB): API/PythonDB.md
+      - Python: API/Python.md
+      - REST: API/REST.md
+  - UI:
+      - Install: UI/Install.md
+      - UnderpassMap: UI/UnderpassMap.md
+      - UnderpassFeatureList: UI/UnderpassFeatureList.md
+  - Developers:
+      - Coding: Dev/coding.md
+      - Debugging: Dev/debugging.md
+      - Data flow: Dev/dataflow.md
+      - Engine: Dev/engine.md
+      - OSM Stats: Dev/osmstats.md
+      - Statistics: Dev/statistics.md
+      - Validation: Dev/validation.md
+      - Replication: Dev/replication.md
+      - Utility: Dev/utility.md
+      

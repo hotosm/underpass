@@ -128,4 +128,4 @@ Underpass currently writes to 1 primary database: the
 validation results and raw OSM data that also gets updated every minute.
 
 &nbsp;
-![Flow Chart](https://raw.githubusercontent.com/hotosm/underpass/master/docs/dataflow.png)
+![Flow Chart](dataflow.png)

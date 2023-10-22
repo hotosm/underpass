@@ -1,4 +1,4 @@
-# Underpass Docker installation
+## Docker installation
 
 This is the easiest way to get Underpass up and running:
 
@@ -6,7 +6,7 @@ This is the easiest way to get Underpass up and running:
 docker-compose up -d
 ```
 
-## Next steps
+## Setup and run demo
 
 ### Bootstrap the database for a country
 
