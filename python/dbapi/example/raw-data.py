@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 #
 # Copyright (c) 2023 Humanitarian OpenStreetMap Team
 #
@@ -17,25 +16,23 @@
 #     You should have received a copy of the GNU General Public License
 #     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 
-#     This is an example on how you can use the Underpass API
-#     to get data from the Underpass database
-#
-#     Install psycopg2 (pip install psycopg2) and run (python report.py)
-
 import sys,os
 sys.path.append(os.path.realpath('..'))
 
-from api import report
+from api import raw
 from api.db import UnderpassDB
 
 db = UnderpassDB("postgresql://localhost/underpass")
 db.connect()
-reporter = report.Report(db)
+rawer = raw.Raw(db)
 
-results = reporter.getDataQualityGeo(
-    fromDate = "2022-12-28T00:00:00", 
-    hashtags = ["hotosm"],
-    responseType = "csv"
+results = rawer.getNodes(
+    area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+    tags = "building=yes",
+    hashtag = "",
+    dateFrom = "",
+    dateTo = "",
+    page = 0
 )
 
 print(results)

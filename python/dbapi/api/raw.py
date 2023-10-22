@@ -54,8 +54,8 @@ def geoFeaturesQuery(
         area = None,
         tags = None,
         hashtag = None,
-        dateTo = None,
         dateFrom = None,
+        dateTo = None,
         page = 0,
         table = None):
 
@@ -87,7 +87,9 @@ def listFeaturesQuery(
         page = 0,
         dateFrom = None,
         dateTo = None,
-        table = None):
+        table = None,
+        orderBy = "created_at"
+    ):
 
         geoType = getGeoType(table)
         if table == "nodes":
@@ -108,7 +110,7 @@ def listFeaturesQuery(
             "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
             "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
             "AND created_at >= '{0}' AND created_at <= '{1}'".format(dateFrom, dateTo) if (dateFrom and dateTo) else "",
-            "AND created_at IS NOT NULL ORDER BY created_at DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + (" OFFSET {0}".format(page * RESULTS_PER_PAGE_LIST) if page else ""),
+            "ORDER BY " + orderBy + " DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + (" OFFSET {0}".format(page * RESULTS_PER_PAGE_LIST) if page else ""),
         )
         return query
 
@@ -130,9 +132,9 @@ class Raw:
             area,
             tags,
             hashtag,
-            page,
             dateFrom,
             dateTo,
+            page,
             "ways_poly"
         ), responseType, True)
 
@@ -150,9 +152,9 @@ class Raw:
             area,
             tags,
             hashtag,
-            page,
             dateFrom,
             dateTo,
+            page,
             "ways_line"
         ), responseType, True)
 
@@ -170,12 +172,11 @@ class Raw:
             area,
             tags,
             hashtag,
-            page,
             dateFrom,
             dateTo,
+            page,
             "nodes"
         ), responseType, True)
-
 
     def getAll(
         self, 
