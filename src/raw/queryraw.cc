@@ -436,7 +436,7 @@ QueryRaw::getWaysFromDB(int lastid, const std::string &tableName) {
         waysQuery = "SELECT osm_id, refs, ST_AsText(geom, 4326)";
     }
     waysQuery += ", version, tags FROM " + tableName + " where osm_id > " + std::to_string(lastid) + " order by osm_id asc limit 500;";
-    
+
     auto ways_result = dbconn->query(waysQuery);
     // Fill vector of OsmWay objects
     auto ways = std::make_shared<std::vector<OsmWay>>();
@@ -464,6 +464,45 @@ QueryRaw::getWaysFromDB(int lastid, const std::string &tableName) {
             }
             ways->push_back(way);
         }
+    }
+
+    return ways;
+}
+
+std::shared_ptr<std::vector<OsmWay>>
+QueryRaw::getWaysFromDBWithoutRefs(int lastid, const std::string &tableName) {
+    std::string waysQuery;
+    if (tableName == QueryRaw::polyTable) {
+        waysQuery = "SELECT osm_id, ST_AsText(ST_ExteriorRing(geom), 4326)";
+    } else {
+        waysQuery = "SELECT osm_id, ST_AsText(geom, 4326)";
+    }
+    waysQuery += ", version, tags FROM " + tableName + " where osm_id > " + std::to_string(lastid) + " order by osm_id asc limit 500;";
+    
+    auto ways_result = dbconn->query(waysQuery);
+    // Fill vector of OsmWay objects
+    auto ways = std::make_shared<std::vector<OsmWay>>();
+    for (auto way_it = ways_result.begin(); way_it != ways_result.end(); ++way_it) {
+        OsmWay way;
+        way.id = (*way_it)[0].as<long>();
+
+        std::string poly = (*way_it)[1].as<std::string>();
+        boost::geometry::read_wkt(poly, way.linestring);
+
+        if (tableName == QueryRaw::polyTable) {
+            way.polygon = { {std::begin(way.linestring), std::end(way.linestring)} };
+        }
+        way.version = (*way_it)[2].as<long>();
+        auto tags = (*way_it)[3];
+        if (!tags.is_null()) {
+            auto tags = parseTagsString((*way_it)[3].as<std::string>());
+            for (auto const& [key, val] : tags)
+            {
+                way.addTag(key, val);
+            }
+        }
+        ways->push_back(way);
+
     }
 
     return ways;

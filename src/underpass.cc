@@ -37,7 +37,6 @@
 #include <tuple>
 #include <vector>
 
-#include "underpassconfig.hh"
 #include "replicator/planetreplicator.hh"
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/date_time.hpp>
@@ -96,9 +95,9 @@ main(int argc, char *argv[])
 
     opts::positional_options_description p;
     opts::variables_map vm;
+    opts::options_description desc("Allowed options");
 
     try {
-        opts::options_description desc("Allowed options");
         // clang-format off
         desc.add_options()
             ("help,h", "display help")
@@ -124,31 +123,20 @@ main(int argc, char *argv[])
             ("disable-stats", "Disable statistics")
             ("disable-validation", "Disable validation")
             ("disable-raw", "Disable raw OSM data")
+            ("norefs", "Disable refs (useful for non OSM data)")
             ("bootstrap", "Bootstrap data tables");
         // clang-format on
 
         opts::store(opts::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
         opts::notify(vm);
 
-        if (vm.count("help")) {
-
-            std::cout << "Usage: options_description [options]" << std::endl;
-            std::cout << desc << std::endl;
-            std::cout << "A few configuration options can be set through the "
-                         "environment,"
-                      << std::endl;
-            std::cout << "this is the current status of the configuration "
-                         "options with"
-                      << std::endl;
-            std::cout << "the environment variable names and their current "
-                         "values (possibly defaults)."
-                      << std::endl;
-            std::cout << config.dbConfigHelp() << std::endl;
-            return 0;
-        }
     } catch (std::exception &e) {
         std::cout << e.what() << std::endl;
         return 1;
+    }
+
+    if (vm.count("norefs")) {
+        config.norefs = true;
     }
 
     // Logging
@@ -185,7 +173,7 @@ main(int argc, char *argv[])
         config.concurrency = std::thread::hardware_concurrency();
     }
     
-    if (!vm.count("bootstrap")) {
+    if (vm.count("timestamp") || vm.count("url")) {
         // Planet server
         if (vm.count("planet")) {
             config.planet_server = vm["planet"].as<std::string>();
@@ -330,14 +318,32 @@ main(int argc, char *argv[])
 
         exit(0);
 
-    } else {
+    }
+    
+    if (vm.count("bootstrap")){
         std::thread bootstrapThread;
+        std::cout << "Starting bootstrapping proccess ..." << std::endl;
         bootstrapThread = std::thread(bootstrap::startProcessingWays, std::ref(config));
         log_info("Waiting...");
         if (bootstrapThread.joinable()) {
             bootstrapThread.join();
         }
+        exit(0);
     }
+
+    std::cout << "Usage: options_description [options]" << std::endl;
+    std::cout << desc << std::endl;
+    std::cout << "A few configuration options can be set through the "
+                    "environment,"
+                << std::endl;
+    std::cout << "this is the current status of the configuration "
+                    "options with"
+                << std::endl;
+    std::cout << "the environment variable names and their current "
+                    "values (possibly defaults)."
+                << std::endl;
+    // std::cout << config.dbConfigHelp() << std::endl;
+    exit(0);
 
 }
 
