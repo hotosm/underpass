@@ -1,15 +1,12 @@
-# The docker image will be built only on a push to the feature branch
-
 name: Deps Dockerfile Build and Push
 
 on:
   push:
-    branches: [ update/docker-ci ]
-
-# A workflow run is made up of one or more jobs that can run
-# sequentially or in parallel
+    branches:
+      - master 
+permissions:
+  contents: write
 jobs:
-
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu:latest
@@ -37,5 +34,3 @@ jobs:
     # be pushed. Otherwise nothing will happen.
     - name: Push to Quay.io
       run: docker push quay.io/hotosm/underpass-build-deps
-
-
