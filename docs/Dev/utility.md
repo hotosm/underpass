@@ -12,7 +12,7 @@ installation.
 
 ## utils/bootstrap.sh
 
-* [Using the bootstrap.sh script](/Dev/bootstrapsh)
+* [Using the bootstrap.sh script](underpass/Dev/bootstrapsh)
 
 ## utils/features2yaml
 
