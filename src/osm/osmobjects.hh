@@ -169,12 +169,7 @@ class OsmWay : public OsmObject {
     /// is a linestring
     bool isClosed(void)
     {
-        if (refs.size() > 0) {
-            if (refs[0] == refs[refs.size() - 1]) {
-                return true;
-            }
-        }
-        return false;
+        return !linestring.empty() && boost::geometry::equals(linestring.back(), linestring.front());
     };
     /// Return the number of nodes in this way
     int numPoints(void) { return boost::geometry::num_points(linestring); };
