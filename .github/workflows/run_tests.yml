@@ -13,7 +13,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      Relies on the master branch built docker image for build-deps
+      # Relies on the master branch built docker image for build-deps
       - name: Start Docker Compose & build
         run: cd docker && docker-compose up -d
 
