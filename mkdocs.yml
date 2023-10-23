@@ -1,5 +1,5 @@
 site_name: Underpass
-site_description: A customizable data engine that processes mapping data.
+site_description: A customizable data engine that processes mapping data
 site_url: "https://underpass.hotosm.org"
 
 repo_name: "hotosm/underpass"
