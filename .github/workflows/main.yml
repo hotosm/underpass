@@ -1,25 +1,33 @@
-name: Docs Action
+name: Publish Docs
+
 on:
   push:
-    branches:
-      - master 
-      - main
-permissions:
-  contents: write
+    paths:
+      - docs/**
+      - docs/mkdocs.yml
+    branches: [master]
+  # Allow manual trigger (workflow_dispatch)
+  workflow_dispatch:
+
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: 3.x
-      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV 
-      - uses: actions/cache@v3
-        with:
-          key: mkdocs-material-${{ env.cache_id }}
-          path: .cache
-          restore-keys: |
-            mkdocs-material-
-      - run: pip install mkdocs-material 
-      - run: mkdocs gh-deploy --force
+  build_doxygen:
+    uses: hotosm/gh-workflows/.github/workflows/doxygen_build.yml@1.0.0
+    with:
+      output_path: docs/apidocs
+
+  build_openapi_json:
+    uses: hotosm/gh-workflows/.github/workflows/openapi_build.yml@1.0.0
+    with:
+      image: ghcr.io/${{ github.repository }}/backend:ci-${{ github.ref_name }}
+      example_env_file_path: ".env.example"
+      output_path: docs/openapi.json
+
+  publish_docs:
+    uses: hotosm/gh-workflows/.github/workflows/mkdocs_build.yml@1.0.0
+    needs:
+      - build_doxygen
+      - build_openapi_json
+    with:
+      image: ghcr.io/${{ github.repository }}/backend:ci-${{ github.ref_name }}
+      doxygen: true
+      openapi: true

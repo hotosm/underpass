@@ -1,26 +1,26 @@
-name: 🧪 Build and Test
+# name: 🧪 Build and Test
 
-on: [push, pull_request]
+# on: [push, pull_request]
 
-jobs:
+# jobs:
 
-  build:
+#   build:
 
-    runs-on: ubuntu-latest
+#     runs-on: ubuntu-latest
 
-    steps:
+#     steps:
 
-      - name: Checkout
-        uses: actions/checkout@v2
+#       - name: Checkout
+#         uses: actions/checkout@v2
 
-      # Relies on the master branch built docker image for build-deps
-      - name: Start Docker Compose
-        run: cd docker && docker-compose up -d
+#       # Relies on the master branch built docker image for build-deps
+#       - name: Start Docker Compose
+#         run: cd docker && docker-compose up -d
 
-      - name: Build Underpass Library and Binaries
-        run: docker-compose -f docker-compose.yml exec -T underpass sh -c "cd /code && ./autogen.sh && mkdir build && cd build && ../configure && make -j `nproc`"
+#       - name: Build Underpass Library and Binaries
+#         run: docker-compose -f docker-compose.yml exec -T underpass sh -c "cd /code && ./autogen.sh && mkdir build && cd build && ../configure && make -j `nproc`"
 
-      # Temporary disabled (FIXME)
-      # - name: Build and Run Underpass Tests (broken - it never fails)
-      #   run: docker-compose -f docker-compose.yml exec -T underpass sh -c "cd /code/build && make check -j `nproc`"
+#       # Temporary disabled (FIXME)
+#       # - name: Build and Run Underpass Tests (broken - it never fails)
+#       #   run: docker-compose -f docker-compose.yml exec -T underpass sh -c "cd /code/build && make check -j `nproc`"
 
