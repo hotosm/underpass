@@ -1,4 +1,4 @@
-FROM ubuntu:kinetic
+FROM ubuntu:latest
 
 # This image is available as quay.io/hotosm/underpass:kinetic
 LABEL maintainer="Humanitarian OpenStreetMap Team" Description="This image provides a build for Underpass" Vendor="HOT" Version="dev"
