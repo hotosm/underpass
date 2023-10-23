@@ -18,6 +18,6 @@ jobs:
         run: cd docker && docker-compose up -d
 
       # Run tests
-      - name: Build and Run Underpass Tests
+      - name: Build and Run Underpass Tests (FIXME: it never fails)
         run: docker-compose -f docker-compose.yml exec -T underpass sh -c "cd /code/build && make check -j `nproc`"
 
