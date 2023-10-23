@@ -2,11 +2,15 @@
 
 If you want to get started really quick and easy, use the [Docker installation](/Dev/install-with-docker)
 
+## Build from source
+
+Check the [build documentation](/get-started/Build)
+
 ## Linux
 
-`apt-get install underpass`
+<s>`apt-get install underpass`</s> (not available yet)
 
 ## MacOS
 
-`brew install underpass`
+<s>`brew install underpass`</s> (not available yet)
 

@@ -1,5 +1,7 @@
 # Underpass Data Flow
 
+![Flow Chart](dataflow.png)
+
 The Overpass data storage contains information from several
 sources. Underpass has to duplicate this collection of data and
 aggregate it into a similar structure. The primary data is the map
@@ -127,5 +129,3 @@ Underpass currently writes to 1 primary database: the
 *underpass* database, which stores all the calculated statistics, data
 validation results and raw OSM data that also gets updated every minute.
 
-&nbsp;
-![Flow Chart](dataflow.png)

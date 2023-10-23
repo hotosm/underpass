@@ -75,6 +75,7 @@ nav:
   - Developers:
       - Coding: Dev/coding.md
       - Debugging: Dev/debugging.md
+      - ChangeFile: Dev/changefile.md
       - Data flow: Dev/dataflow.md
       - Engine: Dev/engine.md
       - OSM Stats: Dev/osmstats.md
@@ -82,4 +83,5 @@ nav:
       - Validation: Dev/validation.md
       - Replication: Dev/replication.md
       - Utility: Dev/utility.md
+      - Chroots: Dev/chroots.md
       
