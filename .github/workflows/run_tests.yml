@@ -6,7 +6,7 @@ jobs:
 
   build:
 
-    runs-on: ubuntu:kinetic
+    runs-on: ubuntu-latest
 
     steps:
 

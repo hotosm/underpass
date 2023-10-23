@@ -12,7 +12,7 @@ installation.
 
 ## utils/bootstrap.sh
 
-* [Using the bootstrap.sh script](https://github.com/hotosm/underpass/blob/master/docs/bootstrapsh.md)
+* [Using the bootstrap.sh script](/Dev/bootstrapsh)
 
 ## utils/features2yaml
 
@@ -20,21 +20,6 @@ Get tags from the Map Features OSM wiki and output YAML
 
 Use this script for output a YAML data model that will be used in 
 the configuration files inside /validation directory.
-
-## utils/xlstoyaml
-
-Convert data models from XLSForms to YAML
-
-Use this script for output a YAML data model that will be used in the
-configuration files inside /validation directory.
-
-#### Usage
-
-```sh
-python xls2yaml.py --category buildings > buildings.yaml
-```
-
-You may want to add more configuration parameters to the YAML file later.
 
 ### Usage
 
@@ -53,6 +38,21 @@ Dependencies:
 
 * pip install beautifulsoup4
 * pip install requests
+
+## utils/xlstoyaml
+
+Convert data models from XLSForms to YAML
+
+Use this script for output a YAML data model that will be used in the
+configuration files inside /validation directory.
+
+#### Usage
+
+```sh
+python xls2yaml.py --category buildings > buildings.yaml
+```
+
+You may want to add more configuration parameters to the YAML file later.
 
 ## utils/poly2geojson
 
