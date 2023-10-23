@@ -14,42 +14,11 @@ It **updates a local copy of the OSM database** in near real-time, and provides 
 We've deployed a rudimentary demo that keeps a database up-to-date for (some country),
 rendering buildings and highlighting the ones identified as "un-squared":
 
-[See the demo](https://underpass.hotosm.org/_renderer.html?_fixtureId=%7B%22path%22%3A%22src%2Ffixtures%2FDemo.fixture.jsx%22%7D)
+[See The demo](https://underpass.hotosm.org)
 
 ## Getting started
 
-If you want to get started really quick and easy, use the [Docker installation](https://github.com/hotosm/underpass/blob/master/docs/install-docker.md) and skip the next steps.
-
-### 1. Install
-
-Install the software on your platform of preference.
-
-* [Linux](https://github.com/hotosm/underpass/blob/master/docs/install.md)
-* MacOS (docs in progress ...)
-
-### 2. Setup
-
-Select the region you want to work with and bootstrap the database with data.
-
-* [Using the bootstrap.sh script](https://github.com/hotosm/underpass/blob/master/docs/bootstrapsh.md)
-
-### 3. Run
-
-For keeping the database up-to-date, you must run underpass:
-
-`./underpass -t $(date +%Y-%m-%dT%H:%M:%S -d "2 days ago")'`
-
-On MacOS, the date command works different:
-
-`./underpass -t $(date -v -2d +%Y-%m-%dT%H:%M:%S)`
-
-A process will start downloading and processing OSM data until lastest data
-is reached, and then it will continue updating every minute.
-
-## Using the data
-
-* [Install & run the Underpass Python REST API](https://github.com/hotosm/underpass/blob/master/docs/python-rest-api.md)
-* [Use the Underpass UI components](https://github.com/hotosm/underpass/blob/master/docs/ui-components.md)
+Check [The docs](https://hotosm.github.io/underpass/)!
 
 ## Get involved!
 
@@ -64,11 +33,6 @@ where we need help, some of them are:
 * Packages for Python, React and system binaries
 * Data models for semantic validation
 * Tests for everything
-
-### Documentation
-
-* Check the [docs](https://github.com/hotosm/underpass/tree/master/docs) folder.
-* For internal documentation of all the C++ classes: [docs](https://hotosm.github.io/underpass/annotated.html) 
 
 ### License
 
