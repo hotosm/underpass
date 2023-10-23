@@ -48,10 +48,11 @@ main(int argc, char *argv[])
     yaml.read(filespec);
     // yaml.dump();
     
-    if (yaml.get("tags").children.size() > 0) {
+    if (yaml.get("tags").children.size() > 10000) {
         runtest.pass("Yaml::get().children");
     } else {
         runtest.fail("Yaml::get().children");
+        exit(1);
     }
 
     if (yaml.contains_value("complete", "yes")) {
