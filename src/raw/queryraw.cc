@@ -477,7 +477,7 @@ QueryRaw::getWaysFromDBWithoutRefs(int lastid, const std::string &tableName) {
     } else {
         waysQuery = "SELECT osm_id, ST_AsText(geom, 4326)";
     }
-    waysQuery += ", version, tags FROM " + tableName + " where osm_id > " + std::to_string(lastid) + " order by osm_id asc limit 500;";
+    waysQuery += ", tags FROM " + tableName + " where osm_id > " + std::to_string(lastid) + " order by osm_id asc limit 500;";
     
     auto ways_result = dbconn->query(waysQuery);
     // Fill vector of OsmWay objects
@@ -492,10 +492,9 @@ QueryRaw::getWaysFromDBWithoutRefs(int lastid, const std::string &tableName) {
         if (tableName == QueryRaw::polyTable) {
             way.polygon = { {std::begin(way.linestring), std::end(way.linestring)} };
         }
-        way.version = (*way_it)[2].as<long>();
-        auto tags = (*way_it)[3];
+        auto tags = (*way_it)[2];
         if (!tags.is_null()) {
-            auto tags = parseTagsString((*way_it)[3].as<std::string>());
+            auto tags = parseTagsString((*way_it)[2].as<std::string>());
             for (auto const& [key, val] : tags)
             {
                 way.addTag(key, val);
