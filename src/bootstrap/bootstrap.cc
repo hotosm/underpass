@@ -42,12 +42,14 @@ namespace bootstrap {
 
 void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
 
+    std::cout << "Connecting to the database (" << config.underpass_db_url << ") ..." << std::endl;
     auto db = std::make_shared<Pq>();
     if (!db->connect(config.underpass_db_url)) {
         log_error("Could not connect to Underpass DB, aborting monitoring thread!");
         return;
     }
 
+    std::cout << "Loading plugins ... " << std::endl;
     std::string plugins;
     if (boost::filesystem::exists("src/validate/.libs")) {
         plugins = "src/validate/.libs";
@@ -73,12 +75,15 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
     };
     
     for (auto table_it = tables.begin(); table_it != tables.end(); ++table_it) {
+        std::cout << "Counting geometries ... " << std::endl;
         int total = queryraw->getWaysCount(*table_it);
+        std::cout << "Total ways:" << total << std::endl;
         if (total > 0) {
             int count = 0;
             long lastid = 0;
             while (count < total) {
                 int percentage = (count * 100) / total;
+                std::cout << "\r" << "Processing " << *table_it << ": " << count << "/" << total << " (" << percentage << "%)";
                 auto task = std::make_shared<BootstrapTask>();
                 WayTask wayTask;
                 wayTask.plugin = validator;
@@ -87,11 +92,10 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
                 wayTask.task = task;
                 wayTask.lastid = lastid;
                 
-                processWays(wayTask, *table_it);
+                processWays(wayTask, *table_it, config);
                 db->query(task->query);
                 lastid = wayTask.lastid;
                 count += wayTask.processed;
-                std::cout << "\r" << "Processing " << *table_it << ": " << count << "/" << total << " (" << percentage << "%)";
             }
         }
     }
@@ -100,7 +104,7 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
 
 // This thread get started for every page of way
 void
-processWays(WayTask &wayTask, const std::string &tableName)
+processWays(WayTask &wayTask, const std::string &tableName, const underpassconfig::UnderpassConfig &config)
 {
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("bootstrap::processWays(wayTask): took %w seconds\n");
@@ -112,14 +116,18 @@ processWays(WayTask &wayTask, const std::string &tableName)
     auto queryraw = wayTask.queryraw;
     auto lastid = wayTask.lastid;
 
-    auto ways = queryraw->getWaysFromDB(lastid, tableName);
+    auto ways = std::make_shared<std::vector<OsmWay>>();
+    if (!config.norefs) {
+        ways = queryraw->getWaysFromDB(lastid, tableName);
+    } else {
+        ways = queryraw->getWaysFromDBWithoutRefs(lastid, tableName);
+    }
     wayTask.processed = ways->size();
     if (wayTask.processed > 0) {
         // Proccesing ways
         for (auto way = ways->begin(); way != ways->end(); ++way) {
-
             // If it's closed polygon
-            if (way->refs.front() == way->refs.back()) {
+            if (way->isClosed()) {
                 log_debug("Way Id: %1%", way->id);
 
                 // Bad geometry
@@ -135,8 +143,10 @@ processWays(WayTask &wayTask, const std::string &tableName)
             }
 
             // Fill the way_refs table
-            for (auto ref = way->refs.begin(); ref != way->refs.end(); ++ref) {
-                task->query += "INSERT INTO way_refs (way_id, node_id) VALUES (" + std::to_string(way->id) + "," + std::to_string(*ref) + "); ";
+            if (!config.norefs) {
+                for (auto ref = way->refs.begin(); ref != way->refs.end(); ++ref) {
+                    task->query += "INSERT INTO way_refs (way_id, node_id) VALUES (" + std::to_string(way->id) + "," + std::to_string(*ref) + "); ";
+                }
             }
         }
         wayTask.lastid = ways->back().id;
