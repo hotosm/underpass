@@ -1,41 +1,41 @@
-# The docker image will be built only on a push to the feature branch
+# # The docker image will be built only on a push to the feature branch
 
-name: Deps Dockerfile Build and Push
+# name: Deps Dockerfile Build and Push
 
-on:
-  push:
-    branches: [ update/docker-ci ]
+# on:
+#   push:
+#     branches: [ update/docker-ci ]
 
-# A workflow run is made up of one or more jobs that can run
-# sequentially or in parallel
-jobs:
+# # A workflow run is made up of one or more jobs that can run
+# # sequentially or in parallel
+# jobs:
 
-  build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu:kinetic
-    # Steps represent a sequence of tasks that will be executed
-    # as part of the job
-    steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your
-    # job can access it
-    - uses: actions/checkout@v2
+#   build:
+#     # The type of runner that the job will run on
+#     runs-on: ubuntu:kinetic
+#     # Steps represent a sequence of tasks that will be executed
+#     # as part of the job
+#     steps:
+#     # Checks-out your repository under $GITHUB_WORKSPACE, so your
+#     # job can access it
+#     - uses: actions/checkout@v2
 
-    - name: Login to Quay.io
-      uses: docker/login-action@v1
-      with:
-        registry: quay.io
-        username: ${{ secrets.QUAY_USERNAME }}
-        password: ${{ secrets.QUAY_ROBOT_TOKEN }}
+#     - name: Login to Quay.io
+#       uses: docker/login-action@v1
+#       with:
+#         registry: quay.io
+#         username: ${{ secrets.QUAY_USERNAME }}
+#         password: ${{ secrets.QUAY_ROBOT_TOKEN }}
 
-    - name: Pull remote image
-      run: docker pull quay.io/hotosm/underpass:kinetic
+#     - name: Pull remote image
+#       run: docker pull quay.io/hotosm/underpass:kinetic
 
-    - name: Build and tag Dockerfile
-      run: cd docker && docker build -t quay.io/hotosm/underpass:kinetic -f underpass.dockerfile .
+#     - name: Build and tag Dockerfile
+#       run: cd docker && docker build -t quay.io/hotosm/underpass:kinetic -f underpass.dockerfile .
 
-    # If there are changes to the dockerfile, then a new image will
-    # be pushed. Otherwise nothing will happen.
-    - name: Push to Quay.io
-      run: docker push quay.io/hotosm/underpass:kinetic
+#     # If there are changes to the dockerfile, then a new image will
+#     # be pushed. Otherwise nothing will happen.
+#     - name: Push to Quay.io
+#       run: docker push quay.io/hotosm/underpass:kinetic
 
 

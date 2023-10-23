@@ -13,12 +13,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Relies on the master branch built docker image for build-deps
-      # - name: Start Docker Compose
-      #   run: cd docker && docker-compose up -d
-
-      # - name: Build Underpass Library and Binaries
-      #   run: docker-compose -f docker-compose.yml exec -T underpass sh -c "cd /code && ./autogen.sh && mkdir build && cd build && ../configure && make -j `nproc`"
+      Relies on the master branch built docker image for build-deps
+      - name: Start Docker Compose & build
+        run: cd docker && docker-compose up -d
 
       # Temporary disabled (FIXME)
       # - name: Build and Run Underpass Tests (broken - it never fails)
