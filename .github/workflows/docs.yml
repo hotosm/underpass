@@ -20,5 +20,4 @@ jobs:
     uses: hotosm/gh-workflows/.github/workflows/mkdocs_build.yml@1.0.1
     needs: [build_doxygen]
     with:
-      image: ghcr.io/${{ github.repository }}:ci
       doxygen: true
