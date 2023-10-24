@@ -52,30 +52,35 @@ main(int argc, char *argv[])
         runtest.pass("StatsConfigSearch::search()");
     } else {
         runtest.fail("StatsConfigSearch::search()");
+        return 1;
     }
 
     if (statsconfig.search("underpass_tag", "underpass_test", osmchange::way) == "buildings") {
         runtest.pass("StatsConfigSearch::search() - way custom tags");
     } else {
         runtest.fail("StatsConfigSearch::search() - way custom tags");
+        return 1;
     }
 
     if (statsconfig.search("underpass_tag", "underpass_test", osmchange::node) == "buildings") {
         runtest.pass("StatsConfigSearch::search() - node custom tags");
     } else {
         runtest.fail("StatsConfigSearch::search() - node custom tags");
+        return 1;
     }
 
     if (statsconfig.search("underpass_tag2", "underpass_test", osmchange::node) == "underpass_category") {
         runtest.pass("StatsConfigSearch::search() - node custom tags and custom category");
     } else {
         runtest.fail("StatsConfigSearch::search() - node custom tags and custom category");
+        return 1;
     }
 
     if (statsconfig.search("underpass_tag2", "underpass_test", osmchange::way) == "underpass_category") {
         runtest.pass("StatsConfigSearch::search() - way custom tags and custom category");
     } else {
         runtest.fail("StatsConfigSearch::search() - way custom tags and custom category");
+        return 1;
     }
 
 }

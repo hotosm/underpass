@@ -102,6 +102,7 @@ main(int argc, char *argv[])
         runtest.pass("ChangeSet areaFilter - true (whole world)");
     } else {
         runtest.fail("ChangeSet areaFilter - true (whole world)");
+        return 1;
     }
 
     // ChangeSet - Small area in North Africa
@@ -110,6 +111,7 @@ main(int argc, char *argv[])
     testChangeset = changeset.changes.front().get();
     if (testChangeset && testChangeset->priority) {
         runtest.fail("ChangeSet areaFilter - false (small area)");
+        return 1;
     } else {
         runtest.pass("ChangeSet areaFilter - false (small area)");
     }
@@ -122,6 +124,7 @@ main(int argc, char *argv[])
         runtest.pass("ChangeSet areaFilter - true (empty)");
     } else {
         runtest.fail("ChangeSet areaFilter - true (empty)");
+        return 1;
     }
 
     // ChangeSet - Half area
@@ -132,6 +135,7 @@ main(int argc, char *argv[])
         runtest.pass("ChangeSet areaFilter - true (half area)");
     } else {
         runtest.fail("ChangeSet areaFilter - true (half area)");
+        return 1;
     }
 
     // OsmChange - Small area in North Africa
@@ -141,6 +145,7 @@ main(int argc, char *argv[])
         runtest.pass("OsmChange areaFilter - false (small area)");
     } else {
         runtest.fail("OsmChange areaFilter - false (small area)");
+        return 1;
     }
 
     // OsmChange - Whole world
@@ -150,6 +155,7 @@ main(int argc, char *argv[])
         runtest.pass("OsmChange areaFilter - true (whole world)");
     } else {
         runtest.fail("OsmChange areaFilter - true (whole world)");
+        return 1;
     }
     // Delete all changes
     osmchange.areaFilter(polySmallArea);
@@ -161,6 +167,7 @@ main(int argc, char *argv[])
         runtest.pass("OsmChange areaFilter - true (empty)");
     } else {
         runtest.fail("OsmChange areaFilter - true (empty)");
+        return 1;
     }
     // Delete all changes
     osmchange.areaFilter(polySmallArea);
@@ -172,6 +179,7 @@ main(int argc, char *argv[])
         runtest.pass("OsmChange areaFilter - true (half area)");
     } else {
         runtest.fail("OsmChange areaFilter - true (half area)");
+        return 1;
     }
 
 }

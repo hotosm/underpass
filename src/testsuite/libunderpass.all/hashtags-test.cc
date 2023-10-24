@@ -52,6 +52,7 @@ main(int argc, char *argv[])
         runtest.pass("ChangeSet hashtags");
     } else {
         runtest.fail("ChangeSet hashtags");
+        return 1;
     }
 
 }

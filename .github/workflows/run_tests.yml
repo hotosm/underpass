@@ -1,9 +1,9 @@
-name: 🧪 Build and Test
+name: 🧪 Build and test
 
 on:
   push:
     branches:
-      - test
+      - master
 
 jobs:
 
@@ -20,10 +20,17 @@ jobs:
       - name: Start Docker Compose & build
         run: cd docker && docker-compose up -d
 
-      # Run tests (FIXME: it never fails) 
-      - name: Build tests 
-        run: docker-compose -f docker-compose.yml exec -T underpass sh -c "cd /code/build && make check -j `nproc`"
+      # Copy Underpass library
+      - name: Copy library
+        run: docker-compose -f docker-compose.yml exec -T underpass sh -c "cp /code/build/.libs/libunderpass.so /usr/lib"
 
-      # Run individual test for testing
-      - name: Run individual test
-        run: docker-compose -f docker-compose.yml exec -T underpass sh -c "/code/build/src/testsuite/libunderpass.all/val-test"
+      # Build and run tests
+      - name: Build and run tests 
+        run: |
+          docker-compose -f docker-compose.yml exec -T underpass sh -c "cd /code/build && make check -j `nproc`"
+          exit_code=$?
+          if [ $exit_code -ne 0 ]; then
+            echo "Test failed with exit code $exit_code"
+            exit $exit_code
+          fi
+
