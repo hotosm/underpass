@@ -17,7 +17,7 @@ import { UnderpassMap } from "@hotosm/underpass-ui";
 <UnderpassMap
     center={[44.39016, -89.79617].reverse()}
     tags={"building=yes"}
-    zoom={17}
+    zoom={18}
 />
 ```
 
