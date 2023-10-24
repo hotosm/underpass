@@ -28,4 +28,3 @@ jobs:
             echo "Test failed with exit code $exit_code"
             exit $exit_code
           fi
-
