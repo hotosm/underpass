@@ -20,9 +20,13 @@ jobs:
       - name: Start Docker Compose & build
         run: cd docker && docker-compose up -d
 
-      # Run tests
+      # Build tests
       - name: Build tests 
         run: docker-compose -f docker-compose.yml exec -T underpass sh -c "cd /code/build && make check -j `nproc`"
+
+      # Copy Underpass library
+      - name: Copy library
+        run: docker-compose -f docker-compose.yml exec -T underpass sh -c "cp /code/build/.libs/libunderpass.so /usr/lib"
 
       # Run individual test for testing
       - name: Run individual test
