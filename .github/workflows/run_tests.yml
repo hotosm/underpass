@@ -1,9 +1,9 @@
-name: 🧪 Build and Test
+name: 🧪 Build and test
 
 on:
   push:
     branches:
-      - test
+      - master
 
 jobs:
 
