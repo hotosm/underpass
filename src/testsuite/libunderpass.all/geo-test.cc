@@ -58,12 +58,14 @@ main(int argc, char* argv[])
         runtest.pass("Read file with bad relative path");
     } else {
         runtest.fail("Read file with bad relative path");
+        return 1;
     }   
 
     if (tgu.readFile("/usr/local/lib/underpass/config/priority.geojson")) {
         runtest.pass("Read file with absolute path");
     } else {
         runtest.fail("Read file with absolute path");
+        return 1;
     }   
         
 };

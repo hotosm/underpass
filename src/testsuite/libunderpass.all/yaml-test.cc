@@ -59,47 +59,55 @@ main(int argc, char *argv[])
         runtest.pass("Yaml::get().contains_value()");
     } else {
         runtest.fail("Yaml::get().contains_value()");
+        return 1;
     }
     if (!yaml.contains_value("complete", "foo")) {
         runtest.pass("Yaml::get().contains_value()");
     } else {
         runtest.fail("Yaml::get().contains_value()");
+        return 1;
     }
 
     if (yaml.get("config").get("minangle").children.size() > 0) {
         runtest.pass("Yaml::get().get().children");
     } else {
         runtest.fail("Yaml::get().get().children");
+        return 1;
     }
 
     if (yaml.contains_key("building:material") && yaml.contains_key("building:roof")) {
         runtest.pass("Yaml::contains_key()");
     } else {
         runtest.fail("Yaml::contains_key()");
+        return 1;
     }
 
     if (yaml.contains_value("building:material", "metal") && yaml.contains_value("building:roof", "tiles")) {
         runtest.pass("Yaml::contains_value(good)");
     } else {
         runtest.fail("Yaml::contains_value(good)");
+        return 1;
     }
 
     if (!yaml.contains_value("building:material", "metalx") && !yaml.contains_value("building:roof", "tilesy")) {
         runtest.pass("Yaml::contains_value(good)");
     } else {
         runtest.fail("Yaml::contains_value(good)");
+        return 1;
     }
 
     if (yaml.contains_key("building:material") && yaml.contains_key("building:roof")) {
         runtest.pass("Yaml::containsKey()");
     } else {
         runtest.fail("Yaml::containsKey()");
+        return 1;
     }
 
     if (yaml.contains_key("building:levels") && yaml.contains_key("building:levels")) {
         runtest.pass("Yaml::containsValue(none)");
     } else {
         runtest.fail("Yaml::containsValue(none)");
+        return 1;
     }
 }
 

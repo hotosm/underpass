@@ -127,7 +127,7 @@ test_semantic_highway(std::shared_ptr<Validate> &plugin) {
     }
 }
 
-void
+int
 test_semantic_building(std::shared_ptr<Validate> &plugin) {
     // checkTag()
 
@@ -137,6 +137,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.pass("Validate::checkTag(good tag) [semantic building]");
     } else {
         runtest.fail("Validate::checkTag(good tag) [semantic building]");
+        return 1;
     }
 
     // Empty value
@@ -145,6 +146,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.pass("Validate::checkTag(empty value) [semantic building]");
     } else {
         runtest.fail("Validate::checkTag(empty value) [semantic building]");
+        return 1;
     }
 
     // Invalid tag, not listed into the config file (ex: foo bar=bar)
@@ -153,6 +155,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.pass("Validate::checkTag(space in key) [semantic building]");
     } else {
         runtest.fail("Validate::checkTag(space in key) [semantic building]");
+        return 1;
     }
 
     // Node - checkPOI()
@@ -167,6 +170,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.pass("Validate::checkPOI(no tags) [semantic building]");
     } else {
         runtest.fail("Validate::checkPOI(no tags) [semantic building]");
+        return 1;
     }
 
     osmobjects::OsmNode node_place;
@@ -180,6 +184,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.pass("Validate::checkPOI(incomplete but correct tagging) [semantic place]");
     } else {
         runtest.fail("Validate::checkPOI(incomplete but correct tagging) [semantic place]");
+        return 1;
     }
 
     node_place.addTag("name", "Electric City");
@@ -188,6 +193,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.pass("Validate::checkPOI(complete and correct tagging) [semantic place]");
     } else {
         runtest.fail("Validate::checkPOI(complete and correct tagging) [semantic place]");
+        return 1;
     }
 
     node.addTag("building", "yes");
@@ -199,6 +205,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.pass("Validate::checkPOI(bad value) [semantic building]");
     } else {
         runtest.fail("Validate::checkPOI(bad value) [semantic building]");
+        return 1;
     }
 
     // But it's complete
@@ -207,6 +214,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.pass("Validate::checkPOI(complete) [semantic building]");
     } else {
         runtest.fail("Validate::checkPOI(complete) [semantic building]");
+        return 1;
     }
 
     node.addTag("building:material", "wood");
@@ -219,6 +227,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.pass("Validate::checkPOI(no bad values) [semantic building]");
     } else {
         runtest.fail("Validate::checkPOI(no bad values) [semantic building]");
+        return 1;
     }
 
     // Way - checkWay()
@@ -231,7 +240,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.pass("Validate::checkWay(no tags) [semantic building]");
     } else {
         runtest.fail("Validate::checkWay(no tags) [semantic building]");
-        way.dump();
+        return 1;
     }
 
     way.addTag("building", "yes");
@@ -243,6 +252,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.pass("Validate::checkWay(bad value) [semantic building]");
     } else {
         runtest.fail("Validate::checkWay(bad value) [semantic building]");
+        return 1;
     }
 
     // But it's complete
@@ -252,6 +262,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.pass("Validate::checkWay(bad value) [semantic building]");
     } else {
         runtest.fail("Validate::checkWay(bad value) [semantic building]");
+        return 1;
     }
 
     way.addTag("building:material", "wood");
@@ -264,6 +275,7 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.pass("Validate::checkWay(no bad values) [semantic building]");
     } else {
         runtest.fail("Validate::checkWay(no bad values) [semantic building]");
+        return 1;
     }
 }
 

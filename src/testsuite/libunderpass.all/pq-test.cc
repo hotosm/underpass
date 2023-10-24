@@ -45,6 +45,7 @@ main(int argc, char *argv[])
         runtest.pass("PQ::PQ(void)");
     } else {
         runtest.fail("PQ::PQ(void)");
+        return 1;
     }
 
     ret = tp.parseURL("testdb");
@@ -53,6 +54,7 @@ main(int argc, char *argv[])
         runtest.pass("PQ::parseURL(dbname)");
     } else {
         runtest.fail("PQ::parseURL(dbname)");
+        return 1;
     }
     ret = tp.parseURL("localhost/testdb");
     //tp.dump();
@@ -60,6 +62,7 @@ main(int argc, char *argv[])
         runtest.pass("PQ::parseURL(localhost/dbname)");
     } else {
         runtest.fail("PQ::parseURL(localhost/dbname)");
+        return 1;
     }
     ret = tp.parseURL("testhost/testdb");
     //tp.dump();
@@ -67,6 +70,7 @@ main(int argc, char *argv[])
         runtest.pass("PQ::parseURL(remote/dbname)");
     } else {
         runtest.fail("PQ::parseURL(remote/dbname)");
+        return 1;
     }
 
     ret = tp.parseURL("foo@testhost/testdb");
@@ -76,6 +80,7 @@ main(int argc, char *argv[])
         runtest.pass("PQ::parseURL(user@remote/dbname)");
     } else {
         runtest.fail("PQ::parseURL(user@remote/dbname)");
+        return 1;
     }
 
     ret = tp.parseURL("foo:bar@testhost/testdb");
@@ -85,6 +90,7 @@ main(int argc, char *argv[])
         runtest.pass("PQ::parseURL(user:pass@remote/dbname)");
     } else {
         runtest.fail("PQ::parseURL(user:pass@remote/dbname)");
+        return 1;
     }
 
     ret = tp.parseURL("foo:bar@testhost");
@@ -94,6 +100,7 @@ main(int argc, char *argv[])
         runtest.pass("PQ::parseURL(user:pass@remote)");
     } else {
         runtest.fail("PQ::parseURL(user:pass@remote)");
+        return 1;
     }
 }
 

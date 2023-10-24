@@ -61,6 +61,7 @@ main(int argc, char *argv[])
         runtest.pass("Validate::checkWay(no badgeom) [squared building 1]");
     } else {
         runtest.fail("Validate::checkWay(no badgeom) [squared building 1]");
+        return 1;
     }
 
     // Squared building 2
@@ -70,6 +71,7 @@ main(int argc, char *argv[])
         runtest.pass("Validate::checkWay(no badgeom) [squared building 2]");
     } else {
         runtest.fail("Validate::checkWay(no badgeom) [squared building 2]");
+        return 1;
     }
 
     // Squared building 3
@@ -79,6 +81,7 @@ main(int argc, char *argv[])
         runtest.pass("Validate::checkWay(no badgeom) [squared building 3]");
     } else {
         runtest.fail("Validate::checkWay(no badgeom) [squared buildin 3]");
+        return 1;
     }
 
     // Un-squared building 1
@@ -88,6 +91,7 @@ main(int argc, char *argv[])
         runtest.pass("Validate::checkWay(badgeom) [unsquared building 1]");
     } else {
         runtest.fail("Validate::checkWay(badgeom) [unsquared building 1]");
+        return 1;
     }
 
     // Un-squared building 2
@@ -97,6 +101,7 @@ main(int argc, char *argv[])
         runtest.pass("Validate::checkWay(badgeom) [unsquared building 2]");
     } else {
         runtest.fail("Validate::checkWay(badgeom) [unsquared building 2]");
+        return 1;
     }
 
     // Un-squared building 3
@@ -106,6 +111,7 @@ main(int argc, char *argv[])
         runtest.pass("Validate::checkWay(badgeom) [unsquared building 3]");
     } else {
         runtest.fail("Validate::checkWay(badgeom) [unsquared building 3]");
+        return 1;
     }
 
 }

@@ -53,6 +53,7 @@ main(int argc, char* argv[])
         runtest.pass("Underpass::connect");
     } else {
         runtest.fail("Underpass::connect");
+        return 1;
     }
 
     ptime tstamp = time_from_string("2014-09-18 12:03:29");
@@ -61,6 +62,7 @@ main(int argc, char* argv[])
     if (state->sequence > 0) {
         if (state->path.compare("https://planet.openstreetmap.org/replication/changesets/000/972/927")) {
             runtest.fail("Underpass::getState(changeset)");
+            return 1;
         } else {
             runtest.pass("Underpass::getState(changeset)");
         }
@@ -70,6 +72,7 @@ main(int argc, char* argv[])
         state->dump();
         if (state->path.compare("https://planet.openstreetmap.org/replication/minute/001/053/674")) {
             runtest.fail("Underpass::getState(minutely)");
+            return 1;
         } else {
             runtest.pass("Underpass::getState(minutely)");
         }
