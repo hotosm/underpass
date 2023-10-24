@@ -1,4 +1,4 @@
-![CI Build and Testing](https://github.com/hotosm/underpass/actions/workflows/tests.yml/badge.svg)
+![CI Build and Testing](https://github.com/hotosm/underpass/actions/workflows/tests.yaml/badge.svg)
 ![Doxygen](https://github.com/hotosm/underpass/actions/workflows/docs.yml/badge.svg)
 
 # Underpass
