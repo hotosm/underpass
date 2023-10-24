@@ -54,8 +54,6 @@ services:
     volumes:
       - ./replication:/code/build/replication
   #   - ./:/code
-    depends_on:
-      - postgis
     networks:
       internal:
 
