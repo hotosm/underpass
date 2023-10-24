@@ -14,7 +14,7 @@ rendering buildings and highlighting the ones identified as "un-squared":
 
 [See The demo](https://underpass.hotosm.org)
 
-<img width="754" alt="Underpass Demo screenshot" src="https://github.com/hotosm/underpass/assets/1226194/20b7bee2-d9af-40fc-bae2-ff21cb7c3b34">
+<img width="1120" alt="Underpass demo screenshot" src="https://github.com/hotosm/underpass/assets/1226194/41c2caf2-4206-4969-9f69-4d73de8d5523" />
 
 ## Getting started
 
