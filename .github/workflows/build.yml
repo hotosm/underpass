@@ -24,5 +24,5 @@ jobs:
     uses: hotosm/gh-workflows/.github/workflows/image_build.yml@1.1.0
     with:
       image_name: ghcr.io/${{ github.repository }}/service
-      build_context: docker
-      build_dockerfile: underpass.dockerfile
+      context: docker
+      dockerfile: underpass.dockerfile

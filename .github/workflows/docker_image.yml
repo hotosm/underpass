@@ -3,7 +3,7 @@ name: Deps Dockerfile Build and Push
 on:
   push:
     branches:
-      - master 
+      - master
 permissions:
   contents: write
 jobs:
