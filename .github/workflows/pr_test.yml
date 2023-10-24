@@ -1,0 +1,24 @@
+name: 🧪 PR Test
+
+on:
+  pull_request:
+    branches:
+      - master
+    # Workflow is triggered only if src/backend changes
+    paths:
+      - src/**
+  # Allow manual trigger (workflow_dispatch)
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    uses: hotosm/gh-workflows/.github/workflows/test_compose.yml@1.1.0
+    with:
+      image_name: ghcr.io/${{ github.repository }}/service
+      build_context: docker
+      build_dockerfile: underpass.dockerfile
+      compose_service: underpass
+      compose_command: wait-for-it postgis:5432 --strict -- "cd /code/build && make check -j `nproc`"
+      cache_extra_imgs: |
+        "docker.io/postgis/postgis:15-3.3"
+    secrets: inherit
