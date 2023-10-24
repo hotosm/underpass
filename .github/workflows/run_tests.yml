@@ -1,6 +1,9 @@
 name: 🧪 Build and Test
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - test
 
 jobs:
 
@@ -18,6 +21,9 @@ jobs:
         run: cd docker && docker-compose up -d
 
       # Run tests (FIXME: it never fails) 
-      - name: Build and Run Underpass Tests 
+      - name: Build tests 
         run: docker-compose -f docker-compose.yml exec -T underpass sh -c "cd /code/build && make check -j `nproc`"
 
+      # Run individual test for testing
+      - name: Run individual test
+        run: docker-compose -f docker-compose.yml exec -T underpass sh -c "/code/build/src/testsuite/libunderpass.all/val-test"
