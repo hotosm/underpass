@@ -135,7 +135,7 @@ main(int argc, char *argv[])
                                   : SRCDIR};
 
     std::string test_data_dir(DATADIR);
-    test_data_dir += "src/testsuite/testdata/";
+    test_data_dir += "/testsuite/testdata/";
 
     std::cerr << test_data_dir << std::endl;
 
