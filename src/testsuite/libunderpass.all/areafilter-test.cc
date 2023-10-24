@@ -168,7 +168,7 @@ main(int argc, char *argv[])
     // osmchange.areaFilter(polySmallArea);
 
     // OsmChange - Half area
-    // FIXME
+    // FIXME!
     // osmchange.readChanges(osmchangeFile);
     // osmchange.areaFilter(polyHalf);
     // if (getPriority(osmchange, true) && countFeatures(osmchange) == 28) {
