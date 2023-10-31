@@ -17,4 +17,5 @@ class RawRequest(BaseModel):
     hashtag: str = None
     dateFrom: str = None
     dateTo: str = None
+    status: str = None
     page: int = None

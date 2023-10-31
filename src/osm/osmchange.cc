@@ -733,15 +733,6 @@ OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate
                 if (way->refs.front() == way->refs.back()) {
                     status->timestamp = boost::posix_time::microsec_clock::universal_time();
                     status->uid = way->uid;
-
-                    // Overlapping
-                    if (plugin->overlaps(change->ways, *way)) {
-                        status->status.insert(overlaping);
-                    }
-                    // Duplicate
-                    if (plugin->duplicate(change->ways, *way)) {
-                        status->status.insert(duplicate);
-                    }
                     // Bad geometry
                     if (boost::geometry::num_points(way->linestring) - 1 < 4 ||
                         plugin->unsquared(way->linestring)
@@ -757,15 +748,15 @@ OsmChangeFile::validateWays(const multipolygon_t &poly, std::shared_ptr<Validate
             totals->push_back(status);
 
             // Semantic checks
-            // std::vector<std::string> way_tests = {"building", "highway", "landuse", "natural", "place", "waterway"};
-            // for (auto test_it = way_tests.begin(); test_it != way_tests.end(); ++test_it) {
-            //     if (way->containsKey(*test_it)) {
-            //         auto status = plugin->checkWay(*way, *test_it);
-            //         status->source = *test_it;
-            //         boost::geometry::centroid(way->linestring, status->center);
-            //         totals->push_back(status);
-            //     }
-            // }
+            std::vector<std::string> way_tests = {"building"};
+            for (auto test_it = way_tests.begin(); test_it != way_tests.end(); ++test_it) {
+                if (way->containsKey(*test_it)) {
+                    auto status = plugin->checkWay(*way, *test_it);
+                    status->source = *test_it;
+                    // boost::geometry::centroid(way->linestring, status->center);
+                    totals->push_back(status);
+                }
+            }
         }
     }
     return totals;

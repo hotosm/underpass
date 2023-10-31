@@ -48,9 +48,9 @@ class TestOsmChange : public osmchange::OsmChangeFile {};
 
 typedef std::shared_ptr<Validate>(plugin_t)();
 
-// void test_semantic_building(std::shared_ptr<Validate> &plugin);
+int test_semantic_building(std::shared_ptr<Validate> &plugin);
 // void test_semantic_highway(std::shared_ptr<Validate> &plugin);
-void test_geometry_building(std::shared_ptr<Validate> &plugin);
+int test_geometry_building(std::shared_ptr<Validate> &plugin);
 
 int
 main(int argc, char *argv[])
@@ -60,7 +60,6 @@ main(int argc, char *argv[])
     dbglogfile.setLogFilename("val-test.log");
     dbglogfile.setVerbosity(3);
 
-#if 1
     std::string plugins(PKGLIBDIR);
     boost::dll::fs::path lib_path(plugins);
     boost::function<plugin_t> creator;
@@ -74,12 +73,12 @@ main(int argc, char *argv[])
         log_debug("Couldn't load plugin! %1%", e.what());
         exit(0);
     }
+    std::string testValidationConfig = DATADIR;
+    testValidationConfig += "/testsuite/testdata/validation/config";
     auto plugin = creator();
-#else
-    auto plugin = std::make_shared<hotosm::Hotosm>();
-#endif
+    plugin->loadConfig(testValidationConfig);
 
-    // test_semantic_building(plugin);
+    test_semantic_building(plugin);
     // test_semantic_highway(plugin);
     test_geometry_building(plugin);
 }
@@ -277,10 +276,27 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         runtest.fail("Validate::checkWay(no bad values) [semantic building]");
         return 1;
     }
+
+    // Has spaces
+    way.addTag("building:material", "made of wood");
+    status = plugin->checkWay(way, "building");
+    if (status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkWay(bad values) [semantic building]");
+    } else {
+        runtest.fail("Validate::checkWay(bad values) [semantic building]");
+        return 1;
+    }
+
+    
+
+    // TODO: Has empty value
+    // TODO: Has single quote
+    // TODO: Has double quotes
+    // TODO: Has spaces
 }
 
 // Geometry tests for buildings
-void
+int
 test_geometry_building(std::shared_ptr<Validate> &plugin)
 {
 

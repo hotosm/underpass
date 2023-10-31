@@ -17,8 +17,8 @@
 //     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 //
 
-#ifndef __HOTOSM_H__
-#define __HOTOSM_H__
+#ifndef __SEMANTIC_H__
+#define __SEMANTIC_H__
 
 #include <array>
 #include <vector>
@@ -40,53 +40,26 @@
 #include <boost/geometry/geometries/polygon.hpp>
 
 #include "utils/yaml.hh"
-#include "hotosm.hh"
+#include "semantic.hh"
 #include "validate.hh"
 #include "osm/osmchange.hh"
 #include "utils/log.hh"
 
 using namespace logger;
 
-namespace hotosm {
+// This plugin checks for issues with tags
+// [*] Required tags
+// [*] Bad values
+// [*] Empty value
+// [*] No tags
+
+namespace semantic {
 
 LogFile &dbglogfile = LogFile::getDefaultInstance();
 
-// FIXME: things to look for
-// Villages, hamlets, neigborhoods, towns, or cities added without a name
+Semantic::Semantic(void) {}
 
-Hotosm::Hotosm(void) {}
-
-#if 0
-Hotosm::Hotosm(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes)
-{
-    for (auto it = std::begin(changes); it != std::end(changes); ++it) {
-        osmchange::OsmChange *change = it->get();
-        change->dump();
-        if (change->action == osmobjects::create) {
-            for (auto it = std::begin(change->nodes); it != std::end(change->nodes); ++it) {
-                osmobjects::OsmNode *node = it->get();
-                if (node->tags.size() > 0) {
-                    // log_debug("Validating New Node ID %1% has tags", node->id);
-                    checkPOI(node);
-                } else {
-                    continue;
-                }
-            // for (auto it = std::begin(change->ways); it != std::end(change->ways); ++it) {
-            //     OsmWay *way = it->get();
-            //     if (way->tags.size() == 0) {
-            //         log_error("Validating New Way ID %1% has no tags", way->id);
-            //         checkWay(way);
-            //     } else {
-            //         continue;
-            //     }
-            // }
-            }
-        }
-    }
-}
-#endif
-
-bool Hotosm::isValidTag(const std::string &key, const std::string &value, yaml::Node tags) {
+bool Semantic::isValidTag(const std::string &key, const std::string &value, yaml::Node tags) {
     if (tags.contains_value(key, value) ||
         (tags.get(key).children.size() == 0 && tags.contains_key(key))) {
             return true;
@@ -95,7 +68,7 @@ bool Hotosm::isValidTag(const std::string &key, const std::string &value, yaml::
     return false;
 }
 
-bool Hotosm::isRequiredTag(const std::string &key, yaml::Node required_tags) {
+bool Semantic::isRequiredTag(const std::string &key, yaml::Node required_tags) {
     if (required_tags.children.size() > 0 && required_tags.contains_key(key)) {
         log_debug("Required tag: %1%", key);
         return true;
@@ -106,7 +79,7 @@ bool Hotosm::isRequiredTag(const std::string &key, yaml::Node required_tags) {
 // Check a POI for tags. A node that is part of a way shouldn't have any
 // tags, this is to check actual POIs, like a school.
 std::shared_ptr<ValidateStatus>
-Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
+Semantic::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
 {
     auto status = std::make_shared<ValidateStatus>(node);
     status->timestamp = boost::posix_time::microsec_clock::universal_time();
@@ -128,11 +101,10 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     yaml::Yaml tests = yamls[type];
     // List of valid tags to be validated
     auto tags = tests.get("tags");
-#if 0
+
     // Not using required_tags disables writing features flagged for not being tag complete
     // from being written to the database thus reducing the size of the results.
     auto required_tags = tests.get("required_tags");
-#endif
 
     std::string key;
     int tagexists = 0;
@@ -143,14 +115,12 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
             status->status.insert(badvalue);
             status->values.insert(vit->first + "=" +  vit->second);
         }
-#if 0
         if (isRequiredTag(vit->first, required_tags)) {
             tagexists++;
         }
-#endif
+        checkTag(vit->first, vit->second);
     }
 
-#if 0
     if (tagexists == required_tags.children.size()) {
         status->status.insert(complete);
     } else {
@@ -159,14 +129,13 @@ Hotosm::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
     if (status->status.size() == 0) {
         status->status.insert(correct);
     }
-#endif
     return status;
 }
 
 // This checks a way. A way should always have some tags. Often a polygon
 // with no tags is a building.
 std::shared_ptr<ValidateStatus>
-Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
+Semantic::checkWay(const osmobjects::OsmWay &way, const std::string &type)
 {
     // On non-english numeric locales using decimal separator different than '.'
     // this is necessary to parse double strings with std::stod correctly
@@ -189,59 +158,51 @@ Hotosm::checkWay(const osmobjects::OsmWay &way, const std::string &type)
     if (way.action == osmobjects::remove) {
         return status;
     }
-    if (way.linestring.size() == 0) {
-        return status;
-    }
 
     yaml::Yaml tests = yamls[type];
 
     std::string key;
-    int tagexists = 0;
     // List of valid tags to be validated
     auto tags = tests.get("tags");
-#if 0
+
+    // These values are in the config section of the YAML file
+    auto config = tests.get("config");
+
     // Not using required_tags disables writing features flagged for not being tag complete
     // from being written to the database thus reducing the size of the results.
     auto required_tags = tests.get("required_tags");
-#endif
-    // These values are in the config section of the YAML file
-    auto config = tests.get("config");
 
     // This enables/disables writing features flagged for not having values
     // in range as defined in the YAML config file. This prevents those
     // from being written to the database to reduce the size of the results.
-    bool values = tests.get("config").contains_value("values", "yes");
 
+    int tagexists = 0;
     for (auto vit = std::begin(way.tags); vit != std::end(way.tags); ++vit) {
-
-        if (!isValidTag(vit->first, vit->second, tags)) {
-            status->status.insert(badvalue);
-            status->values.insert(vit->first + "=" +  vit->second);
-        }
-#if 0
-        if (isRequiredTag(vit->first, required_tags)) {
-            tagexists++;
-        }
-#endif
+            if (!isValidTag(vit->first, vit->second, tags)) {
+                status->status.insert(badvalue);
+                status->values.insert(vit->first + "=" +  vit->second);
+            }
+            if (isRequiredTag(vit->first, required_tags)) {
+                tagexists++;
+            }
+            checkTag(vit->first, vit->second);
     }
-#if 0
+
     if (tagexists == required_tags.children.size()) {
         status->status.insert(complete);
     } else {
         status->status.insert(incomplete);
     }
-#endif
+
     return status;
 }
 
 // Check a tag for typical errors
 std::shared_ptr<ValidateStatus>
-Hotosm::checkTag(const std::string &key, const std::string &value)
+Semantic::checkTag(const std::string &key, const std::string &value)
 {
     auto status = std::make_shared<ValidateStatus>();
-
-    // log_trace("Hotosm::checkTag(%1%, %2%)", key, value);
-    // status->status.insert(correct);
+    // log_trace("Semantic::checkTag(%1%, %2%)", key, value);
     // Check for an empty value
     if (!key.empty() && value.empty()) {
         log_debug("WARNING: empty value for tag \"%1%\"", key);
@@ -262,16 +223,12 @@ Hotosm::checkTag(const std::string &key, const std::string &value)
         log_error("WARNING: double quote in tag value \"%1%\"", value);
         status->status.insert(badvalue);
     }
-
-    if (status->status.size() == 0) {
-        // status->status.insert(correct);
-    }
     return status;
 }
 
 // Check a OSM Change for typical errors
 std::vector<ValidateStatus>
-Hotosm::checkOsmChange(const std::string &xml, const std::string &check) {
+Semantic::checkOsmChange(const std::string &xml, const std::string &check) {
     osmchange::OsmChangeFile ocf;
     std::stringstream _xml(xml);
     ocf.readXML(_xml);
@@ -298,9 +255,9 @@ Hotosm::checkOsmChange(const std::string &xml, const std::string &check) {
     return result;
 }
 
-}; // namespace hotosm
+}; // namespace semantic
 
-#endif // EOF __HOTOSM_H__
+#endif // EOF __SEMANTIC_H__
 
 // Local Variables:
 // mode: C++

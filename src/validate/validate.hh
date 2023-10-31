@@ -57,7 +57,7 @@ using namespace logger;
 
 // JOSM validator
 //   [ ] Crossing ways
-//   [/] Duplicate Ways
+//   [ ] Duplicate Ways
 //   [ ] Duplicate nodes
 //   [ ] Duplicate relations
 //   [ ] Duplicated way nodes
@@ -65,18 +65,18 @@ using namespace logger;
 //   [x] No square building corners
 
 // OSMInspector
-//   [x] Empty tag key
-//   [x] Unknown highway type
+//   [ ] Empty tag key
+//   [ ] Unknown highway type
 //   [ ] Single node way
 //   [ ] Interescting ways
 
 // OSMose
-//   [/] Overlapping buildings
+//   [ ] Overlapping buildings
 //   [ ] orphan nodes
-//   [/] Duplicate geomtry
+//   [ ] Duplicate geomtry
 //   [ ] Highway not connected
-//   [x] Missing tags
-//   [/] Duplicate object
+//   [ ] Missing tags
+//   [ ] Duplicate object
 
 /// \enum valerror_t
 /// The data validation values for the status column in the database.
@@ -173,6 +173,10 @@ class BOOST_SYMBOL_VISIBLE Validate {
     Validate(void) {
         std::string path = PKGLIBDIR;
         path += "/config/validate";
+        loadConfig(path);
+    }
+
+    void loadConfig(const std::string &path) {
         if (!boost::filesystem::exists(path)) {
             throw std::runtime_error("Validation configuration file not found: " + path);
         }
@@ -187,35 +191,31 @@ class BOOST_SYMBOL_VISIBLE Validate {
                 }
             }
         }
-#if 0
-    Validate(const std::string &filespec) {
-        yaml::Yaml yaml;
-        yaml.read(filespec);
-        if (!config.stem().empty()) {
-            yamls[config.stem()] = yaml;
-        }
     }
-#endif
-    };
+
     virtual ~Validate(void){};
     // Validate(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes) {};
 
     /// Check a POI for tags. A node that is part of a way shouldn't have any
     /// tags, this is to check actual POIs, like a school.
-    virtual std::shared_ptr<ValidateStatus> checkPOI(const osmobjects::OsmNode &node, const std::string &type) = 0;
-
+    virtual std::shared_ptr<ValidateStatus> checkGeometry(const osmobjects::OsmNode &node, const std::string &type) = 0;
     /// This checks a way. A way should always have some tags. Often a polygon
     /// is a building
-    virtual std::shared_ptr<ValidateStatus> checkWay(const osmobjects::OsmWay &way, const std::string &type) = 0;
-    std::shared_ptr<ValidateStatus> checkTags(std::map<std::string, std::string> tags) {
-        auto status = std::make_shared<ValidateStatus>();
-        for (auto it = std::begin(tags); it != std::end(tags); ++it) {
-            // FIXME: temporarily disabled
-            // result = checkTag(it->first, it->second);
-        }
-        return status;
-    };
-    virtual std::shared_ptr<ValidateStatus> checkTag(const std::string &key, const std::string &value) = 0;
+    virtual std::shared_ptr<ValidateStatus> checkGeometry(const osmobjects::OsmWay &way, const std::string &type) = 0;
+
+    virtual std::shared_ptr<ValidateStatus> checkSemantic(const osmobjects::OsmWay &way, const std::string &type) = 0;
+    virtual std::shared_ptr<ValidateStatus> checkSemantic(const osmobjects::OsmWay &node, const std::string &type) = 0;
+
+    std::shared_ptr<ValidateStatus> checkNode(const osmobjects::OsmWay &node, const std::string &type) {
+        auto status = std::make_shared<ValidateStatus>(node);
+        auto geometryStatus = checkGeometry(node, type);
+        auto semanticStatus = checkSemantic(node, type);
+    }
+    std::shared_ptr<ValidateStatus> checkWay(const osmobjects::OsmWay &way, const std::string &type) {
+        // checkGeometry
+        // checkSemantic
+    }
+
     yaml::Yaml &operator[](const std::string &key) { return yamls[key]; };
     
     void dump(void) {
@@ -223,103 +223,6 @@ class BOOST_SYMBOL_VISIBLE Validate {
             it->second.dump();
         }
     }
-
-    bool overlaps(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, osmobjects::OsmWay &way) {
-        // This test only applies to buildings, as highways often overlap.
-        // TODO: move logic to a config file
-        yaml::Yaml tests = yamls["building"];
-        if (tests.get("config").contains_value("overlaps", "yes")) {
-#ifdef TIMING_DEBUG_X
-            boost::timer::auto_cpu_timer timer("validate::overlaps: took %w seconds\n");
-#endif
-            if (way.numPoints() <= 1) {
-                return false;
-            }
-            for (auto nit = std::begin(allways); nit != std::end(allways); ++nit) {
-                osmobjects::OsmWay *oldway = nit->get();
-                if (boost::geometry::overlaps(oldway->polygon, way.polygon)) {
-                    if (way.getTagValue("layer") == oldway->getTagValue("layer") && way.id != oldway->id) {
-                        log_error("Building %1% overlaps with %2%", way.id, oldway->id);
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    bool duplicate(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, osmobjects::OsmWay &way) {
-        // This test only applies to buildings, as highways often overlap.
-        // TODO: move logic to a config file
-        yaml::Yaml tests = yamls["building"];
-        if (tests.get("config").contains_value("duplicate", "yes")) {
-#ifdef TIMING_DEBUG_X
-            boost::timer::auto_cpu_timer timer("validate::duplicate: took %w seconds\n");
-#endif
-            if (way.numPoints() <= 1) {
-                return false;
-            }
-
-            for (auto nit = std::begin(allways); nit != std::end(allways); ++nit) {
-                osmobjects::OsmWay *oldway = nit->get();
-                std::deque<polygon> output;
-                bg::intersection(oldway->polygon, way.polygon, output);
-                double iarea = 0;
-                for (auto& p : output)
-                    iarea += bg::area(p);
-                double wayarea = bg::area(way.polygon);
-                double iareapercent = (iarea * 100) / wayarea;
-                if (iareapercent >= 80) {
-                    if (way.getTagValue("layer") == oldway->getTagValue("layer") && way.id != oldway->id) {
-                        log_error("Building %1% duplicate %2%", way.id, oldway->id);
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    bool unsquared(
-        const linestring_t &way,
-        double min_angle = 89,
-        double max_angle = 91
-    ) {
-        const int num_points =  boost::geometry::num_points(way);
-        for(int i = 0; i < num_points - 1; i++) {
-            // Three points
-            int a,b,c;
-            if (i < num_points - 3) {
-                a = i;
-                b = i + 1;
-                c = i + 2;
-            } else if (i == num_points - 3) {
-                a = i;
-                b = i + 1;
-                c = 0;
-            } else {
-                a = i;
-                b = 0;
-                c = 1;
-            }
-            double x1 = boost::geometry::get<0>(way[a]);
-            double y1 = boost::geometry::get<1>(way[a]);
-            double x2 = boost::geometry::get<0>(way[b]);
-            double y2 = boost::geometry::get<1>(way[b]);
-            double x3 = boost::geometry::get<0>(way[c]);
-            double y3 = boost::geometry::get<1>(way[c]);
-
-            double angle = geo::Geo::calculateAngle(x1,y1,x2,y2,x3,y3);
-
-            if (
-                (angle > max_angle || angle < min_angle) &&
-                (angle < 179 || angle > 181)
-            ) {
-                return true;
-            }
-        }
-        return false;
-    };
 
   protected:
     std::map<std::string, yaml::Yaml> yamls;
