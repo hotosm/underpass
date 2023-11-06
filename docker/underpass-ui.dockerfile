@@ -7,5 +7,9 @@ RUN apk --no-cache add git
 WORKDIR /code
 RUN git clone https://github.com/hotosm/underpass-ui.git .
 RUN yarn install
+RUN yarn build
+
+WORKDIR /code/playground
+RUN yarn install
 
 ENTRYPOINT ["yarn", "cosmos"]
