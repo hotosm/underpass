@@ -27,8 +27,6 @@
 #include <array>
 #include <memory>
 #include <iostream>
-#include <codecvt>
-#include <locale>
 #include <algorithm>
 #include <pqxx/pqxx>
 #include <list>

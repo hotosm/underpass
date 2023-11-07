@@ -233,7 +233,6 @@ def getNodesList(request: RawRequest):
 
 @app.post("/raw/allList")
 def getAllList(request: RawRequest):
-    print("request.status", request.status)
     results = rawer.getAllList(
         area = request.area or None,
         tags = request.tags or "",

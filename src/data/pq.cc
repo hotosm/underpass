@@ -25,8 +25,6 @@
 #include "data/pq.hh"
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/split.hpp>
-#include <locale>
-#include <codecvt>
 #include <iostream>
 #include <string>
 #include <vector>
