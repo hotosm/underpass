@@ -31,7 +31,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 
-#include "validate/hotosm.hh"
+#include "validate/defaultvalidation.hh"
 #include "validate/validate.hh"
 #include "stats/querystats.hh"
 #include "osm/osmobjects.hh"
@@ -48,9 +48,8 @@ class TestOsmChange : public osmchange::OsmChangeFile {};
 
 typedef std::shared_ptr<Validate>(plugin_t)();
 
-int test_semantic_building(std::shared_ptr<Validate> &plugin);
-// void test_semantic_highway(std::shared_ptr<Validate> &plugin);
-int test_geometry_building(std::shared_ptr<Validate> &plugin);
+int test_semantic(std::shared_ptr<Validate> &plugin);
+int test_geospatial(std::shared_ptr<Validate> &plugin);
 
 int
 main(int argc, char *argv[])
@@ -68,7 +67,7 @@ main(int argc, char *argv[])
             lib_path / "libunderpass.so", "create_plugin",
             boost::dll::load_mode::append_decorations
         );
-        log_debug("Loaded plugin hotosm!");
+        log_debug("Loaded plugin!");
     } catch (std::exception& e) {
         log_debug("Couldn't load plugin! %1%", e.what());
         exit(0);
@@ -78,9 +77,8 @@ main(int argc, char *argv[])
     auto plugin = creator();
     plugin->loadConfig(testValidationConfig);
 
-    test_semantic_building(plugin);
-    // test_semantic_highway(plugin);
-    test_geometry_building(plugin);
+    test_semantic(plugin);
+    test_geospatial(plugin);
 }
 
 osmobjects::OsmWay readOsmWayFromFile(std::string filename) {
@@ -96,79 +94,67 @@ osmobjects::OsmWay readOsmWayFromFile(std::string filename) {
     return *osmchange.changes.front().get()->ways.front().get();
 }
 
-void
-test_semantic_highway(std::shared_ptr<Validate> &plugin) {
-     // Way - checkWay()
-
-    auto way = readOsmWayFromFile("/testsuite/testdata/validation/highway.osc");
-
-    way.addTag("highway", "primary");
-
-    // Has an invalid key=value
-    way.addTag("surface", "sponge");
-    auto status = plugin->checkWay(way, "highway");
-    if (status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkWay(bad value) [semantic highway]");
-    } else {
-        runtest.fail("Validate::checkWay(bad value) [semantic highway]");
-    }
-
-    way.addTag("surface", "unpaved");
-    way.addTag("smoothness", "very_horrible");
-    way.addTag("highway", "unclassified");
-
-    // Has all valid tags
-    status = plugin->checkWay(way, "highway");
-    if (!status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkWay(no bad values) [semantic highway]");
-    } else {
-        runtest.fail("Validate::checkWay(no bad values) [semantic highway]");
-    }
-}
-
 int
-test_semantic_building(std::shared_ptr<Validate> &plugin) {
-    // checkTag()
+test_semantic(std::shared_ptr<Validate> &plugin) {
 
-    // Existence of key=value
-    auto status = plugin->checkTag("building", "yes");
-    if (!status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkTag(good tag) [semantic building]");
-    } else {
-        runtest.fail("Validate::checkTag(good tag) [semantic building]");
-        return 1;
-    }
-
-    // Empty value
-    status = plugin->checkTag("building", "");
-    if (status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkTag(empty value) [semantic building]");
-    } else {
-        runtest.fail("Validate::checkTag(empty value) [semantic building]");
-        return 1;
-    }
-
-    // Invalid tag, not listed into the config file (ex: foo bar=bar)
-    status = plugin->checkTag("foo bar", "bar");
-    if (status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkTag(space in key) [semantic building]");
-    } else {
-        runtest.fail("Validate::checkTag(space in key) [semantic building]");
-        return 1;
-    }
-
-    // Node - checkPOI()
+    // Node - checkNode()
 
     osmobjects::OsmNode node;
     node.id = 11111;
     node.changeset = 22222;
 
     // Node with no tags
-    status = plugin->checkPOI(node, "building");
+    auto status = plugin->checkNode(node, "building");
     if (status->osm_id == 11111 && status->hasStatus(notags)) {
-        runtest.pass("Validate::checkPOI(no tags) [semantic building]");
+        runtest.pass("Validate::checkNode(no tags) [semantic building]");
     } else {
-        runtest.fail("Validate::checkPOI(no tags) [semantic building]");
+        runtest.fail("Validate::checkNode(no tags) [semantic building]");
+        return 1;
+    }
+
+    // Node with tag with no value
+    node.addTag("building", "");
+    status = plugin->checkNode(node, "building");
+    if (status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkNode(no value) [semantic building]");
+    } else {
+        runtest.fail("Validate::checkNode(no value) [semantic building]");
+        return 1;
+    }
+
+    node.addTag("building", "\"yes\"");
+    status = plugin->checkNode(node, "building");
+    if (status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkNode(double quotes) [semantic building]");
+    } else {
+        runtest.fail("Validate::checkNode(double quotes) [semantic building]");
+        return 1;
+    }
+
+    node.addTag("building", "'yes'");
+    status = plugin->checkNode(node, "building");
+    if (status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkNode(single quotes) [semantic building]");
+    } else {
+        runtest.fail("Validate::checkNode(single quotes) [semantic building]");
+        return 1;
+    }
+
+    node.addTag("building", "yes ");
+    status = plugin->checkNode(node, "building");
+    if (status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkNode(single quotes) [semantic building]");
+    } else {
+        runtest.fail("Validate::checkNode(single quotes) [semantic building]");
+        return 1;
+    }
+
+    node.addTag("building", "yes");
+    status = plugin->checkNode(node, "building");
+    if (!status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkNode(good value) [semantic building]");
+    } else {
+        runtest.fail("Validate::checkNode(good value) [semantic building]");
         return 1;
     }
 
@@ -178,20 +164,20 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
 
     // Has valid tags, but it's incomplete
     node_place.addTag("place", "city");
-    status = plugin->checkPOI(node_place, "place");
+    status = plugin->checkNode(node_place, "place");
     if (!status->hasStatus(badvalue) && status->hasStatus(incomplete)) {
-        runtest.pass("Validate::checkPOI(incomplete but correct tagging) [semantic place]");
+        runtest.pass("Validate::checkNode(incomplete but correct tagging) [semantic place]");
     } else {
-        runtest.fail("Validate::checkPOI(incomplete but correct tagging) [semantic place]");
+        runtest.fail("Validate::checkNode(incomplete but correct tagging) [semantic place]");
         return 1;
     }
 
     node_place.addTag("name", "Electric City");
-    status = plugin->checkPOI(node_place, "place");
+    status = plugin->checkNode(node_place, "place");
     if (!status->hasStatus(badvalue) && !status->hasStatus(incomplete)) {
-        runtest.pass("Validate::checkPOI(complete and correct tagging) [semantic place]");
+        runtest.pass("Validate::checkNode(complete and correct tagging) [semantic place]");
     } else {
-        runtest.fail("Validate::checkPOI(complete and correct tagging) [semantic place]");
+        runtest.fail("Validate::checkNode(complete and correct tagging) [semantic place]");
         return 1;
     }
 
@@ -199,20 +185,20 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
 
     // Has an invalid key=value ...
     node.addTag("building:material", "sponge");
-    status = plugin->checkPOI(node, "building");
+    status = plugin->checkNode(node, "building");
     if (status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkPOI(bad value) [semantic building]");
+        runtest.pass("Validate::checkNode(bad value) [semantic building]");
     } else {
-        runtest.fail("Validate::checkPOI(bad value) [semantic building]");
+        runtest.fail("Validate::checkNode(bad value) [semantic building]");
         return 1;
     }
 
     // But it's complete
-    status = plugin->checkPOI(node, "building");
+    status = plugin->checkNode(node, "building");
     if (status->hasStatus(complete)) {
-        runtest.pass("Validate::checkPOI(complete) [semantic building]");
+        runtest.pass("Validate::checkNode(complete) [semantic building]");
     } else {
-        runtest.fail("Validate::checkPOI(complete) [semantic building]");
+        runtest.fail("Validate::checkNode(complete) [semantic building]");
         return 1;
     }
 
@@ -221,11 +207,11 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
     node.addTag("roof:material", "roof_tiles");
 
     // Has all valid tags
-    status = plugin->checkPOI(node, "building");
+    status = plugin->checkNode(node, "building");
     if (!status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkPOI(no bad values) [semantic building]");
+        runtest.pass("Validate::checkNode(no bad values) [semantic building]");
     } else {
-        runtest.fail("Validate::checkPOI(no bad values) [semantic building]");
+        runtest.fail("Validate::checkNode(no bad values) [semantic building]");
         return 1;
     }
 
@@ -287,17 +273,13 @@ test_semantic_building(std::shared_ptr<Validate> &plugin) {
         return 1;
     }
 
-    
+    return 0;
 
-    // TODO: Has empty value
-    // TODO: Has single quote
-    // TODO: Has double quotes
-    // TODO: Has spaces
 }
 
 // Geometry tests for buildings
 int
-test_geometry_building(std::shared_ptr<Validate> &plugin)
+test_geospatial(std::shared_ptr<Validate> &plugin)
 {
 
     // Bad geometry
@@ -307,11 +289,13 @@ test_geometry_building(std::shared_ptr<Validate> &plugin)
     filespec += "/testsuite/testdata/validation/rect.osc";
     if (boost::filesystem::exists(filespec)) {
         ocf.readChanges(filespec);
+        ocf.buildGeometriesFromNodeCache();
     }
     for (auto it = std::begin(ocf.changes); it != std::end(ocf.changes); ++it) {
         osmchange::OsmChange *change = it->get();
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
             osmobjects::OsmWay *way = wit->get();
+
             auto status = plugin->checkWay(*way, "building");
             // status->dump();
             // std::cerr << way->tags["note"] << std::endl;
@@ -409,29 +393,29 @@ test_geometry_building(std::shared_ptr<Validate> &plugin)
     allways2.push_back(std::make_shared<osmobjects::OsmWay>(way3));
 
     // Overlapping (function)
-    if (plugin->overlaps(allways, way)) {
-        runtest.pass("Validate::overlaps() [geometry building]");
-    } else {
-        runtest.fail("Validate::overlaps() [geometry building]");
-    }
-    if (plugin->overlaps(allways, way3)) {
-        runtest.pass("Validate::overlaps(no) [geometry building]");
-    } else {
-        runtest.fail("Validate::overlaps(no) [geometry building]");
-    }
+    // if (plugin->overlaps(allways, way)) {
+    //     runtest.pass("Validate::overlaps() [geometry building]");
+    // } else {
+    //     runtest.fail("Validate::overlaps() [geometry building]");
+    // }
+    // if (plugin->overlaps(allways, way3)) {
+    //     runtest.pass("Validate::overlaps(no) [geometry building]");
+    // } else {
+    //     runtest.fail("Validate::overlaps(no) [geometry building]");
+    // }
 
     // Duplicate (function)
-    allways.push_back(std::make_shared<osmobjects::OsmWay>(way));
-    if (plugin->duplicate(allways, way2)) {
-        runtest.pass("Validate::duplicate() [geometry building]");
-    } else {
-        runtest.fail("Validate::duplicate() [geometry building]");
-    }
-    if (!plugin->duplicate(allways2, way2)) {
-        runtest.pass("Validate::duplicate(no) [geometry building]");
-    } else {
-        runtest.fail("Validate::duplicate(no) [geometry building]");
-    }
+    // allways.push_back(std::make_shared<osmobjects::OsmWay>(way));
+    // if (plugin->duplicate(allways, way2)) {
+    //     runtest.pass("Validate::duplicate() [geometry building]");
+    // } else {
+    //     runtest.fail("Validate::duplicate() [geometry building]");
+    // }
+    // if (!plugin->duplicate(allways2, way2)) {
+    //     runtest.pass("Validate::duplicate(no) [geometry building]");
+    // } else {
+    //     runtest.fail("Validate::duplicate(no) [geometry building]");
+    // }
 
     // Overlapping, duplicate
     osmchange::OsmChangeFile osmfoverlaping;

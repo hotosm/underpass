@@ -248,7 +248,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     boost::function<plugin_t> creator;
     try {
         creator = boost::dll::import_alias<plugin_t>(lib_path / "libunderpass.so", "create_plugin", boost::dll::load_mode::append_decorations);
-        log_debug("Loaded plugin hotosm!");
+        log_debug("Loaded plugin!");
     } catch (std::exception &e) {
         log_debug("Couldn't load plugin! %1%", e.what());
         exit(0);

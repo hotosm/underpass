@@ -368,13 +368,13 @@ QueryRaw::getNodeCacheFromWays(std::shared_ptr<std::vector<OsmWay>> ways, std::m
     }
 }
 
-std::map<std::string, std::string> parseTagsString(const std::string& input) {
+std::map<std::string, std::string> parseTagsString(std::string input) {
+    input.pop_back();
     std::map<std::string, std::string> result;
     std::stringstream ss(input);
     std::string token;
     while (std::getline(ss, token, ',')) {
-        // Find the position of the arrow
-        size_t arrowPos = token.find(":");
+        size_t arrowPos = token.find_last_of(":");
         if (arrowPos != std::string::npos) {
             std::string key = token.substr(1, arrowPos - 1);
             std::string value = token.substr(arrowPos + 2);

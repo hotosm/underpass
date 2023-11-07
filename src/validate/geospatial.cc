@@ -20,22 +20,9 @@
 #ifndef __GEOSPATIAL_H__
 #define __GEOSPATIAL_H__
 
-#include <array>
-#include <vector>
 #include <memory>
 #include <string>
-#include <iostream>
-#include <filesystem>
-#include <algorithm>
-#include <iterator>
-#include <valarray>
-#include <locale>
 
-#include <boost/dll/alias.hpp>
-#include <boost/function.hpp>
-#include <boost/config.hpp>
-#include <boost/dll/shared_library.hpp>
-#include <boost/dll/shared_library_load_mode.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
 
@@ -57,45 +44,61 @@ namespace geospatial {
 
 LogFile &dbglogfile = LogFile::getDefaultInstance();
 
-Geospatial::Geospatial(void) {}
-
-// Check a POI for tags. A node that is part of a way shouldn't have any
-// tags, this is to check actual POIs, like a school.
-std::shared_ptr<ValidateStatus>
-Geospatial::checkPOI(const osmobjects::OsmNode &node, const std::string &type)
-{
-    auto status = std::make_shared<ValidateStatus>(node);
-    return status;
-}
+Geospatial::Geospatial() {}
 
 // This checks a way. A way should always have some tags. Often a polygon
 // with no tags is a building.
 std::shared_ptr<ValidateStatus>
-Geospatial::checkWay(const osmobjects::OsmWay &way, const std::string &type)
+Geospatial::checkWay(const osmobjects::OsmWay &way, const std::string &type, yaml::Yaml &tests, std::shared_ptr<ValidateStatus> &status)
 {
-    auto status = std::make_shared<ValidateStatus>(way);
+    // On non-english numeric locales using decimal separator different than '.'
+    // this is necessary to parse double strings with std::stod correctly
+    // without loosing precision
+    // std::setlocale(LC_NUMERIC, "C");
+    setlocale(LC_NUMERIC, "C");
+
+    if (way.action == osmobjects::remove) {
+        return status;
+    }
+
+    // These values are in the config section of the YAML file
+    auto config = tests.get("config");
+
+    // if (config.contains_value("overlaps", "yes")) {
+        // auto allWays = context.getOverlappingWays();
+        // if (overlaps(allWays, way)) {
+        //     status->status.insert(overlaping);
+        // }
+    // }
+
+    // if (config.contains_value("duplicate", "yes")) {
+        // auto allWays = context.getOverlappingWays();
+        // if (overlaps(allWays, way)) {
+        //     status->status.insert(overlaping);
+        // }
+    // }
+
+    if (unsquared(way.linestring)) {
+        status->status.insert(badgeom);
+    }
+
     return status;
 }
 
 bool 
 Geospatial::overlaps(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, osmobjects::OsmWay &way) {
-    // This test only applies to buildings, as highways often overlap.
-    // TODO: move logic to a config file
-    yaml::Yaml tests = yamls["building"];
-    if (tests.get("config").contains_value("overlaps", "yes")) {
 #ifdef TIMING_DEBUG_X
-        boost::timer::auto_cpu_timer timer("validate::overlaps: took %w seconds\n");
+    boost::timer::auto_cpu_timer timer("validate::overlaps: took %w seconds\n");
 #endif
-        if (way.numPoints() <= 1) {
-            return false;
-        }
-        for (auto nit = std::begin(allways); nit != std::end(allways); ++nit) {
-            osmobjects::OsmWay *oldway = nit->get();
-            if (boost::geometry::overlaps(oldway->polygon, way.polygon)) {
-                if (way.getTagValue("layer") == oldway->getTagValue("layer") && way.id != oldway->id) {
-                    log_error("Building %1% overlaps with %2%", way.id, oldway->id);
-                    return true;
-                }
+    if (way.numPoints() <= 1) {
+        return false;
+    }
+    for (auto nit = std::begin(allways); nit != std::end(allways); ++nit) {
+        osmobjects::OsmWay *oldway = nit->get();
+        if (boost::geometry::overlaps(oldway->polygon, way.polygon)) {
+            if (way.getTagValue("layer") == oldway->getTagValue("layer") && way.id != oldway->id) {
+                log_error("Building %1% overlaps with %2%", way.id, oldway->id);
+                return true;
             }
         }
     }
@@ -106,29 +109,25 @@ bool
 Geospatial::duplicate(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, osmobjects::OsmWay &way) {
     // This test only applies to buildings, as highways often overlap.
     // TODO: move logic to a config file
-    yaml::Yaml tests = yamls["building"];
-    if (tests.get("config").contains_value("duplicate", "yes")) {
 #ifdef TIMING_DEBUG_X
-        boost::timer::auto_cpu_timer timer("validate::duplicate: took %w seconds\n");
+    boost::timer::auto_cpu_timer timer("validate::duplicate: took %w seconds\n");
 #endif
-        if (way.numPoints() <= 1) {
-            return false;
-        }
-
-        for (auto nit = std::begin(allways); nit != std::end(allways); ++nit) {
-            osmobjects::OsmWay *oldway = nit->get();
-            std::deque<polygon> output;
-            bg::intersection(oldway->polygon, way.polygon, output);
-            double iarea = 0;
-            for (auto& p : output)
-                iarea += bg::area(p);
-            double wayarea = bg::area(way.polygon);
-            double iareapercent = (iarea * 100) / wayarea;
-            if (iareapercent >= 80) {
-                if (way.getTagValue("layer") == oldway->getTagValue("layer") && way.id != oldway->id) {
-                    log_error("Building %1% duplicate %2%", way.id, oldway->id);
-                    return true;
-                }
+    if (way.numPoints() <= 1) {
+        return false;
+    }
+    for (auto nit = std::begin(allways); nit != std::end(allways); ++nit) {
+        osmobjects::OsmWay *oldway = nit->get();
+        std::deque<polygon> output;
+        bg::intersection(oldway->polygon, way.polygon, output);
+        double iarea = 0;
+        for (auto& p : output)
+            iarea += bg::area(p);
+        double wayarea = bg::area(way.polygon);
+        double iareapercent = (iarea * 100) / wayarea;
+        if (iareapercent >= 80) {
+            if (way.getTagValue("layer") == oldway->getTagValue("layer") && way.id != oldway->id) {
+                log_error("Building %1% duplicate %2%", way.id, oldway->id);
+                return true;
             }
         }
     }
@@ -142,6 +141,9 @@ Geospatial::unsquared(
     double max_angle
 ) {
     const int num_points =  boost::geometry::num_points(way);
+    double last_angle = -1;
+    double max_angle_diff = 0;
+    bool unsquared = false;
     for(int i = 0; i < num_points - 1; i++) {
         // Three points
         int a,b,c;
@@ -166,13 +168,23 @@ Geospatial::unsquared(
         double y3 = boost::geometry::get<1>(way[c]);
 
         double angle = geo::Geo::calculateAngle(x1,y1,x2,y2,x3,y3);
+        if (last_angle != -1) {
+            double diff = abs(angle - last_angle);
+            if (diff > max_angle_diff) {
+                max_angle_diff = diff;
+            }
+        }
+        last_angle = angle;
 
         if (
             (angle > max_angle || angle < min_angle) &&
             (angle < 179 || angle > 181)
         ) {
-            return true;
+            unsquared = true;
         }
+    }
+    if (unsquared && !(num_points > 5 && max_angle_diff < 3)) {
+        return true;
     }
     return false;
 };

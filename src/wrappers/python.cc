@@ -25,7 +25,7 @@
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
 
 #include <boost/python.hpp>
-#include "validate/hotosm.hh"
+// #include "validate/defaultvalidation.hh"
 #include "validate/validate.hh"
 #include "osm/osmobjects.hh"
 #include "osm/osmchange.hh"
@@ -51,19 +51,19 @@ std::map<valerror_t, std::string> results = {
     {duplicate, "duplicate"}
 };
 
-ValidateStatus* checkPOI(hotosm::Hotosm& self, const osmobjects::OsmNode &node, const std::string &type) {
-    auto _v = self.checkPOI(node, type);
-    ValidateStatus* v = new ValidateStatus();
-    v->status = _v->status;
-    return v;
-}
+// ValidateStatus* checkNode(defaultvalidation::DefaultValidation& self, const osmobjects::OsmNode &node, const std::string &type) {
+//     // auto _v = self.checkNode(node, type);
+//     ValidateStatus* v = new ValidateStatus();
+//     // v->status = _v->status;
+//     return v;
+// }
 
-ValidateStatus* checkWay(hotosm::Hotosm& self, const osmobjects::OsmWay &way, const std::string &type) {
-    auto _v = self.checkWay(way, type);
-    ValidateStatus* v = new ValidateStatus();
-    v->status = _v->status;
-    return v;
-}
+// ValidateStatus* checkWay(defaultvalidation::DefaultValidation& self, const osmobjects::OsmWay &way, const std::string &type) {
+//     // auto _v = self.checkWay(way, type);
+//     ValidateStatus* v = new ValidateStatus();
+//     // v->status = _v->status;
+//     return v;
+// }
 
 std::string dumpJSON(ValidateStatus& self) {
     std::string output = "";
@@ -93,29 +93,29 @@ std::string dumpJSON(ValidateStatus& self) {
     return output;
 }
 
-std::string checkOsmChange(hotosm::Hotosm& self, const std::string &xml, const std::string &check) {
-    auto result = self.checkOsmChange(xml, check);
-    std::string output = "[ ";
-    for (auto it = std::begin(result); it != std::end(result); ++it) {
-        if ((*it).status.size() > 0) {
-            output += dumpJSON(*it) + ",";
-        }
-    }
-    output.erase(output.size() - 1);
-    output += " ]";
-    return output;
-}
+// std::string checkOsmChange(defaultvalidation::DefaultValidation& self, const std::string &xml, const std::string &check) {
+//     auto result = self.checkOsmChange(xml, check);
+//     std::string output = "[ ";
+//     for (auto it = std::begin(result); it != std::end(result); ++it) {
+//         if ((*it).status.size() > 0) {
+//             output += dumpJSON(*it) + ",";
+//         }
+//     }
+//     output.erase(output.size() - 1);
+//     output += " ]";
+//     return output;
+// }
 
 BOOST_PYTHON_MODULE(underpass)
 {
     // 
-    using namespace hotosm;
-    class_<Hotosm, boost::noncopyable>("Validate")
-        .def("checkTag", &Hotosm::checkTag)
-        .def("checkWay", &checkWay, boost::python::return_value_policy<boost::python::manage_new_object>())
-        .def("checkPOI", &checkPOI, boost::python::return_value_policy<boost::python::manage_new_object>())
-        .def("overlaps", &Hotosm::overlaps)
-        .def("checkOsmChange", &checkOsmChange);
+    // using namespace defaultvalidation;
+    // class_<DefaultValidation, boost::noncopyable>("Validate")
+    //     // .def("checkTag", &DefaultValidation::checkTag)
+    //     .def("checkWay", &checkWay, boost::python::return_value_policy<boost::python::manage_new_object>())
+    //     .def("checkNode", &checkNode, boost::python::return_value_policy<boost::python::manage_new_object>());
+    //     // .def("overlaps", &DefaultValidation::overlaps);
+    //     // .def("checkOsmChange", &checkOsmChange);
 
     class_<ValidateStatus, boost::noncopyable>("ValidateStatus")
         .def("hasStatus", &ValidateStatus::hasStatus)

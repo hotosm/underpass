@@ -183,7 +183,7 @@ class BOOST_SYMBOL_VISIBLE Validate {
         for (auto &file: std::filesystem::recursive_directory_iterator(path)) {
             std::filesystem::path config = file.path();
             if (config.extension() == ".yaml") {
-                log_debug("Loading: %s", config.stem());
+                std::cout <<  "Loading: " << config.stem() << std::endl;
                 yaml::Yaml yaml;
                 yaml.read(config.string());
                 if (!config.stem().empty()) {
@@ -196,25 +196,8 @@ class BOOST_SYMBOL_VISIBLE Validate {
     virtual ~Validate(void){};
     // Validate(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes) {};
 
-    /// Check a POI for tags. A node that is part of a way shouldn't have any
-    /// tags, this is to check actual POIs, like a school.
-    virtual std::shared_ptr<ValidateStatus> checkGeometry(const osmobjects::OsmNode &node, const std::string &type) = 0;
-    /// This checks a way. A way should always have some tags. Often a polygon
-    /// is a building
-    virtual std::shared_ptr<ValidateStatus> checkGeometry(const osmobjects::OsmWay &way, const std::string &type) = 0;
-
-    virtual std::shared_ptr<ValidateStatus> checkSemantic(const osmobjects::OsmWay &way, const std::string &type) = 0;
-    virtual std::shared_ptr<ValidateStatus> checkSemantic(const osmobjects::OsmWay &node, const std::string &type) = 0;
-
-    std::shared_ptr<ValidateStatus> checkNode(const osmobjects::OsmWay &node, const std::string &type) {
-        auto status = std::make_shared<ValidateStatus>(node);
-        auto geometryStatus = checkGeometry(node, type);
-        auto semanticStatus = checkSemantic(node, type);
-    }
-    std::shared_ptr<ValidateStatus> checkWay(const osmobjects::OsmWay &way, const std::string &type) {
-        // checkGeometry
-        // checkSemantic
-    }
+    virtual std::shared_ptr<ValidateStatus> checkNode(const osmobjects::OsmNode &node, const std::string &type) = 0;
+    virtual std::shared_ptr<ValidateStatus> checkWay(const osmobjects::OsmWay &way, const std::string &type) = 0;
 
     yaml::Yaml &operator[](const std::string &key) { return yamls[key]; };
     

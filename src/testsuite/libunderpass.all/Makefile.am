@@ -75,23 +75,18 @@ geo_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 val_test_SOURCES = val-test.cc
 val_test_LDFLAGS = -L../..
 val_test_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
-val_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS) ../../validate/hotosm.lo
+val_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS) ../../validate/defaultvalidation.lo ../../validate/geospatial.lo ../../validate/semantic.lo
 
 val_unsquared_test_SOURCES = val-unsquared-test.cc
 val_unsquared_test_LDFLAGS = -L../..
 val_unsquared_test_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
-val_unsquared_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS) ../../validate/hotosm.lo
+val_unsquared_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS) ../../validate/defaultvalidation.lo ../../validate/geospatial.lo ../../validate/semantic.lo
 
 # Test the replication classes
 #replication_test_SOURCES = replication-test.cc
 #replication_test_LDFLAGS = -L../..
 #rplication_test_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
 #replication_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
-
-# Test the OSM DB classes
-#hotosm_test_SOURCES = hotosm-test.cc
-#hotosm_test_LDFLAGS = -L../..
-#hotosm_test_LDADD = -lpqxx -lunderpass  $(BOOST_LIBS)
 
 # Test the OSM Stats class
 stats_test_SOURCES = stats-test.cc

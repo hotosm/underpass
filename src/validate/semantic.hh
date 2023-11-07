@@ -35,19 +35,13 @@
 #include <iostream>
 
 #include <boost/config.hpp>
-#include <boost/geometry.hpp>
-#include <boost/dll/alias.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/date_time.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/dll/runtime_symbol_info.hpp>
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
 #include "utils/yaml.hh"
-
-// MinGW related workaround
-#define BOOST_DLL_FORCE_ALIAS_INSTANTIATION
 
 #include "validate.hh"
 
@@ -56,37 +50,18 @@ namespace semantic {
 
 /// \class Semantic
 /// \brief This is the plugin class, deprived from the Validate class
-class Semantic : public Validate
+class Semantic
 {
 public:
-    Semantic(void);
+    Semantic();
     ~Semantic(void) {  };
-
-    /// Check a POI for tags. A node that is part of a way shouldn't have any
-    /// tags, this is to check actual POIs, like a school.
-    std::shared_ptr<ValidateStatus> checkPOI(const osmobjects::OsmNode &node, const std::string &type);
-
-    /// This checks a way. A way should always have some tags. Often a polygon
-    /// is a building
-    std::shared_ptr<ValidateStatus> checkWay(const osmobjects::OsmWay &way, const std::string &type);
-
-    /// Check a tag
-    std::shared_ptr<ValidateStatus> checkTag(const std::string &key, const std::string &value);
-
-    /// Check a set of changes
-    std::vector<ValidateStatus> checkOsmChange(const std::string &xml, const std::string &check);
-
-    // Factory method
-    static std::shared_ptr<Semantic> create(void) {
-    return std::make_shared<Semantic>();
-    };
+    static std::shared_ptr<ValidateStatus> checkNode(const osmobjects::OsmNode &node, const std::string &type, yaml::Yaml &tests, std::shared_ptr<ValidateStatus> &status);
+    static std::shared_ptr<ValidateStatus> checkWay(const osmobjects::OsmWay &way, const std::string &type, yaml::Yaml &tests, std::shared_ptr<ValidateStatus> &status);
 private:
-    std::map<std::string, std::vector<std::string>> tests;
-    bool isValidTag(const std::string &key, const std::string &value, yaml::Node tags);
-    bool isRequiredTag(const std::string &key, yaml::Node required_tags);
+    static bool isValidTag(const std::string &key, const std::string &value, yaml::Node tags);
+    static bool isRequiredTag(const std::string &key, yaml::Node required_tags);
+    static void checkTag(const std::string &key, const std::string &value, std::shared_ptr<ValidateStatus> &status);
 };
-
-BOOST_DLL_ALIAS(Semantic::create, create_plugin)
 
 } // EOF semantic namespace
 

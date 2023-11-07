@@ -18,7 +18,7 @@
 //
 
 /// \file geospatial.hh
-/// \brief This file implements the data validation used by HOT
+/// \brief Geospatial validation
 
 #ifndef __GEOSPATIAL_HH__
 #define __GEOSPATIAL_HH__
@@ -28,60 +28,27 @@
 # include "unconfig.h"
 #endif
 
-#include <string>
-#include <vector>
-#include <array>
 #include <memory>
-#include <iostream>
-
-#include <boost/config.hpp>
-#include <boost/geometry.hpp>
-#include <boost/dll/alias.hpp>
-#include <boost/filesystem/path.hpp>
-#include <boost/date_time.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/dll/runtime_symbol_info.hpp>
-using namespace boost::posix_time;
-using namespace boost::gregorian;
-
-#include "utils/yaml.hh"
-
-// MinGW related workaround
-#define BOOST_DLL_FORCE_ALIAS_INSTANTIATION
-
+#include "osm/osmobjects.hh"
 #include "validate.hh"
+#include "utils/yaml.hh"
 
 /// \namespace geospatial
 namespace geospatial {
 
 /// \class Geospatial
 /// \brief This is the plugin class, deprived from the Validate class
-class Geospatial : public Validate
+class Geospatial
 {
 public:
-    Geospatial(void);
+    Geospatial();
     ~Geospatial(void) {  };
-
-    /// Check a POI for tags. A node that is part of a way shouldn't have any
-    /// tags, this is to check actual POIs, like a school.
-    std::shared_ptr<ValidateStatus> checkPOI(const osmobjects::OsmNode &node, const std::string &type);
-
-    /// This checks a way. A way should always have some tags. Often a polygon
-    /// is a building
-    std::shared_ptr<ValidateStatus> checkWay(const osmobjects::OsmWay &way, const std::string &type);
-
-    // Factory method
-    static std::shared_ptr<Geospatial> create(void) {
-    return std::make_shared<Geospatial>();
-    };
+    static std::shared_ptr<ValidateStatus> checkWay(const osmobjects::OsmWay &way, const std::string &type, yaml::Yaml &tests, std::shared_ptr<ValidateStatus> &status);
 private:
-    std::map<std::string, std::vector<std::string>> tests;
-    bool unsquared(const linestring_t &way, double min_angle = 89, double max_angle = 91);
-    bool duplicate(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, osmobjects::OsmWay &way);
-    bool overlaps(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, osmobjects::OsmWay &way);
+    static bool unsquared(const linestring_t &way, double min_angle = 89, double max_angle = 91);
+    static bool duplicate(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, osmobjects::OsmWay &way);
+    static bool overlaps(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, osmobjects::OsmWay &way);
 };
-
-BOOST_DLL_ALIAS(Geospatial::create, create_plugin)
 
 } // EOF geospatial namespace
 
