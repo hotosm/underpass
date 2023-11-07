@@ -20,7 +20,11 @@ rendering buildings and highlighting the ones identified as "un-squared":
 
 Check [the documentation](https://hotosm.github.io/underpass/)
 
-## Get involved!
+## Project
+
+Check the tasks board and roadmap [here](https://github.com/orgs/hotosm/projects/23)
+
+### Get involved!
 
 We invite software designers and developers to contribute to the project, there are several issues
 where we need help, some of them are:
