@@ -32,7 +32,9 @@ BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
 	$(BOOST_LOCALE_LIB)
 
 libunderpass_la_SOURCES = \
-	hotosm.cc hotosm.hh \
+	geospatial.cc geospatial.hh \
+	semantic.cc semantic.hh \
+	defaultvalidation.cc defaultvalidation.hh \
 	validate.hh
 
 libunderpass_la_LDFLAGS = -module -avoid-version

@@ -20,7 +20,7 @@
 #include <dejagnu.h>
 #include <iostream>
 #include "validate/validate.hh"
-#include "validate/hotosm.hh"
+#include "validate/defaultvalidation.hh"
 #include "osm/osmobjects.hh"
 #include "osm/osmchange.hh"
 #include "utils/log.hh"
@@ -41,6 +41,7 @@ osmobjects::OsmWay readOsmWayFromFile(std::string filename) {
     } else {
         log_debug("Couldn't load ! %1%", filespec);
     };
+    osmchange.buildGeometriesFromNodeCache();
     return *osmchange.changes.front().get()->ways.front().get();
 }
 
@@ -52,7 +53,7 @@ main(int argc, char *argv[])
     dbglogfile.setLogFilename("val-unsquared-test.log");
     dbglogfile.setVerbosity(3);
 
-     auto plugin = std::make_shared<hotosm::Hotosm>();
+     auto plugin = std::make_shared<defaultvalidation::DefaultValidation>();
 
     // Squared building 1
     auto way = readOsmWayFromFile("/testsuite/testdata/validation/squared-building-1.osm");

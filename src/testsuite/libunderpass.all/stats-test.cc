@@ -237,7 +237,6 @@ class TestStats {
                     if (this->verbose) {
                         std::cout << "changeset: " << changestats->changeset << std::endl;
                     }
-                    // TODO: get values to test from YAML validation file
                     testStat(changestats, validation, "highway");
                     testStat(changestats, validation, "building");
                     testStat(changestats, validation, "humanitarian_building");

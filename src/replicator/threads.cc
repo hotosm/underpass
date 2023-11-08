@@ -248,7 +248,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     boost::function<plugin_t> creator;
     try {
         creator = boost::dll::import_alias<plugin_t>(lib_path / "libunderpass.so", "create_plugin", boost::dll::load_mode::append_decorations);
-        log_debug("Loaded plugin hotosm!");
+        log_debug("Loaded plugin!");
     } catch (std::exception &e) {
         log_debug("Couldn't load plugin! %1%", e.what());
         exit(0);
@@ -535,8 +535,8 @@ threadOsmChange(OsmChangeTask osmChangeTask)
                 for (auto status_it = it->get()->status.begin(); status_it != it->get()->status.end(); ++status_it) {
                     task.query += queryvalidate->applyChange(*it->get(), *status_it);
                 }
-                if (!it->get()->hasStatus(overlaping)) {
-                    task.query += queryvalidate->updateValidation(it->get()->osm_id, overlaping, "building");
+                if (!it->get()->hasStatus(overlapping)) {
+                    task.query += queryvalidate->updateValidation(it->get()->osm_id, overlapping, "building");
                 }
                 if (!it->get()->hasStatus(duplicate)) {
                     task.query += queryvalidate->updateValidation(it->get()->osm_id, duplicate, "building");

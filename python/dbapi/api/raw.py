@@ -57,6 +57,7 @@ def geoFeaturesQuery(
         dateFrom = None,
         dateTo = None,
         page = 0,
+        status = None,
         table = None):
 
         geoType = getGeoType(table)
@@ -65,7 +66,7 @@ def geoFeaturesQuery(
             LEFT JOIN validation ON validation.osm_id = " + table + ".osm_id \
             LEFT JOIN changesets c ON c.id = " + table + ".changeset \
             WHERE \
-            {0} {1} {2} {3} {4} \
+            {0} {1} {2} {3} {4} {5} \
         ), \
         t_features AS (  \
             SELECT jsonb_build_object( 'type', 'Feature', 'id', id, 'properties', to_jsonb(t_ways) \
@@ -76,6 +77,7 @@ def geoFeaturesQuery(
             "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
             "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
             "AND created at >= {0} AND created_at <= {1}".format(dateFrom, dateTo) if dateFrom and dateTo else "",
+            "AND status = '{0}'".format(status) if (status) else "",
             "LIMIT " + str(RESULTS_PER_PAGE),
         )
         return query
@@ -87,6 +89,7 @@ def listFeaturesQuery(
         page = 0,
         dateFrom = None,
         dateTo = None,
+        status = None,
         table = None,
         orderBy = "created_at"
     ):
@@ -102,7 +105,7 @@ def listFeaturesQuery(
             LEFT JOIN validation ON validation.osm_id = " + table + ".osm_id \
             LEFT JOIN changesets c ON c.id = " + table + ".changeset \
             WHERE \
-            {0} {1} {2} {3} {4} \
+            {0} {1} {2} {3} {4} {5} \
         ), t_features AS ( \
             SELECT to_jsonb(t_ways) as feature from t_ways \
         ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;".format(
@@ -110,6 +113,7 @@ def listFeaturesQuery(
             "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
             "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
             "AND created_at >= '{0}' AND created_at <= '{1}'".format(dateFrom, dateTo) if (dateFrom and dateTo) else "",
+            "AND status = '{0}'".format(status) if (status) else "",
             "ORDER BY " + orderBy + " DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + (" OFFSET {0}".format(page * RESULTS_PER_PAGE_LIST) if page else ""),
         )
         return query
@@ -126,6 +130,7 @@ class Raw:
         responseType = "json",
         dateFrom = None,
         dateTo = None,
+        status = None,
         page = None
     ):
         return self.underpassDB.run(geoFeaturesQuery(
@@ -135,6 +140,7 @@ class Raw:
             dateFrom,
             dateTo,
             page,
+            status,
             "ways_poly"
         ), responseType, True)
 
@@ -146,6 +152,7 @@ class Raw:
         responseType = "json",
         dateFrom = None,
         dateTo = None,
+        status = None,
         page = None
     ):
         return self.underpassDB.run(geoFeaturesQuery(
@@ -155,6 +162,7 @@ class Raw:
             dateFrom,
             dateTo,
             page,
+            status,
             "ways_line"
         ), responseType, True)
 
@@ -166,6 +174,7 @@ class Raw:
         responseType = "json",
         dateFrom = None,
         dateTo = None,
+        status = None,
         page = None
     ):
         return self.underpassDB.run(geoFeaturesQuery(
@@ -175,6 +184,7 @@ class Raw:
             dateFrom,
             dateTo,
             page,
+            status,
             "nodes"
         ), responseType, True)
 
@@ -186,6 +196,7 @@ class Raw:
         responseType = "json",
         dateFrom = None,
         dateTo = None,
+        status = None,
         page = None
     ):
 
@@ -196,6 +207,7 @@ class Raw:
         responseType,
         dateFrom,
         dateTo,
+        status,
         page)
 
         lines = self.getLines( 
@@ -205,6 +217,7 @@ class Raw:
         responseType,
         dateFrom,
         dateTo,
+        status,
         page)
 
         nodes = self.getNodes( 
@@ -214,6 +227,7 @@ class Raw:
         responseType,
         dateFrom,
         dateTo,
+        status,
         page)
 
         result = {'type': 'FeatureCollection', 'features': []}
@@ -237,6 +251,7 @@ class Raw:
         responseType = "json",
         dateFrom = None,
         dateTo = None,
+        status = None,
         page = None
     ):
         return self.underpassDB.run(listFeaturesQuery(
@@ -246,6 +261,7 @@ class Raw:
             page,
             dateFrom,
             dateTo,
+            status,
             "ways_poly"
         ), responseType, True)
 
@@ -257,6 +273,7 @@ class Raw:
         responseType = "json",
         dateFrom = None,
         dateTo = None,
+        status = None,
         page = None
     ):
         return self.underpassDB.run(listFeaturesQuery(
@@ -266,6 +283,7 @@ class Raw:
             page,
             dateFrom,
             dateTo,
+            status,
             "ways_line"
         ), responseType, True)
 
@@ -278,6 +296,7 @@ class Raw:
         responseType = "json",
         dateFrom = None,
         dateTo = None,
+        status = None,
         page = None
     ):
         return self.underpassDB.run(listFeaturesQuery(
@@ -287,6 +306,7 @@ class Raw:
             page,
             dateFrom,
             dateTo,
+            status,
             "nodes"
         ), responseType, True)
 
@@ -299,6 +319,7 @@ class Raw:
         responseType = "json",
         dateFrom = None,
         dateTo = None,
+        status = None,
         page = None
     ):
 
@@ -309,6 +330,7 @@ class Raw:
         responseType,
         dateFrom,
         dateTo,
+        status,
         page)
 
         lines = self.getLinesList( 
@@ -318,6 +340,7 @@ class Raw:
         responseType,
         dateFrom,
         dateTo,
+        status,
         page)
 
         nodes = self.getNodesList( 
@@ -327,6 +350,7 @@ class Raw:
         responseType,
         dateFrom,
         dateTo,
+        status,
         page)
 
         result = []

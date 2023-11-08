@@ -245,6 +245,8 @@ class OsmChangeFile
     /// Delete any data not in the boundary polygon
     void areaFilter(const multipolygon_t &poly);
 
+    void buildGeometriesFromNodeCache();
+
 #ifdef LIBXML
     /// Called by libxml++ for each element of the XML file
     void on_start_element(const Glib::ustring &name,

@@ -25,7 +25,6 @@
 #include "data/pq.hh"
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/split.hpp>
-#include <boost/locale.hpp>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -152,9 +151,22 @@ Pq::query(const std::string &query)
 {
     std::scoped_lock write_lock{pqxx_mutex};
     pqxx::work worker(*sdb);
-    pqxx::result result = worker.exec(query);
+    auto result = worker.exec(query);
     worker.commit();
     return result;
+}
+
+std::string Latin1ToUTF8(const std::string& latin1str) {
+    std::string utf8str;
+    for (char c : latin1str) {
+        if (static_cast<unsigned char>(c) <= 0x7F) {
+            utf8str.push_back(c);
+        } else {
+            utf8str.push_back(0xC0 | static_cast<unsigned char>(c) >> 6);
+            utf8str.push_back(0x80 | (static_cast<unsigned char>(c) & 0x3F));
+        }
+    }
+    return utf8str;
 }
 
 std::string
@@ -180,7 +192,8 @@ Pq::escapedString(std::string text)
         }
         i++;
     }
-    return sdb->esc(newstr);
+
+    return sdb->esc(Latin1ToUTF8(newstr));
 }
 
 } // namespace pq

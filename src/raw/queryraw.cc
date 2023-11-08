@@ -36,6 +36,8 @@
 #include <boost/format.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 #include <map>
 #include <string>
 #include "utils/log.hh"
@@ -368,22 +370,25 @@ QueryRaw::getNodeCacheFromWays(std::shared_ptr<std::vector<OsmWay>> ways, std::m
     }
 }
 
-std::map<std::string, std::string> parseTagsString(const std::string& input) {
-    std::map<std::string, std::string> result;
-    std::stringstream ss(input);
-    std::string token;
-    while (std::getline(ss, token, ',')) {
-        // Find the position of the arrow
-        size_t arrowPos = token.find(":");
-        if (arrowPos != std::string::npos) {
-            std::string key = token.substr(1, arrowPos - 1);
-            std::string value = token.substr(arrowPos + 2);
-            key.erase(std::remove( key.begin(), key.end(), '\"' ),key.end());
-            value.erase(std::remove( value.begin(), value.end(), '\"' ),value.end());
-            result[key] = value;
-        }
+std::map<std::string, std::string> parseTagsString(std::string input) {
+    // std::cout << "[INPUT] " << input << std::endl;
+    std::map<std::string, std::string> tags;
+    boost::property_tree::ptree pt;
+    try {
+        std::istringstream jsonStream(input);
+        boost::property_tree::read_json(jsonStream, pt);
+    } catch (const boost::property_tree::json_parser::json_parser_error& e) {
+        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
+        return tags;
     }
-    return result;
+    for (const auto& pair : pt) {
+        tags[pair.first] = pair.second.get_value<std::string>();
+    }
+    // for (const auto& pair : tags) {
+    //     std::cout << pair.first << "=" << pair.second << std::endl;
+    // }
+    // std::cout << std::endl;
+    return tags;
 }
 
 std::list<std::shared_ptr<OsmWay>>

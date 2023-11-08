@@ -161,6 +161,7 @@ def getPolygons(request: RawRequest):
         hashtag = request.hashtag or "",
         dateFrom = request.dateFrom or "",
         dateTo = request.dateTo or "",
+        status = request.status or "",
         page = request.page
     )
     return results
@@ -173,6 +174,7 @@ def getNodes(request: RawRequest):
         hashtag = request.hashtag or "",
         dateFrom = request.dateFrom or "",
         dateTo = request.dateTo or "",
+        status = request.status or "",
         page = request.page
     )
     return results
@@ -185,6 +187,7 @@ def getLines(request: RawRequest):
         hashtag = request.hashtag or "",
         dateFrom = request.dateFrom or "",
         dateTo = request.dateTo or "",
+        status = request.status or "",
         page = request.page
     )
     return results
@@ -197,6 +200,7 @@ def getLines(request: RawRequest):
         hashtag = request.hashtag or "",
         dateFrom = request.dateFrom or "",
         dateTo = request.dateTo or "",
+        status = request.status or "",
         page = request.page
     )
     return results
@@ -209,6 +213,7 @@ def getPolygonsList(request: RawRequest):
         hashtag = request.hashtag or "",
         dateFrom = request.dateFrom or "",
         dateTo = request.dateTo or "",
+        status = request.status or "",
         page = request.page
     )
     return results
@@ -221,6 +226,7 @@ def getNodesList(request: RawRequest):
         hashtag = request.hashtag or "",
         dateFrom = request.dateFrom or "",
         dateTo = request.dateTo or "",
+        status = request.status or "",
         page = request.page
     )
     return results
@@ -233,6 +239,7 @@ def getAllList(request: RawRequest):
         hashtag = request.hashtag or "",
         dateFrom = request.dateFrom or "",
         dateTo = request.dateTo or "",
+        status = request.status or "",
         page = request.page,
     )
     return results

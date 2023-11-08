@@ -42,7 +42,7 @@ ALTER TABLE ONLY public.changesets
 DROP TYPE IF EXISTS public.objtype;
 CREATE TYPE public.objtype AS ENUM ('node', 'way', 'relation');
 DROP TYPE IF EXISTS public.status;
-CREATE TYPE public.status AS ENUM ('notags', 'complete', 'incomplete', 'badvalue', 'correct', 'badgeom', 'orphan', 'overlaping', 'duplicate');
+CREATE TYPE public.status AS ENUM ('notags', 'complete', 'incomplete', 'badvalue', 'correct', 'badgeom', 'orphan', 'overlapping', 'duplicate');
 
 CREATE TABLE IF NOT EXISTS public.validation (
     osm_id int8,

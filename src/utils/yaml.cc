@@ -95,7 +95,8 @@ std::pair<std::string, int> Yaml::process_line(std::string line ) {
 }
 
 std::string Yaml::scan_ident(std::string line) {
-    const char *c = line.substr(0, 1).c_str();
+    std::string firstChar = line.substr(0, 1);
+    const char *c = firstChar.c_str();
     if (ident_char == '\0') {
         if (*c == idents[0]) {
             this->ident_char = idents[0];

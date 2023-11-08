@@ -58,7 +58,7 @@ main(int argc, char *argv[])
     }
     ret = tp.parseURL("localhost/testdb");
     //tp.dump();
-    if (ret && tp.dbname == "dbname=testdb" && tp.host.empty()) {
+    if (ret && tp.dbname == "dbname=testdb" && tp.host == "host=localhost") {
         runtest.pass("PQ::parseURL(localhost/dbname)");
     } else {
         runtest.fail("PQ::parseURL(localhost/dbname)");

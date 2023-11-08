@@ -60,7 +60,7 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
     boost::function<plugin_t> creator;
     try {
         creator = boost::dll::import_alias<plugin_t>(lib_path / "libunderpass.so", "create_plugin", boost::dll::load_mode::append_decorations);
-        log_debug("Loaded plugin hotosm!");
+        log_debug("Loaded plugin!");
     } catch (std::exception &e) {
         log_debug("Couldn't load plugin! %1%", e.what());
         exit(0);
@@ -75,9 +75,9 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
     };
     
     for (auto table_it = tables.begin(); table_it != tables.end(); ++table_it) {
-        std::cout << "Counting geometries ... " << std::endl;
+        std::cout << std::endl << "Counting geometries ... " << std::endl;
         int total = queryraw->getWaysCount(*table_it);
-        std::cout << "Total ways:" << total << std::endl;
+        std::cout << "Total: " << total << std::endl;
         if (total > 0) {
             int count = 0;
             long lastid = 0;
@@ -126,22 +126,10 @@ processWays(WayTask &wayTask, const std::string &tableName, const underpassconfi
     if (wayTask.processed > 0) {
         // Proccesing ways
         for (auto way = ways->begin(); way != ways->end(); ++way) {
-            // If it's closed polygon
-            if (way->isClosed()) {
-                log_debug("Way Id: %1%", way->id);
-
-                // Bad geometry
-                if (way->containsKey("building") && (boost::geometry::num_points(way->linestring) - 1 < 4 ||
-                    plugin->unsquared(way->linestring))
-                ) {
-                    auto status = ValidateStatus(*way);
-                    status.timestamp = boost::posix_time::microsec_clock::universal_time();
-                    status.source = "building";
-                    boost::geometry::centroid(way->linestring, status.center);
-                    task->query += queryvalidate->applyChange(status, badgeom);
-                }
+            auto status = plugin->checkWay(*way, "building");
+            for (auto status_it = status->status.begin(); status_it != status->status.end(); ++status_it) {
+                task->query += queryvalidate->applyChange(*status, *status_it);
             }
-
             // Fill the way_refs table
             if (!config.norefs) {
                 for (auto ref = way->refs.begin(); ref != way->refs.end(); ++ref) {
