@@ -22,7 +22,7 @@ version: "3"
 services:
   # Database
   postgis:
-    image: postgis/postgis:15-3.3
+    image: postgis/postgis:${POSTGIS_TAG:-15-3.3-alpine}
     # image: arm64v8/postgres:15.3-alpine3.18
     container_name: "underpass_postgis"
     ports:
@@ -44,7 +44,8 @@ services:
 
   # Underpass
   underpass:
-    container_name: "underpass"
+    image: "ghcr.io/hotosm/underpass/server:${APP_VERSION:-0.1.0}"
+    container_name: underpass
     build:
      context: .
      dockerfile: docker/underpass.dockerfile
@@ -59,7 +60,8 @@ services:
 
   # Underpass API
   underpass-api:
-    container_name: "underpass_api"
+    image: "ghcr.io/hotosm/underpass/api:${APP_VERSION:-0.1.0}"
+    container_name: underpass_api
     build:
      context: .
      dockerfile: docker/underpass-api.dockerfile
@@ -74,14 +76,15 @@ services:
 
   # Underpass UI
   underpass-ui:
-    container_name: "underpass_ui"
+    image: "ghcr.io/hotosm/underpass/ui:${APP_VERSION:-0.1.0}"
+    container_name: underpass_ui
     build:
      context: .
      dockerfile: docker/underpass-ui.dockerfile
     # volumes:
     #   - js:/code
     ports:
-      - "5000:5000"
+      - "8080:8080"
     networks:
       internal:
     environment:
