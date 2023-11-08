@@ -69,7 +69,7 @@ std::map<valerror_t, std::string> status_list = {
     {badvalue, "badvalue"},
     {correct, "correct"},
     {orphan, "orphan"},
-    {overlaping, "overlaping"},
+    {overlapping, "overlapping"},
     {duplicate, "duplicate"},
     {badgeom, "badgeom"}
 };

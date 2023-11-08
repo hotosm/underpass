@@ -75,7 +75,7 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
     };
     
     for (auto table_it = tables.begin(); table_it != tables.end(); ++table_it) {
-        std::cout << "Counting geometries ... " << std::endl;
+        std::cout << std::endl << "Counting geometries ... " << std::endl;
         int total = queryraw->getWaysCount(*table_it);
         std::cout << "Total: " << total << std::endl;
         if (total > 0) {

@@ -51,36 +51,43 @@ Geospatial::Geospatial() {}
 std::shared_ptr<ValidateStatus>
 Geospatial::checkWay(const osmobjects::OsmWay &way, const std::string &type, yaml::Yaml &tests, std::shared_ptr<ValidateStatus> &status)
 {
-    // On non-english numeric locales using decimal separator different than '.'
-    // this is necessary to parse double strings with std::stod correctly
-    // without loosing precision
-    // std::setlocale(LC_NUMERIC, "C");
-    setlocale(LC_NUMERIC, "C");
-
     if (way.action == osmobjects::remove) {
         return status;
     }
 
-    // These values are in the config section of the YAML file
     auto config = tests.get("config");
+    bool check_badgeom = config.get_value("badgeom") == "yes";    
+    // bool check_overlapping = config.get_value("overlapping") == "yes";
+    // bool check_duplicate = config.get_value("duplicate") == "yes";
 
-    // if (config.contains_value("overlaps", "yes")) {
-        // auto allWays = context.getOverlappingWays();
-        // if (overlaps(allWays, way)) {
-        //     status->status.insert(overlaping);
-        // }
-    // }
+    if (check_badgeom) {
+        auto badgeom_minangle = config.get_value("badgeom_minangle");
+        auto badgeom_maxangle = config.get_value("badgeom_maxangle");
+        if (badgeom_minangle != "" && badgeom_maxangle != "") {
+            if (unsquared(way.linestring, std::stod(badgeom_minangle), std::stod(badgeom_maxangle))) {
+                status->status.insert(badgeom);
+            }
+        } else {
+            if (unsquared(way.linestring)) {
+                status->status.insert(badgeom);
+            }
+        }
 
-    // if (config.contains_value("duplicate", "yes")) {
-        // auto allWays = context.getOverlappingWays();
-        // if (overlaps(allWays, way)) {
-        //     status->status.insert(overlaping);
-        // }
-    // }
-
-    if (unsquared(way.linestring)) {
-        status->status.insert(badgeom);
     }
+
+    // if (check_overlapping) {
+        // auto allWays = context.getOverlappingWays();
+        // if (overlaps(allWays, way)) {
+        //     status->status.insert(overlapping);
+        // }
+    // }
+
+    // if (check_duplicate) {
+        // auto allWays = context.getOverlappingWays();
+        // if (overlaps(allWays, way)) {
+        //     status->status.insert(overlapping);
+        // }
+    // }
 
     return status;
 }
@@ -107,8 +114,6 @@ Geospatial::overlaps(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allwa
 
 bool 
 Geospatial::duplicate(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, osmobjects::OsmWay &way) {
-    // This test only applies to buildings, as highways often overlap.
-    // TODO: move logic to a config file
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("validate::duplicate: took %w seconds\n");
 #endif

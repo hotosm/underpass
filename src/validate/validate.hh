@@ -88,7 +88,7 @@ typedef enum {
     correct,
     badgeom,
     orphan,
-    overlaping,
+    overlapping,
     duplicate,
     valid
 } valerror_t;
@@ -141,7 +141,7 @@ class ValidateStatus {
         results[correct] = "Correct tag value";
         results[badgeom] = "Bad geometry";
         results[orphan] = "Orphan";
-        results[overlaping] = "Overlap";
+        results[overlapping] = "Overlap";
         results[duplicate] = "Duplicate";
         for (const auto &stat: std::as_const(status)) {
             std::cerr << "\tResult: " << results[stat] << std::endl;
@@ -183,7 +183,6 @@ class BOOST_SYMBOL_VISIBLE Validate {
         for (auto &file: std::filesystem::recursive_directory_iterator(path)) {
             std::filesystem::path config = file.path();
             if (config.extension() == ".yaml") {
-                std::cout <<  "Loading: " << config.stem() << std::endl;
                 yaml::Yaml yaml;
                 yaml.read(config.string());
                 if (!config.stem().empty()) {

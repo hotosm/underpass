@@ -70,7 +70,9 @@ DefaultValidation::checkWay(const osmobjects::OsmWay &way, const std::string &ty
     yaml::Yaml tests = yamls[type];
     semantic::Semantic::checkWay(way, type, tests, status);
     geospatial::Geospatial::checkWay(way, type, tests, status);
-    boost::geometry::centroid(way.linestring, status->center);
+    if (way.linestring.size() > 2) {
+        boost::geometry::centroid(way.linestring, status->center);
+    }
     status->source = type;
     return status;
 }

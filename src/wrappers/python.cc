@@ -47,7 +47,7 @@ std::map<valerror_t, std::string> results = {
     {correct, "correct"},
     {badgeom, "badgeom"},
     {orphan, "orphan"},
-    {overlaping, "overlaping"},
+    {overlapping, "overlapping"},
     {duplicate, "duplicate"}
 };
 

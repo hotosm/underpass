@@ -66,21 +66,25 @@ Semantic::checkTag(const std::string &key, const std::string &value, std::shared
     if (!key.empty() && value.empty()) {
         log_debug("WARNING: empty value for tag \"%1%\"", key);
         status->status.insert(badvalue);
+        status->values.insert(key + "=" + value);
     }
     // Check for a space in the tag key
     if (key.find(' ') != std::string::npos) {
         log_error("WARNING: spaces in tag key \"%1%\"", key);
         status->status.insert(badvalue);
+        status->values.insert(key + "=" + value);
     }
     // Check for single quotes in the tag value
-    if (value.find('\'') != std::string::npos) {
-        log_error("WARNING: single quote in tag value \"%1%\"", value);
+    if (key.find('\'') != std::string::npos) {
+        log_error("WARNING: single quote in tag key \"%1%\"", value);
         status->status.insert(badvalue);
+        status->values.insert(key + "=" + value);
     }
-    // Check for single quotes in the tag value
-    if (value.find('\"') != std::string::npos) {
-        log_error("WARNING: double quote in tag value \"%1%\"", value);
+    // Check for double quotes in the tag key
+    if (key.find('\"') != std::string::npos) {
+        log_error("WARNING: double quote in tag key \"%1%\"", value);
         status->status.insert(badvalue);
+        status->values.insert(key + "=" + value);
     }
 }
 
@@ -147,48 +151,49 @@ Semantic::checkNode(const osmobjects::OsmNode &node, const std::string &type, ya
 std::shared_ptr<ValidateStatus>
 Semantic::checkWay(const osmobjects::OsmWay &way, const std::string &type, yaml::Yaml &tests, std::shared_ptr<ValidateStatus> &status)
 {
-    // On non-english numeric locales using decimal separator different than '.'
-    // this is necessary to parse double strings with std::stod correctly
-    // without loosing precision
-    // std::setlocale(LC_NUMERIC, "C");
-    setlocale(LC_NUMERIC, "C");
-
-    if (way.tags.size() == 0) {
-        status->status.insert(notags);
-        return status;
-    }
     if (way.action == osmobjects::remove) {
         return status;
     }
 
-    std::string key;
-    // List of valid tags to be validated
-    auto tags = tests.get("tags");
-
     // These values are in the config section of the YAML file
     auto config = tests.get("config");
+    bool check_badvalue = config.get_value("badvalue") == "yes";
+    bool check_incomplete = config.get_value("incomplete") == "yes";
 
-    // Not using required_tags disables writing features flagged for not being tag complete
-    // from being written to the database thus reducing the size of the results.
-    auto required_tags = tests.get("required_tags");
+    // List of required tags to be validated
+    yaml::Node required_tags;
+    if (check_incomplete) {
+        required_tags = tests.get("required_tags");
+    } 
 
-    // This enables/disables writing features flagged for not having values
-    // in range as defined in the YAML config file. This prevents those
-    // from being written to the database to reduce the size of the results.
+    // List of valid tags to be validated
+    yaml::Node tags;
+    if (check_badvalue) {
+     tags = tests.get("tags");
+    }
+
+    if (check_badvalue && way.tags.size() == 0) {
+        status->status.insert(notags);
+        return status;
+    }
 
     int tagexists = 0;
     for (auto vit = std::begin(way.tags); vit != std::end(way.tags); ++vit) {
-        if (!isValidTag(vit->first, vit->second, tags)) {
-            status->status.insert(badvalue);
-            status->values.insert(vit->first + "=" +  vit->second);
+        if (check_badvalue) {
+            if (tags.children.size() > 0 && !isValidTag(vit->first, vit->second, tags)) {
+                status->status.insert(badvalue);
+                status->values.insert(vit->first + "=" +  vit->second);
+            }
+            checkTag(vit->first, vit->second, status);
         }
-        if (isRequiredTag(vit->first, required_tags)) {
-            tagexists++;
+        if (check_incomplete) {
+            if (isRequiredTag(vit->first, required_tags)) {
+                tagexists++;
+            }
         }
-        // checkTag(vit->first, vit->second, status);
     }
 
-    if (tagexists != required_tags.children.size()) {
+    if (check_incomplete && tagexists != required_tags.children.size()) {
         status->status.insert(incomplete);
     }
 

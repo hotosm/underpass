@@ -535,8 +535,8 @@ threadOsmChange(OsmChangeTask osmChangeTask)
                 for (auto status_it = it->get()->status.begin(); status_it != it->get()->status.end(); ++status_it) {
                     task.query += queryvalidate->applyChange(*it->get(), *status_it);
                 }
-                if (!it->get()->hasStatus(overlaping)) {
-                    task.query += queryvalidate->updateValidation(it->get()->osm_id, overlaping, "building");
+                if (!it->get()->hasStatus(overlapping)) {
+                    task.query += queryvalidate->updateValidation(it->get()->osm_id, overlapping, "building");
                 }
                 if (!it->get()->hasStatus(duplicate)) {
                     task.query += queryvalidate->updateValidation(it->get()->osm_id, duplicate, "building");

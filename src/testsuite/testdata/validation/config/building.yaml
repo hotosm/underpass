@@ -1,16 +1,12 @@
 
 config:
-  - minangle:
-    - 70
-  - maxangle:
-    - 110
-  - anglethreshold:
-    - 19
-  - overlaps:
+  - badgeom:
     - yes
-  - duplicate:
-    - yes
-  - enable_tag_values:
+  - badgeom_minangle:
+    - 89
+  - badgeom_maxangle:
+    - 91
+  - badvalue:
     - yes
 
 tags:

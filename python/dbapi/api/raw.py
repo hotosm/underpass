@@ -116,7 +116,6 @@ def listFeaturesQuery(
             "AND status = '{0}'".format(status) if (status) else "",
             "ORDER BY " + orderBy + " DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + (" OFFSET {0}".format(page * RESULTS_PER_PAGE_LIST) if page else ""),
         )
-        print("status", status)
         return query
 
 class Raw:

@@ -91,6 +91,7 @@ osmobjects::OsmWay readOsmWayFromFile(std::string filename) {
     } else {
         log_debug("Couldn't load ! %1%", filespec);
     };
+    osmchange.buildGeometriesFromNodeCache();
     return *osmchange.changes.front().get()->ways.front().get();
 }
 
@@ -195,7 +196,7 @@ test_semantic(std::shared_ptr<Validate> &plugin) {
 
     // But it's complete
     status = plugin->checkNode(node, "building");
-    if (status->hasStatus(complete)) {
+    if (!status->hasStatus(incomplete)) {
         runtest.pass("Validate::checkNode(complete) [semantic building]");
     } else {
         runtest.fail("Validate::checkNode(complete) [semantic building]");
@@ -243,7 +244,7 @@ test_semantic(std::shared_ptr<Validate> &plugin) {
     // But it's complete
     way.addTag("building:material", "sponge");
     status = plugin->checkWay(way, "building");
-    if (status->hasStatus(complete)) {
+    if (!status->hasStatus(incomplete)) {
         runtest.pass("Validate::checkWay(bad value) [semantic building]");
     } else {
         runtest.fail("Validate::checkWay(bad value) [semantic building]");
@@ -418,29 +419,30 @@ test_geospatial(std::shared_ptr<Validate> &plugin)
     // }
 
     // Overlapping, duplicate
-    osmchange::OsmChangeFile osmfoverlaping;
+    osmchange::OsmChangeFile osmfoverlapping;
     const multipolygon_t poly;
     filespec = DATADIR;
     filespec += "/testdata/validation/rect-overlap-and-duplicate-building.osc";
     if (boost::filesystem::exists(filespec)) {
-        osmfoverlaping.readChanges(filespec);
+        osmfoverlapping.readChanges(filespec);
+        osmfoverlapping.buildGeometriesFromNodeCache();
     } else {
         log_debug("Couldn't load ! %1%", filespec);
     }
-    for (auto it = std::begin(osmfoverlaping.changes); it != std::end(osmfoverlaping.changes); ++it) {
+    for (auto it = std::begin(osmfoverlapping.changes); it != std::end(osmfoverlapping.changes); ++it) {
         osmchange::OsmChange *change = it->get();
         for (auto nit = std::begin(change->ways); nit != std::end(change->ways); ++nit) {
             osmobjects::OsmWay *way = nit->get();
             way->priority = true;
         }
     }
-    auto wayval = osmfoverlaping.validateWays(poly, plugin);
+    auto wayval = osmfoverlapping.validateWays(poly, plugin);
     for (auto sit = wayval->begin(); sit != wayval->end(); ++sit) {
         auto status = *sit->get();
-        if (status.hasStatus(overlaping)) {
-            runtest.pass("Validate::validateWays(overlaping) [geometry building]");
+        if (status.hasStatus(overlapping)) {
+            runtest.pass("Validate::validateWays(overlapping) [geometry building]");
         } else {
-            runtest.fail("Validate::validateWays(overlaping) [geometry building]");
+            runtest.fail("Validate::validateWays(overlapping) [geometry building]");
         }
         if (status.hasStatus(duplicate)) {
             runtest.pass("Validate::validateWays(duplicate) [geometry building]");
@@ -450,28 +452,28 @@ test_geospatial(std::shared_ptr<Validate> &plugin)
     }
 
     // No overlapping, no duplicate
-    osmchange::OsmChangeFile osmfnooverlaping;
+    osmchange::OsmChangeFile osmfnooverlapping;
     filespec = DATADIR;
     filespec += "/testsuite/testdata/validation/rect-no-overlap-and-duplicate-building.osc";
     if (boost::filesystem::exists(filespec)) {
-        osmfnooverlaping.readChanges(filespec);
+        osmfnooverlapping.readChanges(filespec);
     } else {
         log_debug("Couldn't load ! %1%", filespec);
     }
-    for (auto it = std::begin(osmfnooverlaping.changes); it != std::end(osmfnooverlaping.changes); ++it) {
+    for (auto it = std::begin(osmfnooverlapping.changes); it != std::end(osmfnooverlapping.changes); ++it) {
         osmchange::OsmChange *change = it->get();
         for (auto nit = std::begin(change->ways); nit != std::end(change->ways); ++nit) {
             osmobjects::OsmWay *way = nit->get();
             way->priority = true;
         }
     }
-    wayval = osmfnooverlaping.validateWays(poly, plugin);
+    wayval = osmfnooverlapping.validateWays(poly, plugin);
     for (auto sit = wayval->begin(); sit != wayval->end(); ++sit) {
         auto status = *sit->get();
-        if (!status.hasStatus(overlaping)) {
-            runtest.pass("Validate::validateWays(no overlaping) [geometry building]");
+        if (!status.hasStatus(overlapping)) {
+            runtest.pass("Validate::validateWays(no overlapping) [geometry building]");
         } else {
-            runtest.fail("Validate::validateWays(no overlaping) [geometry building]");
+            runtest.fail("Validate::validateWays(no overlapping) [geometry building]");
         }
         if (!status.hasStatus(duplicate)) {
             runtest.pass("Validate::validateWays(no duplicate) [geometry building]");
