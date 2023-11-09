@@ -72,8 +72,8 @@ services:
      args:
         APP_VERSION: ${APP_VERSION:-debug}
     depends_on: [underpass]
-    # volumes:
-    #   - ./python:/code
+    volumes:
+      - ./python:/code
     ports:
       - "${API_PORT:-8000}:8000"
     networks:
@@ -91,8 +91,10 @@ services:
      target: debug
      args:
         APP_VERSION: ${APP_VERSION:-debug}
+    # # Mount underpass-ui repo
     # volumes:
-    #   - js:/code
+    #   - ../underpass-ui/src:/code/src
+    #   - ../underpass-ui/playground:/code/playground
     ports:
       - "${UI_PORT:-5000}:8080"
     networks:

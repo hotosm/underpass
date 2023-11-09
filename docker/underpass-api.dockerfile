@@ -77,7 +77,7 @@ HEALTHCHECK --start-period=10s --interval=5s --retries=12 --timeout=5s \
 
 
 FROM runtime as debug
-CMD ["uvicorn", "app.main:api", \
+CMD ["uvicorn", "main:app", \
     "--host", "0.0.0.0", "--port", "8000", \
     "--reload", "--log-level", "critical", "--no-access-log"]
 

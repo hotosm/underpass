@@ -31,11 +31,11 @@ RUN set -ex \
     -y --no-install-recommends \
         "git" \
     && rm -rf /var/lib/apt/lists/*
-WORKDIR /repo
+WORKDIR /code
 RUN git clone https://github.com/hotosm/underpass-ui.git .
 RUN yarn install
 RUN yarn build
-
+# Cosmos
 WORKDIR /code/playground
 RUN yarn install
 
