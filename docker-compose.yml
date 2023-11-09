@@ -22,8 +22,7 @@ version: "3"
 services:
   # Database
   postgis:
-    image: postgis/postgis:15-3.3
-    # image: arm64v8/postgres:15.3-alpine3.18
+    image: postgis/postgis:${POSTGIS_TAG:-15-3.3-alpine}
     container_name: "underpass_postgis"
     ports:
       - "5439:5432"
@@ -64,7 +63,7 @@ services:
      context: .
      dockerfile: docker/underpass-api.dockerfile
     # volumes:
-    #   - ./python:/code/api
+    #   - ./python:/code
     ports:
       - "8000:8000"
     networks:
@@ -81,7 +80,7 @@ services:
     # volumes:
     #   - js:/code
     ports:
-      - "5000:5000"
+      - "5000:8080"
     networks:
       internal:
 
