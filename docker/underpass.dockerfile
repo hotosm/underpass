@@ -22,7 +22,7 @@ ENV LC_ALL en_US.UTF-8
 
 
 
-FROM base as build
+FROM base as deps
 
 RUN set -ex \
     && apt-get update \
@@ -49,8 +49,10 @@ RUN set -ex \
         "libtool" \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /code
 
+
+FROM deps as build
+WORKDIR /code
 COPY ./src /code/src
 COPY ./config /code/config
 COPY ./setup /code/setup
@@ -86,10 +88,8 @@ COPY ./dist /code/dist
 COPY ./docs /code/docs
 COPY ./ABOUT-NLS /code/ABOUT-NLS
 COPY ./config.rpath /code/config.rpath
-
 WORKDIR /code
 RUN ./autogen.sh
-
 WORKDIR /code/build
 RUN ../configure && \
     make -j $(nproc) && \
@@ -98,7 +98,19 @@ RUN ../configure && \
 
 
 
-FROM base as runtime
+FROM deps as debug
+ENV PATH=$PATH:/code/build \
+    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/code/build/.libs
+COPY --from=build /code/build /code/build
+WORKDIR /code/build
+# Add non-root user
+RUN useradd -r -u 1001 -m -c "hotosm account" -d /home/appuser -s /bin/false appuser
+# Change to non-root user
+USER appuser
+
+
+
+FROM base as prod
 ENV PATH=$PATH:/code/build \
     LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/code/build/.libs
 RUN set -ex \
@@ -107,6 +119,7 @@ RUN set -ex \
     -y --no-install-recommends \
         "libboost-all-dev" \
         "libgdal32" \
+        "libosmium2-dev" \
         "libxml++2.6-2v5" \
         "libjemalloc2" \
         "libpqxx-6.4" \
