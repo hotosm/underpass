@@ -43,7 +43,7 @@ services:
 
   # Underpass
   underpass:
-    image: "ghcr.io/hotosm/underpass/server:${APP_VERSION:-debug}"
+    image: "ghcr.io/hotosm/underpass:${APP_VERSION:-debug}"
     container_name: "underpass"
     build:
      context: .
