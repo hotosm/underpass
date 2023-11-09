@@ -18,12 +18,12 @@ jobs:
     uses: hotosm/gh-workflows/.github/workflows/image_build.yml@1.1.2
     with:
       dockerfile: docker/underpass-api.dockerfile
-      build_target: runtime
+      build_target: prod
       image_name: ghcr.io/${{ github.repository }}/api
 
   ui-build:
     uses: hotosm/gh-workflows/.github/workflows/image_build.yml@1.1.2
     with:
       dockerfile: docker/underpass-ui.dockerfile
-      build_target: runtime
+      build_target: prod
       image_name: ghcr.io/${{ github.repository }}/ui
