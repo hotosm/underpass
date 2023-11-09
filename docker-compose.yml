@@ -48,6 +48,7 @@ services:
     build:
      context: .
      dockerfile: docker/underpass.dockerfile
+     target: debug
     depends_on: [postgis]
     environment:
       - REPLICATOR_UNDERPASS_DB_URL=underpass:underpass@postgis/underpass
