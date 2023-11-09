@@ -48,7 +48,7 @@ services:
     build:
      context: .
      dockerfile: docker/underpass.dockerfile
-     target: debug
+    depends_on: [postgis]
     environment:
       - REPLICATOR_UNDERPASS_DB_URL=underpass:underpass@postgis/underpass
     command: tail -f /dev/null
@@ -64,6 +64,7 @@ services:
     build:
      context: .
      dockerfile: docker/underpass-api.dockerfile
+    depends_on: [underpass]
     # volumes:
     #   - ./python:/code
     ports:

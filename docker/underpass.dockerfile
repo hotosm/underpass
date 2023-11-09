@@ -23,7 +23,8 @@ ENV LC_ALL en_US.UTF-8
 
 
 FROM base as deps
-
+# Install dev deps
+WORKDIR /code
 RUN set -ex \
     && apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install \
@@ -51,44 +52,18 @@ RUN set -ex \
 
 
 
+FROM deps as ci
+# Add code only for tests
+COPY . .
+RUN mv docker/ci-entrypoint.sh /ci-entrypoint.sh \
+    && chmod +x /ci-entrypoint.sh
+ENTRYPOINT [ "/ci-entrypoint.sh" ]
+
+
+
 FROM deps as build
-WORKDIR /code
-COPY ./src /code/src
-COPY ./config /code/config
-COPY ./setup /code/setup
-
-RUN apt-get update \
-    && apt-get install -y software-properties-common \
-    && apt-get update && apt-get install -y \
-        libboost-dev \
-        autotools-dev \
-        swig \
-        pkg-config \
-        gcc \
-        build-essential \
-        ccache \
-        libboost-all-dev \
-        dejagnu \
-        libjemalloc-dev \
-        libxml++2.6-dev \
-        doxygen \
-        libgdal-dev \
-        libosmium2-dev \
-        libpqxx-dev \
-        postgresql \
-        libgumbo-dev \
-        librange-v3-dev
-
-COPY ./docker/bzip2.pc /usr/lib/x86_64-linux-gnu/pkgconfig/bzip2.pc
-COPY ./autogen.sh /code/autogen.sh
-COPY ./configure.ac /code/configure.ac
-COPY ./Makefile.am /code/Makefile.am
-COPY ./m4 /code/m4
-COPY ./dist /code/dist
-COPY ./docs /code/docs
-COPY ./ABOUT-NLS /code/ABOUT-NLS
-COPY ./config.rpath /code/config.rpath
-WORKDIR /code
+# Build underpass
+COPY . .
 RUN ./autogen.sh
 WORKDIR /code/build
 RUN ../configure && \
@@ -97,8 +72,8 @@ RUN ../configure && \
 
 
 
-
 FROM deps as debug
+# Local debug with all dev deps
 ENV PATH=$PATH:/code/build \
     LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/code/build/.libs
 COPY --from=build /code/build /code/build
@@ -111,6 +86,7 @@ USER appuser
 
 
 FROM base as prod
+# Production image with minimal deps
 ENV PATH=$PATH:/code/build \
     LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/code/build/.libs
 RUN set -ex \
