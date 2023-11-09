@@ -56,4 +56,4 @@ WORKDIR /app
 # Add non-root user, permissions
 RUN adduser -D -u 1001 -h /home/appuser appuser
 USER appuser
-COPY --from=build --chown=appuser:appuser /repo/playground/cosmos-export/ .
+COPY --from=build --chown=appuser:appuser /code/playground/cosmos-export/ .
