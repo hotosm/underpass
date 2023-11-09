@@ -26,12 +26,14 @@ RUN apt-get update && apt-get -y install \
     postgresql \
     libpq-dev
 
-COPY ./python/dbapi /code/api/dbapi
-COPY ./python/restapi /code/api/restapi
-
-RUN pip3 install -r /code/api/dbapi/requirements.txt
-RUN pip3 install -r /code/api/restapi/requirements.txt
-
+FROM base as build
+RUN set -ex \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install \
+    -y --no-install-recommends \
+        "build-essential" \
+        "libpq-dev" \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /opt/python
 COPY python/dbapi/requirements.txt /opt/python/requirements.txt
 COPY python/restapi/requirements.txt /opt/python/requirements2.txt
@@ -57,15 +59,12 @@ RUN set -ex \
     -y --no-install-recommends \
         "postgresql-client" \
     && rm -rf /var/lib/apt/lists/*
-
 COPY --from=build \
     /root/.local \
     /home/appuser/.local
-
 COPY /python/dbapi /code/dbapi
 COPY /python/restapi /code/restapi
 WORKDIR /code/restapi
-
 # Add non-root user, permissions
 RUN useradd -r -u 1001 -m -c "hotosm account" -d /home/appuser -s /bin/false appuser \
     && chown -R appuser:appuser /code /home/appuser
@@ -75,5 +74,18 @@ USER appuser
 HEALTHCHECK --start-period=10s --interval=5s --retries=12 --timeout=5s \
     CMD curl --fail http://localhost:8000 || exit 1
 
-ENTRYPOINT ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 
+
+FROM runtime as debug
+CMD ["uvicorn", "app.main:api", \
+    "--host", "0.0.0.0", "--port", "8000", \
+    "--reload", "--log-level", "critical", "--no-access-log"]
+
+
+
+FROM runtime as prod
+# Pre-compile packages to .pyc (init speed gains)
+RUN python -c "import compileall; compileall.compile_path(maxlevels=10, quiet=1)"
+# Note: 4 uvicorn workers as running with docker, change to 1 worker for Kubernetes
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", \
+    "--workers", "4", "--log-level", "critical", "--no-access-log"]

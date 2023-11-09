@@ -49,6 +49,8 @@ services:
      context: .
      dockerfile: docker/underpass.dockerfile
      target: debug
+     args:
+        APP_VERSION: ${APP_VERSION:-debug}
     depends_on: [postgis]
     environment:
       - REPLICATOR_UNDERPASS_DB_URL=underpass:underpass@postgis/underpass
@@ -60,11 +62,15 @@ services:
       internal:
 
   # Underpass API
-  underpass-api:
+  api:
+    image: "ghcr.io/hotosm/underpass/api:${APP_VERSION:-debug}"
     container_name: "underpass_api"
     build:
      context: .
      dockerfile: docker/underpass-api.dockerfile
+     target: debug
+     args:
+        APP_VERSION: ${APP_VERSION:-debug}
     depends_on: [underpass]
     # volumes:
     #   - ./python:/code
@@ -76,11 +82,15 @@ services:
       - UNDERPASS_API_DB=postgresql://underpass:underpass@postgis/underpass
 
   # Underpass UI
-  underpass-ui:
+  ui:
+    image: "ghcr.io/hotosm/underpass/ui:${APP_VERSION:-debug}"
     container_name: "underpass_ui"
     build:
      context: .
      dockerfile: docker/underpass-ui.dockerfile
+     target: debug
+     args:
+        APP_VERSION: ${APP_VERSION:-debug}
     # volumes:
     #   - js:/code
     ports:

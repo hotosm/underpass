@@ -22,7 +22,16 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-WORKDIR /code
+
+
+FROM base as deps
+RUN set -ex \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install \
+    -y --no-install-recommends \
+        "git" \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /repo
 RUN git clone https://github.com/hotosm/underpass-ui.git .
 RUN yarn install
 RUN yarn build
@@ -30,4 +39,21 @@ RUN yarn build
 WORKDIR /code/playground
 RUN yarn install
 
-ENTRYPOINT ["yarn", "cosmos"]
+
+
+FROM deps as build
+RUN yarn run cosmos:export
+
+
+
+FROM deps as debug
+CMD yarn run cosmos
+
+
+
+FROM docker.io/devforth/spa-to-http:1.0.3 as prod
+WORKDIR /app
+# Add non-root user, permissions
+RUN adduser -D -u 1001 -h /home/appuser appuser
+USER appuser
+COPY --from=build --chown=appuser:appuser /repo/playground/cosmos-export/ .
