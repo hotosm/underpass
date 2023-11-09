@@ -60,34 +60,38 @@ Geospatial::checkWay(const osmobjects::OsmWay &way, const std::string &type, yam
     // bool check_overlapping = config.get_value("overlapping") == "yes";
     // bool check_duplicate = config.get_value("duplicate") == "yes";
 
-    if (check_badgeom) {
-        auto badgeom_minangle = config.get_value("badgeom_minangle");
-        auto badgeom_maxangle = config.get_value("badgeom_maxangle");
-        if (badgeom_minangle != "" && badgeom_maxangle != "") {
-            if (unsquared(way.linestring, std::stod(badgeom_minangle), std::stod(badgeom_maxangle))) {
-                status->status.insert(badgeom);
+    if (way.tags.count(type)) {
+        if (check_badgeom) {
+            auto badgeom_minangle = config.get_value("badgeom_minangle");
+            auto badgeom_maxangle = config.get_value("badgeom_maxangle");
+            if (!way.linestring.empty() && boost::geometry::equals(way.linestring.back(), way.linestring.front())) {
+                if (badgeom_minangle != "" && badgeom_maxangle != "") {
+                    if (unsquared(way.linestring, std::stod(badgeom_minangle), std::stod(badgeom_maxangle))) {
+                        status->status.insert(badgeom);
+                    }
+                } else {
+                    if (unsquared(way.linestring)) {
+                        status->status.insert(badgeom);
+                    }
+                }
             }
-        } else {
-            if (unsquared(way.linestring)) {
-                status->status.insert(badgeom);
-            }
+
         }
 
+        // if (check_overlapping) {
+            // auto allWays = context.getOverlappingWays();
+            // if (overlaps(allWays, way)) {
+            //     status->status.insert(overlapping);
+            // }
+        // }
+
+        // if (check_duplicate) {
+            // auto allWays = context.getOverlappingWays();
+            // if (overlaps(allWays, way)) {
+            //     status->status.insert(overlapping);
+            // }
+        // }
     }
-
-    // if (check_overlapping) {
-        // auto allWays = context.getOverlappingWays();
-        // if (overlaps(allWays, way)) {
-        //     status->status.insert(overlapping);
-        // }
-    // }
-
-    // if (check_duplicate) {
-        // auto allWays = context.getOverlappingWays();
-        // if (overlaps(allWays, way)) {
-        //     status->status.insert(overlapping);
-        // }
-    // }
 
     return status;
 }

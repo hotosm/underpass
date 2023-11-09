@@ -129,19 +129,21 @@ Semantic::checkNode(const osmobjects::OsmNode &node, const std::string &type, ya
     int tagexists = 0;
     status->center = node.point;
 
-    for (auto vit = std::begin(node.tags); vit != std::end(node.tags); ++vit) {
-        if (!isValidTag(vit->first, vit->second, tags)) {
-            status->status.insert(badvalue);
-            status->values.insert(vit->first + "=" +  vit->second);
+    if (node.tags.count(type)) {
+        for (auto vit = std::begin(node.tags); vit != std::end(node.tags); ++vit) {
+            if (!isValidTag(vit->first, vit->second, tags)) {
+                status->status.insert(badvalue);
+                status->values.insert(vit->first + "=" +  vit->second);
+            }
+            if (isRequiredTag(vit->first, required_tags)) {
+                tagexists++;
+            }
+            checkTag(vit->first, vit->second, status);
         }
-        if (isRequiredTag(vit->first, required_tags)) {
-            tagexists++;
-        }
-        checkTag(vit->first, vit->second, status);
-    }
 
-    if (tagexists != required_tags.children.size()) {
-        status->status.insert(incomplete);
+        if (tagexists != required_tags.children.size()) {
+            status->status.insert(incomplete);
+        }
     }
     return status;
 }
@@ -178,25 +180,26 @@ Semantic::checkWay(const osmobjects::OsmWay &way, const std::string &type, yaml:
     }
 
     int tagexists = 0;
-    for (auto vit = std::begin(way.tags); vit != std::end(way.tags); ++vit) {
-        if (check_badvalue) {
-            if (tags.children.size() > 0 && !isValidTag(vit->first, vit->second, tags)) {
-                status->status.insert(badvalue);
-                status->values.insert(vit->first + "=" +  vit->second);
+    if (way.tags.count(type)) {
+        for (auto vit = std::begin(way.tags); vit != std::end(way.tags); ++vit) {
+            if (check_badvalue) {
+                if (tags.children.size() > 0 && !isValidTag(vit->first, vit->second, tags)) {
+                    status->status.insert(badvalue);
+                    status->values.insert(vit->first + "=" +  vit->second);
+                }
+                checkTag(vit->first, vit->second, status);
             }
-            checkTag(vit->first, vit->second, status);
+            if (check_incomplete) {
+                if (isRequiredTag(vit->first, required_tags)) {
+                    tagexists++;
+                }
+            }
         }
-        if (check_incomplete) {
-            if (isRequiredTag(vit->first, required_tags)) {
-                tagexists++;
-            }
+
+        if (check_incomplete && tagexists != required_tags.children.size()) {
+            status->status.insert(incomplete);
         }
     }
-
-    if (check_incomplete && tagexists != required_tags.children.size()) {
-        status->status.insert(incomplete);
-    }
-
     return status;
 }
 
