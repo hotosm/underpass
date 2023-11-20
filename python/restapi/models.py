@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Union
 
 class DataQualityRequest(BaseModel):
     fromDate: str = None
@@ -12,7 +13,7 @@ class OsmchangeValidateRequest(BaseModel):
     check: str
     
 class RawRequest(BaseModel):
-    area: str = None
+    area: Union[str, None] = None
     tags: str = None
     hashtag: str = None
     dateFrom: str = None
