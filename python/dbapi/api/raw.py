@@ -20,7 +20,7 @@
 from .db import UnderpassDB
 
 RESULTS_PER_PAGE = 500
-RESULTS_PER_PAGE_LIST = 100
+RESULTS_PER_PAGE_LIST = 10
 
 def tagsQueryFilter(tagsQuery, table):
     query = ""
@@ -100,23 +100,27 @@ def listFeaturesQuery(
         else:
             osmType = "way"
 
-        query = "with t_ways AS ( \
+        query = "\
             SELECT '" + osmType + "' as type, '" + geoType + "' as geotype, " + table + ".osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, " + table + ".timestamp, tags, status, created_at FROM " + table + " \
             LEFT JOIN validation ON validation.osm_id = " + table + ".osm_id \
             LEFT JOIN changesets c ON c.id = " + table + ".changeset \
             WHERE \
-            {0} {1} {2} {3} {4} {5} \
-        ), t_features AS ( \
-            SELECT to_jsonb(t_ways) as feature from t_ways \
-        ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;".format(
+            {0} {1} {2} {3} {4} \
+        ".format(
             "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
             "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
             "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
             "AND created_at >= '{0}' AND created_at <= '{1}'".format(dateFrom, dateTo) if (dateFrom and dateTo) else "",
             "AND status = '{0}'".format(status) if (status) else "",
-            "ORDER BY " + orderBy + " DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + (" OFFSET {0}".format(page * RESULTS_PER_PAGE_LIST) if page else ""),
         )
         return query
+
+def queryToJSON(query, orderBy, page):
+    return "with data AS (" + query + " {0}) , t_features AS ( \
+            SELECT to_jsonb(data) as feature from data \
+        ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;".format(
+            "ORDER BY " + orderBy + " DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + (" OFFSET {0}".format(page * RESULTS_PER_PAGE_LIST) if page else ""),
+        )
 
 class Raw:
     def __init__(self, db):
@@ -323,45 +327,40 @@ class Raw:
         page = None
     ):
 
-        polygons = self.getPolygonsList( 
+        queryPolygons = listFeaturesQuery(
         area,
         tags,
         hashtag,
-        responseType,
+        page,
         dateFrom,
         dateTo,
         status,
-        page)
+        "ways_poly")
 
-        lines = self.getLinesList( 
+        queryLines = listFeaturesQuery(
         area,
         tags,
         hashtag,
-        responseType,
+        page,
         dateFrom,
         dateTo,
         status,
-        page)
+        "ways_line")
 
-        nodes = self.getNodesList( 
+        queryNodes = listFeaturesQuery(
         area,
         tags,
         hashtag,
-        responseType,
+        page,
         dateFrom,
         dateTo,
         status,
-        page)
+        "nodes")
 
-        result = []
+        query = queryToJSON(
+            " UNION ".join([queryPolygons, queryLines, queryNodes]),
+            "id",
+            page
+        )
 
-        if polygons:
-            result = result + polygons
-
-        if lines:
-            result = result + lines
-
-        if nodes:
-            result = result + nodes
-            
-        return result
+        return self.underpassDB.run(query, responseType, True)

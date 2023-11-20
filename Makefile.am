@@ -140,7 +140,7 @@ install-python: underpass.la
 	   if test ! -e $${moddir}; then \
 	     $(MDIR_P) $${moddir}; \
 	   fi; \
-	   cp .libs/underpass.so $${moddir}/underpass$(EXT); \
+	   cp .libs/libunderpass.so $${moddir}/libunderpass$(EXT); \
 	fi
 
 endif
