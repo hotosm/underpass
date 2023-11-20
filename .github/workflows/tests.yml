@@ -16,9 +16,6 @@ jobs:
       # Relies on the master branch built docker image for build-deps
       - name: Start Docker Compose & build
         run: cd docker && docker-compose up -d underpass
-      # Copy Underpass library
-      - name: Copy library
-        run: docker-compose -f docker-compose.yml exec -T underpass sh -c "cp /code/build/.libs/libunderpass.so /usr/lib"
       # Build and run tests
       - name: Build and run tests 
         run: |
