@@ -99,6 +99,7 @@ void startProcessingWays(const underpassconfig::UnderpassConfig &config) {
             }
         }
     }
+    std::cout << std::endl;
 
 }
 
