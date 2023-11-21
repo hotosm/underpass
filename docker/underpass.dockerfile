@@ -1,5 +1,3 @@
-FROM ubuntu:latest
-
 FROM docker.io/debian:bookworm-slim as base
 ARG APP_VERSION
 ARG COMMIT_REF

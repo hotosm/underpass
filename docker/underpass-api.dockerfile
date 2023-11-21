@@ -1,4 +1,5 @@
-FROM python:3.9
+ARG PYTHON_TAG=${PYTHON_TAG:-3.10}
+
 
 FROM docker.io/python:${PYTHON_TAG}-slim-bookworm as base
 ARG APP_VERSION

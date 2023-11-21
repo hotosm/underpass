@@ -1,6 +1,5 @@
-FROM node:alpine 
+ARG NODE_TAG=${NODE_TAG:-18}
 
-LABEL maintainer="Humanitarian OpenStreetMap Team" Description="This image provides the Underpass UI playground" Vendor="HOT" Version="dev"
 
 FROM docker.io/node:${NODE_TAG}-bookworm-slim as base
 ARG APP_VERSION
