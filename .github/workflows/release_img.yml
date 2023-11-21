@@ -1,4 +1,4 @@
-name: 🔧 Build Release Images
+name: 🔧 Build Release Image
 
 on:
   release:
