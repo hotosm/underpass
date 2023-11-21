@@ -43,7 +43,7 @@ from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from models import * 
-from api import report, raw
+from api import report, raw, stats
 from api.db import UnderpassDB
 import config
 import json
@@ -70,6 +70,7 @@ db = UnderpassDB(config.UNDERPASS_DB)
 db.connect()
 reporter = report.Report(db)
 rawer = raw.Raw(db)
+statser = stats.Stats(db)
 
 @app.get("/")
 def read_root():
@@ -241,5 +242,17 @@ def getAllList(request: RawRequest):
         dateTo = request.dateTo or "",
         status = request.status or "",
         page = request.page,
+    )
+    return results
+
+@app.post("/stats/count")
+def getCount(request: StatsRequest):
+    results = statser.getCount(
+        area = request.area or None,
+        tags = request.tags or "",
+        hashtag = request.hashtag or "",
+        dateFrom = request.dateFrom or "",
+        dateTo = request.dateTo or "",
+        status = request.status or ""
     )
     return results

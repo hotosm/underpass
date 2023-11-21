@@ -20,3 +20,12 @@ class RawRequest(BaseModel):
     dateTo: str = None
     status: str = None
     page: int = None
+
+class StatsRequest(BaseModel):
+    area: Union[str, None] = None
+    tags: str = None
+    hashtag: str = None
+    dateFrom: str = None
+    dateTo: str = None
+    status: str = None
+
