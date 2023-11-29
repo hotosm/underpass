@@ -20,7 +20,7 @@ Requirements:
 Run this utility script for bootstrap the database with data for a country:
 
 ```sh
-cd utils && ./bootstrap.sh -r asia -c nepal
+cd utils && ./bootstrap.sh -r asia -c nepal 
 ```
 Regions (-r) are:
 
