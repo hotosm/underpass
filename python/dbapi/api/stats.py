@@ -59,7 +59,7 @@ class Stats:
                     select count(validation.osm_id) from validation \
                     left join " + table + " on validation.osm_id = " + table + ".osm_id \
                     where {0} {1} {2} {3} {4}".format(
-                    "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
+                    "ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "1=1 ",
                     "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
                     "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
                     "AND created at >= {0} AND created_at <= {1}".format(dateFrom, dateTo) if dateFrom and dateTo else "",
@@ -68,7 +68,7 @@ class Stats:
                     select count(" + table + ".osm_id) as total from " + table + " \
                     where {0} {1} {2} {3} \
                     ) select t1.count, t2.total from t1,t2".format(
-                    "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
+                    "ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "1=1 ",
                     "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
                     "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
                     "AND created at >= {0} AND created_at <= {1}".format(dateFrom, dateTo) if dateFrom and dateTo else "")
@@ -76,7 +76,7 @@ class Stats:
             query = "select count(" + table + ".osm_id) from " + table \
                 + " where \
                 {0} {1} {2} {3} {4}".format(
-                    "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
+                    "ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "1=1 ",
                     "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
                     "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
                     "AND created at >= {0} AND created_at <= {1}".format(dateFrom, dateTo) if dateFrom and dateTo else "",

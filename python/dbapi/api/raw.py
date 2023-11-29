@@ -73,7 +73,7 @@ def geoFeaturesQuery(
             - 'geometry' , 'geometry', ST_AsGeoJSON(geometry)::jsonb ) AS feature FROM t_ways  \
         ) SELECT jsonb_build_object( 'type', 'FeatureCollection', 'features', jsonb_agg(t_features.feature) ) \
         as result FROM t_features;".format(
-            "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
+            "ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "1=1 ",
             "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
             "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
             "AND created at >= {0} AND created_at <= {1}".format(dateFrom, dateTo) if dateFrom and dateTo else "",
@@ -107,7 +107,7 @@ def listFeaturesQuery(
             WHERE \
             {0} {1} {2} {3} {4} \
         ".format(
-            "ST_Intersects(\"geom\", ST_GeomFromText('POLYGON(({0}))', 4326) )".format(area) if area else "1=1 ",
+            "ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "1=1 ",
             "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
             "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
             "AND created_at >= '{0}' AND created_at <= '{1}'".format(dateFrom, dateTo) if (dateFrom and dateTo) else "",
