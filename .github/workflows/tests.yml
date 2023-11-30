@@ -14,7 +14,7 @@ on:
 
 jobs:
   build-and-test:
-    uses: hotosm/gh-workflows/.github/workflows/test_compose.yml@1.4.0
+    uses: hotosm/gh-workflows/.github/workflows/test_compose.yml@1.4.1
     with:
       image_name: ghcr.io/${{ github.repository }}
       build_dockerfile: docker/underpass.dockerfile
