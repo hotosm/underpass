@@ -22,10 +22,11 @@ version: "3"
 services:
   # Database
   postgis:
-    image: postgis/postgis:${POSTGIS_TAG:-15-3.3-alpine}
+    image: postgis/postgis:15-3.3
+    # image: arm64v8/postgres:15.3-alpine3.18
     container_name: "underpass_postgis"
     ports:
-      - "${DB_PORT:-5439}:5432"
+      - "5439:5432"
     environment:
       - POSTGRES_DB=underpass
       - POSTGRES_USER=underpass
@@ -43,61 +44,44 @@ services:
 
   # Underpass
   underpass:
-    image: "ghcr.io/hotosm/underpass:${APP_VERSION:-debug}"
-    container_name: underpass
+    container_name: "underpass"
     build:
      context: .
      dockerfile: docker/underpass.dockerfile
-     target: debug
-     args:
-        APP_VERSION: ${APP_VERSION:-debug}
-    depends_on: [postgis]
     environment:
       - REPLICATOR_UNDERPASS_DB_URL=underpass:underpass@postgis/underpass
     command: tail -f /dev/null
     volumes:
       - ./replication:/code/build/replication
-  # # Mount code
   #   - ./:/code
     networks:
       internal:
 
   # Underpass API
-  api:
-    image: "ghcr.io/hotosm/underpass/api:${APP_VERSION:-debug}"
-    container_name: underpass_api
+  underpass-api:
+    container_name: "underpass_api"
     build:
      context: .
      dockerfile: docker/underpass-api.dockerfile
-     target: debug
-     args:
-        APP_VERSION: ${APP_VERSION:-debug}
-    depends_on: [underpass]
-    volumes:
-      - ./python:/code
+    # volumes:
+    #   - ./python:/code/api
     ports:
-      - "${API_PORT:-8000}:8000"
+      - "8000:8000"
     networks:
       internal:
     environment:
       - UNDERPASS_API_DB=postgresql://underpass:underpass@postgis/underpass
 
   # Underpass UI
-  ui:
-    image: "ghcr.io/hotosm/underpass/ui:${APP_VERSION:-debug}"
-    container_name: underpass_ui
+  underpass-ui:
+    container_name: "underpass_ui"
     build:
      context: .
      dockerfile: docker/underpass-ui.dockerfile
-     target: debug
-     args:
-        APP_VERSION: ${APP_VERSION:-debug}
-    # # Mount underpass-ui repo
     # volumes:
-    #   - ../underpass-ui/src:/code/src
-    #   - ../underpass-ui/playground:/code/playground
+    #   - js:/code
     ports:
-      - "${UI_PORT:-5000}:5000"
+      - "5000:5000"
     networks:
       internal:
 
