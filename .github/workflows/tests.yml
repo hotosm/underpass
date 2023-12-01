@@ -11,6 +11,8 @@ on:
       - src/**
       - .github/workflows/**
       - docker/**
+  # Allow manual trigger
+  workflow_dispatch:
 
 jobs:
   build-and-test:

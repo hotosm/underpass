@@ -6,9 +6,11 @@ on:
       - docs/**
       - mkdocs.yml
     branches:
-      - master 
+      - master
+
 permissions:
   contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

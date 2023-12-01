@@ -57,7 +57,7 @@ services:
     command: tail -f /dev/null
     volumes:
       - ./replication:/code/build/replication
-  #   - ./:/code
+      # - ./:/code
     networks:
       internal:
 
