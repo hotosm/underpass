@@ -1,0 +1,29 @@
+name: 🔧 Build Release Image
+
+on:
+  release:
+    types: [published]
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  underpass-build:
+    uses: hotosm/gh-workflows/.github/workflows/image_build.yml@1.4.1
+    with:
+      dockerfile: docker/underpass.dockerfile
+      build_target: prod
+      image_name: ghcr.io/${{ github.repository }}
+
+  api-build:
+    uses: hotosm/gh-workflows/.github/workflows/image_build.yml@1.4.1
+    with:
+      dockerfile: docker/underpass-api.dockerfile
+      build_target: prod
+      image_name: ghcr.io/${{ github.repository }}/api
+
+  ui-build:
+    uses: hotosm/gh-workflows/.github/workflows/image_build.yml@1.4.1
+    with:
+      dockerfile: docker/underpass-ui.dockerfile
+      build_target: prod
+      image_name: ghcr.io/${{ github.repository }}/ui
