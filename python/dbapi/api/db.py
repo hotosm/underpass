@@ -49,10 +49,10 @@ class UnderpassDB():
             try:
                 cur.execute(query)
             except Exception as e: 
-                print("*******" + "\n" + query + "\n")
+                print("\n******* \n" + query + "\n******* \n")
                 print(e)
                 cur.close()
-                return {"Error": "There was an error running the query."}
+                return None
 
             results = None
 

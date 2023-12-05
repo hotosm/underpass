@@ -83,6 +83,9 @@ class Stats:
                     "AND status = '{0}'".format(status) if (status) else "",
                 )
         
-        return self.underpassDB.run(query, True)[0]
+        result = self.underpassDB.run(query, True)
+        if result:
+            return result[0]
+        return None
 
     

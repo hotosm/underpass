@@ -19,6 +19,7 @@ class RawRequest(BaseModel):
     dateFrom: str = None
     dateTo: str = None
     status: str = None
+    orderBy: str = None
     page: int = None
 
 class StatsRequest(BaseModel):
