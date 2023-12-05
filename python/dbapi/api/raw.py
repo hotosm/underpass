@@ -91,7 +91,6 @@ def listFeaturesQuery(
         dateTo = None,
         status = None,
         table = None,
-        orderBy = "created_at"
     ):
 
         geoType = getGeoType(table)
@@ -116,10 +115,12 @@ def listFeaturesQuery(
         return query
 
 def queryToJSON(query, orderBy, page):
-    return "with data AS (" + query + " {0}) , t_features AS ( \
-            SELECT to_jsonb(data) as feature from data \
-        ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;".format(
-            "ORDER BY " + orderBy + " DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + (" OFFSET {0}".format(page * RESULTS_PER_PAGE_LIST) if page else ""),
+    return "with data AS (" + query + ") , t_features AS ( \
+            SELECT to_jsonb(data) as feature from data {0} \
+        ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;" \
+        .format(
+            "WHERE " + orderBy + " IS NOT NULL ORDER BY " + orderBy + " DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + (" OFFSET {0}" \
+            .format(page * RESULTS_PER_PAGE_LIST) if page else ""),
         )
 
 class Raw:
@@ -236,13 +237,13 @@ class Raw:
 
         result = {'type': 'FeatureCollection', 'features': []}
 
-        if 'features' in polygons and polygons['features']:
+        if polygons and polygons['features']:
             result['features'] = result['features'] + polygons['features']
 
-        if 'features' in lines and lines['features']:
+        if lines and lines['features']:
             result['features'] = result['features'] + lines['features']
 
-        elif 'features' in nodes and nodes['features']:
+        elif nodes and nodes['features']:
             result['features'] = result['features'] + nodes['features']
             
         return result
@@ -291,7 +292,6 @@ class Raw:
             "ways_line"
         ), responseType, True)
 
-
     def getNodesList(
         self, 
         area = None,
@@ -324,6 +324,7 @@ class Raw:
         dateFrom = None,
         dateTo = None,
         status = None,
+        orderBy = None,
         page = None
     ):
 
@@ -359,8 +360,8 @@ class Raw:
 
         query = queryToJSON(
             " UNION ".join([queryPolygons, queryLines, queryNodes]),
-            "id",
-            page
+            orderBy or "id",
+            page or 0,
         )
 
         return self.underpassDB.run(query, responseType, True)

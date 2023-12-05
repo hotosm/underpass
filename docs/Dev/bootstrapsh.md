@@ -55,3 +55,35 @@ ecuador-latests.osm.pbf
 ecuador.poly
 ```
 
+## OSM authentication for downloading data
+
+If you want to bootstrap your database with ChangeSet data downloaded from
+ GeoFabrik, you'll need to be authenticated with an OSM account.
+
+ A good utility for doing this from command line is in the sendfile_osm_oauth_protector
+ repository.
+
+ ```sh
+ git clone https://github.com/geofabrik/sendfile_osm_oauth_protector.git
+ cd sendfile_osm_oauth_protector
+ ```
+
+Edit `settings.json` with your credentials:
+
+ ```json
+ {
+  "user": "<your_osm_username>",
+  "password": "<your_osm_password>",
+  "osm_host": "https://www.openstreetmap.org",
+  "consumer_url": "https://osm-internal.download.geofabrik.de/get_cookie"
+}
+```
+
+And download your file:
+
+```sh
+curl https://osm-internal.download.geofabrik.de/africa/tanzania-latest-internal.osm.pbf \
+   --cookie "$(cat cookie_output_file.txt)" --output tanzania-latest.osm.pbf
+```
+
+Then you can move the pbf file to the `underpass/utils` directory and use the `-l yes` option.

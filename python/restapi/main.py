@@ -194,7 +194,7 @@ def getLines(request: RawRequest):
     return results
 
 @app.post("/raw/all")
-def getLines(request: RawRequest):
+def getAll(request: RawRequest):
     results = rawer.getAll(
         area = request.area,
         tags = request.tags or "",
@@ -241,6 +241,7 @@ def getAllList(request: RawRequest):
         dateFrom = request.dateFrom or "",
         dateTo = request.dateTo or "",
         status = request.status or "",
+        orderBy = request.orderBy or None,
         page = request.page,
     )
     return results
