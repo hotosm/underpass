@@ -302,13 +302,16 @@ test_geospatial(std::shared_ptr<Validate> &plugin)
             // std::cerr << way->tags["note"] << std::endl;
 
             // Good geometry rectangle
-            if (way->id == -101790) {
-                if (!status->hasStatus(badgeom)) {
-                    runtest.pass("Validate::checkWay(good geometry rectangle) [geometry building]");
-                } else {
-                    runtest.fail("Validate::checkWay(good geometry rectangle) [geometry building]");
-                }
-            }
+            // if (way->id == -101790) {
+            //     if (!status->hasStatus(badgeom)) {
+            //         runtest.pass("Validate::checkWay(good geometry rectangle) [geometry building]");
+            //     } else {
+            //         runtest.fail("Validate::checkWay(good geometry rectangle) [geometry building]");
+            //     }
+            // }
+            
+            // Temporary: testing test results for CI
+            runtest.fail("Validate::checkWay(good geometry rectangle) [geometry building]");
 
             // Good geometry complex rectangle
             if (way->id == 838311812) {
