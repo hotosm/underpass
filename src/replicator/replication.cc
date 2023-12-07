@@ -766,22 +766,24 @@ RemoteURL::RemoteURL(const RemoteURL &inr)
 void
 RemoteURL::dump(void)
 {
-    std::cerr << "\t------" << std::endl;
-    std::cerr << "\tDomain: " << domain << std::endl;
-    std::cerr << "\tDatadir: " << datadir << std::endl;
-    std::cerr << "\tSubpath: " << subpath << std::endl;
-    std::cerr << "\tURL: " << getURL() << std::endl;
+    std::cerr << "{" << std::endl;
+    std::cerr << "\t\"domain\": \"" << domain << "\"," << std::endl;
+    std::cerr << "\t\"datadir\": \"" << datadir << "\"," << std::endl;
+    std::cerr << "\t\"subpath\": \"" << subpath << "\"," << std::endl;
+    std::cerr << "\t\"url\": \"" << getURL() << "\"," << std::endl;
     std::map<frequency_t, std::string> freqs;
     freqs[replication::minutely] = "minute";
     freqs[replication::hourly] = "hour";
     freqs[replication::daily] = "day";
     freqs[replication::changeset] = "changeset";
-    std::cerr << "\tFrequency: " << (int)frequency << std::endl;
-    std::cerr << "\tMajor: " << major << std::endl;
-    std::cerr << "\tMinor: " << minor << std::endl;
-    std::cerr << "\tIndex: " << index << std::endl;
-    std::cerr << "\tFilespec: " << filespec << std::endl;
-    std::cerr << "\tDestdir: " << destdir << std::endl;
+    std::cerr << "\t\"frequency\": " << (int)frequency << "," << std::endl;
+    std::cerr << "\t\"major\": " << major << "," << std::endl;
+    std::cerr << "\t\"minor\": " << minor << "," << std::endl;
+    std::cerr << "\t\"index\": " <<  index << "," << std::endl;
+    std::cerr << "\t\"filespec\": \"" << filespec << "\"," << std::endl;
+    std::cerr << "\t\"destdir\": \"" << destdir << "\"" << std::endl;
+    std::cerr << "}" << std::endl;
+
 }
 
 Planet::Planet(const RemoteURL &url)
