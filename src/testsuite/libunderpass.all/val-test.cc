@@ -312,6 +312,7 @@ test_geospatial(std::shared_ptr<Validate> &plugin)
             
             // Temporary: testing test results for CI
             runtest.fail("Validate::checkWay(good geometry rectangle) [geometry building]");
+            return 1;
 
             // Good geometry complex rectangle
             if (way->id == 838311812) {
