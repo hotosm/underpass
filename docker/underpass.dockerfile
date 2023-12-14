@@ -27,6 +27,7 @@ RUN set -ex \
     && apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install \
     -y --no-install-recommends \
+        "git" \
         "software-properties-common" \
         "libboost-all-dev" \
         "autotools-dev" \
