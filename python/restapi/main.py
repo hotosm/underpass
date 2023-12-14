@@ -48,15 +48,11 @@ from api.db import UnderpassDB
 import config
 import json
 
-origins = config.ORIGINS
-
-print(origins)
-
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=config.ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
