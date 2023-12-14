@@ -26,7 +26,7 @@ yellow_echo "Generating Makefiles"
 
 echo
 echo "Generating 'build' directory"
-mkdir build
+mkdir -p build
 echo "Entering 'build' directory"
 cd build
 
