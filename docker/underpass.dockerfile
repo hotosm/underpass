@@ -42,8 +42,7 @@ RUN set -ex \
         "libgdal-dev" \
         "libosmium2-dev" \
         "libpqxx-dev" \
-        "postgresql" \
-        "postgis" \
+        "postgresql-postgis" \
         "libgumbo-dev" \
         "librange-v3-dev" \
         "libtool" \
