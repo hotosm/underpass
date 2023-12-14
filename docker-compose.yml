@@ -55,8 +55,8 @@ services:
     environment:
       - REPLICATOR_UNDERPASS_DB_URL=underpass:underpass@postgis/underpass
     command: tail -f /dev/null
-    volumes:
-      - ${PWD}:/code
+    # volumes:
+      # - ${PWD}:/code
       # - ./replication:/code/build/replication
     networks:
       internal:
