@@ -19,11 +19,16 @@ cd ${TEMP_DIR}
 make distclean -j `nproc` || true
 make clean -j `nproc` || true
 
-# Run CI
-APP_VERSION=ci docker compose run underpass --exit-code-from=underpass
+# Stop containers if running
+docker rm --force underpass underpass_postgis underpass_api underpass_ui || true
 
-# Shut down containers
-APP_VERSION=ci docker compose down
+# Run CI
+export TAG_OVERRIDE=ci
+echo
+# Use -t flag to pass signals via tty
+docker compose run -t --rm --build underpass
+echo "Returned signal from tests: $?"
+echo
 
 echo "Remove temporary folder ${TEMP_DIR}"
 sudo rm -rf ${TEMP_DIR}
