@@ -16,7 +16,7 @@
 !docs
 !ABOUT-NLS
 !config.rpath
-!docker/ci-entrypoint.sh
+!docker/build-and-test.sh
 
 # API
 !python

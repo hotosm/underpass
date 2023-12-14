@@ -51,9 +51,9 @@ RUN set -ex \
 
 
 FROM deps as ci
-COPY docker/ci-entrypoint.sh /ci-entrypoint.sh
-RUN chmod +x /ci-entrypoint.sh
-ENTRYPOINT [ "/ci-entrypoint.sh" ]
+COPY docker/build-and-test.sh /build-and-test.sh
+RUN chmod +x /build-and-test.sh
+ENTRYPOINT [ "/bin/bash", "-c" ]
 
 
 

@@ -36,5 +36,4 @@ make install
 
 # Run tests
 yellow_echo "Running Tests"
-cd /code/build/src/testsuite/libunderpass.all
 make check -j `nproc`
