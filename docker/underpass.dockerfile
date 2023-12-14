@@ -72,7 +72,10 @@ FROM deps as debug
 # Local debug with all dev deps
 ENV PATH=$PATH:/code/build \
     LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/code/build/.libs
+# Required dirs for underpass
 COPY --from=build /code/build /code/build
+COPY --from=build /usr/local/lib/underpass \
+    /usr/local/lib/underpass
 WORKDIR /code/build
 # Add non-root user
 RUN useradd -r -u 1001 -m -c "hotosm account" -d /home/appuser -s /bin/false appuser
@@ -97,7 +100,10 @@ RUN set -ex \
         "libpqxx-6.4" \
         "libgumbo1" \
     && rm -rf /var/lib/apt/lists/*
+# Required dirs for underpass
 COPY --from=build /code/build /code/build
+COPY --from=build /usr/local/lib/underpass \
+    /usr/local/lib/underpass
 WORKDIR /code/build
 # Add non-root user
 RUN useradd -r -u 1001 -m -c "hotosm account" -d /home/appuser -s /bin/false appuser
