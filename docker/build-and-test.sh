@@ -25,6 +25,8 @@ yellow_echo "Generating Makefiles"
 ./autogen.sh
 
 echo
+echo "Generating 'build' directory"
+mkdir build
 echo "Entering 'build' directory"
 cd build
 
