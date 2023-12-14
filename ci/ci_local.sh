@@ -30,6 +30,9 @@ docker compose run -t --rm --build underpass
 echo "Returned signal from tests: $?"
 echo
 
+# Cleanup containers
+docker rm --force underpass underpass_postgis underpass_api underpass_ui || true
+
 echo "Remove temporary folder ${TEMP_DIR}"
 sudo rm -rf ${TEMP_DIR}
 
