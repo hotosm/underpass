@@ -47,6 +47,7 @@ RUN set -ex \
         "libgumbo-dev" \
         "librange-v3-dev" \
         "libtool" \
+        "osm2pgsql" \
     && rm -rf /var/lib/apt/lists/*
 
 
@@ -101,6 +102,7 @@ RUN set -ex \
         "libpqxx-6.4" \
         "libgumbo1" \
         "postgresql-client" \
+        "osm2pgsql" \
     && rm -rf /var/lib/apt/lists/*
 # Required dirs for underpass
 COPY --from=build /code/build /code/build
