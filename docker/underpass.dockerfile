@@ -52,13 +52,6 @@ RUN set -ex \
 
 
 
-FROM deps as ci
-COPY docker/build-and-test.sh /build-and-test.sh
-RUN chmod +x /build-and-test.sh
-ENTRYPOINT [ "/bin/bash", "-c" ]
-
-
-
 FROM deps as build
 # Build underpass
 COPY . .
@@ -70,14 +63,22 @@ RUN ../configure && \
 
 
 
+FROM build as ci
+ENV LD_LIBRARY_PATH=/code/build/.libs/
+WORKDIR /code/build
+ENTRYPOINT [ "/bin/bash", "-c" ]
+CMD ["make", "check", "-j", "$(nproc)"]
+
+
+
 FROM deps as debug
 # Local debug with all dev deps
-ENV PATH=$PATH:/code/build \
-    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/code/build/.libs
-# Required dirs for underpass
-COPY --from=build /code/build /code/build
-COPY --from=build /usr/local/lib/underpass \
-    /usr/local/lib/underpass
+ENV LD_LIBRARY_PATH=/code/build/.libs/
+COPY --from=build /usr/local/bin /usr/local/bin
+COPY --from=build /code/build/.libs/ \
+    /code/build/.libs/
+COPY --from=build /usr/local/lib/underpass/config \
+    /usr/local/lib/underpass/config
 WORKDIR /code/build
 # Add non-root user
 RUN useradd -r -u 1001 -m -c "hotosm account" -d /home/appuser -s /bin/false appuser
@@ -88,8 +89,7 @@ USER appuser
 
 FROM base as prod
 # Production image with minimal deps
-ENV PATH=$PATH:/code/build \
-    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/code/build/.libs
+ENV LD_LIBRARY_PATH=/usr/local/lib
 RUN set -ex \
     && apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install \
@@ -104,10 +104,11 @@ RUN set -ex \
         "postgresql-client" \
         "osm2pgsql" \
     && rm -rf /var/lib/apt/lists/*
-# Required dirs for underpass
-COPY --from=build /code/build /code/build
-COPY --from=build /usr/local/lib/underpass \
-    /usr/local/lib/underpass
+COPY --from=build /usr/local/bin /usr/local/bin
+COPY --from=build /code/build/.libs/ \
+    /usr/local/lib/
+COPY --from=build /usr/local/lib/underpass/config \
+    /usr/local/lib/underpass/config
 WORKDIR /code/build
 # Add non-root user
 RUN useradd -r -u 1001 -m -c "hotosm account" -d /home/appuser -s /bin/false appuser
