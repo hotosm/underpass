@@ -51,10 +51,8 @@ RUN set -ex \
 
 
 FROM deps as ci
-# Add code only for tests
-COPY . .
-RUN mv docker/ci-entrypoint.sh /ci-entrypoint.sh \
-    && chmod +x /ci-entrypoint.sh
+COPY docker/ci-entrypoint.sh /ci-entrypoint.sh
+RUN chmod +x /ci-entrypoint.sh
 ENTRYPOINT [ "/ci-entrypoint.sh" ]
 
 
