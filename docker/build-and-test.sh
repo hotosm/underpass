@@ -38,4 +38,4 @@ make install
 
 # Run tests
 yellow_echo "Running Tests"
-make check -j `nproc`
+make check -j $(nproc)
