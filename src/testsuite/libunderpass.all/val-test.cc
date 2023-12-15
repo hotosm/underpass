@@ -301,7 +301,7 @@ test_geospatial(std::shared_ptr<Validate> &plugin)
             // status->dump();
             // std::cerr << way->tags["note"] << std::endl;
 
-            Good geometry rectangle
+            // Good geometry rectangle
             if (way->id == -101790) {
                 if (!status->hasStatus(badgeom)) {
                     runtest.pass("Validate::checkWay(good geometry rectangle) [geometry building]");
