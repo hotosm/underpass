@@ -301,18 +301,15 @@ test_geospatial(std::shared_ptr<Validate> &plugin)
             // status->dump();
             // std::cerr << way->tags["note"] << std::endl;
 
-            // Good geometry rectangle
-            // if (way->id == -101790) {
-            //     if (!status->hasStatus(badgeom)) {
-            //         runtest.pass("Validate::checkWay(good geometry rectangle) [geometry building]");
-            //     } else {
-            //         runtest.fail("Validate::checkWay(good geometry rectangle) [geometry building]");
-            //     }
-            // }
-            
-            // Temporary: testing test results for CI
-            runtest.fail("Validate::checkWay(good geometry rectangle) [geometry building]");
-            return 1;
+            Good geometry rectangle
+            if (way->id == -101790) {
+                if (!status->hasStatus(badgeom)) {
+                    runtest.pass("Validate::checkWay(good geometry rectangle) [geometry building]");
+                } else {
+                    runtest.fail("Validate::checkWay(good geometry rectangle) [geometry building]");
+                    return 1;
+                }
+            }
 
             // Good geometry complex rectangle
             if (way->id == 838311812) {
@@ -320,6 +317,7 @@ test_geospatial(std::shared_ptr<Validate> &plugin)
                     runtest.pass("Validate::checkWay(good geometry complex rectangle) [geometry building]");
                 } else {
                     runtest.fail("Validate::checkWay(good geometry complex rectangle) [geometry building]");
+                    return 1;
                 }
             }
 
@@ -329,6 +327,7 @@ test_geospatial(std::shared_ptr<Validate> &plugin)
                     runtest.pass("Validate::checkWay(bad geometry triangle) [geometry building]");
                 } else {
                     runtest.fail("Validate::checkWay(bad geometry triangle) [geometry building]");
+                    return 1;
                 }
             }
 
@@ -338,6 +337,7 @@ test_geospatial(std::shared_ptr<Validate> &plugin)
                     runtest.pass("Validate::checkWay(good geometry) [geometry building]");
                 } else {
                     runtest.fail("Validate::checkWay(good geometry) [geometry building]");
+                    return 1;
                 }
             }
 
@@ -356,6 +356,7 @@ test_geospatial(std::shared_ptr<Validate> &plugin)
                     runtest.pass("Validate::checkWay(good geometry big circle) [geometry building]");
                 } else {
                     runtest.fail("Validate::checkWay(good geometry big circle) [geometry building]");
+                    return 1;
                 }
             }
 
@@ -365,6 +366,7 @@ test_geospatial(std::shared_ptr<Validate> &plugin)
                     runtest.pass("Validate::checkWay(good geometry really big circle) [geometry building]");
                 } else {
                     runtest.fail("Validate::checkWay(good geometry really big circle) [geometry building]");
+                    return 1;
                 }
             }
 
@@ -374,6 +376,7 @@ test_geospatial(std::shared_ptr<Validate> &plugin)
                     runtest.pass("Validate::checkWay(good geometry circle) [geometry building]");
                 } else {
                     runtest.fail("Validate::checkWay(good geometry small circle) [geometry building]");
+                    return 1;
                 }
             }
 
@@ -383,6 +386,7 @@ test_geospatial(std::shared_ptr<Validate> &plugin)
                     runtest.pass("Validate::checkWay(badgeom really bad circle) [geometry building]");
                 } else {
                     runtest.fail("Validate::checkWay(badgeom really bad circle) [geometry building]");
+                    return 1;
                 }
             }
         }
@@ -447,11 +451,13 @@ test_geospatial(std::shared_ptr<Validate> &plugin)
             runtest.pass("Validate::validateWays(overlapping) [geometry building]");
         } else {
             runtest.fail("Validate::validateWays(overlapping) [geometry building]");
+            return 1;
         }
         if (status.hasStatus(duplicate)) {
             runtest.pass("Validate::validateWays(duplicate) [geometry building]");
         } else {
             runtest.fail("Validate::validateWays(duplicate) [geometry building]");
+            return 1;
         }
     }
 
@@ -478,11 +484,13 @@ test_geospatial(std::shared_ptr<Validate> &plugin)
             runtest.pass("Validate::validateWays(no overlapping) [geometry building]");
         } else {
             runtest.fail("Validate::validateWays(no overlapping) [geometry building]");
+            return 1;
         }
         if (!status.hasStatus(duplicate)) {
             runtest.pass("Validate::validateWays(no duplicate) [geometry building]");
         } else {
             runtest.fail("Validate::validateWays(no duplicate) [geometry building]");
+            return 1;
         }
     }
 }
