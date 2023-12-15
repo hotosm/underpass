@@ -27,6 +27,7 @@ RUN set -ex \
     && apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install \
     -y --no-install-recommends \
+        "git" \
         "software-properties-common" \
         "libboost-all-dev" \
         "autotools-dev" \
@@ -42,18 +43,12 @@ RUN set -ex \
         "libgdal-dev" \
         "libosmium2-dev" \
         "libpqxx-dev" \
-        "postgresql" \
+        "postgresql-postgis" \
         "libgumbo-dev" \
         "librange-v3-dev" \
         "libtool" \
+        "osm2pgsql" \
     && rm -rf /var/lib/apt/lists/*
-
-
-
-FROM deps as ci
-COPY docker/build-and-test.sh /build-and-test.sh
-RUN chmod +x /build-and-test.sh
-ENTRYPOINT [ "/bin/bash", "-c" ]
 
 
 
@@ -68,11 +63,22 @@ RUN ../configure && \
 
 
 
+FROM build as ci
+ENV LD_LIBRARY_PATH=/code/build/.libs/
+WORKDIR /code/build
+ENTRYPOINT [ "/bin/bash", "-c" ]
+CMD ["make", "check", "-j", "$(nproc)"]
+
+
+
 FROM deps as debug
 # Local debug with all dev deps
-ENV PATH=$PATH:/code/build \
-    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/code/build/.libs
-COPY --from=build /code/build /code/build
+ENV LD_LIBRARY_PATH=/code/build/.libs/
+COPY --from=build /usr/local/bin /usr/local/bin
+COPY --from=build /code/build/.libs/ \
+    /code/build/.libs/
+COPY --from=build /usr/local/lib/underpass/config \
+    /usr/local/lib/underpass/config
 WORKDIR /code/build
 # Add non-root user
 RUN useradd -r -u 1001 -m -c "hotosm account" -d /home/appuser -s /bin/false appuser
@@ -83,8 +89,7 @@ USER appuser
 
 FROM base as prod
 # Production image with minimal deps
-ENV PATH=$PATH:/code/build \
-    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/code/build/.libs
+ENV LD_LIBRARY_PATH=/usr/local/lib
 RUN set -ex \
     && apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install \
@@ -96,8 +101,14 @@ RUN set -ex \
         "libjemalloc2" \
         "libpqxx-6.4" \
         "libgumbo1" \
+        "postgresql-client" \
+        "osm2pgsql" \
     && rm -rf /var/lib/apt/lists/*
-COPY --from=build /code/build /code/build
+COPY --from=build /usr/local/bin /usr/local/bin
+COPY --from=build /code/build/.libs/ \
+    /usr/local/lib/
+COPY --from=build /usr/local/lib/underpass/config \
+    /usr/local/lib/underpass/config
 WORKDIR /code/build
 # Add non-root user
 RUN useradd -r -u 1001 -m -c "hotosm account" -d /home/appuser -s /bin/false appuser

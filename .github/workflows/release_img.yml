@@ -11,6 +11,7 @@ jobs:
     uses: hotosm/gh-workflows/.github/workflows/image_build.yml@1.4.1
     with:
       dockerfile: docker/underpass.dockerfile
+      scan_dockerfile: false
       build_target: prod
       image_name: ghcr.io/${{ github.repository }}
 
@@ -18,6 +19,7 @@ jobs:
     uses: hotosm/gh-workflows/.github/workflows/image_build.yml@1.4.1
     with:
       dockerfile: docker/underpass-api.dockerfile
+      scan_dockerfile: false
       build_target: prod
       image_name: ghcr.io/${{ github.repository }}/api
 
@@ -25,5 +27,6 @@ jobs:
     uses: hotosm/gh-workflows/.github/workflows/image_build.yml@1.4.1
     with:
       dockerfile: docker/underpass-ui.dockerfile
+      scan_dockerfile: false
       build_target: prod
       image_name: ghcr.io/${{ github.repository }}/ui

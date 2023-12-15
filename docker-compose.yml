@@ -43,21 +43,21 @@ services:
 
   # Underpass
   underpass:
-    image: "ghcr.io/hotosm/underpass:${APP_VERSION:-debug}"
+    image: "ghcr.io/hotosm/underpass:${TAG_OVERRIDE:-debug}"
     container_name: "underpass"
     build:
      context: .
      dockerfile: docker/underpass.dockerfile
-     target: debug
+     target: ${TAG_OVERRIDE:-debug}
      args:
         APP_VERSION: ${APP_VERSION:-debug}
     depends_on: [postgis]
     environment:
       - REPLICATOR_UNDERPASS_DB_URL=underpass:underpass@postgis/underpass
     command: tail -f /dev/null
-    volumes:
-      - ./replication:/code/build/replication
-      # - ./:/code
+    # volumes:
+      # - ${PWD}:/code
+      # - ./replication:/code/build/replication
     networks:
       internal:
 
