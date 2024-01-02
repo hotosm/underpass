@@ -151,7 +151,9 @@ QueryRaw::applyChange(const OsmWay &way) const
     
     if (way.refs.size() > 2
         && (way.action == osmobjects::create || way.action == osmobjects::modify)) {
-        if (way.refs.size() == boost::geometry::num_points(way.linestring)) {
+        if ((way.refs.front() != way.refs.back() && way.refs.size() == boost::geometry::num_points(way.linestring)) ||
+            (way.refs.front() == way.refs.back() && way.refs.size() == boost::geometry::num_points(way.polygon))
+         ) {
 
             query = "INSERT INTO " + *tableName + " as r (osm_id, tags, refs, geom, timestamp, version, \"user\", uid, changeset) VALUES(";
             std::string format = "%d, %s, %s, %s, \'%s\', %d, \'%s\', %d, %d) \

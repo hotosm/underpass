@@ -185,7 +185,7 @@ Pq::escapedString(std::string text)
             newstr += "&#41;";
         } else if (text[i] == '(') {
             newstr += "&#40;";
-        } else if (text[i] == '\\') {
+        } else if ((text[i] == '\\') || (text[i] == '\n')) {
             // drop this character
         } else {
             newstr += text[i];
