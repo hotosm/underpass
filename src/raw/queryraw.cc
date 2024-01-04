@@ -88,12 +88,13 @@ QueryRaw::applyChange(const OsmNode &node) const
             for (auto it = std::begin(node.tags); it != std::end(node.tags); ++it) {
                 std::string tag_format = "\"%s\" : \"%s\",";
                 boost::format tag_fmt(tag_format);
-                tag_fmt % dbconn->escapedString(it->first);
-                tag_fmt % dbconn->escapedString(it->second);
+                tag_fmt % dbconn->escapedString(dbconn->escapedJSON(it->first));
+                tag_fmt % dbconn->escapedString(dbconn->escapedJSON(it->second));
                 tags += tag_fmt.str();
             }
             tags.erase(tags.size() - 1);
             tags = "'{" + tags + "}'";
+
         } else {
             tags = "null";
         }
@@ -169,8 +170,8 @@ QueryRaw::applyChange(const OsmWay &way) const
                 for (auto it = std::begin(way.tags); it != std::end(way.tags); ++it) {
                     std::string tag_format = "\"%s\" : \"%s\",";
                     boost::format tag_fmt(tag_format);
-                    tag_fmt % dbconn->escapedString(it->first);
-                    tag_fmt % dbconn->escapedString(it->second);
+                    tag_fmt % dbconn->escapedString(dbconn->escapedJSON(it->first));
+                    tag_fmt % dbconn->escapedString(dbconn->escapedJSON(it->second));
                     tags += tag_fmt.str();
                 }
                 tags.erase(tags.size() - 1);
@@ -373,7 +374,6 @@ QueryRaw::getNodeCacheFromWays(std::shared_ptr<std::vector<OsmWay>> ways, std::m
 }
 
 std::map<std::string, std::string> parseTagsString(std::string input) {
-    // std::cout << "[INPUT] " << input << std::endl;
     std::map<std::string, std::string> tags;
     boost::property_tree::ptree pt;
     try {
@@ -386,10 +386,6 @@ std::map<std::string, std::string> parseTagsString(std::string input) {
     for (const auto& pair : pt) {
         tags[pair.first] = pair.second.get_value<std::string>();
     }
-    // for (const auto& pair : tags) {
-    //     std::cout << pair.first << "=" << pair.second << std::endl;
-    // }
-    // std::cout << std::endl;
     return tags;
 }
 

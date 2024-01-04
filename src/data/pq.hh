@@ -64,7 +64,10 @@ class Pq {
     void dump(void);
 
     // Escape string
-    std::string escapedString(std::string text);
+    std::string escapedString(const std::string &s);
+
+    // Escape JSON
+    std::string escapedJSON(const std::string &s);
 
     // Database connection
     std::shared_ptr<pqxx::connection> sdb;

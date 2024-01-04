@@ -28,6 +28,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include "utils/log.hh"
 using namespace logger;
@@ -170,30 +171,59 @@ std::string Latin1ToUTF8(const std::string& latin1str) {
 }
 
 std::string
-Pq::escapedString(std::string text)
+Pq::escapedString(const std::string &s)
 {
     std::string newstr;
     int i = 0;
-    while (i < text.size()) {
-        if (text[i] == '\'') {
+    while (i < s.size()) {
+        if (s[i] == '\'') {
             newstr += "&apos;";
-        } else if (text[i] == '\"') {
+        } else if (s[i] == '\"') {
             newstr += "&quot;";
-        } else if (text[i] == '\'') {
+        } else if (s[i] == '\'') {
             newstr += "&quot;";
-        } else if (text[i] == ')') {
+        } else if (s[i] == ')') {
             newstr += "&#41;";
-        } else if (text[i] == '(') {
+        } else if (s[i] == '(') {
             newstr += "&#40;";
-        } else if ((text[i] == '\\') || (text[i] == '\n')) {
+        } else if ((s[i] == '\\') || (s[i] == '\n')) {
             // drop this character
         } else {
-            newstr += text[i];
+            newstr += s[i];
         }
         i++;
     }
 
     return sdb->esc(Latin1ToUTF8(newstr));
+}
+
+std::string 
+Pq::escapedJSON(const std::string &s) {
+    std::ostringstream o;
+    for (auto c = s.cbegin(); c != s.cend(); c++) {
+        switch (*c) {
+        case '\x00': o << "\\u0000"; break;
+        case '\x01': o << " "; break;
+        case '\x02': o << " "; break;
+        case '\x03': o << " "; break;
+        case '\x04': o << " "; break;
+        case '\x05': o << " "; break;
+        case '\x06': o << " "; break;
+        case '\x07': o << " "; break;
+        case '\x08': o << " "; break;
+        case '\x09': o << " "; break;
+        case '\x0a': o << "\\n"; break;
+        case '\x0b': o << " "; break;
+        case '\x0c': o << " "; break;
+        case '\x0d': o << " "; break;
+        case '\x0e': o << " "; break;
+        case '\x1f': o << "\\u001f"; break;
+        case '\x22': o << "\\\""; break;
+        case '\x5c': o << "\\\\"; break;
+        default: o << *c;
+        }
+    }
+    return o.str();
 }
 
 } // namespace pq
