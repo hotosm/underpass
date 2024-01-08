@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Copyright (c) 2023 Humanitarian OpenStreetMap Team
+# Copyright (c) 2023, 2024 Humanitarian OpenStreetMap Team
 #
 # This file is part of Underpass.
 #
@@ -41,7 +41,7 @@ class UnderpassDB():
         if self.conn is not None:
             self.conn.close()
 
-    def run(self, query, responseType = 'json', singleObject = False):
+    def run(self, query, singleObject = False):
         if self.conn is None:
             self.connect()
         if self.conn:
@@ -56,23 +56,15 @@ class UnderpassDB():
 
             results = None
 
-            if responseType == 'csv':
-                results = ""
-                for row in cur:
-                    results += '    '.join((str(x)) for x in row) + '\n'
-                cur.close()
-                csvHeaders = '    '.join([desc[0] for desc in cur.description])  + '\n'
-                return csvHeaders + results
-            else:
-                results = []
-                colnames = [desc[0] for desc in cur.description]
-                for row in cur:
-                    item = {}
-                    for index, column in enumerate(colnames):
-                        item[column] = row[index]
-                    results.append(item)
+            results = []
+            colnames = [desc[0] for desc in cur.description]
+            for row in cur:
+                item = {}
+                for index, column in enumerate(colnames):
+                    item[column] = row[index]
+                results.append(item)
             cur.close()
 
             if singleObject:
-                return results[0]['result']
-            return results
+                return results[0]
+            return results[0]['result']

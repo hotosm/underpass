@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Copyright (c) 2023 Humanitarian OpenStreetMap Team
+# Copyright (c) 2023, 2024 Humanitarian OpenStreetMap Team
 #
 # This file is part of Underpass.
 #
@@ -40,13 +40,11 @@ import sys,os
 sys.path.append(os.path.realpath('../dbapi'))
 
 from fastapi import FastAPI
-from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from models import * 
-from api import report, raw, stats
+from api import raw, stats
 from api.db import UnderpassDB
 import config
-import json
 
 app = FastAPI()
 
@@ -60,91 +58,12 @@ app.add_middleware(
 
 db = UnderpassDB(config.UNDERPASS_DB)
 db.connect()
-reporter = report.Report(db)
 rawer = raw.Raw(db)
 statser = stats.Stats(db)
 
 @app.get("/")
 def read_root():
     return {"Welcome": "This is the Underpass REST API."}
-
-@app.post("/report/dataQualityGeo")
-def dataQualityGeo(request: DataQualityRequest):
-    if request.fromDate or request.toDate or request.area or request.hashtags:
-        results = reporter.getDataQualityGeo(
-            fromDate = request.fromDate,
-            toDate = request.toDate,
-            hashtags = request.hashtags,
-            area = request.area
-        )
-    else:
-        results = reporter.getDataQualityGeoLatest()
-    return results
-
-@app.post("/report/dataQualityGeo/csv", response_class=PlainTextResponse)
-def dataQualityGeo(request: DataQualityRequest):
-    results = reporter.getDataQualityGeo(
-        fromDate = request.fromDate,
-        toDate = request.toDate,
-        hashtags = request.hashtags,
-        area = request.area,
-        responseType = "csv"
-    )
-    return results
-
-@app.post("/report/dataQualityTag")
-def dataQualityTag(request: DataQualityRequest):
-    results = reporter.getDataQualityTag(
-        fromDate = request.fromDate,
-        toDate = request.toDate,
-        hashtags = request.hashtags,
-        area = request.area
-    )
-    return results
-
-@app.post("/report/dataQualityTag/csv", response_class=PlainTextResponse)
-def dataQualityTag(request: DataQualityRequest):
-    results = reporter.getDataQualityTag(
-        fromDate = request.fromDate,
-        toDate = request.toDate,
-        hashtags = request.hashtags,
-        area = request.area,
-        responseType = "csv"
-    )
-    return results
-
-@app.post("/report/dataQualityTagStats/csv", response_class=PlainTextResponse)
-def dataQualityTag(request: DataQualityRequest):
-    results = reporter.getDataQualityTagStats(
-        fromDate = request.fromDate,
-        toDate = request.toDate,
-        hashtags = request.hashtags,
-        area = request.area,
-        responseType = "csv"
-    )
-    return results
-
-@app.post("/report/dataQualityTagStats")
-def dataQualityTag(request: DataQualityRequest):
-    results = reporter.getDataQualityTagStats(
-        fromDate = request.fromDate,
-        toDate = request.toDate,
-        hashtags = request.hashtags,
-        area = request.area
-    )
-    return results
-
-if hasattr(config, 'ENABLE_UNDERPASS_CORE'):
-    import underpass as u
-
-    @app.post("/osmchange/validate")
-    def osmchangeValidate(request: OsmchangeValidateRequest):
-        validator = u.Validate()
-        print(request.osmchange)
-        return json.loads(validator.checkOsmChange(
-            request.osmchange,
-            request.check)
-        )
 
 @app.post("/raw/polygons")
 def getPolygons(request: RawRequest):
@@ -185,48 +104,23 @@ def getLines(request: RawRequest):
     )
     return results
 
-@app.post("/raw/all")
-def getAll(request: RawRequest):
-    results = rawer.getAll(
-        area = request.area,
-        tags = request.tags or "",
-        hashtag = request.hashtag or "",
-        dateFrom = request.dateFrom or "",
-        dateTo = request.dateTo or "",
-        status = request.status or "",
-        page = request.page
-    )
-    return results
-
-@app.post("/raw/polygonsList")
-def getPolygonsList(request: RawRequest):
-    results = rawer.getPolygonsList(
+@app.post("/raw/features")
+def getRawFeatures(request: RawRequest):
+    results = rawer.getFeatures(
         area = request.area or None,
         tags = request.tags or "",
         hashtag = request.hashtag or "",
         dateFrom = request.dateFrom or "",
         dateTo = request.dateTo or "",
         status = request.status or "",
-        page = request.page
+        page = request.page,
+        featureType = request.featureType or None
     )
     return results
 
-@app.post("/raw/nodesList")
-def getNodesList(request: RawRequest):
-    results = rawer.getNodesList(
-        area = request.area or None,
-        tags = request.tags or "",
-        hashtag = request.hashtag or "",
-        dateFrom = request.dateFrom or "",
-        dateTo = request.dateTo or "",
-        status = request.status or "",
-        page = request.page
-    )
-    return results
-
-@app.post("/raw/allList")
-def getAllList(request: RawRequest):
-    results = rawer.getAllList(
+@app.post("/raw/list")
+def getRawList(request: RawRequest):
+    results = rawer.getList(
         area = request.area or None,
         tags = request.tags or "",
         hashtag = request.hashtag or "",
@@ -235,17 +129,19 @@ def getAllList(request: RawRequest):
         status = request.status or "",
         orderBy = request.orderBy or None,
         page = request.page,
+        featureType = request.featureType or None
     )
     return results
 
 @app.post("/stats/count")
-def getCount(request: StatsRequest):
+def getStatsCount(request: StatsRequest):
     results = statser.getCount(
         area = request.area or None,
         tags = request.tags or "",
         hashtag = request.hashtag or "",
         dateFrom = request.dateFrom or "",
         dateTo = request.dateTo or "",
-        status = request.status or ""
+        status = request.status or "",
+        featureType = request.featureType or None
     )
     return results

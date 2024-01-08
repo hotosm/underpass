@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Copyright (c) 2023 Humanitarian OpenStreetMap Team
+# Copyright (c) 2023, 2024 Humanitarian OpenStreetMap Team
 #
 # This file is part of Underpass.
 #
@@ -82,15 +82,12 @@ def geoFeaturesQuery(
         )
         return query
 
-def listFeaturesQuery(
-        area = None,
-        tags = None,
-        hashtag = None,
-        page = 0,
-        dateFrom = None,
-        dateTo = None,
-        status = None,
-        table = None,
+def listAllFeaturesQuery(
+        area,
+        tags,
+        orderBy,
+        page,
+        table,
     ):
 
         geoType = getGeoType(table)
@@ -100,18 +97,14 @@ def listFeaturesQuery(
             osmType = "way"
 
         query = "\
-            SELECT '" + osmType + "' as type, '" + geoType + "' as geotype, " + table + ".osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, " + table + ".timestamp, tags, status, created_at FROM " + table + " \
-            LEFT JOIN validation ON validation.osm_id = " + table + ".osm_id \
-            LEFT JOIN changesets c ON c.id = " + table + ".changeset \
-            WHERE \
-            {0} {1} {2} {3} {4} \
+            (SELECT '" + osmType + "' as type, '" + geoType + "' as geotype, " + table + ".osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, " + table + ".timestamp, tags, changeset FROM " + table + " \
+            WHERE {0} {1} {2})\
         ".format(
-            "ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "1=1 ",
+            "ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "1=1",
             "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
-            "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
-            "AND created_at >= '{0}' AND created_at <= '{1}'".format(dateFrom, dateTo) if (dateFrom and dateTo) else "",
-            "AND status = '{0}'".format(status) if (status) else "",
-        )
+            "AND " + orderBy + " IS NOT NULL ORDER BY " + orderBy + " DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + (" OFFSET {0}" \
+                .format(page * RESULTS_PER_PAGE_LIST) if page else ""),
+        ).replace("WHERE 1=1 AND", "WHERE")
         return query
 
 def queryToJSON(query, orderBy, page):
@@ -123,21 +116,147 @@ def queryToJSON(query, orderBy, page):
             .format(page * RESULTS_PER_PAGE_LIST) if page else ""),
         )
 
+def queryToJSONAllFeatures(query, hashtag, dateFrom, dateTo, status):
+    return "with predata AS (" + query + ") , \
+           data as ( \
+                select predata.type, geotype, predata.id, predata.timestamp, tags, status, predata.changeset, created_at, lat, lon from predata \
+                LEFT JOIN validation ON validation.osm_id = id \
+                LEFT JOIN changesets c ON c.id = predata.changeset \
+                WHERE {0} {1}{2} \
+            ),\
+            t_features AS ( \
+            SELECT to_jsonb(data) as feature from data \
+        ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;" \
+        .format(
+            hashtagQueryFilter(hashtag, "predata") if hashtag else "1=1",
+            "AND created_at >= '{0}' AND created_at <= '{1}'".format(dateFrom, dateTo) if (dateFrom and dateTo) else "",
+            "AND status = '{0}'".format(status) if (status) else ""
+        ).replace("WHERE 1=1 AND", "WHERE")
+
 class Raw:
-    def __init__(self, db):
+    def __init__(self,db):
         self.underpassDB = db
 
-    def getPolygons(
-        self, 
-        area = None,
-        tags = None,
-        hashtag = None,
-        responseType = "json",
-        dateFrom = None,
-        dateTo = None,
-        status = None,
-        page = None
+    def getList(
+        self,
+        area,
+        tags,
+        hashtag,
+        dateFrom,
+        dateTo,
+        status,
+        orderBy,
+        page,
+        featureType
     ):
+        if featureType == "line":
+            return self.getLinesList(
+                area,
+                tags,
+                hashtag,
+                dateFrom,
+                dateTo,
+                status,
+                orderBy,
+                page
+            )
+        elif featureType == "node":
+            return self.getNodesList(
+                area,
+                tags,
+                hashtag,
+                dateFrom,
+                dateTo,
+                status,
+                orderBy,
+                page
+            )
+        elif featureType == "polygon":
+            return self.getPolygonsList(
+                area,
+                tags,
+                hashtag,
+                dateFrom,
+                dateTo,
+                status,
+                orderBy,
+                page
+            )
+        else:
+            return self.getAllList(
+                area,
+                tags,
+                hashtag,
+                dateFrom,
+                dateTo,
+                status,
+                orderBy,
+                page
+            )
+
+    def getFeatures(
+        self,
+        area,
+        tags,
+        hashtag,
+        dateFrom,
+        dateTo,
+        status,
+        page,
+        featureType
+    ):
+        if featureType == "line":
+            return self.getLines(
+                area,
+                tags,
+                hashtag,
+                dateFrom,
+                dateTo,
+                status,
+                page
+            )
+        elif featureType == "node":
+            return self.getNodes(
+                area,
+                tags,
+                hashtag,
+                dateFrom,
+                dateTo,
+                status,
+                page
+            )
+        elif featureType == "polygon":
+            return self.getPolygons(
+                area,
+                tags,
+                hashtag,
+                dateFrom,
+                dateTo,
+                status,
+                page
+            )
+        else:
+            return self.getAll(
+                area,
+                tags,
+                hashtag,
+                dateFrom,
+                dateTo,
+                status,
+                page
+            )
+
+    def getPolygons(
+        self,
+        area,
+        tags,
+        hashtag,
+        dateFrom,
+        dateTo,
+        status,
+        page
+    ):
+
         return self.underpassDB.run(geoFeaturesQuery(
             area,
             tags,
@@ -147,19 +266,19 @@ class Raw:
             page,
             status,
             "ways_poly"
-        ), responseType, True)
+        ))
 
     def getLines(
-        self, 
-        area = None,
-        tags = None,
-        hashtag = None,
-        responseType = "json",
-        dateFrom = None,
-        dateTo = None,
-        status = None,
-        page = None
+        self,
+        area,
+        tags,
+        hashtag,
+        dateFrom,
+        dateTo,
+        status,
+        page
     ):
+
         return self.underpassDB.run(geoFeaturesQuery(
             area,
             tags,
@@ -169,19 +288,20 @@ class Raw:
             page,
             status,
             "ways_line"
-        ), responseType, True)
+        ))
+
 
     def getNodes(
         self,
-        area = None,
-        tags = None,
-        hashtag = None,
-        responseType = "json",
-        dateFrom = None,
-        dateTo = None,
-        status = None,
-        page = None
+        area,
+        tags,
+        hashtag,
+        dateFrom,
+        dateTo,
+        status,
+        page
     ):
+
         return self.underpassDB.run(geoFeaturesQuery(
             area,
             tags,
@@ -191,25 +311,23 @@ class Raw:
             page,
             status,
             "nodes"
-        ), responseType, True)
+        ), True)
 
     def getAll(
-        self, 
-        area = None,
-        tags = None,
-        hashtag = None,
-        responseType = "json",
-        dateFrom = None,
-        dateTo = None,
-        status = None,
-        page = None
+        self,
+        area,
+        tags,
+        hashtag,
+        dateFrom,
+        dateTo,
+        status,
+        page
     ):
 
         polygons = self.getPolygons( 
         area,
         tags,
         hashtag,
-        responseType,
         dateFrom,
         dateTo,
         status,
@@ -219,7 +337,6 @@ class Raw:
         area,
         tags,
         hashtag,
-        responseType,
         dateFrom,
         dateTo,
         status,
@@ -229,7 +346,6 @@ class Raw:
         area,
         tags,
         hashtag,
-        responseType,
         dateFrom,
         dateTo,
         status,
@@ -237,131 +353,139 @@ class Raw:
 
         result = {'type': 'FeatureCollection', 'features': []}
 
-        if polygons and polygons['features']:
+        if polygons and "features" in polygons:
             result['features'] = result['features'] + polygons['features']
 
-        if lines and lines['features']:
+        if lines and "features" in lines:
             result['features'] = result['features'] + lines['features']
 
-        elif nodes and nodes['features']:
+        elif nodes and "features" in nodes:
             result['features'] = result['features'] + nodes['features']
             
         return result
 
     def getPolygonsList(
-        self, 
-        area = None,
-        tags = None,
-        hashtag = None,
-        responseType = "json",
-        dateFrom = None,
-        dateTo = None,
-        status = None,
-        page = None
+        self,
+        area,
+        tags,
+        hashtag,
+        dateFrom,
+        dateTo,
+        status,
+        orderBy,
+        page
     ):
-        return self.underpassDB.run(listFeaturesQuery(
+
+        queryPolygons = listAllFeaturesQuery(
             area,
             tags,
+            orderBy or "osm_id",
+            page or 0,
+            "ways_poly")
+
+        query = queryToJSONAllFeatures(
+            " UNION ".join([queryPolygons]),
             hashtag,
-            page,
             dateFrom,
             dateTo,
-            status,
-            "ways_poly"
-        ), responseType, True)
+            status
+        )
+        return self.underpassDB.run(query)
 
     def getLinesList(
-        self, 
-        area = None,
-        tags = None,
-        hashtag = None,
-        responseType = "json",
-        dateFrom = None,
-        dateTo = None,
-        status = None,
-        page = None
+        self,
+        area,
+        tags,
+        hashtag,
+        dateFrom,
+        dateTo,
+        status,
+        orderBy,
+        page
     ):
-        return self.underpassDB.run(listFeaturesQuery(
+
+        queryLines = listAllFeaturesQuery(
             area,
             tags,
+            orderBy or "osm_id",
+            page or 0,
+            "ways_line")
+
+        query = queryToJSONAllFeatures(
+            " UNION ".join([queryLines]),
             hashtag,
-            page,
             dateFrom,
             dateTo,
-            status,
-            "ways_line"
-        ), responseType, True)
+            status
+        )
+        return self.underpassDB.run(query)
 
     def getNodesList(
-        self, 
-        area = None,
-        tags = None,
-        hashtag = None,
-        responseType = "json",
-        dateFrom = None,
-        dateTo = None,
-        status = None,
-        page = None
+        self,
+        area,
+        tags,
+        hashtag,
+        dateFrom,
+        dateTo,
+        status,
+        orderBy,
+        page
     ):
-        return self.underpassDB.run(listFeaturesQuery(
+
+        queryNodes = listAllFeaturesQuery(
             area,
             tags,
+            orderBy or "osm_id",
+            page or 0,
+            "nodes")
+
+        query = queryToJSONAllFeatures(
+            " UNION ".join([queryNodes]),
             hashtag,
-            page,
             dateFrom,
             dateTo,
-            status,
-            "nodes"
-        ), responseType, True)
-
+            status
+        )
+        return self.underpassDB.run(query)
         
     def getAllList(
-        self, 
-        area = None,
-        tags = None,
-        hashtag = None,
-        responseType = "json",
-        dateFrom = None,
-        dateTo = None,
-        status = None,
-        orderBy = None,
-        page = None
+        self,
+        area,
+        tags,
+        hashtag,
+        dateFrom,
+        dateTo,
+        status,
+        orderBy,
+        page
     ):
 
-        queryPolygons = listFeaturesQuery(
+        queryPolygons = listAllFeaturesQuery(
         area,
         tags,
-        hashtag,
-        page,
-        dateFrom,
-        dateTo,
-        status,
+        orderBy or "osm_id",
+        page or 0,
         "ways_poly")
 
-        queryLines = listFeaturesQuery(
+        queryLines = listAllFeaturesQuery(
         area,
         tags,
-        hashtag,
-        page,
-        dateFrom,
-        dateTo,
-        status,
+        orderBy or "osm_id",
+        page or 0,
         "ways_line")
 
-        queryNodes = listFeaturesQuery(
+        queryNodes = listAllFeaturesQuery(
         area,
         tags,
-        hashtag,
-        page,
-        dateFrom,
-        dateTo,
-        status,
+        orderBy or "osm_id",
+        page or 0,
         "nodes")
 
-        query = queryToJSON(
+        query = queryToJSONAllFeatures(
             " UNION ".join([queryPolygons, queryLines, queryNodes]),
-            orderBy or "id",
-            page or 0,
+            hashtag,
+            dateFrom,
+            dateTo,
+            status
         )
-
-        return self.underpassDB.run(query, responseType, True)
+        return self.underpassDB.run(query)

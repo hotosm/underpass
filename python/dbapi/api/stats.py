@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Copyright (c) 2023 Humanitarian OpenStreetMap Team
+# Copyright (c) 2023, 2024 Humanitarian OpenStreetMap Team
 #
 # This file is part of Underpass.
 #
@@ -52,8 +52,15 @@ class Stats:
         dateFrom = None,
         dateTo = None,
         status = None,
+        featureType = None,
     ):
-        table = "ways_poly"
+        if featureType == "line":
+            table = "ways_line"
+        elif featureType == "node":
+            table = "nodes"
+        else:
+            table = "ways_poly"
+
         if status:
             query = "with t1 as ( \
                     select count(validation.osm_id) from validation \
@@ -82,10 +89,7 @@ class Stats:
                     "AND created at >= {0} AND created_at <= {1}".format(dateFrom, dateTo) if dateFrom and dateTo else "",
                     "AND status = '{0}'".format(status) if (status) else "",
                 )
-        
-        result = self.underpassDB.run(query, True)
-        if result:
-            return result[0]
-        return None
+        print(query)
+        return(self.underpassDB.run(query, True))
 
     
