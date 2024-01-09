@@ -89,7 +89,6 @@ class Stats:
                     "AND created at >= {0} AND created_at <= {1}".format(dateFrom, dateTo) if dateFrom and dateTo else "",
                     "AND status = '{0}'".format(status) if (status) else "",
                 )
-        print(query)
         return(self.underpassDB.run(query, True))
 
     

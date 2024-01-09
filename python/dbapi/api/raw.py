@@ -76,7 +76,7 @@ def geoFeaturesQuery(
             "ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "1=1 ",
             "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
             "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
-            "AND created at >= {0} AND created_at <= {1}".format(dateFrom, dateTo) if dateFrom and dateTo else "",
+            "AND created_at >= {0} AND created_at <= {1}".format(dateFrom, dateTo) if dateFrom and dateTo else "",
             "AND status = '{0}'".format(status) if (status) else "",
             "LIMIT " + str(RESULTS_PER_PAGE),
         )
@@ -97,8 +97,11 @@ def listAllFeaturesQuery(
             osmType = "way"
 
         query = "\
-            (SELECT '" + osmType + "' as type, '" + geoType + "' as geotype, " + table + ".osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, " + table + ".timestamp, tags, changeset FROM " + table + " \
-            WHERE {0} {1} {2})\
+            ( \
+            SELECT '" + osmType + "' as type, '" + geoType + "' as geotype, " + table + ".osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, " + table + ".timestamp, tags, changeset, c.created_at FROM " + table + " \
+            LEFT JOIN changesets c ON c.id = changeset \
+            WHERE {0} {1} {2}\
+            )\
         ".format(
             "ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "1=1",
             "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
@@ -107,22 +110,13 @@ def listAllFeaturesQuery(
         ).replace("WHERE 1=1 AND", "WHERE")
         return query
 
-def queryToJSON(query, orderBy, page):
-    return "with data AS (" + query + ") , t_features AS ( \
-            SELECT to_jsonb(data) as feature from data {0} \
-        ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;" \
-        .format(
-            "WHERE " + orderBy + " IS NOT NULL ORDER BY " + orderBy + " DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + (" OFFSET {0}" \
-            .format(page * RESULTS_PER_PAGE_LIST) if page else ""),
-        )
-
-def queryToJSONAllFeatures(query, hashtag, dateFrom, dateTo, status):
+def queryToJSONAllFeatures(query, hashtag, dateFrom, dateTo, status, orderBy):
     return "with predata AS (" + query + ") , \
            data as ( \
-                select predata.type, geotype, predata.id, predata.timestamp, tags, status, predata.changeset, created_at, lat, lon from predata \
+                select predata.type, geotype, predata.id, predata.timestamp, tags, status, predata.changeset, predata.created_at as created_at, lat, lon from predata \
                 LEFT JOIN validation ON validation.osm_id = id \
                 LEFT JOIN changesets c ON c.id = predata.changeset \
-                WHERE {0} {1}{2} \
+                WHERE {0} {1}{2} {3} \
             ),\
             t_features AS ( \
             SELECT to_jsonb(data) as feature from data \
@@ -130,7 +124,8 @@ def queryToJSONAllFeatures(query, hashtag, dateFrom, dateTo, status):
         .format(
             hashtagQueryFilter(hashtag, "predata") if hashtag else "1=1",
             "AND created_at >= '{0}' AND created_at <= '{1}'".format(dateFrom, dateTo) if (dateFrom and dateTo) else "",
-            "AND status = '{0}'".format(status) if (status) else ""
+            "AND status = '{0}'".format(status) if (status) else "",
+            "AND {0}{1} IS NOT NULL ORDER BY {0}{1} DESC".format("predata.",orderBy) if orderBy != "osm_id" else "ORDER BY osm_id DESC",
         ).replace("WHERE 1=1 AND", "WHERE")
 
 class Raw:
@@ -353,13 +348,13 @@ class Raw:
 
         result = {'type': 'FeatureCollection', 'features': []}
 
-        if polygons and "features" in polygons:
+        if polygons and "features" in polygons and polygons['features']:
             result['features'] = result['features'] + polygons['features']
 
-        if lines and "features" in lines:
+        if lines and "features" in lines and lines['features']:
             result['features'] = result['features'] + lines['features']
 
-        elif nodes and "features" in nodes:
+        elif nodes and "features" in nodes and nodes['features']:
             result['features'] = result['features'] + nodes['features']
             
         return result
@@ -388,7 +383,8 @@ class Raw:
             hashtag,
             dateFrom,
             dateTo,
-            status
+            status,
+            orderBy or "osm_id"
         )
         return self.underpassDB.run(query)
 
@@ -416,7 +412,8 @@ class Raw:
             hashtag,
             dateFrom,
             dateTo,
-            status
+            status,
+            orderBy or "osm_id"
         )
         return self.underpassDB.run(query)
 
@@ -444,7 +441,8 @@ class Raw:
             hashtag,
             dateFrom,
             dateTo,
-            status
+            status,
+            orderBy or "osm_id"
         )
         return self.underpassDB.run(query)
         
@@ -486,6 +484,7 @@ class Raw:
             hashtag,
             dateFrom,
             dateTo,
-            status
+            status,
+            orderBy or "osm_id"
         )
         return self.underpassDB.run(query)
