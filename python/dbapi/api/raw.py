@@ -17,31 +17,10 @@
 #     You should have received a copy of the GNU General Public License
 #     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 
-from .db import UnderpassDB
+from .filters import tagsQueryFilter, hashtagQueryFilter
 
 RESULTS_PER_PAGE = 500
 RESULTS_PER_PAGE_LIST = 10
-
-def tagsQueryFilter(tagsQuery, table):
-    query = ""
-    tags = tagsQuery.split(",")
-    keyValue = tags[0].split("=")
-
-    if len(keyValue) == 2:
-        query += "{0}.tags->>'{1}' ~* '^{2}'".format(table, keyValue[0], keyValue[1])
-    else:
-        query += "{0}.tags->>'{1}' IS NOT NULL".format(table, keyValue[0])
-
-    for tag in tags[1:]:
-        keyValue = tag.split("=")
-        if len(keyValue) == 2:
-            query += "OR {0}.tags->>'{1}' ~* '^{2}'".format(table, keyValue[0], keyValue[1])
-        else:
-            query += "OR {0}.tags->>'{1}' IS NOT NULL".format(table, keyValue[0])
-    return query
-
-def hashtagQueryFilter(hashtag, table):
-    return table + ".changeset IN (SELECT c.id FROM changesets c where jsonb_path_exists(to_jsonb(hashtags), '$[*] ? (@ like_regex \"^{0}\")') GROUP BY C.id)".format(hashtag)
 
 def getGeoType(table):
     if table == "ways_poly":
@@ -85,6 +64,8 @@ def geoFeaturesQuery(
 def listAllFeaturesQuery(
         area,
         tags,
+        hashtag,
+        status,
         orderBy,
         page,
         table,
@@ -98,35 +79,35 @@ def listAllFeaturesQuery(
 
         query = "\
             ( \
-            SELECT '" + osmType + "' as type, '" + geoType + "' as geotype, " + table + ".osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, " + table + ".timestamp, tags, changeset, c.created_at FROM " + table + " \
-            LEFT JOIN changesets c ON c.id = changeset \
-            WHERE {0} {1} {2}\
+            SELECT '" + osmType + "' as type, '" + geoType + "' as geotype, " + table + ".osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, " + table + ".timestamp, tags, " + table + ".changeset, c.created_at, v.status FROM " + table + " \
+            LEFT JOIN changesets c ON c.id = " + table + ".changeset \
+            LEFT JOIN validation v ON v.osm_id = " + table + ".osm_id \
+            WHERE {0} {1} {2} {3} {4} \
             )\
         ".format(
-            "ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "1=1",
+            "status = '{0}'".format(status) if (status) else "1=1",
+            "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
+            "AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "",
             "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
             "AND " + orderBy + " IS NOT NULL ORDER BY " + orderBy + " DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + (" OFFSET {0}" \
                 .format(page * RESULTS_PER_PAGE_LIST) if page else ""),
         ).replace("WHERE 1=1 AND", "WHERE")
         return query
 
-def queryToJSONAllFeatures(query, hashtag, dateFrom, dateTo, status, orderBy):
-    return "with predata AS (" + query + ") , \
+def queryToJSONAllFeatures(query, dateFrom, dateTo, orderBy):
+    query = "with predata AS (" + query + ") , \
            data as ( \
                 select predata.type, geotype, predata.id, predata.timestamp, tags, status, predata.changeset, predata.created_at as created_at, lat, lon from predata \
-                LEFT JOIN validation ON validation.osm_id = id \
-                LEFT JOIN changesets c ON c.id = predata.changeset \
-                WHERE {0} {1}{2} {3} \
+                WHERE {0} {1} \
             ),\
             t_features AS ( \
             SELECT to_jsonb(data) as feature from data \
         ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;" \
         .format(
-            hashtagQueryFilter(hashtag, "predata") if hashtag else "1=1",
-            "AND created_at >= '{0}' AND created_at <= '{1}'".format(dateFrom, dateTo) if (dateFrom and dateTo) else "",
-            "AND status = '{0}'".format(status) if (status) else "",
-            "AND {0}{1} IS NOT NULL ORDER BY {0}{1} DESC".format("predata.",orderBy) if orderBy != "osm_id" else "ORDER BY osm_id DESC",
+            "created_at >= '{0}' AND created_at <= '{1}'".format(dateFrom, dateTo) if (dateFrom and dateTo) else "1=1",
+            "AND {0}{1} IS NOT NULL ORDER BY {0}{1} DESC".format("predata.",orderBy) if orderBy != "osm_id" else "ORDER BY id DESC",
         ).replace("WHERE 1=1 AND", "WHERE")
+    return query
 
 class Raw:
     def __init__(self,db):
@@ -374,16 +355,16 @@ class Raw:
         queryPolygons = listAllFeaturesQuery(
             area,
             tags,
-            orderBy or "osm_id",
+            hashtag,
+            status,
+            orderBy or "ways_poly.osm_id",
             page or 0,
             "ways_poly")
 
         query = queryToJSONAllFeatures(
             " UNION ".join([queryPolygons]),
-            hashtag,
             dateFrom,
             dateTo,
-            status,
             orderBy or "osm_id"
         )
         return self.underpassDB.run(query)
@@ -403,16 +384,16 @@ class Raw:
         queryLines = listAllFeaturesQuery(
             area,
             tags,
-            orderBy or "osm_id",
+            hashtag,
+            status,
+            orderBy or "ways_line.osm_id",
             page or 0,
             "ways_line")
 
         query = queryToJSONAllFeatures(
             " UNION ".join([queryLines]),
-            hashtag,
             dateFrom,
             dateTo,
-            status,
             orderBy or "osm_id"
         )
         return self.underpassDB.run(query)
@@ -432,16 +413,16 @@ class Raw:
         queryNodes = listAllFeaturesQuery(
             area,
             tags,
-            orderBy or "osm_id",
+            hashtag,
+            status,
+            orderBy or "nodes.osm_id",
             page or 0,
             "nodes")
 
         query = queryToJSONAllFeatures(
             " UNION ".join([queryNodes]),
-            hashtag,
             dateFrom,
             dateTo,
-            status,
             orderBy or "osm_id"
         )
         return self.underpassDB.run(query)
@@ -461,30 +442,34 @@ class Raw:
         queryPolygons = listAllFeaturesQuery(
         area,
         tags,
-        orderBy or "osm_id",
+        hashtag,
+        status,
+        orderBy or "ways_poly.osm_id",
         page or 0,
         "ways_poly")
 
         queryLines = listAllFeaturesQuery(
         area,
         tags,
-        orderBy or "osm_id",
+        hashtag,
+        status,
+        orderBy or "ways_line.osm_id",
         page or 0,
         "ways_line")
 
         queryNodes = listAllFeaturesQuery(
         area,
         tags,
-        orderBy or "osm_id",
+        hashtag,
+        status,
+        orderBy or "nodes.osm_id",
         page or 0,
         "nodes")
 
         query = queryToJSONAllFeatures(
             " UNION ".join([queryPolygons, queryLines, queryNodes]),
-            hashtag,
             dateFrom,
             dateTo,
-            status,
             orderBy or "osm_id"
         )
         return self.underpassDB.run(query)
