@@ -40,34 +40,20 @@ class Stats:
         else:
             table = "ways_poly"
 
-        if status:
-            query = "with t1 as ( \
-                    select count(validation.osm_id) from validation \
-                    left join " + table + " on validation.osm_id = " + table + ".osm_id \
-                    where {0} {1} {2} {3} {4}".format(
-                    "ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "1=1 ",
-                    "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
-                    "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
-                    "AND created at >= {0} AND created_at <= {1}".format(dateFrom, dateTo) if dateFrom and dateTo else "",
-                    "AND status = '" + status + "'")
-            query += "), t2 as ( \
-                    select count(" + table + ".osm_id) as total from " + table + " \
-                    where {0} {1} {2} {3} \
-                    ) select t1.count, t2.total from t1,t2".format(
-                    "ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "1=1 ",
-                    "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
-                    "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
-                    "AND created at >= {0} AND created_at <= {1}".format(dateFrom, dateTo) if dateFrom and dateTo else "")
-        else:
-            query = "select count(" + table + ".osm_id) from " + table \
-                + " where \
-                {0} {1} {2} {3} {4}".format(
-                    "ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "1=1 ",
-                    "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
-                    "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
-                    "AND created at >= {0} AND created_at <= {1}".format(dateFrom, dateTo) if dateFrom and dateTo else "",
-                    "AND status = '{0}'".format(status) if (status) else "",
-                )
+        query = "with features as ( \
+            select {0}.osm_id, ways_poly.changeset, tags, hashtags, status from {0} \
+            left join changesets c on changeset = c.id \
+            left join validation v on {0}.osm_id = v.osm_id \
+            where {1} {2} {3} {4} {5} \
+            ) select count(distinct(osm_id)) from features;".format(
+                table,
+                "created_at >= '{0}'".format(dateFrom) if (dateFrom) else "1=1",
+                "AND created_at <= '{0}'".format(dateTo) if (dateTo) else "",
+                "AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "",
+                "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
+                "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
+                "AND status = '" + status + "'" if status else "",
+            )
         return(self.underpassDB.run(query, True))
 
     

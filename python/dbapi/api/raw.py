@@ -68,6 +68,8 @@ def listAllFeaturesQuery(
         status,
         orderBy,
         page,
+        dateFrom,
+        dateTo,
         table,
     ):
 
@@ -82,10 +84,12 @@ def listAllFeaturesQuery(
             SELECT '" + osmType + "' as type, '" + geoType + "' as geotype, " + table + ".osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, " + table + ".timestamp, tags, " + table + ".changeset, c.created_at, v.status FROM " + table + " \
             LEFT JOIN changesets c ON c.id = " + table + ".changeset \
             LEFT JOIN validation v ON v.osm_id = " + table + ".osm_id \
-            WHERE {0} {1} {2} {3} {4} \
+            WHERE {0} {1} {2} {3} {4} {5} {6} \
             )\
         ".format(
-            "status = '{0}'".format(status) if (status) else "1=1",
+            "created_at >= '{0}'".format(dateFrom) if (dateFrom) else "1=1",
+            "AND created_at <= '{0}'".format(dateTo) if (dateTo) else "",
+            "AND status = '{0}'".format(status) if (status) else "",
             "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
             "AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "",
             "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
@@ -98,13 +102,14 @@ def queryToJSONAllFeatures(query, dateFrom, dateTo, orderBy):
     query = "with predata AS (" + query + ") , \
            data as ( \
                 select predata.type, geotype, predata.id, predata.timestamp, tags, status, predata.changeset, predata.created_at as created_at, lat, lon from predata \
-                WHERE {0} {1} \
+                WHERE {0} {1} {2} \
             ),\
             t_features AS ( \
             SELECT to_jsonb(data) as feature from data \
         ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;" \
         .format(
-            "created_at >= '{0}' AND created_at <= '{1}'".format(dateFrom, dateTo) if (dateFrom and dateTo) else "1=1",
+            "created_at >= '{0}'".format(dateFrom) if (dateFrom) else "1=1",
+            "AND created_at <= '{0}'".format(dateTo) if (dateTo) else "",
             "AND {0}{1} IS NOT NULL ORDER BY {0}{1} DESC".format("predata.",orderBy) if orderBy != "osm_id" else "ORDER BY id DESC",
         ).replace("WHERE 1=1 AND", "WHERE")
     return query
@@ -359,6 +364,8 @@ class Raw:
             status,
             orderBy or "ways_poly.osm_id",
             page or 0,
+            dateFrom,
+            dateTo,
             "ways_poly")
 
         query = queryToJSONAllFeatures(
@@ -388,6 +395,8 @@ class Raw:
             status,
             orderBy or "ways_line.osm_id",
             page or 0,
+            dateFrom,
+            dateTo,
             "ways_line")
 
         query = queryToJSONAllFeatures(
@@ -417,6 +426,8 @@ class Raw:
             status,
             orderBy or "nodes.osm_id",
             page or 0,
+            dateFrom,
+            dateTo,
             "nodes")
 
         query = queryToJSONAllFeatures(
@@ -446,6 +457,8 @@ class Raw:
         status,
         orderBy or "ways_poly.osm_id",
         page or 0,
+        dateFrom,
+        dateTo,
         "ways_poly")
 
         queryLines = listAllFeaturesQuery(
@@ -455,6 +468,8 @@ class Raw:
         status,
         orderBy or "ways_line.osm_id",
         page or 0,
+        dateFrom,
+        dateTo,
         "ways_line")
 
         queryNodes = listAllFeaturesQuery(
@@ -464,6 +479,8 @@ class Raw:
         status,
         orderBy or "nodes.osm_id",
         page or 0,
+        dateFrom,
+        dateTo,
         "nodes")
 
         query = queryToJSONAllFeatures(

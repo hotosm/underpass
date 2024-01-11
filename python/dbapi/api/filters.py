@@ -18,4 +18,4 @@ def tagsQueryFilter(tagsQuery, table):
     return query
 
 def hashtagQueryFilter(hashtag, table):
-    return table + ".changeset IN (SELECT c.id FROM changesets c where jsonb_path_exists(to_jsonb(hashtags), '$[*] ? (@ like_regex \"^{0}\")') GROUP BY C.id)".format(hashtag)
+    return "'{0}' = ANY (hashtags)".format(hashtag)
