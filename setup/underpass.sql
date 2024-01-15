@@ -112,3 +112,6 @@ CREATE INDEX ways_line_version_idx ON public.ways_line (version);
 CREATE INDEX nodes_timestamp_idx ON public.nodes(timestamp DESC);
 CREATE INDEX ways_poly_timestamp_idx ON public.ways_poly(timestamp DESC);
 CREATE INDEX ways_line_timestamp_idx ON public.ways_line(timestamp DESC);
+
+CREATE INDEX idx_changesets_hashtags ON changesets USING gin(hashtags);
+CREATE INDEX idx_osm_id_status ON validation (osm_id)
