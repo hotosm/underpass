@@ -431,14 +431,18 @@ int QueryRaw::getWaysCount(const std::string &tableName) {
 }
 
 std::shared_ptr<std::vector<OsmWay>>
-QueryRaw::getWaysFromDB(int lastid, const std::string &tableName) {
+QueryRaw::getWaysFromDB(long lastid, int pageSize, const std::string &tableName) {
     std::string waysQuery;
     if (tableName == QueryRaw::polyTable) {
         waysQuery = "SELECT osm_id, refs, ST_AsText(ST_ExteriorRing(geom), 4326)";
     } else {
         waysQuery = "SELECT osm_id, refs, ST_AsText(geom, 4326)";
     }
-    waysQuery += ", version, tags FROM " + tableName + " where osm_id > " + std::to_string(lastid) + " order by osm_id asc limit 500;";
+    if (lastid > 0) {
+        waysQuery += ", version, tags FROM " + tableName + " where osm_id < " + std::to_string(lastid) + " order by osm_id desc limit " + std::to_string(pageSize) + ";";
+    } else {
+        waysQuery += ", version, tags FROM " + tableName + " order by osm_id desc limit " + std::to_string(pageSize) + ";";
+    }
 
     auto ways_result = dbconn->query(waysQuery);
     // Fill vector of OsmWay objects
@@ -473,14 +477,18 @@ QueryRaw::getWaysFromDB(int lastid, const std::string &tableName) {
 }
 
 std::shared_ptr<std::vector<OsmWay>>
-QueryRaw::getWaysFromDBWithoutRefs(int lastid, const std::string &tableName) {
+QueryRaw::getWaysFromDBWithoutRefs(long lastid, int pageSize, const std::string &tableName) {
     std::string waysQuery;
     if (tableName == QueryRaw::polyTable) {
         waysQuery = "SELECT osm_id, ST_AsText(ST_ExteriorRing(geom), 4326)";
     } else {
         waysQuery = "SELECT osm_id, ST_AsText(geom, 4326)";
     }
-    waysQuery += ", tags FROM " + tableName + " where osm_id > " + std::to_string(lastid) + " order by osm_id asc limit 500;";
+    if (lastid > 0) {
+        waysQuery += ", tags FROM " + tableName + " where osm_id < " + std::to_string(lastid) + " order by osm_id desc limit " + std::to_string(pageSize) + ";";
+    } else {
+        waysQuery += ", tags FROM " + tableName + " order by osm_id desc limit " + std::to_string(pageSize) + ";";
+    }
     
     auto ways_result = dbconn->query(waysQuery);
     // Fill vector of OsmWay objects

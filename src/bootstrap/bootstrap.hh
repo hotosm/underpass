@@ -33,20 +33,23 @@ namespace bootstrap {
 /// \brief Represents a bootstrap task
 struct BootstrapTask {
     std::string query = "";
+    int processed = 0;
 };
 
 struct WayTask {
     std::shared_ptr<Validate> plugin;
     std::shared_ptr<QueryValidate> queryvalidate;
-    std::shared_ptr<QueryRaw> queryraw;
-    std::shared_ptr<BootstrapTask> task;
-    int processed = 0;
-    long lastid = 0;
+    underpassconfig::UnderpassConfig config;
+    int taskIndex;
+    std::shared_ptr<std::vector<BootstrapTask>> tasks;
+    std::shared_ptr<std::vector<OsmWay>> ways;
 };
 
 void startProcessingWays(const underpassconfig::UnderpassConfig &config);
 
 // This thread get started for every page of way
-void processWays(WayTask &wayTask, const std::string &tableName, const underpassconfig::UnderpassConfig &config);
+void threadBootstrapTask(WayTask wayTask);
+
+static std::mutex tasks_change_mutex;
 
 }
