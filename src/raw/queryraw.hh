@@ -76,8 +76,8 @@ class QueryRaw {
     // Get ways count
     int getWaysCount(const std::string &tableName);
     // Get ways by page
-    std::shared_ptr<std::vector<OsmWay>> getWaysFromDB(int page, const std::string &tableName);
-    std::shared_ptr<std::vector<OsmWay>> getWaysFromDBWithoutRefs(int lastid, const std::string &tableName);
+    std::shared_ptr<std::vector<OsmWay>> getWaysFromDB(long lastid, int pageSize, const std::string &tableName);
+    std::shared_ptr<std::vector<OsmWay>> getWaysFromDBWithoutRefs(long lastid, int pageSize, const std::string &tableName);
 
 };
 
