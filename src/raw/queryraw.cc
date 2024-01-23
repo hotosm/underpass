@@ -398,8 +398,8 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
     // Get all ways that have references to nodes
     std::list<std::shared_ptr<osmobjects::OsmWay>> ways;
 
-    std::string waysQuery = "SELECT distinct(osm_id), refs, version, tags from way_refs join ways_poly wp on wp.osm_id = way_id where node_id = any(ARRAY[" + nodeIds + "])";
-    waysQuery += " UNION SELECT distinct(osm_id), refs, version, tags from way_refs join ways_line wl on wl.osm_id = way_id where node_id = any(ARRAY[" + nodeIds + "]);";
+    std::string waysQuery = "SELECT distinct(osm_id), refs, version, tags, uid, changeset from way_refs join ways_poly wp on wp.osm_id = way_id where node_id = any(ARRAY[" + nodeIds + "])";
+    waysQuery += " UNION SELECT distinct(osm_id), refs, version, tags, uid, changeset from way_refs join ways_line wl on wl.osm_id = way_id where node_id = any(ARRAY[" + nodeIds + "]);";
     auto ways_result = dbconn->query(waysQuery);
 
     // Fill vector of OsmWay objects
@@ -419,6 +419,8 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
                 way->addTag(key, val);
             }
         }
+        way->uid = (*way_it)[4].as<long>();
+        way->changeset = (*way_it)[5].as<long>();
         ways.push_back(way);
     }
     return ways;
