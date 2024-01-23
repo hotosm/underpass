@@ -145,3 +145,9 @@ def getStatsCount(request: StatsRequest):
         featureType = request.featureType or None
     )
     return results
+
+@app.post("/availability")
+def getAvailability():
+    return {
+        "countries": config.AVAILABILITY
+    }

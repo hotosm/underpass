@@ -8,3 +8,4 @@ ORIGINS = os.getenv("UNDERPASS_API_ORIGINS").split(",") if os.getenv("UNDERPASS_
     "http://127.0.0.1",
     "http://127.0.0.1:5000"
 ]
+AVAILABILITY=os.getenv("UNDERPASS_API_AVAILABILITY").split(",") if os.getenv("UNDERPASS_API_AVAILABILITY") else []
