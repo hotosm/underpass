@@ -146,7 +146,7 @@ def getStatsCount(request: StatsRequest):
     )
     return results
 
-@app.post("/availability")
+@app.get("/availability")
 def getAvailability():
     return {
         "countries": config.AVAILABILITY
