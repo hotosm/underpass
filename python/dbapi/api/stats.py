@@ -40,12 +40,20 @@ class Stats:
         else:
             table = "ways_poly"
 
-        query = "with features as ( \
-            select {0}.osm_id, ways_poly.changeset, tags, hashtags, status from {0} \
+        if status:
+            query = "with all_features as ( \
+            select {0}.osm_id from {0} \
             left join changesets c on changeset = c.id \
-            left join validation v on {0}.osm_id = v.osm_id \
             where {1} {2} {3} {4} {5} \
-            ) select count(distinct(osm_id)) from features;".format(
+            ), \
+            validated_features as ( \
+            select count(distinct(all_features.osm_id)) as count from all_features \
+            left join validation v on all_features.osm_id = v.osm_id \
+            where v.status = 'badgeom' \
+            ) \
+            select count(distinct(all_features.osm_id)) as total, validated_features.count \
+            from all_features \
+            , validated_features group by validated_features.count".format(
                 table,
                 "created_at >= '{0}'".format(dateFrom) if (dateFrom) else "1=1",
                 "AND created_at <= '{0}'".format(dateTo) if (dateTo) else "",
@@ -53,6 +61,17 @@ class Stats:
                 "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
                 "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
                 "AND status = '" + status + "'" if status else "",
+            )
+        else:
+           query = "select count(distinct {0}.osm_id) as count from {0} \
+            left join changesets c on changeset = c.id \
+            where {1} {2} {3} {4} {5}".format(
+                table,
+                "created_at >= '{0}'".format(dateFrom) if (dateFrom) else "1=1",
+                "AND created_at <= '{0}'".format(dateTo) if (dateTo) else "",
+                "AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "",
+                "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
+                "AND " + hashtagQueryFilter(hashtag, table) if hashtag else ""
             )
         return(self.underpassDB.run(query, True))
 
