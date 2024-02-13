@@ -419,8 +419,14 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
                 way->addTag(key, val);
             }
         }
-        way->uid = (*way_it)[4].as<long>();
-        way->changeset = (*way_it)[5].as<long>();
+        auto uid = (*way_it)[4];
+        if (!uid.is_null()) {
+            way->uid = (*way_it)[4].as<long>();
+        }
+        auto changeset = (*way_it)[5];
+        if (!changeset.is_null()) {
+            way->changeset = (*way_it)[5].as<long>();
+        }
         ways.push_back(way);
     }
     return ways;
