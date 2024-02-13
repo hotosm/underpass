@@ -21,14 +21,11 @@ import asyncpg
 import json
 
 class UnderpassDB():
-    conn = None
-
     # Default Underpass local DB configuration
     # This might be replaced by an .ini config file
     
     def __init__(self, connectionString = None):
         self.connectionString = connectionString or "postgresql://underpass:underpass@postgis/underpass"
-        self.cursor = None
         self.pool = None
 
     async def __enter__(self):
