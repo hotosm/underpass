@@ -227,7 +227,7 @@ class Raw:
                 page
             )
 
-    def getPolygons(
+    async def getPolygons(
         self,
         area,
         tags,
@@ -238,7 +238,7 @@ class Raw:
         page
     ):
 
-        return self.underpassDB.run(geoFeaturesQuery(
+        return await self.underpassDB.run(geoFeaturesQuery(
             area,
             tags,
             hashtag,
@@ -249,7 +249,7 @@ class Raw:
             "ways_poly"
         ))
 
-    def getLines(
+    async def getLines(
         self,
         area,
         tags,
@@ -260,7 +260,7 @@ class Raw:
         page
     ):
 
-        return self.underpassDB.run(geoFeaturesQuery(
+        return await self.underpassDB.run(geoFeaturesQuery(
             area,
             tags,
             hashtag,
@@ -272,7 +272,7 @@ class Raw:
         ))
 
 
-    def getNodes(
+    async def getNodes(
         self,
         area,
         tags,
@@ -283,7 +283,7 @@ class Raw:
         page
     ):
 
-        return self.underpassDB.run(geoFeaturesQuery(
+        return await self.underpassDB.run(geoFeaturesQuery(
             area,
             tags,
             hashtag,
@@ -345,7 +345,7 @@ class Raw:
             
         return result
 
-    def getPolygonsList(
+    async def getPolygonsList(
         self,
         area,
         tags,
@@ -374,9 +374,9 @@ class Raw:
             dateTo,
             orderBy or "osm_id"
         )
-        return self.underpassDB.run(query)
+        return await self.underpassDB.run(query)
 
-    def getLinesList(
+    async def getLinesList(
         self,
         area,
         tags,
@@ -405,9 +405,9 @@ class Raw:
             dateTo,
             orderBy or "osm_id"
         )
-        return self.underpassDB.run(query)
+        return await self.underpassDB.run(query)
 
-    def getNodesList(
+    async def getNodesList(
         self,
         area,
         tags,
@@ -436,9 +436,9 @@ class Raw:
             dateTo,
             orderBy or "osm_id"
         )
-        return self.underpassDB.run(query)
+        return await self.underpassDB.run(query)
         
-    def getAllList(
+    async def getAllList(
         self,
         area,
         tags,
@@ -489,4 +489,4 @@ class Raw:
             dateTo,
             orderBy or "osm_id"
         )
-        return self.underpassDB.run(query)
+        return await self.underpassDB.run(query)

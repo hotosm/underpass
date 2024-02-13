@@ -57,17 +57,16 @@ app.add_middleware(
 )
 
 db = UnderpassDB(config.UNDERPASS_DB)
-db.connect()
 rawer = raw.Raw(db)
 statser = stats.Stats(db)
 
 @app.get("/")
-def read_root():
-    return {"Welcome": "This is the Underpass REST API."}
+async def index():
+    return {"message": "This is the Underpass REST API."}
 
 @app.post("/raw/polygons")
-def getPolygons(request: RawRequest):
-    results = rawer.getPolygons(
+async def getPolygons(request: RawRequest):
+    results = await rawer.getPolygons(
         area = request.area or None,
         tags = request.tags or "",
         hashtag = request.hashtag or "",
@@ -79,8 +78,8 @@ def getPolygons(request: RawRequest):
     return results
 
 @app.post("/raw/nodes")
-def getNodes(request: RawRequest):
-    results = rawer.getNodes(
+async def getNodes(request: RawRequest):
+    results = await rawer.getNodes(
         area = request.area,
         tags = request.tags or "",
         hashtag = request.hashtag or "",
@@ -92,8 +91,8 @@ def getNodes(request: RawRequest):
     return results
 
 @app.post("/raw/lines")
-def getLines(request: RawRequest):
-    results = rawer.getLines(
+async def getLines(request: RawRequest):
+    results = await rawer.getLines(
         area = request.area,
         tags = request.tags or "",
         hashtag = request.hashtag or "",
@@ -105,8 +104,8 @@ def getLines(request: RawRequest):
     return results
 
 @app.post("/raw/features")
-def getRawFeatures(request: RawRequest):
-    results = rawer.getFeatures(
+async def getRawFeatures(request: RawRequest):
+    results = await rawer.getFeatures(
         area = request.area or None,
         tags = request.tags or "",
         hashtag = request.hashtag or "",
@@ -119,8 +118,8 @@ def getRawFeatures(request: RawRequest):
     return results
 
 @app.post("/raw/list")
-def getRawList(request: RawRequest):
-    results = rawer.getList(
+async def getRawList(request: RawRequest):
+    results = await rawer.getList(
         area = request.area or None,
         tags = request.tags or "",
         hashtag = request.hashtag or "",
@@ -134,8 +133,8 @@ def getRawList(request: RawRequest):
     return results
 
 @app.post("/stats/count")
-def getStatsCount(request: StatsRequest):
-    results = statser.getCount(
+async def getStatsCount(request: StatsRequest):
+    results = await statser.getCount(
         area = request.area or None,
         tags = request.tags or "",
         hashtag = request.hashtag or "",
@@ -147,7 +146,7 @@ def getStatsCount(request: StatsRequest):
     return results
 
 @app.get("/availability")
-def getAvailability():
+async def getAvailability():
     return {
         "countries": config.AVAILABILITY
     }

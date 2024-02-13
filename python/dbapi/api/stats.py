@@ -23,7 +23,7 @@ class Stats:
     def __init__(self, db):
         self.underpassDB = db
 
-    def getCount(
+    async def getCount(
         self, 
         area = None,
         tags = None,
@@ -73,6 +73,6 @@ class Stats:
                 "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
                 "AND " + hashtagQueryFilter(hashtag, table) if hashtag else ""
             )
-        return(self.underpassDB.run(query, True))
+        return(await self.underpassDB.run(query, True))
 
     

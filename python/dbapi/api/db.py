@@ -17,7 +17,8 @@
 #     You should have received a copy of the GNU General Public License
 #     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 
-import psycopg2
+import asyncpg
+import json
 
 class UnderpassDB():
     conn = None
@@ -27,44 +28,47 @@ class UnderpassDB():
     
     def __init__(self, connectionString = None):
         self.connectionString = connectionString or "postgresql://underpass:underpass@postgis/underpass"
+        self.cursor = None
+        self.conn = None
+        self.pool = None
 
-    def connect(self):
+    async def __enter__(self):
+        await self.connect()
+
+    async def connect(self):
         """ Connect to the database """
-        print("Connecting to",self.connectionString,"...")
-        try:
-            self.conn = psycopg2.connect(self.connectionString)
-        except (Exception, psycopg2.DatabaseError) as error:
-            print("Can't connect!")
-            print(error)
+        print("Connecting to DB ...")
+        if not self.pool:
+            try:
+                self.pool = await asyncpg.create_pool(
+                    min_size=1,
+                    max_size=10,
+                    command_timeout=60,
+                    dsn=self.connectionString,
+                )
+            except Exception as e:
+                print("Can't connect!")
+                print(e)
 
     def close(self):
         if self.conn is not None:
+            self.cursor.close()
             self.conn.close()
 
-    def run(self, query, singleObject = False):
-        if self.conn is None:
-            self.connect()
-        if self.conn:
-            cur = self.conn.cursor()
+    async def run(self, query, singleObject = False):
+        if not self.pool:
+            await self.connect()
+        if self.pool:
             try:
-                cur.execute(query)
+                self.conn = await self.pool.acquire()
+                result = await self.conn.fetch(query)
+                if singleObject:
+                    return result[0]
+                return json.loads((result[0]['result']))
             except Exception as e: 
                 print("\n******* \n" + query + "\n******* \n")
                 print(e)
-                cur.close()
                 return None
-
-            results = None
-
-            results = []
-            colnames = [desc[0] for desc in cur.description]
-            for row in cur:
-                item = {}
-                for index, column in enumerate(colnames):
-                    item[column] = row[index]
-                results.append(item)
-            cur.close()
-
-            if singleObject:
-                return results[0]
-            return results[0]['result']
+            finally:
+                await self.pool.release(self.conn)
+        return None
