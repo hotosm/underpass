@@ -9,7 +9,7 @@ You can prepare your Underpass installation with data for a specific country.
 Prepare your PostgreSQL + PostGIS database, for example:
 
 ```
-sudo apt update 
+sudo apt update
 sudo apt install postgis
 sudo su - postgres
 psql
@@ -37,7 +37,7 @@ apt install osm2pgsql
 Now you can go to the `utils` directory and run the boostrap script:
 
 cd utils
-chmod +x bootstrap.sh 
+chmod +x bootstrap.sh
 ./bootstrap.sh -r south-america -c uruguay -p 5432 -u underpass
 ```
 

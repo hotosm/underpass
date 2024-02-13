@@ -29,7 +29,6 @@ class UnderpassDB():
     def __init__(self, connectionString = None):
         self.connectionString = connectionString or "postgresql://underpass:underpass@postgis/underpass"
         self.cursor = None
-        self.conn = None
         self.pool = None
 
     async def __enter__(self):
@@ -53,15 +52,14 @@ class UnderpassDB():
     def close(self):
         if self.conn is not None:
             self.cursor.close()
-            self.conn.close()
 
     async def run(self, query, singleObject = False):
         if not self.pool:
             await self.connect()
         if self.pool:
             try:
-                self.conn = await self.pool.acquire()
-                result = await self.conn.fetch(query)
+                conn = await self.pool.acquire()
+                result = await conn.fetch(query)
                 if singleObject:
                     return result[0]
                 return json.loads((result[0]['result']))
@@ -70,5 +68,5 @@ class UnderpassDB():
                 print(e)
                 return None
             finally:
-                await self.pool.release(self.conn)
+                await self.pool.release(conn)
         return None
