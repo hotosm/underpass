@@ -50,8 +50,8 @@ class UnderpassDB():
                 print(e)
 
     def close(self):
-        if self.conn is not None:
-            self.cursor.close()
+        if self.pool is not None:
+            self.pool.close()
 
     async def run(self, query, singleObject = False):
         if not self.pool:
