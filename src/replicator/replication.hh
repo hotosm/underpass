@@ -222,8 +222,9 @@ class RemoteURL {
     int major;                ///< The first element in the numerical path
     int minor;            ///< The second element in the numerical path
     int index;            ///< The third element in the numerical path
-    std::string filespec;    ///< The full fiespec
+    std::string filespec;    ///< The full filespec
     std::string destdir;    ///< The local directory used to cache files
+    std::string destdir_base;    ///< A base local directory for caching files
     /// Dump internal data for debugging
     void dump(void);
     /// Increment the numerical part of the path by one file
@@ -283,10 +284,10 @@ class Planet {
     /// \param file the full URL or the path part of the URL (such as:
     /// "/replication/changesets/000/001/633.osm.gz"), the host part is taken from remote.domain.
     /// \return RequestedFile object, which includes data and status
-    RequestedFile downloadFile(const std::string &file);
+    RequestedFile downloadFile(const std::string &file, const std::string &destdir_base);
     RequestedFile downloadFile(const RemoteURL &remote) {
         std::string str = "https://" + remote.domain + "/" + remote.filespec;
-        return downloadFile(str);
+        return downloadFile(str, remote.destdir_base);
     };
 
     /// \brief readFile read a file from disk cache

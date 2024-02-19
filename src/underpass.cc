@@ -112,7 +112,8 @@ main(int argc, char *argv[])
             ("boundary,b", opts::value<std::string>(), "Boundary polygon file name")
             ("osmnoboundary", "Disable boundary polygon for OsmChanges")
             ("oscnoboundary", "Disable boundary polygon for Changesets")
-            ("datadir", opts::value<std::string>(), "Base directory for cached files (with ending slash)")
+            ("datadir", opts::value<std::string>(), "Directory for remote and local cached files (with ending slash)")
+            ("destdir_base", opts::value<std::string>(), "Base directory for local cached files (with ending slash)")
             ("verbose,v", "Enable verbosity")
             ("logstdout,l", "Enable logging to stdout, default is log to underpass.log")
             ("changefile", opts::value<std::string>(), "Import change file")
@@ -154,6 +155,10 @@ main(int argc, char *argv[])
 
     if (vm.count("server")) {
         config.underpass_db_url = vm["server"].as<std::string>();
+    }
+
+    if (vm.count("destdir_base")) {
+        config.destdir_base = vm["destdir_base"].as<std::string>();
     }
 
     // Concurrency
@@ -275,6 +280,7 @@ main(int argc, char *argv[])
             // fullurl += "/" + vm["url"].as<std::string>() + "/" + parts[2] + ".state.txt";
             fullurl += "/" + vm["url"].as<std::string>() + ".state.txt";
             osmchange->parse(fullurl);
+            osmchange->destdir_base = config.destdir_base;
             auto data = replicator.downloadFile(*osmchange).data;
             StateFile start(osmchange->filespec, false);
             //start.dump();
@@ -291,11 +297,13 @@ main(int argc, char *argv[])
             if (!vm.count("osmnoboundary")) {
                 osmboundary = &geou.boundary;
             }
+            osmchange->destdir_base = config.destdir_base;
             osmChangeThread = std::thread(replicatorthreads::startMonitorChanges, std::ref(osmchange),
                             std::ref(*osmboundary), std::ref(config));
         }
         config.frequency = replication::changeset;
         auto changeset = replicator.findRemotePath(config, config.start_time);
+        changeset->destdir_base = config.destdir_base;
         if (vm.count("changeseturl")) {
             std::vector<std::string> parts;
             boost::split(parts, vm["changeseturl"].as<std::string>(), boost::is_any_of("/"));

@@ -119,10 +119,16 @@ struct UnderpassConfig {
                     );
                 }
             };
+            if (yaml.contains_key("destdir_base")) {
+                destdir_base = yamlConfig.get_value("destdir_base");
+            }
         }
 
         if (getenv("REPLICATOR_UNDERPASS_DB_URL")) {
             underpass_db_url = getenv("REPLICATOR_UNDERPASS_DB_URL");
+        }
+        if (getenv("REPLICATOR_DESTDIR_BASE")) {
+            destdir_base = getenv("REPLICATOR_DESTDIR_BASE");
         }
         if (getenv("REPLICATOR_PLANET_SERVER")) {
             planet_server = getenv("REPLICATOR_PLANET_SERVER");
@@ -145,6 +151,7 @@ struct UnderpassConfig {
     };
 
     std::string underpass_db_url = "localhost/underpass";
+    std::string destdir_base;
     std::string planet_server;
     std::string datadir;
     std::vector<PlanetServer> planet_servers;

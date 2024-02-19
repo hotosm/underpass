@@ -182,8 +182,10 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
                 (last_task->status == reqfile_t::remoteNotFound && !caughtUpWithNow)) {
                 remote->Increment();
             }
+            auto new_remote = std::make_shared<replication::RemoteURL>(remote->getURL());
+            new_remote->destdir_base = remote->destdir_base;
             auto task = boost::bind(threadChangeSet,
-                std::make_shared<replication::RemoteURL>(remote->getURL()),
+                new_remote,
                 std::ref(planets.front()),
                 std::ref(poly),
                 std::ref(tasks),
@@ -308,9 +310,10 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
                 (last_task->status == reqfile_t::remoteNotFound && !caughtUpWithNow)) {
                 remote->Increment();
             }
-
+            auto new_remote = std::make_shared<replication::RemoteURL>(remote->getURL());
+            new_remote->destdir_base = remote->destdir_base;
             OsmChangeTask osmChangeTask {
-                std::make_shared<replication::RemoteURL>(remote->getURL()),
+                new_remote,
                 std::ref(planets.front()),
                 std::ref(poly),
                 std::ref(validator),

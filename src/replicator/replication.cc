@@ -284,17 +284,19 @@ Planet::processData(const std::string &dest, std::vector<unsigned char> &data)
 
 // Download a file from planet
 RequestedFile
-Planet::downloadFile(const std::string &url)
+Planet::downloadFile(const std::string &url, const std::string &destdir_base)
 {
 
     RemoteURL remote(url);
+    remote.destdir_base = destdir_base;
     RequestedFile file;
+    std::string local_file_path = destdir_base + remote.filespec;
 
-    if (std::filesystem::exists(remote.filespec)) {
-        file = readFile(remote.filespec);
+    if (std::filesystem::exists(local_file_path)) {
+        file = readFile(local_file_path);
         // If local file doesn't work, remove it
         if (file.status == reqfile_t::localError) {
-            boost::filesystem::remove(remote.filespec);
+            boost::filesystem::remove(local_file_path);
         }
         return file;
     }
@@ -434,19 +436,20 @@ Planet::readFile(std::string &filespec) {
 }
 
 void Planet::writeFile(RemoteURL &remote, std::shared_ptr<std::vector<unsigned char>> data) {
+    std::string local_file_path = remote.destdir_base + remote.destdir;
     try {
-        if (!boost::filesystem::exists(remote.destdir)) {
-            boost::filesystem::create_directories(remote.destdir);
+        if (!boost::filesystem::exists(local_file_path)) {
+            boost::filesystem::create_directories(local_file_path);
         }
     } catch (boost::system::system_error ex) {
-        log_error("Destdir corrupted!: %1%, %2%", remote.destdir, ex.what());
+        log_error("Destdir corrupted!: %1%, %2%", local_file_path, ex.what());
     }
     std::ofstream myfile;
     myfile.open(remote.filespec, std::ofstream::out | std::ios::binary);
     myfile.write(reinterpret_cast<char *>(data.get()->data()), data.get()->size());
     myfile.flush();
     myfile.close();
-    log_debug("Wrote downloaded file %1% to disk from %2%", remote.filespec, remote.domain);
+    log_debug("Wrote downloaded file %1% to disk from %2%", local_file_path, remote.domain);
 }
 
 Planet::~Planet(void)
@@ -740,6 +743,7 @@ RemoteURL::operator=(const RemoteURL &inr)
     index = inr.index;
     filespec = inr.filespec;
     destdir = inr.destdir;
+    destdir_base = inr.destdir_base;
 
     return *this;
 }
@@ -761,6 +765,7 @@ RemoteURL::RemoteURL(const RemoteURL &inr)
     index = inr.index;
     filespec = inr.filespec;
     destdir = inr.destdir;
+    destdir_base = inr.destdir_base;
 }
 
 void
@@ -781,7 +786,7 @@ RemoteURL::dump(void)
     std::cerr << "\t\"minor\": " << minor << "," << std::endl;
     std::cerr << "\t\"index\": " <<  index << "," << std::endl;
     std::cerr << "\t\"filespec\": \"" << filespec << "\"," << std::endl;
-    std::cerr << "\t\"destdir\": \"" << destdir << "\"" << std::endl;
+    std::cerr << "\t\"destdir\": \"" << destdir_base + destdir << "\"" << std::endl;
     std::cerr << "}" << std::endl;
 
 }
