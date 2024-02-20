@@ -171,8 +171,7 @@ class ValidateStatus {
 class BOOST_SYMBOL_VISIBLE Validate {
   public:
     Validate(void) {
-        std::string path = PKGLIBDIR;
-        path += "/config/validate";
+        std::string path = "/etc/underpass/validate";
         loadConfig(path);
     }
 

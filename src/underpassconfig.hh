@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021, 2022, 2023 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022, 2023, 2024 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -103,10 +103,9 @@ struct UnderpassConfig {
     UnderpassConfig()
     {
 
-        std::string homedir = getenv("HOME");
-        if (std::filesystem::exists(homedir + "/.underpass")) {
+        if (std::filesystem::exists("/etc/underpass/default.yaml")) {
             yaml::Yaml yaml;
-            yaml.read(homedir + "/.underpass");
+            yaml.read("/etc/underpass/default.yaml");
             auto yamlConfig = yaml.get("config");
             if (yaml.contains_key("underpass_db_url")) {
                 underpass_db_url = yamlConfig.get_value("underpass_db_url");

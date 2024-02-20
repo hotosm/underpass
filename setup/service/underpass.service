@@ -1,0 +1,16 @@
+[Unit]
+Description=Underpass replication service
+After=syslog.target
+
+[Service]
+ExecStart=/usr/local/lib/underpass/service/start.sh
+ExecRestart=/usr/local/lib/underpass/service/restart.sh
+WorkingDirectory=/usr/local/lib/underpass/
+Restart=always
+KillSignal=SIGQUIT
+Type=simple
+StandardError=syslog
+NotifyAccess=all
+
+[Install]
+WantedBy=multi-user.target

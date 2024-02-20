@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021, 2022, 2023 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022, 2023, 2024 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -102,8 +102,7 @@ PlanetReplicator::PlanetReplicator(void) {};
 std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const underpassconfig::UnderpassConfig &config, ptime time) {
     yaml::Yaml yaml;
 
-    std::string rep_file = PKGLIBDIR;
-    rep_file += "/config/replicator/planetreplicator.yaml";
+    std::string rep_file = "/etc/underpass/replicator/planetreplicator.yaml";
     yaml.read(rep_file);
     std::map<int, ptime> hashes;
 

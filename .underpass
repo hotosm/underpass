@@ -1,7 +1,0 @@
-# Underpass config
-# Edit and copy this file to $HOME
-config:
-  - planet_servers:
-    - planet.openstreetmap.org
-  - underpass_db_url:
-    - underpass@postgis/underpass

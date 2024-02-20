@@ -110,11 +110,9 @@ then
         python3 poly2geojson.py $COUNTRY.poly
         if "$use_docker";
         then
-            docker cp $COUNTRY.geojson underpass:/usr/local/lib/underpass/config/priority.geojson
-            docker cp $COUNTRY.geojson underpass:/code/config/priority.geojson
+            docker cp $COUNTRY.geojson underpass:/etc/underpass/priority.geojson
         else
-            cp $COUNTRY.geojson /usr/local/lib/underpass/config/priority.geojson
-            cp $COUNTRY.geojson ../config/priority.geojson
+            cp $COUNTRY.geojson /etc/underpass/priority.geojson
         fi
         echo "Bootstrapping database ..."
         if "$use_docker";
