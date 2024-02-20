@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021, 2022, 2023 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022, 2023, 2024 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -51,8 +51,7 @@ namespace statsconfig {
 
     StatsConfig::StatsConfig() {
         if (path.empty()) {
-            path = PKGLIBDIR;
-            path += "/config/stats/statistics.yaml";
+            path = "/etc/underpass/stats/statistics.yaml";
             if (!boost::filesystem::exists(path)) {
                 throw std::runtime_error("Statistics file not found: " + path);
             }

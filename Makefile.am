@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2021, 2022, 2023 Humanitarian OpenStreetMap Team
+# Copyright (c) 2020, 2021, 2022, 2023, 2024 Humanitarian OpenStreetMap Team
 #
 # This file is part of Underpass.
 #
@@ -152,13 +152,14 @@ endif
 
 install-data-hook:
 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
-	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)/config
-	cp -rvp $(srcdir)/config/priority.geojson $(DESTDIR)/$(pkglibdir)/config
-	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)/config/replicator
-	cp -vp $(srcdir)/config/replicator/planetreplicator.yaml $(DESTDIR)/$(pkglibdir)/config/replicator
-	cp -rvp $(srcdir)/config/stats $(DESTDIR)/$(pkglibdir)/config
+	$(MKDIR_P) /etc/underpass
+	cp -rvp $(srcdir)/config/priority.geojson /etc/underpass/
+	cp -rvp $(srcdir)/config/replicator /etc/underpass/
+	cp -rvp $(srcdir)/config/stats /etc/underpass/
+	cp -rvp $(srcdir)/config/default.yaml /etc/underpass/
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
 	cp -rvp $(srcdir)/docs/*.md $(DESTDIR)/$(docdir)
+	cp -rvp $(srcdir)/setup/service $(DESTDIR)/$(pkglibdir)
 
 dist-hook: apidoc
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
