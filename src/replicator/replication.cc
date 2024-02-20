@@ -445,11 +445,11 @@ void Planet::writeFile(RemoteURL &remote, std::shared_ptr<std::vector<unsigned c
         log_error("Destdir corrupted!: %1%, %2%", local_file_path, ex.what());
     }
     std::ofstream myfile;
-    myfile.open(remote.filespec, std::ofstream::out | std::ios::binary);
+    myfile.open(remote.destdir_base + remote.filespec, std::ofstream::out | std::ios::binary);
     myfile.write(reinterpret_cast<char *>(data.get()->data()), data.get()->size());
     myfile.flush();
     myfile.close();
-    log_debug("Wrote downloaded file %1% to disk from %2%", local_file_path, remote.domain);
+    log_debug("Wrote downloaded file %1% to disk from %2%", remote.destdir_base + remote.filespec, remote.domain);
 }
 
 Planet::~Planet(void)
