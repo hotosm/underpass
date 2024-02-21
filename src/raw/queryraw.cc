@@ -68,16 +68,18 @@ QueryRaw::buildTagsQuery(std::map<std::string, std::string> tags) const {
         std::string tagsStr = "jsonb_build_object(";
         int count = 0;
         for (auto it = std::begin(tags); it != std::end(tags); ++it) {
+            ++count;
+            // PostgreSQL has an argument limit for functions
+            if (count == 50) {
+                tagsStr.erase(tagsStr.size() - 1);
+                tagsStr += ") || jsonb_build_object(";
+                count = 0;
+            }
             std::string tag_format = "'%s', '%s',";
             boost::format tag_fmt(tag_format);
             tag_fmt % dbconn->escapedString(dbconn->escapedJSON(it->first));
             tag_fmt % dbconn->escapedString(dbconn->escapedJSON(it->second));
             tagsStr += tag_fmt.str();
-            ++count;
-            if (count == 101) {
-                tagsStr.erase(tagsStr.size() - 1);
-                tagsStr += ") || jsonb_build_object(";
-            }
         }
         tagsStr.erase(tagsStr.size() - 1);
         return tagsStr + ")";
