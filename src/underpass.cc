@@ -349,7 +349,6 @@ main(int argc, char *argv[])
     std::cout << "the environment variable names and their current "
                     "values (possibly defaults)."
                 << std::endl;
-    // std::cout << config.dbConfigHelp() << std::endl;
     exit(0);
 
 }

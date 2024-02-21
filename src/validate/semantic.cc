@@ -86,6 +86,12 @@ Semantic::checkTag(const std::string &key, const std::string &value, std::shared
         status->status.insert(badvalue);
         status->values.insert(key + "=" + value);
     }
+    // Check for a underscore at the beginning of the tag key
+    if(key.at(0) == '_') {
+        log_error("WARNING: underscore at the beginning of the tag key \"%1%\"", key);
+        status->status.insert(badvalue);
+        status->values.insert(key + "=" + value);
+    }
 }
 
 bool Semantic::isValidTag(const std::string &key, const std::string &value, yaml::Node tags) {

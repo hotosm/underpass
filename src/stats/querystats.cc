@@ -71,7 +71,6 @@ QueryStats::applyChange(const osmchange::ChangeStats &change) const
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("applyChange(statistics): took %w seconds\n");
 #endif
-    // std::cout << "Applying OsmChange data" << std::endl;
 
     if (change.closed_at != not_a_date_time) {
 
