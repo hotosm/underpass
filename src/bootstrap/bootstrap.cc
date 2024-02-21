@@ -165,10 +165,8 @@ threadBootstrapTask(WayTask wayTask)
 
     // Proccesing ways
     for (int i = 0; i < PAGE_SIZE; ++i) {
-        // std::cout << "--> processing way " << i * taskIndex << std::endl;
         if (i * taskIndex < ways->size()) {
             auto way = ways->at(i * (taskIndex + 1));
-            // std::cout << "[task " << taskIndex << "] way " << i * (taskIndex + 1) << std::endl;
             auto status = plugin->checkWay(way, "building");
             for (auto status_it = status->status.begin(); status_it != status->status.end(); ++status_it) {
                 task.query += queryvalidate->applyChange(*status, *status_it);

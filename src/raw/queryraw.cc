@@ -86,14 +86,14 @@ QueryRaw::applyChange(const OsmNode &node) const
         std::string tags = "";
         if (node.tags.size() > 0) {
             for (auto it = std::begin(node.tags); it != std::end(node.tags); ++it) {
-                std::string tag_format = "\"%s\" : \"%s\",";
+                std::string tag_format = "'%s', '%s',";
                 boost::format tag_fmt(tag_format);
                 tag_fmt % dbconn->escapedString(dbconn->escapedJSON(it->first));
                 tag_fmt % dbconn->escapedString(dbconn->escapedJSON(it->second));
                 tags += tag_fmt.str();
             }
             tags.erase(tags.size() - 1);
-            tags = "'{" + tags + "}'";
+            tags = "jsonb_build_object(" + tags + ")";
 
         } else {
             tags = "null";
@@ -168,14 +168,14 @@ QueryRaw::applyChange(const OsmWay &way) const
             std::string tags = "";
             if (way.tags.size() > 0) {
                 for (auto it = std::begin(way.tags); it != std::end(way.tags); ++it) {
-                    std::string tag_format = "\"%s\" : \"%s\",";
+                    std::string tag_format = "'%s', '%s',";
                     boost::format tag_fmt(tag_format);
                     tag_fmt % dbconn->escapedString(dbconn->escapedJSON(it->first));
                     tag_fmt % dbconn->escapedString(dbconn->escapedJSON(it->second));
                     tags += tag_fmt.str();
                 }
                 tags.erase(tags.size() - 1);
-                tags = "'{" + tags + "}'";
+                tags = "jsonb_build_object(" + tags + ")";
             } else {
                 tags = "null";
             }
