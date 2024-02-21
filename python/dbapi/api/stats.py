@@ -49,7 +49,7 @@ class Stats:
             count_validated_features as ( \
                 select count(distinct(all_features.osm_id)) as count from all_features \
                 left join validation v on all_features.osm_id = v.osm_id \
-                where v.status = 'badgeom' \
+                where v.status = '{6}' \
             ), count_features as (\
                 select count(distinct(all_features.osm_id)) as total from all_features \
             ) \
@@ -60,7 +60,7 @@ class Stats:
                 "AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "",
                 "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
                 "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
-                "AND status = '" + status + "'" if status else "",
+                status
             )
         else:
            query = "select count(distinct {0}.osm_id) as count from {0} \
