@@ -157,44 +157,24 @@ Pq::query(const std::string &query)
     return result;
 }
 
-std::string Latin1ToUTF8(const std::string& latin1str) {
-    std::string utf8str;
-    for (char c : latin1str) {
-        if (static_cast<unsigned char>(c) <= 0x7F) {
-            utf8str.push_back(c);
-        } else {
-            utf8str.push_back(0xC0 | static_cast<unsigned char>(c) >> 6);
-            utf8str.push_back(0x80 | (static_cast<unsigned char>(c) & 0x3F));
-        }
-    }
-    return utf8str;
-}
-
 std::string
 Pq::escapedString(const std::string &s)
 {
     std::string newstr;
     int i = 0;
     while (i < s.size()) {
+        // Single quote (')
         if (s[i] == '\'') {
-            newstr += "&apos;";
-        } else if (s[i] == '\"') {
-            newstr += "&quot;";
-        } else if (s[i] == '\'') {
-            newstr += "&quot;";
-        } else if (s[i] == ')') {
-            newstr += "&#41;";
-        } else if (s[i] == '(') {
-            newstr += "&#40;";
-        } else if ((s[i] == '\\') || (s[i] == '\n')) {
-            // drop this character
+            newstr += "''";
+        // Slash (\)
+        } else if (s[i] == '\\') {
+            newstr += "\\\\";
         } else {
             newstr += s[i];
         }
         i++;
     }
-
-    return sdb->esc(Latin1ToUTF8(newstr));
+    return sdb->esc(newstr);
 }
 
 std::string 

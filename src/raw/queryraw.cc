@@ -63,6 +63,32 @@ QueryRaw::QueryRaw(std::shared_ptr<Pq> db) {
 }
 
 std::string
+QueryRaw::buildTagsQuery(std::map<std::string, std::string> tags) const {
+    if (tags.size() > 0) {
+        std::string tagsStr = "jsonb_build_object(";
+        int count = 0;
+        for (auto it = std::begin(tags); it != std::end(tags); ++it) {
+            ++count;
+            // PostgreSQL has an argument limit for functions
+            if (count == 50) {
+                tagsStr.erase(tagsStr.size() - 1);
+                tagsStr += ") || jsonb_build_object(";
+                count = 0;
+            }
+            std::string tag_format = "'%s', '%s',";
+            boost::format tag_fmt(tag_format);
+            tag_fmt % dbconn->escapedString(dbconn->escapedJSON(it->first));
+            tag_fmt % dbconn->escapedString(dbconn->escapedJSON(it->second));
+            tagsStr += tag_fmt.str();
+        }
+        tagsStr.erase(tagsStr.size() - 1);
+        return tagsStr + ")";
+    } else {
+        return "null";
+    }
+}
+
+std::string
 QueryRaw::applyChange(const OsmNode &node) const
 {
     std::string query;
@@ -83,21 +109,7 @@ QueryRaw::applyChange(const OsmNode &node) const
         fmt % geometry;
 
         // tags
-        std::string tags = "";
-        if (node.tags.size() > 0) {
-            for (auto it = std::begin(node.tags); it != std::end(node.tags); ++it) {
-                std::string tag_format = "\"%s\" : \"%s\",";
-                boost::format tag_fmt(tag_format);
-                tag_fmt % dbconn->escapedString(dbconn->escapedJSON(it->first));
-                tag_fmt % dbconn->escapedString(dbconn->escapedJSON(it->second));
-                tags += tag_fmt.str();
-            }
-            tags.erase(tags.size() - 1);
-            tags = "'{" + tags + "}'";
-
-        } else {
-            tags = "null";
-        }
+        auto tags = buildTagsQuery(node.tags);
         fmt % tags;
         // timestamp
         std::string timestamp = to_simple_string(boost::posix_time::microsec_clock::universal_time());
@@ -164,22 +176,8 @@ QueryRaw::applyChange(const OsmWay &way) const
             // osm_id
             fmt % way.id;
 
-            // tags
-            std::string tags = "";
-            if (way.tags.size() > 0) {
-                for (auto it = std::begin(way.tags); it != std::end(way.tags); ++it) {
-                    std::string tag_format = "\"%s\" : \"%s\",";
-                    boost::format tag_fmt(tag_format);
-                    tag_fmt % dbconn->escapedString(dbconn->escapedJSON(it->first));
-                    tag_fmt % dbconn->escapedString(dbconn->escapedJSON(it->second));
-                    tags += tag_fmt.str();
-                }
-                tags.erase(tags.size() - 1);
-                tags = "'{" + tags + "}'";
-            } else {
-                tags = "null";
-            }
-
+            //tags
+            auto tags = buildTagsQuery(way.tags);
             fmt % tags;
 
             // refs
