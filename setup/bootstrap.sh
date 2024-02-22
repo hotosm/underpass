@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2023 Humanitarian OpenStreetMap Team
+# Copyright (c) 2023, 2024 Humanitarian OpenStreetMap Team
 #
 # This file is part of Underpass.
 #
@@ -91,7 +91,7 @@ then
 
         echo "Cleaning database ..."
         PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB -c 'DROP TABLE IF EXISTS ways_poly; DROP TABLE IF EXISTS ways_line; DROP TABLE IF EXISTS nodes; DROP TABLE IF EXISTS way_refs; DROP TABLE IF EXISTS validation; DROP TABLE IF EXISTS changesets;'
-        PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB --file '../setup/underpass.sql'
+        PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB --file 'db/underpass.sql'
 
         if "$localfiles";
         then
@@ -103,8 +103,8 @@ then
         fi
 
         echo "Importing data (this will take some time) ..."
-        PGPASSWORD=$PASS osm2pgsql -H $HOST -U $USER -P $PORT -d $DB --extra-attributes --output=flex --style ./raw-underpass.lua $COUNTRY-latest.osm.pbf
-        PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB < raw-underpass.sql
+        PGPASSWORD=$PASS osm2pgsql -H $HOST -U $USER -P $PORT -d $DB --extra-attributes --output=flex --style ./db/raw.lua $COUNTRY-latest.osm.pbf
+        PGPASSWORD=$PASS psql --host $HOST --user $USER --port $PORT $DB < db/indexes.sql
 
         echo "Configuring Underpass ..."
         python3 poly2geojson.py $COUNTRY.poly
@@ -117,9 +117,9 @@ then
         echo "Bootstrapping database ..."
         if "$use_docker";
         then
-            docker exec -w /code/build -t underpass ./underpass --bootstrap
+            docker exec -w /code/build -t underpass underpass --bootstrap
         else
-            cd ../build && ./underpass --bootstrap
+            underpass --bootstrap
         fi
         echo "Done."
         echo " "

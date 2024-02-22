@@ -1,6 +1,6 @@
 # Utility Programs
 
-## data/setupdb.sh
+## data/db/setupdb.sh
 
 This is a simple shell script that creates all the databases Underpass
 uses. It can also be used to initialize the two internal databases
@@ -10,7 +10,7 @@ countries used to determine which country a change was made in for
 statistics collection. These are used to bootstrap a new Underpass
 installation.
 
-## utils/bootstrap.sh
+## setup/bootstrap.sh
 
 * [Using the bootstrap.sh script](/underpass/Dev/bootstrapsh)
 
@@ -62,27 +62,6 @@ Converts .poly to .geojson
 
 ```sh
 python poly2geojson file.poly
-```
-
-## utils/underpassmon
-
-Replication process log monitor
-
-Use this script for monitoring Underpass logs and estimate replication speed.
-
-You'll need to pass the `-v -d` parameters to the `underpass` command
-in order to output the log file.
-
-Monitoring OsmChanges processing (default):
-
-```sh
-python underpassmon.py -f underpass.log
-```
-
-Monitoring ChangeSets processing:
-
-```sh
-python underpassmon.py -f underpass.log -m changesets
 ```
 
 ## utils/clean-osmchanges.sql

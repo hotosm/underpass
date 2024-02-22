@@ -58,19 +58,19 @@ displaying raw data and validation results on top of the OSM map.
 Run this command for start processing data from 2 days ago:
 
 ```sh
-docker exec -w /code/build underpass ./underpass -t $(date +%Y-%m-%dT%H:%M:%S -d "2 days ago")
+docker exec -w /code/build underpass underpass -t $(date +%Y-%m-%dT%H:%M:%S -d "2 days ago")
 ```
 
 On MacOS, the date command is different:
 
 ```sh
-docker exec -w /code/build underpass ./underpass -t $(date -v -2d +%Y-%m-%dT%H:%M:%S)
+docker exec -w /code/build underpass underpass -t $(date -v -2d +%Y-%m-%dT%H:%M:%S)
 ```
 
 For running underpass as a daemon, use the `-d` option:
 
 ```sh
-docker exec -d -w /code/build underpass ./underpass -t $(date -v -2d +%Y-%m-%dT%H:%M:%S)
+docker exec -d -w /code/build underpass underpass -t $(date -v -2d +%Y-%m-%dT%H:%M:%S)
 ```
 
 ### Stop and start underpass
