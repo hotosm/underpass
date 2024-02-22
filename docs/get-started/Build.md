@@ -36,63 +36,50 @@ $ ./autogen.sh && \
   ../configure && make -j$(nproc) && sudo make install
 ```
 
-## MacOS (Intel)
+## MacOS
 
 ### Install dependencies
 
 ```
+sudo port install boost
 brew install \
-    autoconf \
-    automake \
     libtool \
-    swig \
     gdal \
     pkg-config \
-    openjdk@11 \
-    libosmium \
-    gumbo-parser \
-    boost \
-    boost-python \
-    open-mpi \
-    range-v3 \
-    wget \
-    unzip \
+    openssl \
+    protobuf \
+    boost-python3 \
     libxml++3 \
     libpqxx \
-    ccache \
-    openssl \
-    protobuf
+    gumbo-parser
 ```
 
-### Build 
+### Build (Intel)
 
 ```sh
 sh ./autogen.sh
 mkdir build && cd build
-../configure CXXFLAGS="-I/usr/local/include \
-    -I/usr/local/Homebrew/Cellar/libpqxx/7.7.5/include/ \
-    -I/opt/homebrew/opt/openssl@3/include \
-    -L/opt/homebrew/Cellar/boost-python3/1.82.0/lib \
-    -L/opt/homebrew/Cellar/jemalloc/5.3.0/lib \
-    -g -O0" CXX="ccache g++"
+../configure CXXFLAGS=" \
+    -I/usr/local/include \
+    -L/opt/homebrew/lib \
+    -I/opt/homebrew/include \
+    -I/opt/homebrew/Cellar \
+    -L/usr/local/Cellar" CXX="g++"
 make -j$(nproc) && sudo make install
 ```
 
 ## MacOS (Sillicon)
 
-Make sure you have installed all dependencies built for arm64 or as universal binaries.
-
-You can do this with brew using:
-
-`arch -arm64 brew install <package>`
-
-Then the process is similar to Intel but adding `-arch arm64` to `CXXFLAGS`:
+The process is similar to Intel but adding `-arch arm64` to `CXXFLAGS`:
 
 ```sh
-../configure CXXFLAGS="-arch arm64 -I/usr/local/include \
-    -I/usr/local/Homebrew/Cellar/libpqxx/7.7.5/include/ \
-    -I/opt/homebrew/opt/openssl@3/include \
-    -L/opt/homebrew/Cellar/boost-python3/1.82.0/lib \
-    -L/opt/homebrew/Cellar/jemalloc/5.3.0/lib \
-    -g -O0" CXX="ccache g++"
+sh ./autogen.sh
+mkdir build && cd build
+../configure CXXFLAGS=" -arch arm64\
+    -I/usr/local/include \
+    -L/opt/homebrew/lib \
+    -I/opt/homebrew/include \
+    -I/opt/homebrew/Cellar \
+    -L/usr/local/Cellar" CXX="g++"
+make -j$(nproc) && sudo make install
 ```

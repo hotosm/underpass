@@ -1,4 +1,4 @@
-## Boostrap the database
+## Boostraping the database
 
 You can prepare your Underpass installation with data for a specific country.
 
@@ -34,17 +34,19 @@ apt install osm2pgsql
 
 ### Bootstrap
 
-Now you can go to the `utils` directory and run the boostrap script:
+Go to the `setup` directory and run the boostrap script:
 
 cd utils
-chmod +x bootstrap.sh 
-./bootstrap.sh -r south-america -c uruguay -p 5432 -u underpass
+./bootstrap.sh -r south-america -c uruguay
 ```
 
-Use `-p <PORT>` and `-u <USERNAME>` for the database.
+Use `-u <USERNAME>` `-h <HOST>` `-d <DATABASE>` `-d <PORT>` for the database connection.
+
+If you installed Underpass with Docker, you might use the `-p 5439 -k yes` options.
+
+./bootstrap.sh -r south-america -c uruguay -p 5439 -k yes
 
 Regions (-r) are:
-
     africa
     asia
     australia-oceania
@@ -58,4 +60,3 @@ Countries (-c) is the name of the country inside the region.
 Data is downloaded from GeoFabrik, if you are not sure of what name you need to use, please check there.
 
 For advanced users, check the [boostrap script documentation](/underpass/Dev/bootstrapsh).
-

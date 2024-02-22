@@ -19,7 +19,7 @@ sources, they are analyzed, and applied to the appropriate
 database. Most of the work is done by the Underpass
 library. *underpass* is the utility program that a uses the library. 
 
-	./underpass -h
+	underpass -h
 	-h [ --help ]         display help
 	-s [ --server arg]    database server (defaults to localhost)
 	-m [ --monitor]       Start monitoring planet

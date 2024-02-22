@@ -24,7 +24,7 @@ This will:
 2. Download raw data from GeoFabrik
 3. Run osm2psql for import it
 4. Convert the country .poly file to .geojson and install config files
-5. Run ./underpass --bootstrap for bootstrapping the validation table
+5. Run underpass --bootstrap for bootstrapping the validation table
 
 ### Script options
 

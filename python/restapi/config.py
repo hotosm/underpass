@@ -5,6 +5,7 @@ ORIGINS = os.getenv("UNDERPASS_API_ORIGINS").split(",") if os.getenv("UNDERPASS_
     "http://localhost",
     "http://localhost:5000",
     "http://localhost:3000",
+    "http://localhost:8080",
     "http://127.0.0.1",
     "http://127.0.0.1:5000"
 ]

@@ -50,7 +50,7 @@ BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
 	$(BOOST_PYTHON_LIB)
 
 SQL_FILES = \
-	setup/underpass.sql
+	setup/db/underpass.sql
 
 libunderpass_la_SOURCES = \
 	src/utils/log.cc src/utils/log.hh \
@@ -69,9 +69,9 @@ libunderpass_la_SOURCES = \
 	src/bootstrap/bootstrap.cc src/bootstrap/bootstrap.hh \
 	src/utils/geoutil.cc src/utils/geoutil.hh \
 	src/utils/geo.cc src/utils/geo.hh \
-	src/tils/yaml.hh src/utils/yaml.cc \
+	src/utils/yaml.hh src/utils/yaml.cc \
 	src/data/pq.hh src/data/pq.cc \
-	setup/setupdb.sh
+	setup/db/setupdb.sh
 
 if JEMALLOC
 libunderpass_la_LDFLAGS = -avoid-version -ljemalloc
@@ -107,7 +107,7 @@ AM_CPPFLAGS = \
 # clutter to the output. This should only be enabled when doing performance tuning.
 	-DTIMING_DEBUG
 
-pkgdata_DATA = $(SQL_FILES) setup/setupdb.sh $(PYTHON_UTILS)
+pkgdata_DATA = $(SQL_FILES) setup/db/setupdb.sh $(PYTHON_UTILS)
 
 EXTRA_DIST = \
 	$(SQL_FILES) \
@@ -153,8 +153,10 @@ endif
 install-data-hook:
 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
 	$(MKDIR_P) /etc/underpass
+	cp -rvp $(srcdir)/setup/service/underpass.service /etc/systemd/system/
 	cp -rvp $(srcdir)/config/priority.geojson /etc/underpass/
 	cp -rvp $(srcdir)/config/replicator /etc/underpass/
+	cp -rvp $(srcdir)/config/validate /etc/underpass/
 	cp -rvp $(srcdir)/config/stats /etc/underpass/
 	cp -rvp $(srcdir)/config/default.yaml /etc/underpass/
 	$(MKDIR_P) $(DESTDIR)/$(docdir)

@@ -1,1 +1,1 @@
-psycopg2==2.9.6
+asyncpg==0.29.0

@@ -239,7 +239,7 @@ if test x"${enable_python}" = x"yes"; then
   AX_BOOST_PYTHON
   AC_DEFINE(USE_PYTHON, [1], [Enable Python binding])
 fi
-AM_CONDITIONAL(ENABLE_PYTHON, [ test x"${enable_python}" != x ])
+AM_CONDITIONAL(ENABLE_PYTHON, [ test x"${enable_python}" != x"no" ])
 
 AC_PATH_PROG(DOXYGEN, doxygen)
 AM_CONDITIONAL(ENABLE_DOXYGEN, [ test x"$DOXYGEN" != x ])
