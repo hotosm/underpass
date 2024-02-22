@@ -20,7 +20,7 @@ Requirements:
 Run this utility script for bootstrap the database with data for a country:
 
 ```sh
-cd utils && ./bootstrap.sh -r asia -c nepal
+cd setup && ./bootstrap.sh -r asia -c nepal -p 5439
 ```
 Regions (-r) are:
 
@@ -38,7 +38,7 @@ Data is downloaded from [GeoFabrik](https://download.geofabrik.de/), if you are 
 
 ### Configure the UI
 
-You can find the UI's playground here: `http://localhost:5000`
+You can find the UI's playground here: `http://localhost:8080`
 
 Edit this file with the center coordinates for the map:
 
