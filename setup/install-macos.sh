@@ -18,7 +18,7 @@
 #     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 
 echo "Installing dependencies ..."
-sudo port install boost 
+sudo port install boost
 brew install \
     libtool \
     gdal \

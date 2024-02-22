@@ -45,7 +45,7 @@ sudo apt-get update \
 echo "Setting up build ..."
 cd ..
 ./autogen.sh && mkdir build && cd build && ../configure
-  
+
 echo "Building ..."
 make -j$(nproc) && sudo make install
 
