@@ -43,7 +43,7 @@ done
 REGION=${region}
 COUNTRY=${country}
 HOST=${host:-localhost}
-PORT=${port:-5439}
+PORT=${port:-5432}
 DB=${database:-underpass}
 
 if [ -n "${user}" ] 
@@ -112,7 +112,7 @@ then
         then
             docker cp $COUNTRY.geojson underpass:/etc/underpass/priority.geojson
         else
-            cp $COUNTRY.geojson /etc/underpass/priority.geojson
+            sudo cp $COUNTRY.geojson /etc/underpass/priority.geojson
         fi
         echo "Bootstrapping database ..."
         if "$use_docker";
