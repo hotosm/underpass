@@ -8,11 +8,11 @@ On MacOS, the date command is different
 
 `underpass -t $(date -v -2d +%Y-%m-%dT%H:%M:%S)`
 
-Using Docker, add `docker exec -d -w /code/build underpass`
+Using Docker, add `docker exec -d underpass`
 
-`docker exec -w /code/build underpass underpass -t $(date -v -2d +%Y-%m-%dT%H:%M:%S)`
+`docker exec -d underpass underpass -t $(date -v -2d +%Y-%m-%dT%H:%M:%S)`
 
 For running underpass as a daemon, use the -d option:
 
-`docker exec -d -w /code/build underpass underpass -t $(date -v -2d +%Y-%m-%dT%H:%M:%S)`
+`docker exec -d underpass underpass -t $(date -v -2d +%Y-%m-%dT%H:%M:%S)`
 

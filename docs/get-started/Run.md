@@ -16,10 +16,10 @@ On MacOS, the date command is slighty different:
 
 If you're running Underpass on a Docker container:
 
-`docker exec -w /code/build underpass underpass -t $(date +%Y-%m-%dT%H:%M:%S -d "2 days ago")`
+`docker exec underpass underpass -t $(date +%Y-%m-%dT%H:%M:%S -d "2 days ago")`
 
 For running as a daemon:
 
-`docker exec -d -w /code/build underpass underpass -t $(date -v -2d +%Y-%m-%dT%H:%M:%S)`
+`docker exec -d underpass underpass -t $(date -v -2d +%Y-%m-%dT%H:%M:%S)`
 
 

@@ -44,7 +44,7 @@ Use `-u <USERNAME>` `-h <HOST>` `-d <DATABASE>` `-d <PORT>` for the database con
 
 If you installed Underpass with Docker, you might use the `-p 5439 -k yes` options.
 
-./bootstrap.sh -r south-america -c uruguay -p 5439 -k yes
+`./bootstrap.sh -r south-america -c uruguay -p 5439 -k yes`
 
 Regions (-r) are:
     africa
