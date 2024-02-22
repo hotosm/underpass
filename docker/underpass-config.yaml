@@ -1,4 +1,8 @@
 # Underpass config file
 config:
-  - underpass_db_url:
-    - underpass@postgis/underpass
+    - underpass_db_url:
+        - underpass@postgis/underpass
+    - planet_servers:
+        - planet.maps.mail.ru
+    - destdir_base:
+        - /usr/local/lib/underpass/data/

@@ -74,11 +74,12 @@ CMD ["make", "check", "-j", "$(nproc)"]
 FROM deps as debug
 # Local debug with all dev deps
 ENV LD_LIBRARY_PATH=/code/build/.libs/
+COPY --from=build /usr/local/lib/ /usr/local/lib/
 COPY --from=build /usr/local/bin /usr/local/bin
 COPY --from=build /code/build/.libs/ \
     /code/build/.libs/
-COPY --from=build /usr/local/lib/underpass/config \
-    /usr/local/lib/underpass/config
+COPY --from=build /etc/underpass \
+    /etc/underpass
 WORKDIR /code/build
 # Add non-root user
 RUN useradd -r -u 1001 -m -c "hotosm account" -d /home/appuser -s /bin/false appuser
@@ -105,10 +106,10 @@ RUN set -ex \
         "osm2pgsql" \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /usr/local/bin /usr/local/bin
-COPY --from=build /code/build/.libs/ \
+COPY --from=build /usr/local/lib/ \
     /usr/local/lib/
-COPY --from=build /usr/local/lib/underpass/config \
-    /usr/local/lib/underpass/config
+COPY --from=build /etc/underpass \
+    /etc/underpass
 WORKDIR /code/build
 # Add non-root user
 RUN useradd -r -u 1001 -m -c "hotosm account" -d /home/appuser -s /bin/false appuser
