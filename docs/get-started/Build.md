@@ -41,7 +41,7 @@ $ ./autogen.sh && \
 ### Install dependencies
 
 ```
-sudo port install boost 
+sudo port install boost
 brew install \
     libtool \
     gdal \

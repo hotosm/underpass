@@ -18,7 +18,7 @@
 #     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 
 echo "Installing dependencies ..."
-sudo port install boost 
+sudo port install boost
 brew install \
     libtool \
     gdal \
@@ -51,8 +51,8 @@ ln -s /usr/local/lib/libboost_filesystem.dylib .libs
 ln -s /usr/local/lib/libboost_log.dylib .libs
 ln -s /usr/local/lib/libboost_program_options.dylib .libs
 ln -s /usr/local/lib/libboost_iostreams.dylib .libs
-ln -s /usr/local/lib/libboost_thread.dylib .libs 
-ln -s /usr/local/lib/libboost_serialization.dylib .libs 
+ln -s /usr/local/lib/libboost_thread.dylib .libs
+ln -s /usr/local/lib/libboost_serialization.dylib .libs
 ln -s /usr/local/lib/libboost_regex.dylib .libs
 
 echo "Done! now you may want to initialize the database with the bootstrap script"
