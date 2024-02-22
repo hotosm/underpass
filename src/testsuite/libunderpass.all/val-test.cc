@@ -183,7 +183,6 @@ test_semantic(std::shared_ptr<Validate> &plugin) {
     }
 
     node.addTag("building", "yes");
-
     // Has an invalid key=value ...
     node.addTag("building:material", "sponge");
     status = plugin->checkNode(node, "building");
@@ -213,6 +212,16 @@ test_semantic(std::shared_ptr<Validate> &plugin) {
         runtest.pass("Validate::checkNode(no bad values) [semantic building]");
     } else {
         runtest.fail("Validate::checkNode(no bad values) [semantic building]");
+        return 1;
+    }
+
+    // Has an invalid key=value
+    node.addTag("__building", "yes");
+    status = plugin->checkNode(node, "building");
+    if (status->hasStatus(badvalue)) {
+        runtest.pass("Validate::checkNode(bad value) [semantic building]");
+    } else {
+        runtest.fail("Validate::checkNode(bad value) [semantic building]");
         return 1;
     }
 
