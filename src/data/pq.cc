@@ -197,6 +197,7 @@ Pq::escapedJSON(const std::string &s) {
         case '\x0c': o << " "; break;
         case '\x0d': o << " "; break;
         case '\x0e': o << " "; break;
+        case '\xfe': o << " "; break;
         case '\x1f': o << "\\u001f"; break;
         case '\x22': o << "\\\""; break;
         case '\x5c': o << "\\\\"; break;
