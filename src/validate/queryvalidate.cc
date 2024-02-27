@@ -118,6 +118,17 @@ QueryValidate::updateValidation(long osm_id, const valerror_t &status, const std
 }
 
 std::string
+QueryValidate::updateValidation(long osm_id, const valerror_t &status) const
+{
+    std::string format = "DELETE FROM validation WHERE osm_id = %d and status = '%s';";
+    boost::format fmt(format);
+    fmt % osm_id;
+    fmt % status_list[status];
+    std::string query = fmt.str();
+    return query;
+}
+
+std::string
 QueryValidate::applyChange(const ValidateStatus &validation, const valerror_t &status) const
 {
 #ifdef TIMING_DEBUG_X
@@ -169,6 +180,84 @@ QueryValidate::applyChange(const ValidateStatus &validation, const valerror_t &s
     query += fmt.str();
 
     return query;
+}
+
+
+void
+QueryValidate::ways(
+    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> wayval,
+    std::string &task_query
+) {
+    for (auto it = wayval->begin(); it != wayval->end(); ++it) {
+        if (it->get()->status.size() > 0) {
+            for (auto status_it = it->get()->status.begin(); status_it != it->get()->status.end(); ++status_it) {
+                task_query += applyChange(*it->get(), *status_it);
+            }
+        }
+    }
+}
+
+void
+QueryValidate::ways(
+    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> wayval,
+    std::string &task_query,
+    std::shared_ptr<std::vector<long>> validation_removals
+) {
+    for (auto it = wayval->begin(); it != wayval->end(); ++it) {
+        if (it->get()->status.size() > 0) {
+            for (auto status_it = it->get()->status.begin(); status_it != it->get()->status.end(); ++status_it) {
+                task_query += applyChange(*it->get(), *status_it);
+            }
+            if (!it->get()->hasStatus(overlapping)) {
+                task_query += updateValidation(it->get()->osm_id, overlapping, "building");
+            }
+            if (!it->get()->hasStatus(duplicate)) {
+                task_query += updateValidation(it->get()->osm_id, duplicate, "building");
+            }
+            if (!it->get()->hasStatus(badgeom)) {
+                task_query += updateValidation(it->get()->osm_id, badgeom, "building");
+            }
+            if (!it->get()->hasStatus(badvalue)) {
+                task_query += updateValidation(it->get()->osm_id, badvalue);
+            }
+        } else {
+            validation_removals->push_back(it->get()->osm_id);
+        }
+    }
+}
+
+void
+QueryValidate::nodes(
+    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> nodeval,
+    std::string &task_query
+) {
+    for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
+        if (it->get()->status.size() > 0) {
+            for (auto status_it = it->get()->status.begin(); status_it != it->get()->status.end(); ++status_it) {
+                task_query += applyChange(*it->get(), *status_it);
+            }
+        }
+    }
+}
+
+void
+QueryValidate::nodes(
+    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> nodeval,
+    std::string &task_query,
+    std::shared_ptr<std::vector<long>> validation_removals
+) {
+    for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
+        if (it->get()->status.size() > 0) {
+            for (auto status_it = it->get()->status.begin(); status_it != it->get()->status.end(); ++status_it) {
+                task_query += applyChange(*it->get(), *status_it);
+            }
+            if (!it->get()->hasStatus(badvalue)) {
+                task_query += updateValidation(it->get()->osm_id, badvalue);
+            }
+        } else {
+            validation_removals->push_back(it->get()->osm_id);
+        }
+    }
 }
 
 } // namespace queryvalidate

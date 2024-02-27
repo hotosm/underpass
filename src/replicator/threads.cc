@@ -479,6 +479,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
 
     auto removed_nodes = std::make_shared<std::vector<long>>();
     auto removed_ways = std::make_shared<std::vector<long>>();
+    auto removed_relations = std::make_shared<std::vector<long>>();
     auto validation_removals = std::make_shared<std::vector<long>>();
     
     // Raw data and validation
@@ -524,6 +525,25 @@ threadOsmChange(OsmChangeTask osmChangeTask)
                 }
             }
 
+            // Relations
+            // for (auto rit = std::begin(change->relations); rit != std::end(change->relations); ++rit) {
+            //     osmobjects::OsmRelation *relation = rit->get();
+
+            //     if (relation->action != osmobjects::remove && !relation->priority) {
+            //         continue;
+            //     }
+
+            //     // Remove deleted relations from validation table
+            //     if (!config->disable_validation && relation->action == osmobjects::remove) {
+            //         removed_relations->push_back(relation->id);
+            //     }
+
+            //     //  Update relations, ignore new ones outside priority area
+            //     if (!config->disable_raw) {
+            //         task.query += queryraw->applyChange(*relation);
+            //     }
+            // }
+
         }
     }
 
@@ -532,30 +552,20 @@ threadOsmChange(OsmChangeTask osmChangeTask)
 
         // Validate ways
         auto wayval = osmchanges->validateWays(poly, plugin);
-        for (auto it = wayval->begin(); it != wayval->end(); ++it) {
+        queryvalidate->ways(wayval, task.query, validation_removals);
 
-            if (it->get()->status.size() > 0) {
-                for (auto status_it = it->get()->status.begin(); status_it != it->get()->status.end(); ++status_it) {
-                    task.query += queryvalidate->applyChange(*it->get(), *status_it);
-                }
-                if (!it->get()->hasStatus(overlapping)) {
-                    task.query += queryvalidate->updateValidation(it->get()->osm_id, overlapping, "building");
-                }
-                if (!it->get()->hasStatus(duplicate)) {
-                    task.query += queryvalidate->updateValidation(it->get()->osm_id, duplicate, "building");
-                }
-                if (!it->get()->hasStatus(badgeom)) {
-                    task.query += queryvalidate->updateValidation(it->get()->osm_id, badgeom, "building");
-                }
-            } else {
-                validation_removals->push_back(it->get()->osm_id);
-            }
-        }
+        // Validate nodes
+        auto nodeval = osmchanges->validateNodes(poly, plugin);
+        queryvalidate->nodes(nodeval, task.query, validation_removals);
+
+        // Validate relations
+        // task.query += queryvalidate->rels(wayval, task.query, validation_removals);
 
         // Remove validation entries for removed objects
         task.query += queryvalidate->updateValidation(validation_removals);
         task.query += queryvalidate->updateValidation(removed_nodes);
         task.query += queryvalidate->updateValidation(removed_ways);
+        // task.query += queryvalidate->updateValidation(removed_relations);
 
     }
 

@@ -78,6 +78,13 @@ class QueryValidate  {
     /// Update the validation table, delete any feature that has been fixed.
     std::string updateValidation(std::shared_ptr<std::vector<long>> removals);
     std::string updateValidation(long osm_id, const valerror_t &status, const std::string &source) const;
+    std::string updateValidation(long osm_id, const valerror_t &status) const;
+    void ways(std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> wayval, std::string &task_query);
+    void nodes(std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> nodeval, std::string &task_query);
+    void rels(std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> relval, std::string &task_query);
+    void ways(std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> wayval, std::string &task_query, std::shared_ptr<std::vector<long>> validation_removals);
+    void nodes(std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> nodeval, std::string &task_query, std::shared_ptr<std::vector<long>> validation_removals);
+    void rels(std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> relval, std::string &task_query, std::shared_ptr<std::vector<long>> validation_removals);
     // Database connection, used for escape strings
     std::shared_ptr<Pq> dbconn;
   };
