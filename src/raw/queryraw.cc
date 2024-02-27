@@ -436,7 +436,7 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
     return ways;
 }
 
-int QueryRaw::getWaysCount(const std::string &tableName) {
+int QueryRaw::getCount(const std::string &tableName) {
     std::string query = "select count(osm_id) from " + tableName;
     auto result = dbconn->query(query);
     return result[0][0].as<int>();
@@ -486,6 +486,42 @@ QueryRaw::getWaysFromDB(long lastid, int pageSize, const std::string &tableName)
     }
 
     return ways;
+}
+
+std::shared_ptr<std::vector<OsmNode>>
+QueryRaw::getNodesFromDB(long lastid, int pageSize) {
+    std::string nodesQuery = "SELECT osm_id, ST_AsText(geom, 4326)";
+
+    if (lastid > 0) {
+        nodesQuery += ", version, tags FROM nodes where osm_id < " + std::to_string(lastid) + " order by osm_id desc limit " + std::to_string(pageSize) + ";";
+    } else {
+        nodesQuery += ", version, tags FROM nodes order by osm_id desc limit " + std::to_string(pageSize) + ";";
+    }
+
+    auto nodes_result = dbconn->query(nodesQuery);
+    // Fill vector of OsmNode objects
+    auto nodes = std::make_shared<std::vector<OsmNode>>();
+    for (auto node_it = nodes_result.begin(); node_it != nodes_result.end(); ++node_it) {
+        OsmNode node;
+        node.id = (*node_it)[0].as<long>();
+
+        point_t point;
+        std::string point_str = (*node_it)[1].as<std::string>();
+        boost::geometry::read_wkt(point_str, point);
+        node.setPoint(boost::geometry::get<0>(point), boost::geometry::get<1>(point));
+        node.version = (*node_it)[2].as<long>();
+        auto tags = (*node_it)[3];
+        if (!tags.is_null()) {
+            auto tags = parseTagsString((*node_it)[3].as<std::string>());
+            for (auto const& [key, val] : tags)
+            {
+                node.addTag(key, val);
+            }
+        }
+        nodes->push_back(node);
+    }
+
+    return nodes;
 }
 
 std::shared_ptr<std::vector<OsmWay>>

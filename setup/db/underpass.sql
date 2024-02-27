@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS public.nodes (
     uid int8
 );
 
-CREATE TABLE IF NOT EXISTS public.rels (
+CREATE TABLE IF NOT EXISTS public.relations (
     osm_id int8,
     changeset int8,
     geom public.geometry(Geometry,4326),

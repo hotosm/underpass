@@ -27,7 +27,6 @@
 #include <array>
 #include <memory>
 #include <iostream>
-//#include <pqxx/pqxx>
 #ifdef LIBXML
 #include <libxml++/libxml++.h>
 #endif
@@ -36,11 +35,6 @@
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS 1
-// #include <boost/geometry.hpp>
-// typedef boost::geometry::model::d2::point_xy<double> point_t;
-// typedef boost::geometry::model::polygon<point_t> polygon_t;
-// typedef boost::geometry::model::multi_polygon<polygon_t> multipolygon_t;
-// typedef boost::geometry::model::linestring<point_t> linestring_t;
 
 #include "osm/osmobjects.hh"
 
@@ -89,20 +83,6 @@ OsmObject::dump(void) const
         }
     }
 };
-
-// This represents an ODM node. A node has point coordinates, and may
-// contain tags if it's a POI.
-// void
-// OsmWay::makeLinestring(point_t point)
-// {
-//     // If the first and last ref are the same, it's a closed polygon,
-//     // like a building.
-//     if (refs.begin() == refs.end()) {
-//         boost::geometry::append(polygon, point);
-//     } else {
-//         boost::geometry::append(linestring, point);
-//     }
-// };
 
 void
 OsmWay::dump(void) const

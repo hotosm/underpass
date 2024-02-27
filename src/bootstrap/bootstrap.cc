@@ -43,6 +43,8 @@ using namespace queryraw;
 using namespace underpassconfig;
 using namespace logger;
 
+typedef boost::geometry::model::d2::point_xy<double> point_t;
+
 namespace bootstrap {
 
 Bootstrap::Bootstrap(void) {}
@@ -90,7 +92,7 @@ Bootstrap::start(const underpassconfig::UnderpassConfig &config) {
     norefs = config.norefs;
 
     processWays();
-    // processNodes();
+    processNodes();
     // processRels();
 
 }
@@ -105,7 +107,7 @@ Bootstrap::processWays() {
     
     for (auto table_it = tables.begin(); table_it != tables.end(); ++table_it) {
         std::cout << std::endl << "Counting geometries ... " << std::endl;
-        long int total = queryraw->getWaysCount(*table_it);
+        long int total = queryraw->getCount(*table_it);
         long int count = 0;
         int num_chunks = total / page_size;
 
@@ -139,7 +141,7 @@ Bootstrap::processWays() {
                 };
                 std::cout << "\r" << "Processing " << *table_it << ": " << count << "/" << total << " (" << percentage << "%)";
                 
-                boost::asio::post(pool, boost::bind(&Bootstrap::threadBootstrapTask, this, wayTask));
+                boost::asio::post(pool, boost::bind(&Bootstrap::threadBootstrapWayTask, this, wayTask));
             }
 
             pool.join();
@@ -155,12 +157,61 @@ Bootstrap::processWays() {
 
 }
 
+void 
+Bootstrap::processNodes() {
+    
+    std::cout << std::endl << "Counting nodes ... " << std::endl;
+    long int total = queryraw->getCount("nodes");
+    long int count = 0;
+    int num_chunks = total / page_size;
+
+    std::cout << "Total: " << total << std::endl;
+    std::cout << "Threads: " << concurrency << std::endl;
+    std::cout << "Page size: " << page_size << std::endl;
+    long lastid = 0;
+
+    int concurrentTasks = concurrency;
+    int taskIndex = 0;
+
+    for (int chunkIndex = 1; chunkIndex <= (num_chunks/concurrentTasks); chunkIndex++) {
+
+        int percentage = (count * 100) / total;
+
+        auto nodes = std::make_shared<std::vector<OsmNode>>();
+        nodes = queryraw->getNodesFromDB(lastid, concurrency * page_size);
+
+        auto tasks = std::make_shared<std::vector<BootstrapTask>>(concurrentTasks);
+        boost::asio::thread_pool pool(concurrentTasks);
+        for (int taskIndex = 0; taskIndex < concurrentTasks; taskIndex++) {
+            auto taskNodes = std::make_shared<std::vector<OsmNode>>();
+            NodeTask nodeTask {
+                taskIndex,
+                std::ref(tasks),
+                std::ref(nodes),
+            };
+            std::cout << "\r" << "Processing nodes: " << count << "/" << total << " (" << percentage << "%)";
+            
+            boost::asio::post(pool, boost::bind(&Bootstrap::threadBootstrapNodeTask, this, nodeTask));
+        }
+
+        pool.join();
+
+        db->query(allTasksQueries(tasks));
+        lastid = nodes->back().id;
+        for (auto it = tasks->begin(); it != tasks->end(); ++it) {
+            count += it->processed;
+        }
+    }
+    std::cout << std::endl;
+
+}
+
 // This thread get started for every page of way
 void
-Bootstrap::threadBootstrapTask(WayTask wayTask)
+Bootstrap::threadBootstrapWayTask(WayTask wayTask)
 {
 #ifdef TIMING_DEBUG
-    boost::timer::auto_cpu_timer timer("bootstrap::threadBootstrapTask(wayTask): took %w seconds\n");
+    boost::timer::auto_cpu_timer timer("bootstrap::threadBootstrapWayTask(wayTask): took %w seconds\n");
 #endif
     auto taskIndex = wayTask.taskIndex;
     auto tasks = wayTask.tasks;
@@ -186,6 +237,42 @@ Bootstrap::threadBootstrapTask(WayTask wayTask)
         }
     }
     queryvalidate->ways(wayval, task.query);
+    task.processed = processed;
+    const std::lock_guard<std::mutex> lock(tasks_change_mutex);
+    (*tasks)[taskIndex] = task;
+
+}
+
+// This thread get started for every page of node
+void
+Bootstrap::threadBootstrapNodeTask(NodeTask nodeTask)
+{
+#ifdef TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("bootstrap::threadBootstrapNodeTask(nodeTask): took %w seconds\n");
+#endif
+    auto taskIndex = nodeTask.taskIndex;
+    auto tasks = nodeTask.tasks;
+    auto nodes = nodeTask.nodes;
+
+    BootstrapTask task;
+    int processed = 0;
+
+    auto nodeval = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
+
+    // Proccesing nodes
+    std::vector<std::string> node_tests = {"building", "natural", "place", "waterway"};
+    for (int i = 0; i < page_size; ++i) {
+        if (i * taskIndex < nodes->size()) {
+            auto node = nodes->at(i * (taskIndex + 1));
+            for (auto test_it = std::begin(node_tests); test_it != std::end(node_tests); ++test_it) {
+                if (node.containsKey(*test_it)) {
+                    nodeval->push_back(validator->checkNode(node, *test_it));
+                }
+            }
+            ++processed;
+        }
+    }
+    queryvalidate->nodes(nodeval, task.query);
     task.processed = processed;
     const std::lock_guard<std::mutex> lock(tasks_change_mutex);
     (*tasks)[taskIndex] = task;

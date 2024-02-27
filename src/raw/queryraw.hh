@@ -76,12 +76,14 @@ class QueryRaw {
     // DB connection
     std::shared_ptr<Pq> dbconn;
     // Get ways count
-    int getWaysCount(const std::string &tableName);
+    int getCount(const std::string &tableName);
     // Build tags query
     std::string buildTagsQuery(std::map<std::string, std::string> tags) const;
     // Get ways by page
     std::shared_ptr<std::vector<OsmWay>> getWaysFromDB(long lastid, int pageSize, const std::string &tableName);
     std::shared_ptr<std::vector<OsmWay>> getWaysFromDBWithoutRefs(long lastid, int pageSize, const std::string &tableName);
+    // Get nodes by page
+    std::shared_ptr<std::vector<OsmNode>> getNodesFromDB(long lastid, int pageSize);
 
 };
 
