@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS public.relations (
     changeset int8,
     geom public.geometry(Geometry,4326),
     tags JSONB,
-    members int8[],
+    refs int8[],
     timestamp timestamp with time zone,
     version int,
     "user" text,
@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS public.way_refs (
     node_id int8
 );
 
-CREATE TABLE IF NOT EXISTS public.rel_members (
+CREATE TABLE IF NOT EXISTS public.rel_refs (
     rel_id int8,
     way_id int8
 );

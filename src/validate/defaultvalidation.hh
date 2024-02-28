@@ -55,6 +55,10 @@ public:
     /// is a building
     std::shared_ptr<ValidateStatus> checkWay(const osmobjects::OsmWay &way, const std::string &type);
 
+
+    /// This checks a relation. A relation should always have some tags.
+    std::shared_ptr<ValidateStatus> checkRelation(const osmobjects::OsmRelation &relation, const std::string &type);
+
     // Factory method
     static std::shared_ptr<DefaultValidation> create(void) {
         return std::make_shared<DefaultValidation>();

@@ -77,6 +77,27 @@ DefaultValidation::checkWay(const osmobjects::OsmWay &way, const std::string &ty
     return status;
 }
 
+// This checks a relation. A relation should always have some tags.
+std::shared_ptr<ValidateStatus>
+DefaultValidation::checkRelation(const osmobjects::OsmRelation &relation, const std::string &type)
+{
+    auto status = std::make_shared<ValidateStatus>(relation);
+    status->timestamp = boost::posix_time::microsec_clock::universal_time();
+    status->uid = relation.uid;
+    if (yamls.size() == 0) {
+        log_error("No config files!");
+        return status;
+    }
+    yaml::Yaml tests = yamls[type];
+    semantic::Semantic::checkRelation(relation, type, tests, status);
+    // geospatial::Geospatial::checkRelation(relation, type, tests, status);
+    // if (relation.linestring.size() > 2) {
+    //     boost::geometry::centroid(way.linestring, status->center);
+    // }
+    status->source = type;
+    return status;
+}
+
 }; // namespace defaultvalidation
 
 #endif // EOF __DEFAULTVALIDATION_H__

@@ -93,7 +93,7 @@ Bootstrap::start(const underpassconfig::UnderpassConfig &config) {
 
     processWays();
     processNodes();
-    // processRels();
+    processRelations();
 
 }
 
@@ -106,22 +106,20 @@ Bootstrap::processWays() {
     };
     
     for (auto table_it = tables.begin(); table_it != tables.end(); ++table_it) {
-        std::cout << std::endl << "Counting geometries ... " << std::endl;
+        std::cout << std::endl << "Processing ways ... ";
         long int total = queryraw->getCount(*table_it);
         long int count = 0;
         int num_chunks = total / page_size;
 
-        std::cout << "Total: " << total << std::endl;
-        std::cout << "Threads: " << concurrency << std::endl;
-        std::cout << "Page size: " << page_size << std::endl;
         long lastid = 0;
 
         int concurrentTasks = concurrency;
         int taskIndex = 0;
+        int percentage = 0;
 
-        for (int chunkIndex = 1; chunkIndex <= (num_chunks/concurrentTasks); chunkIndex++) {
+        for (int chunkIndex = 0; chunkIndex <= (num_chunks/concurrentTasks); chunkIndex++) {
 
-            int percentage = (count * 100) / total;
+            percentage = (count * 100) / total;
 
             auto ways = std::make_shared<std::vector<OsmWay>>();
             if (!norefs) {
@@ -152,6 +150,8 @@ Bootstrap::processWays() {
                 count += it->processed;
             }
         }
+        percentage = (count * 100) / total;
+        std::cout << "\r" << "Processing " << *table_it << ": " << count << "/" << total << " (" << percentage << "%)";
     }
     std::cout << std::endl;
 
@@ -160,22 +160,20 @@ Bootstrap::processWays() {
 void 
 Bootstrap::processNodes() {
     
-    std::cout << std::endl << "Counting nodes ... " << std::endl;
+    std::cout << "Processing nodes ... ";
     long int total = queryraw->getCount("nodes");
     long int count = 0;
     int num_chunks = total / page_size;
 
-    std::cout << "Total: " << total << std::endl;
-    std::cout << "Threads: " << concurrency << std::endl;
-    std::cout << "Page size: " << page_size << std::endl;
     long lastid = 0;
 
     int concurrentTasks = concurrency;
     int taskIndex = 0;
+    int percentage = 0;
 
-    for (int chunkIndex = 1; chunkIndex <= (num_chunks/concurrentTasks); chunkIndex++) {
+    for (int chunkIndex = 0; chunkIndex <= (num_chunks/concurrentTasks); chunkIndex++) {
 
-        int percentage = (count * 100) / total;
+        percentage = (count * 100) / total;
 
         auto nodes = std::make_shared<std::vector<OsmNode>>();
         nodes = queryraw->getNodesFromDB(lastid, concurrency * page_size);
@@ -190,7 +188,6 @@ Bootstrap::processNodes() {
                 std::ref(nodes),
             };
             std::cout << "\r" << "Processing nodes: " << count << "/" << total << " (" << percentage << "%)";
-            
             boost::asio::post(pool, boost::bind(&Bootstrap::threadBootstrapNodeTask, this, nodeTask));
         }
 
@@ -202,6 +199,57 @@ Bootstrap::processNodes() {
             count += it->processed;
         }
     }
+    percentage = (count * 100) / total;
+    std::cout << "\r" << "Processing nodes: " << count << "/" << total << " (" << percentage << "%)";
+    std::cout << std::endl;
+
+}
+
+void 
+Bootstrap::processRelations() {
+    
+    std::cout << "Processing relations ... ";
+    long int total = queryraw->getCount("relations");
+    long int count = 0;
+    int num_chunks = total / page_size;
+
+    long lastid = 0;
+
+    int concurrentTasks = concurrency;
+    int taskIndex = 0;
+    int percentage = 0;
+
+    for (int chunkIndex = 0; chunkIndex <= (num_chunks/concurrentTasks); chunkIndex++) {
+
+        percentage = (count * 100) / total;
+
+        auto relations = std::make_shared<std::vector<OsmRelation>>();
+        relations = queryraw->getRelationsFromDB(lastid, concurrency * page_size);
+
+        auto tasks = std::make_shared<std::vector<BootstrapTask>>(concurrentTasks);
+        boost::asio::thread_pool pool(concurrentTasks);
+        for (int taskIndex = 0; taskIndex < concurrentTasks; taskIndex++) {
+            auto taskRelations = std::make_shared<std::vector<OsmRelation>>();
+            RelationTask relationTask {
+                taskIndex,
+                std::ref(tasks),
+                std::ref(relations),
+            };
+            std::cout << "\r" << "Processing relations: " << count << "/" << total << " (" << percentage << "%)";
+            boost::asio::post(pool, boost::bind(&Bootstrap::threadBootstrapRelationTask, this, relationTask));
+        }
+
+        pool.join();
+
+        db->query(allTasksQueries(tasks));
+        lastid = relations->back().id;
+        for (auto it = tasks->begin(); it != tasks->end(); ++it) {
+            count += it->processed;
+        }
+    }
+    percentage = (count * 100) / total;
+    std::cout << "\r" << "Processing relations: " << count << "/" << total << " (" << percentage << "%)";
+
     std::cout << std::endl;
 
 }
@@ -223,9 +271,9 @@ Bootstrap::threadBootstrapWayTask(WayTask wayTask)
     auto wayval = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
 
     // Proccesing ways
-    for (int i = 0; i < page_size; ++i) {
-        if (i * taskIndex < ways->size()) {
-            auto way = ways->at(i * (taskIndex + 1));
+    for (int i = taskIndex * page_size; i < (taskIndex + 1) * page_size; ++i) {
+        if (i < ways->size()) {
+            auto way = ways->at(i);
             wayval->push_back(validator->checkWay(way, "building"));
             // Fill the way_refs table
             if (!norefs) {
@@ -261,9 +309,9 @@ Bootstrap::threadBootstrapNodeTask(NodeTask nodeTask)
 
     // Proccesing nodes
     std::vector<std::string> node_tests = {"building", "natural", "place", "waterway"};
-    for (int i = 0; i < page_size; ++i) {
-        if (i * taskIndex < nodes->size()) {
-            auto node = nodes->at(i * (taskIndex + 1));
+    for (int i = taskIndex * page_size; i < (taskIndex + 1) * page_size; ++i) {
+        if (i < nodes->size()) {
+            auto node = nodes->at(i);
             for (auto test_it = std::begin(node_tests); test_it != std::end(node_tests); ++test_it) {
                 if (node.containsKey(*test_it)) {
                     nodeval->push_back(validator->checkNode(node, *test_it));
@@ -273,6 +321,41 @@ Bootstrap::threadBootstrapNodeTask(NodeTask nodeTask)
         }
     }
     queryvalidate->nodes(nodeval, task.query);
+    task.processed = processed;
+    const std::lock_guard<std::mutex> lock(tasks_change_mutex);
+    (*tasks)[taskIndex] = task;
+
+}
+
+// This thread get started for every page of relation
+void
+Bootstrap::threadBootstrapRelationTask(RelationTask relationTask)
+{
+#ifdef TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("bootstrap::threadBootstrapRelationTask(relationTask): took %w seconds\n");
+#endif
+    auto taskIndex = relationTask.taskIndex;
+    auto tasks = relationTask.tasks;
+    auto relations = relationTask.relations;
+
+    BootstrapTask task;
+    int processed = 0;
+
+    auto relationval = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
+
+    // Proccesing relations
+    for (int i = taskIndex * page_size; i < (taskIndex + 1) * page_size; ++i) {
+        if (i < relations->size()) {
+            auto relation = relations->at(i);
+            // relationval->push_back(validator->checkRelation(way, "building"));
+            // Fill the rel_members table
+            // for (auto ref = relation.refs.begin(); ref != relation.refs.end(); ++ref) {
+            //     task.query += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(rel.id) + "," + std::to_string(*ref) + "); ";
+            // }
+            ++processed;
+        }
+    }
+    // queryvalidate->relations(relval, task.query);
     task.processed = processed;
     const std::lock_guard<std::mutex> lock(tasks_change_mutex);
     (*tasks)[taskIndex] = task;

@@ -377,20 +377,42 @@ QueryRaw::getNodeCacheFromWays(std::shared_ptr<std::vector<OsmWay>> ways, std::m
     }
 }
 
-std::map<std::string, std::string> parseTagsString(std::string input) {
-    std::map<std::string, std::string> tags;
+std::map<std::string, std::string> parseJSONObjectStr(std::string input) {
+    std::map<std::string, std::string> obj;
     boost::property_tree::ptree pt;
     try {
         std::istringstream jsonStream(input);
         boost::property_tree::read_json(jsonStream, pt);
     } catch (const boost::property_tree::json_parser::json_parser_error& e) {
         std::cerr << "Error parsing JSON: " << e.what() << std::endl;
-        return tags;
+        return obj;
     }
     for (const auto& pair : pt) {
-        tags[pair.first] = pair.second.get_value<std::string>();
+        obj[pair.first] = pair.second.get_value<std::string>();
     }
-    return tags;
+    return obj;
+}
+
+std::vector<std::map<std::string, std::string>> parseJSONArrayStr(std::string input) {
+    std::vector<std::map<std::string, std::string>> arr;
+    boost::property_tree::ptree pt;
+    try {
+        std::istringstream jsonStream(input);
+        boost::property_tree::read_json(jsonStream, pt);
+    } catch (const boost::property_tree::json_parser::json_parser_error& e) {
+        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
+        return arr;
+    }
+
+    for (const auto& item : pt) {
+        std::map<std::string, std::string> obj;
+        for (const auto& pair : item.second) {
+            obj[pair.first] = pair.second.get_value<std::string>();
+        }
+        arr.push_back(obj);
+    }
+
+    return arr;
 }
 
 std::list<std::shared_ptr<OsmWay>>
@@ -417,7 +439,7 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
         way->version = (*way_it)[2].as<long>();
         auto tags = (*way_it)[3];
         if (!tags.is_null()) {
-            auto tags = parseTagsString((*way_it)[3].as<std::string>());
+            auto tags = parseJSONObjectStr((*way_it)[3].as<std::string>());
             for (auto const& [key, val] : tags)
             {
                 way->addTag(key, val);
@@ -441,6 +463,43 @@ int QueryRaw::getCount(const std::string &tableName) {
     auto result = dbconn->query(query);
     return result[0][0].as<int>();
 }
+
+std::shared_ptr<std::vector<OsmNode>>
+QueryRaw::getNodesFromDB(long lastid, int pageSize) {
+    std::string nodesQuery = "SELECT osm_id, ST_AsText(geom, 4326)";
+
+    if (lastid > 0) {
+        nodesQuery += ", version, tags FROM nodes where osm_id < " + std::to_string(lastid) + " order by osm_id desc limit " + std::to_string(pageSize) + ";";
+    } else {
+        nodesQuery += ", version, tags FROM nodes order by osm_id desc limit " + std::to_string(pageSize) + ";";
+    }
+
+    auto nodes_result = dbconn->query(nodesQuery);
+    // Fill vector of OsmNode objects
+    auto nodes = std::make_shared<std::vector<OsmNode>>();
+    for (auto node_it = nodes_result.begin(); node_it != nodes_result.end(); ++node_it) {
+        OsmNode node;
+        node.id = (*node_it)[0].as<long>();
+
+        point_t point;
+        std::string point_str = (*node_it)[1].as<std::string>();
+        boost::geometry::read_wkt(point_str, point);
+        node.setPoint(boost::geometry::get<0>(point), boost::geometry::get<1>(point));
+        node.version = (*node_it)[2].as<long>();
+        auto tags = (*node_it)[3];
+        if (!tags.is_null()) {
+            auto tags = parseJSONObjectStr((*node_it)[3].as<std::string>());
+            for (auto const& [key, val] : tags)
+            {
+                node.addTag(key, val);
+            }
+        }
+        nodes->push_back(node);
+    }
+
+    return nodes;
+}
+
 
 std::shared_ptr<std::vector<OsmWay>>
 QueryRaw::getWaysFromDB(long lastid, int pageSize, const std::string &tableName) {
@@ -475,7 +534,7 @@ QueryRaw::getWaysFromDB(long lastid, int pageSize, const std::string &tableName)
             way.version = (*way_it)[3].as<long>();
             auto tags = (*way_it)[4];
             if (!tags.is_null()) {
-                auto tags = parseTagsString((*way_it)[4].as<std::string>());
+                auto tags = parseJSONObjectStr((*way_it)[4].as<std::string>());
                 for (auto const& [key, val] : tags)
                 {
                     way.addTag(key, val);
@@ -486,42 +545,6 @@ QueryRaw::getWaysFromDB(long lastid, int pageSize, const std::string &tableName)
     }
 
     return ways;
-}
-
-std::shared_ptr<std::vector<OsmNode>>
-QueryRaw::getNodesFromDB(long lastid, int pageSize) {
-    std::string nodesQuery = "SELECT osm_id, ST_AsText(geom, 4326)";
-
-    if (lastid > 0) {
-        nodesQuery += ", version, tags FROM nodes where osm_id < " + std::to_string(lastid) + " order by osm_id desc limit " + std::to_string(pageSize) + ";";
-    } else {
-        nodesQuery += ", version, tags FROM nodes order by osm_id desc limit " + std::to_string(pageSize) + ";";
-    }
-
-    auto nodes_result = dbconn->query(nodesQuery);
-    // Fill vector of OsmNode objects
-    auto nodes = std::make_shared<std::vector<OsmNode>>();
-    for (auto node_it = nodes_result.begin(); node_it != nodes_result.end(); ++node_it) {
-        OsmNode node;
-        node.id = (*node_it)[0].as<long>();
-
-        point_t point;
-        std::string point_str = (*node_it)[1].as<std::string>();
-        boost::geometry::read_wkt(point_str, point);
-        node.setPoint(boost::geometry::get<0>(point), boost::geometry::get<1>(point));
-        node.version = (*node_it)[2].as<long>();
-        auto tags = (*node_it)[3];
-        if (!tags.is_null()) {
-            auto tags = parseTagsString((*node_it)[3].as<std::string>());
-            for (auto const& [key, val] : tags)
-            {
-                node.addTag(key, val);
-            }
-        }
-        nodes->push_back(node);
-    }
-
-    return nodes;
 }
 
 std::shared_ptr<std::vector<OsmWay>>
@@ -553,7 +576,7 @@ QueryRaw::getWaysFromDBWithoutRefs(long lastid, int pageSize, const std::string 
         }
         auto tags = (*way_it)[2];
         if (!tags.is_null()) {
-            auto tags = parseTagsString((*way_it)[2].as<std::string>());
+            auto tags = parseJSONObjectStr((*way_it)[2].as<std::string>());
             for (auto const& [key, val] : tags)
             {
                 way.addTag(key, val);
@@ -565,6 +588,54 @@ QueryRaw::getWaysFromDBWithoutRefs(long lastid, int pageSize, const std::string 
 
     return ways;
 }
+
+std::shared_ptr<std::vector<OsmRelation>>
+QueryRaw::getRelationsFromDB(long lastid, int pageSize) {
+    std::string relationsQuery = "SELECT osm_id, refs, ST_AsText(geom, 4326)";
+    if (lastid > 0) {
+        relationsQuery += ", version, tags FROM relations where osm_id < " + std::to_string(lastid) + " order by osm_id desc limit " + std::to_string(pageSize) + ";";
+    } else {
+        relationsQuery += ", version, tags FROM relations order by osm_id desc limit " + std::to_string(pageSize) + ";";
+    }
+
+    auto relations_result = dbconn->query(relationsQuery);
+    // Fill vector of OsmRelation objects
+    auto relations = std::make_shared<std::vector<OsmRelation>>();
+    for (auto rel_it = relations_result.begin(); rel_it != relations_result.end(); ++rel_it) {
+        OsmRelation relation;
+        relation.id = (*rel_it)[0].as<long>();
+        auto refs = (*rel_it)[1];
+        if (!refs.is_null()) {
+            auto refs = parseJSONArrayStr((*rel_it)[1].as<std::string>());
+            for (auto ref_it = refs.begin(); ref_it != refs.end(); ++ref_it) {
+                if (ref_it->at("type") == "w" && (ref_it->at("role") == "inner" || ref_it->at("role") == "outer")) {
+                    relation.addMember(
+                        std::stoi(ref_it->at("ref")),
+                        osmobjects::osmtype_t::way,
+                        ref_it->at("role")
+                    );
+                }
+            }
+            std::string geometry = (*rel_it)[2].as<std::string>();
+            if (geometry.substr(0, 12) == "MULTIPOLYGON") {
+                boost::geometry::read_wkt(geometry, relation.multipolygon);
+            }
+            relation.version = (*rel_it)[3].as<long>();
+        }
+        auto tags = (*rel_it)[4];
+        if (!tags.is_null()) {
+            auto tags = parseJSONObjectStr((*rel_it)[4].as<std::string>());
+            for (auto const& [key, val] : tags)
+            {
+                relation.addTag(key, val);
+            }
+        }
+        relations->push_back(relation);
+    }
+
+    return relations;
+}
+
 
 } // namespace queryraw
 

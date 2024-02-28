@@ -118,6 +118,14 @@ class ValidateStatus {
         version = way.version;
         timestamp = way.timestamp;
     }
+    ValidateStatus(const osmobjects::OsmRelation &relation) {
+        osm_id = relation.id;
+        uid = relation.uid;
+        changeset = relation.changeset;
+        objtype = osmobjects::relation;
+        version = relation.version;
+        timestamp = relation.timestamp;
+    }
     /// Does this change have a particular status value
     bool hasStatus(const valerror_t &val) const {
         auto match = std::find(status.begin(), status.end(), val);
