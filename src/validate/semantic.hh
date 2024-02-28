@@ -57,6 +57,7 @@ public:
     ~Semantic(void) {  };
     static std::shared_ptr<ValidateStatus> checkNode(const osmobjects::OsmNode &node, const std::string &type, yaml::Yaml &tests, std::shared_ptr<ValidateStatus> &status);
     static std::shared_ptr<ValidateStatus> checkWay(const osmobjects::OsmWay &way, const std::string &type, yaml::Yaml &tests, std::shared_ptr<ValidateStatus> &status);
+    static std::shared_ptr<ValidateStatus> checkRelation(const osmobjects::OsmRelation &relation, const std::string &type, yaml::Yaml &tests, std::shared_ptr<ValidateStatus> &status);
 private:
     static bool isValidTag(const std::string &key, const std::string &value, yaml::Node tags);
     static bool isRequiredTag(const std::string &key, yaml::Node required_tags);

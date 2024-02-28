@@ -110,6 +110,9 @@ struct UnderpassConfig {
             if (yaml.contains_key("underpass_db_url")) {
                 underpass_db_url = yamlConfig.get_value("underpass_db_url");
             }
+            if (yaml.contains_key("bootstrap_page_size")) {
+                bootstrap_page_size = std::stoul(yamlConfig.get_value("bootstrap_page_size"));
+            }
             if (yaml.contains_key("planet_servers")) {
                 std::vector<std::string> planet_servers_config = yamlConfig.get_values("planet_servers");
                 for (auto it = planet_servers_config.begin(); it != planet_servers_config.end(); ++it) {
@@ -155,6 +158,7 @@ struct UnderpassConfig {
     std::string datadir;
     std::vector<PlanetServer> planet_servers;
     unsigned int concurrency = 1;
+    unsigned int bootstrap_page_size = 100;
 
     frequency_t frequency = frequency_t::minutely;
     ptime start_time = not_a_date_time;              ///< Starting time for changesets and OSM changes import

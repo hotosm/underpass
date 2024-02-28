@@ -94,9 +94,26 @@ CREATE TABLE IF NOT EXISTS public.nodes (
     uid int8
 );
 
+CREATE TABLE IF NOT EXISTS public.relations (
+    osm_id int8,
+    changeset int8,
+    geom public.geometry(Geometry,4326),
+    tags JSONB,
+    refs int8[],
+    timestamp timestamp with time zone,
+    version int,
+    "user" text,
+    uid int8
+);
+
 CREATE TABLE IF NOT EXISTS public.way_refs (
     way_id int8,
     node_id int8
+);
+
+CREATE TABLE IF NOT EXISTS public.rel_refs (
+    rel_id int8,
+    way_id int8
 );
 
 CREATE UNIQUE INDEX nodes_id_idx ON public.nodes (osm_id DESC);

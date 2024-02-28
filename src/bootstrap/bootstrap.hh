@@ -21,6 +21,7 @@
 #include "raw/queryraw.hh"
 #include "underpassconfig.hh"
 #include "validate/validate.hh"
+#include <mutex>
 
 using namespace queryvalidate;
 using namespace queryraw;
@@ -37,18 +38,50 @@ struct BootstrapTask {
 };
 
 struct WayTask {
-    std::shared_ptr<Validate> plugin;
-    std::shared_ptr<QueryValidate> queryvalidate;
-    underpassconfig::UnderpassConfig config;
     int taskIndex;
     std::shared_ptr<std::vector<BootstrapTask>> tasks;
     std::shared_ptr<std::vector<OsmWay>> ways;
 };
 
-void startProcessingWays(const underpassconfig::UnderpassConfig &config);
+struct NodeTask {
+    int taskIndex;
+    std::shared_ptr<std::vector<BootstrapTask>> tasks;
+    std::shared_ptr<std::vector<OsmNode>> nodes;
+};
 
-// This thread get started for every page of way
-void threadBootstrapTask(WayTask wayTask);
+struct RelationTask {
+    int taskIndex;
+    std::shared_ptr<std::vector<BootstrapTask>> tasks;
+    std::shared_ptr<std::vector<OsmRelation>> relations;
+};
+
+class Bootstrap {
+  public:
+    Bootstrap(void);
+    ~Bootstrap(void){};
+
+    static const std::string polyTable;
+    static const std::string lineTable;
+    
+    void start(const underpassconfig::UnderpassConfig &config);
+    void processWays();
+    void processNodes();
+    void processRelations();
+
+    // This thread get started for every page of way
+    void threadBootstrapWayTask(WayTask wayTask);
+    void threadBootstrapNodeTask(NodeTask nodeTask);
+    void threadBootstrapRelationTask(RelationTask relationTask);
+    std::string allTasksQueries(std::shared_ptr<std::vector<BootstrapTask>> tasks);
+    
+    std::shared_ptr<Validate> validator;
+    std::shared_ptr<QueryValidate> queryvalidate;
+    std::shared_ptr<QueryRaw> queryraw;
+    std::shared_ptr<Pq> db;
+    bool norefs;
+    unsigned int concurrency;
+    unsigned int page_size;
+};
 
 static std::mutex tasks_change_mutex;
 

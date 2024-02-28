@@ -42,6 +42,7 @@ typedef boost::geometry::model::d2::point_xy<double> point_t;
 typedef boost::geometry::model::polygon<point_t> polygon_t;
 typedef boost::geometry::model::multi_polygon<polygon_t> multipolygon_t;
 typedef boost::geometry::model::linestring<point_t> linestring_t;
+typedef boost::geometry::model::multi_linestring<linestring_t> multilinestring_t;
 typedef boost::geometry::model::segment<point_t> segment_t;
 typedef boost::geometry::model::point<double, 2, boost::geometry::cs::spherical_equatorial<boost::geometry::degree>> sphere_t;
 
@@ -174,9 +175,6 @@ class OsmWay : public OsmObject {
     /// Return the number of nodes in this way
     int numPoints(void) { return boost::geometry::num_points(linestring); };
 
-    /// Add a point to the way's geometric data storage
-    // void makeLinestring(point_t point);
-
     /// Calculate the length of the linestring in Kilometers
     double getLength(void)
     {
@@ -219,6 +217,10 @@ struct OsmRelationMember {
 class OsmRelation : public OsmObject {
   public:
     OsmRelation(void) { type = relation; };
+
+    multilinestring_t multilinestring; ///< Store the members as a linestring
+    multipolygon_t multipolygon; ///< Store the members as a multipolygon
+    point_t center;          ///< Store the centroid of the relation
 
     /// Add a member to this relation
     void addMember(long ref, osmtype_t _type, const std::string role) { members.push_back({ref, _type, role}); };

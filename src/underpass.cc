@@ -329,8 +329,9 @@ main(int argc, char *argv[])
     
     if (vm.count("bootstrap")){
         std::thread bootstrapThread;
-        std::cout << "Starting bootstrapping proccess ..." << std::endl;
-        bootstrapThread = std::thread(bootstrap::startProcessingWays, std::ref(config));
+        std::cout << "Starting bootstrapping process ..." << std::endl;
+        auto boostrapper = bootstrap::Bootstrap();
+        bootstrapThread = std::thread(&bootstrap::Bootstrap::start, &boostrapper, std::ref(config));
         log_info("Waiting...");
         if (bootstrapThread.joinable()) {
             bootstrapThread.join();
