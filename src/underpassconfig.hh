@@ -168,6 +168,7 @@ struct UnderpassConfig {
     bool disable_stats = false;
     bool disable_raw = false;
     bool norefs = false;
+    bool silent = false;
 
     ///
     /// \brief getPlanetServer returns either the command line supplied planet server

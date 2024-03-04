@@ -32,19 +32,19 @@
 #include <iostream>
 #include <list>
 #include <memory>
-#include <pqxx/pqxx>
+// #include <pqxx/pqxx>
 #include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "boost/date_time/posix_time/posix_time.hpp"
-#include <boost/date_time.hpp>
-using namespace boost::posix_time;
-using namespace boost::gregorian;
+// #include "boost/date_time/posix_time/posix_time.hpp"
+// #include <boost/date_time.hpp>
+// using namespace boost::posix_time;
+// using namespace boost::gregorian;
 
 #include "utils/geoutil.hh"
-#include "osm/changeset.hh"
+// #include "osm/changeset.hh"
 #include <ogr_geometry.h>
 #include <ogrsf_frmts.h>
 

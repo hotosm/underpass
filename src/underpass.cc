@@ -124,7 +124,8 @@ main(int argc, char *argv[])
             ("disable-validation", "Disable validation")
             ("disable-raw", "Disable raw OSM data")
             ("norefs", "Disable refs (useful for non OSM data)")
-            ("bootstrap", "Bootstrap data tables");
+            ("bootstrap", "Bootstrap data tables")
+            ("silent", "Silent");
         // clang-format on
 
         opts::store(opts::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
@@ -135,6 +136,7 @@ main(int argc, char *argv[])
         return 1;
     }
 
+    // Data processing
     if (vm.count("norefs")) {
         config.norefs = true;
     }
@@ -158,6 +160,10 @@ main(int argc, char *argv[])
 
     if (vm.count("destdir_base")) {
         config.destdir_base = vm["destdir_base"].as<std::string>();
+    }
+
+    if (vm.count("silent")) {
+        config.silent = true;
     }
 
     // Concurrency
@@ -307,6 +313,9 @@ main(int argc, char *argv[])
             std::vector<std::string> parts;
             boost::split(parts, vm["changeseturl"].as<std::string>(), boost::is_any_of("/"));
             changeset->updatePath(stoi(parts[0]),stoi(parts[1]),stoi(parts[2]));
+            if (!config.silent) {
+                changeset->dump();
+            }
         }
         if (!vm.count("osmchanges")) {
             multipolygon_t * oscboundary = &poly;

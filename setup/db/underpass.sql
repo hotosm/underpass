@@ -111,11 +111,6 @@ CREATE TABLE IF NOT EXISTS public.way_refs (
     node_id int8
 );
 
-CREATE TABLE IF NOT EXISTS public.rel_refs (
-    rel_id int8,
-    way_id int8
-);
-
 CREATE UNIQUE INDEX nodes_id_idx ON public.nodes (osm_id DESC);
 CREATE UNIQUE INDEX ways_poly_id_idx ON public.ways_poly (osm_id DESC);
 CREATE UNIQUE INDEX ways_line_id_idx ON public.ways_line(osm_id DESC);

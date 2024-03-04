@@ -37,12 +37,12 @@
 #include <array>
 #include <memory>
 #include <iostream>
-#include <pqxx/pqxx>
+// #include <pqxx/pqxx>
 
-#include <boost/date_time.hpp>
-#include "boost/date_time/posix_time/posix_time.hpp"
-using namespace boost::posix_time;
-using namespace boost::gregorian;
+// #include <boost/date_time.hpp>
+// #include "boost/date_time/posix_time/posix_time.hpp"
+// using namespace boost::posix_time;
+// using namespace boost::gregorian;
 #include <ogrsf_frmts.h>
 #include <ogr_geometry.h>
 

@@ -673,7 +673,6 @@ RemoteURL::updatePath(int _major, int _minor, int _index)
     filespec = parts[0] + "/" + parts[1] + "/" + newpath + suffix;
     destdir = parts[0] + "/" + parts[1] + "/" + majorfmt.str() + "/" + minorfmt.str();
     subpath = newpath;
-    dump();
 }
 
 void
