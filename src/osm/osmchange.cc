@@ -137,6 +137,9 @@ OsmChangeFile::buildGeometriesFromNodeCache() {
             for (auto lit = std::begin(way->refs); lit != std::end(way->refs); ++lit) {
                 boost::geometry::append(way->linestring, nodecache[*lit]);
             }
+            if (way->isClosed()) {
+                way->polygon = { {std::begin(way->linestring), std::end(way->linestring)} };
+            }
         }
     }
 }

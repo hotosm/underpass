@@ -403,7 +403,6 @@ Planet::downloadFile(const std::string &url, const std::string &destdir_base)
     return file;
 }
 
-
 RequestedFile
 Planet::readFile(std::string &filespec) {
     log_debug("Reading cached file: %1%", filespec);

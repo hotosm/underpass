@@ -473,7 +473,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
     //   or created ways and also ways affected by modified nodes
     // - Add indirectly modified ways to osmchanges
     // - Build ways geometries using nodecache
-    // - Build relation multipolyon geometries (TODO)
+    // - Build relation multipolyon geometries
     if (!config->disable_raw) {
         queryraw->buildGeometries(osmchanges, poly);
     }

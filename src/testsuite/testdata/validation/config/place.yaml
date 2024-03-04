@@ -1,4 +1,10 @@
 
+config:
+  - badvalue:
+    - yes
+  - incomplete:
+    - yes
+
 required_tags:
   - name
 

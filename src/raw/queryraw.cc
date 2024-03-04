@@ -312,13 +312,12 @@ std::vector<long> arrayStrToVector(std::string &refs_str) {
 }
 
 void
-QueryRaw::getWaysByIds(std::string &relsForWayCacheIds, std::map<long, std::shared_ptr<osmobjects::OsmWay>> waycache) {
+QueryRaw::getWaysByIds(std::string &waysIds, std::map<long, std::shared_ptr<osmobjects::OsmWay>> &waycache) {
 #ifdef TIMING_DEBUG
-    boost::timer::auto_cpu_timer timer("getWaysByIds(relsForWayCacheIds, waycache): took %w seconds\n");
+    boost::timer::auto_cpu_timer timer("getWaysByIds(waysIds, waycache): took %w seconds\n");
 #endif
     // Get all ways that have references to nodes
-    relsForWayCacheIds.erase(relsForWayCacheIds.size() - 1);
-    std::string waysQuery = "SELECT distinct(osm_id), ST_AsText(geom, 4326) from ways_poly wp where osm_id = any(ARRAY[" + relsForWayCacheIds + "])";
+    std::string waysQuery = "SELECT distinct(osm_id), ST_AsText(geom, 4326) from ways_poly wp where osm_id = any(ARRAY[" + waysIds + "])";
     auto ways_result = dbconn->query(waysQuery);
 
     // Fill vector of OsmWay objects
@@ -355,7 +354,7 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
                 if (way->linestring.size() == way->refs.size()) {
                     // Save only ways with a geometry that are inside the priority area
                     // these are mostly created ways
-                    if (boost::geometry::within(way->linestring, poly)) {
+                    if (poly.empty() || boost::geometry::within(way->linestring, poly)) {
                         osmchanges->waycache.insert(std::make_pair(way->id, std::make_shared<osmobjects::OsmWay>(*way)));
                     }
                 }
@@ -369,7 +368,7 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
             OsmNode *node = nit->get();
             if (node->action == osmobjects::modify) {
                 // Get only modified nodes ids inside the priority area
-                if (boost::geometry::within(node->point, poly)) {
+                if (poly.empty() || boost::geometry::within(node->point, poly)) {
                     modifiedNodesIds += std::to_string(node->id) + ",";
                 }
             }
@@ -431,7 +430,7 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
                 }
             }
             // Save way pointer for later use
-            if (boost::geometry::within(way->linestring, poly)) {
+            if (poly.empty() || boost::geometry::within(way->linestring, poly)) {
                 osmchanges->waycache.insert(std::make_pair(way->id, std::make_shared<osmobjects::OsmWay>(*way)));
             }
         }
@@ -467,6 +466,7 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
     }
     // Get all missing ways geometries for relations
     if (relsForWayCacheIds != "") {
+        relsForWayCacheIds.erase(relsForWayCacheIds.size() - 1);
         getWaysByIds(relsForWayCacheIds, osmchanges->waycache);
     }
 

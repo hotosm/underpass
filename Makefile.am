@@ -153,7 +153,6 @@ endif
 install-data-hook:
 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
 	$(MKDIR_P) /etc/underpass
-	cp -rvp $(srcdir)/setup/service/underpass.service /etc/systemd/system/
 	cp -rvp $(srcdir)/config/priority.geojson /etc/underpass/
 	cp -rvp $(srcdir)/config/replicator /etc/underpass/
 	cp -rvp $(srcdir)/config/validate /etc/underpass/
@@ -162,6 +161,7 @@ install-data-hook:
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
 	cp -rvp $(srcdir)/docs/*.md $(DESTDIR)/$(docdir)
 	cp -rvp $(srcdir)/setup/service $(DESTDIR)/$(pkglibdir)
+	cp -rvp $(srcdir)/setup/service/underpass.service /etc/systemd/system/
 
 dist-hook: apidoc
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
