@@ -108,7 +108,7 @@ std::string dumpJSON(ValidateStatus& self) {
 
 BOOST_PYTHON_MODULE(underpass)
 {
-    // 
+    //
     // using namespace defaultvalidation;
     // class_<DefaultValidation, boost::noncopyable>("Validate")
     //     // .def("checkTag", &DefaultValidation::checkTag)

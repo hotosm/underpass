@@ -200,7 +200,6 @@ class BOOST_SYMBOL_VISIBLE Validate {
     }
 
     virtual ~Validate(void){};
-    // Validate(std::vector<std::shared_ptr<osmchange::OsmChange>> &changes) {};
 
     virtual std::shared_ptr<ValidateStatus> checkNode(const osmobjects::OsmNode &node, const std::string &type) = 0;
     virtual std::shared_ptr<ValidateStatus> checkWay(const osmobjects::OsmWay &way, const std::string &type) = 0;

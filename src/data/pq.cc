@@ -177,7 +177,7 @@ Pq::escapedString(const std::string &s)
     return sdb->esc(newstr);
 }
 
-std::string 
+std::string
 Pq::escapedJSON(const std::string &s) {
     std::ostringstream o;
     for (auto c = s.cbegin(); c != s.cend(); c++) {

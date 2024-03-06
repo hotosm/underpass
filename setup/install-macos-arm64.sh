@@ -34,25 +34,15 @@ cd ..
 echo "Setting up build ..."
 ./autogen.sh
 mkdir build && cd build
-../configure CXXFLAGS="-arch arm64 \
-    -I/usr/local/include \
-    -L/opt/homebrew/lib \
-    -I/opt/homebrew/include \
-    -I/opt/homebrew/Cellar/ \
-    -L/usr/local/Cellar/ \
-    -g -O2" CXX="g++"
+../configure CXXFLAGS="-arch arm64 -g -O2" \
+    LDFLAGS="-L/opt/homebrew/lib -L/usr/local/lib" \
+    CPPFLAGS="-I/opt/homebrew/include -I/usr/local/include" \
+    CXX="g++" \
+    --enable-python=no \
+    --with-boost=/opt/local/libexec/boost/1.76/lib
+
 
 echo "Building ..."
 make -j$(nproc) && sudo make install
-echo "Setting up libs ..."
-ln -s /usr/local/lib/libboost_date_time.dylib .libs
-ln -s /usr/local/lib/libboost_system.dylib .libs
-ln -s /usr/local/lib/libboost_filesystem.dylib .libs
-ln -s /usr/local/lib/libboost_log.dylib .libs
-ln -s /usr/local/lib/libboost_program_options.dylib .libs
-ln -s /usr/local/lib/libboost_iostreams.dylib .libs
-ln -s /usr/local/lib/libboost_thread.dylib .libs
-ln -s /usr/local/lib/libboost_serialization.dylib .libs
-ln -s /usr/local/lib/libboost_regex.dylib .libs
 
 echo "Done! now you may want to initialize the database with the bootstrap script"

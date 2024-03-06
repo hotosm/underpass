@@ -181,6 +181,9 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
             if (last_task->status == reqfile_t::success ||
                 (last_task->status == reqfile_t::remoteNotFound && !caughtUpWithNow)) {
                 remote->Increment();
+                if (!config.silent) {
+                    remote->dump();
+                }
             }
             auto new_remote = std::make_shared<replication::RemoteURL>(remote->getURL());
             new_remote->destdir_base = remote->destdir_base;
@@ -219,6 +222,9 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
                     std::stoi(closest.url.substr(4, 3)),
                     std::stoi(closest.url.substr(8, 3))
                 );
+                if (!config.silent) {
+                    remote->dump();
+                }
                 cores = 1;
                 delay = std::chrono::seconds{45};
             }
@@ -309,6 +315,9 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
             if (last_task->status == reqfile_t::success ||
                 (last_task->status == reqfile_t::remoteNotFound && !caughtUpWithNow)) {
                 remote->Increment();
+                if (!config.silent) {
+                    remote->dump();
+                }
             }
             auto new_remote = std::make_shared<replication::RemoteURL>(remote->getURL());
             new_remote->destdir_base = remote->destdir_base;
@@ -353,6 +362,9 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
                     std::stoi(closest.url.substr(4, 3)),
                     std::stoi(closest.url.substr(8, 3))
                 );
+                if (!config.silent) {
+                    remote->dump();
+                }
                 concurrentTasks = 1;
                 delay = std::chrono::seconds{45};
             }
@@ -439,7 +451,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
 
             try {
                 osmchanges->nodecache.clear();
-                osmchanges->readXML(changes_xml);  
+                osmchanges->readXML(changes_xml);
                 if (osmchanges->changes.size() > 0) {
                     task.timestamp = osmchanges->changes.back()->final_entry;
                     log_debug("OsmChange final_entry: %1%", task.timestamp);
@@ -457,10 +469,13 @@ threadOsmChange(OsmChangeTask osmChangeTask)
         }
     }
 
-    // Finish filling node cache with nodes referenced in modified
-    // or created ways and also ways affected by modified nodes
+    // - Fill node cache with nodes referenced in modified
+    //   or created ways and also ways affected by modified nodes
+    // - Add indirectly modified ways to osmchanges
+    // - Build ways geometries using nodecache
+    // - Build relation multipolyon geometries
     if (!config->disable_raw) {
-        queryraw->getNodeCache(osmchanges, poly);
+        queryraw->buildGeometries(osmchanges, poly);
     }
 
     // Filter data by priority polygon
@@ -481,7 +496,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
     auto removed_ways = std::make_shared<std::vector<long>>();
     auto removed_relations = std::make_shared<std::vector<long>>();
     auto validation_removals = std::make_shared<std::vector<long>>();
-    
+
     // Raw data and validation
     if (!config->disable_validation || !config->disable_raw) {
         for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
@@ -526,23 +541,23 @@ threadOsmChange(OsmChangeTask osmChangeTask)
             }
 
             // Relations
-            // for (auto rit = std::begin(change->relations); rit != std::end(change->relations); ++rit) {
-            //     osmobjects::OsmRelation *relation = rit->get();
+            for (auto rit = std::begin(change->relations); rit != std::end(change->relations); ++rit) {
+                osmobjects::OsmRelation *relation = rit->get();
 
-            //     if (relation->action != osmobjects::remove && !relation->priority) {
-            //         continue;
-            //     }
+                if (relation->action != osmobjects::remove && !relation->priority) {
+                    continue;
+                }
 
-            //     // Remove deleted relations from validation table
-            //     if (!config->disable_validation && relation->action == osmobjects::remove) {
-            //         removed_relations->push_back(relation->id);
-            //     }
+                // Remove deleted relations from validation table
+                if (!config->disable_validation && relation->action == osmobjects::remove) {
+                    removed_relations->push_back(relation->id);
+                }
 
-            //     //  Update relations, ignore new ones outside priority area
-            //     if (!config->disable_raw) {
-            //         task.query += queryraw->applyChange(*relation);
-            //     }
-            // }
+                //  Update relations, ignore new ones outside priority area
+                if (!config->disable_raw) {
+                    // task.query += queryraw->applyChange(*relation);
+                }
+            }
 
         }
     }
@@ -565,7 +580,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
         task.query += queryvalidate->updateValidation(validation_removals);
         task.query += queryvalidate->updateValidation(removed_nodes);
         task.query += queryvalidate->updateValidation(removed_ways);
-        // task.query += queryvalidate->updateValidation(removed_relations);
+        task.query += queryvalidate->updateValidation(removed_relations);
 
     }
 

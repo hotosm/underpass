@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version="0.6" generator="Osmosis 0.47.4">
+  <create>
+    <way id='101875' visible='true' version='1'>
+      <nd ref='111766' />
+      <nd ref='111767' />
+      <nd ref='111768' />
+      <nd ref='111769' />
+      <nd ref='111766' />
+    </way>
+ </create>
+</osmChange>

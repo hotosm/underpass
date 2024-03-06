@@ -271,7 +271,7 @@ QueryStats::applyChange(const changesets::ChangeSet &change) const
     }
 
     query += ", bbox=" + bbox.substr(2) + ")'));";
-    
+
     return query;
 
 }

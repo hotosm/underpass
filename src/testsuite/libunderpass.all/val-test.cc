@@ -144,9 +144,9 @@ test_semantic(std::shared_ptr<Validate> &plugin) {
     node.addTag("building", "yes ");
     status = plugin->checkNode(node, "building");
     if (status->hasStatus(badvalue)) {
-        runtest.pass("Validate::checkNode(single quotes) [semantic building]");
+        runtest.pass("Validate::checkNode(extra space) [semantic building]");
     } else {
-        runtest.fail("Validate::checkNode(single quotes) [semantic building]");
+        runtest.fail("Validate::checkNode(extra space) [semantic building]");
         return 1;
     }
 
@@ -166,6 +166,7 @@ test_semantic(std::shared_ptr<Validate> &plugin) {
     // Has valid tags, but it's incomplete
     node_place.addTag("place", "city");
     status = plugin->checkNode(node_place, "place");
+
     if (!status->hasStatus(badvalue) && status->hasStatus(incomplete)) {
         runtest.pass("Validate::checkNode(incomplete but correct tagging) [semantic place]");
     } else {

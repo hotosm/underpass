@@ -56,7 +56,7 @@ Geospatial::checkWay(const osmobjects::OsmWay &way, const std::string &type, yam
     }
 
     auto config = tests.get("config");
-    bool check_badgeom = config.get_value("badgeom") == "yes";    
+    bool check_badgeom = config.get_value("badgeom") == "yes";
     // bool check_overlapping = config.get_value("overlapping") == "yes";
     // bool check_duplicate = config.get_value("duplicate") == "yes";
 
@@ -96,7 +96,7 @@ Geospatial::checkWay(const osmobjects::OsmWay &way, const std::string &type, yam
     return status;
 }
 
-bool 
+bool
 Geospatial::overlaps(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, osmobjects::OsmWay &way) {
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("validate::overlaps: took %w seconds\n");
@@ -116,7 +116,7 @@ Geospatial::overlaps(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allwa
     return false;
 }
 
-bool 
+bool
 Geospatial::duplicate(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allways, osmobjects::OsmWay &way) {
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("validate::duplicate: took %w seconds\n");
@@ -143,7 +143,7 @@ Geospatial::duplicate(const std::list<std::shared_ptr<osmobjects::OsmWay>> &allw
     return false;
 }
 
-bool 
+bool
 Geospatial::unsquared(
     const linestring_t &way,
     double min_angle,

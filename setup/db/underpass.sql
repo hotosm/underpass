@@ -99,12 +99,15 @@ CREATE TABLE IF NOT EXISTS public.relations (
     changeset int8,
     geom public.geometry(Geometry,4326),
     tags JSONB,
-    refs int8[],
+    refs JSONB,
     timestamp timestamp with time zone,
     version int,
     "user" text,
     uid int8
 );
+
+ALTER TABLE ONLY public.relations
+    ADD CONSTRAINT relations_pkey PRIMARY KEY (osm_id);
 
 CREATE TABLE IF NOT EXISTS public.way_refs (
     way_id int8,
@@ -119,8 +122,12 @@ CREATE TABLE IF NOT EXISTS public.rel_refs (
 CREATE UNIQUE INDEX nodes_id_idx ON public.nodes (osm_id DESC);
 CREATE UNIQUE INDEX ways_poly_id_idx ON public.ways_poly (osm_id DESC);
 CREATE UNIQUE INDEX ways_line_id_idx ON public.ways_line(osm_id DESC);
+CREATE UNIQUE INDEX relations_id_idx ON public.relations(osm_id DESC);
 CREATE INDEX way_refs_node_id_idx ON public.way_refs (node_id);
 CREATE INDEX way_refs_way_id_idx ON public.way_refs (way_id);
+
+CREATE INDEX rel_refs_rel_id_idx ON public.rel_refs (rel_id);
+CREATE INDEX rel_refs_way_id_idx ON public.rel_refs (way_id);
 
 CREATE INDEX nodes_version_idx ON public.nodes (version);
 CREATE INDEX ways_poly_version_idx ON public.ways_poly (version);

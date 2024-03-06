@@ -66,13 +66,16 @@ class QueryRaw {
     std::string applyChange(const OsmWay &way) const;
     /// Build query for processed Relation
     std::string applyChange(const OsmRelation &relation) const;
-    /// Get nodes for filling Node cache
-    void getNodeCache(std::shared_ptr<OsmChangeFile> osmchanges, const multipolygon_t &poly);
+    /// Build all geometries for osmchanges
+    void buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const multipolygon_t &poly);
     /// Get nodes for filling Node cache from ways refs
     void getNodeCacheFromWays(std::shared_ptr<std::vector<OsmWay>> ways, std::map<double, point_t> &nodecache) const;
     // Get ways by refs
     std::list<std::shared_ptr<OsmWay>> getWaysByNodesRefs(std::string &nodeIds) const;
-
+    // Get ways by ids (used for getting relations geometries)
+    void getWaysByIds(std::string &relsForWayCacheIds, std::map<long, std::shared_ptr<osmobjects::OsmWay>> &waycache);
+    // Get relations by referenced ways
+    std::list<std::shared_ptr<OsmRelation>> getRelationsByWaysRefs(std::string &wayIds) const;
     // DB connection
     std::shared_ptr<Pq> dbconn;
     // Get ways count

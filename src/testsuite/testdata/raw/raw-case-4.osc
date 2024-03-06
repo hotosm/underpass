@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version="0.6" generator="Osmosis 0.47.4">
+  <create>
+    <node id='111770' visible='true' lat='4.620413435077737,' lon='21.726017072796814' version='1' />
+    <node id='111771' visible='true' lat='4.620413267984446' lon='21.726071387529366' version='1'/>
+    <node id='111772' visible='true' lat='4.620376841648422' lon='21.72607088461518' version='1'/>
+    <node id='111773' visible='true' lat='4.620380350607476' lon='21.726016569882624' version='1'/>
+    <way id='101876' visible='true' version='1'>
+      <nd ref='111770' />
+      <nd ref='111771' />
+      <nd ref='111772' />
+      <nd ref='111773' />
+      <nd ref='111770' />
+    </way>
+  </create>
+ <create>
+    <relation id='211766' visible='true' version='1'>
+       <tag k="type" v="multipolygon"/>
+       <member type="way" ref="101875" role="outer"/>
+       <member type="way" ref="101876" role="inner"/>
+    </relation>
+  </create>
+ </osmChange>
+ 

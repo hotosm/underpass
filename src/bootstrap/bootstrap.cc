@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Humanitarian OpenStreetMap Team
+// Copyright (c) 2023, 2024 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -58,9 +58,9 @@ Bootstrap::allTasksQueries(std::shared_ptr<std::vector<BootstrapTask>> tasks) {
     return queries;
 }
 
-void 
+void
 Bootstrap::start(const underpassconfig::UnderpassConfig &config) {
-    std::cout << "Connecting to the database ..." << std::endl;
+    std::cout << "Connecting to the database ... " << std::endl;
     db = std::make_shared<Pq>();
     if (!db->connect(config.underpass_db_url)) {
         std::cout << "Could not connect to Underpass DB, aborting bootstrapping thread!" << std::endl;
@@ -97,14 +97,14 @@ Bootstrap::start(const underpassconfig::UnderpassConfig &config) {
 
 }
 
-void 
+void
 Bootstrap::processWays() {
 
     std::vector<std::string> tables = {
         QueryRaw::polyTable,
         QueryRaw::lineTable
     };
-    
+
     for (auto table_it = tables.begin(); table_it != tables.end(); ++table_it) {
         std::cout << std::endl << "Processing ways ... ";
         long int total = queryraw->getCount(*table_it);
@@ -138,7 +138,7 @@ Bootstrap::processWays() {
                     std::ref(ways),
                 };
                 std::cout << "\r" << "Processing " << *table_it << ": " << count << "/" << total << " (" << percentage << "%)";
-                
+
                 boost::asio::post(pool, boost::bind(&Bootstrap::threadBootstrapWayTask, this, wayTask));
             }
 
@@ -157,9 +157,9 @@ Bootstrap::processWays() {
 
 }
 
-void 
+void
 Bootstrap::processNodes() {
-    
+
     std::cout << "Processing nodes ... ";
     long int total = queryraw->getCount("nodes");
     long int count = 0;
@@ -205,9 +205,9 @@ Bootstrap::processNodes() {
 
 }
 
-void 
+void
 Bootstrap::processRelations() {
-    
+
     std::cout << "Processing relations ... ";
     long int total = queryraw->getCount("relations");
     long int count = 0;
@@ -348,10 +348,10 @@ Bootstrap::threadBootstrapRelationTask(RelationTask relationTask)
         if (i < relations->size()) {
             auto relation = relations->at(i);
             // relationval->push_back(validator->checkRelation(way, "building"));
-            // Fill the rel_members table
-            // for (auto ref = relation.refs.begin(); ref != relation.refs.end(); ++ref) {
-            //     task.query += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(rel.id) + "," + std::to_string(*ref) + "); ";
-            // }
+            // Fill the rel_refs table
+            for (auto mit = relation.members.begin(); mit != relation.members.end(); ++mit) {
+                task.query += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(mit->ref) + "); ";
+            }
             ++processed;
         }
     }

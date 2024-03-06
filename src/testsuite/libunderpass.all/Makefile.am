@@ -31,6 +31,7 @@ check_PROGRAMS = \
 	stats-test \
 	val-test \
 	val-unsquared-test \
+	raw-test \
 	test-playground
 
 TOPSRC := $(shell cd $(top_srcdir) && pwd)/src
@@ -81,6 +82,11 @@ val_unsquared_test_SOURCES = val-unsquared-test.cc
 val_unsquared_test_LDFLAGS = -L../..
 val_unsquared_test_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
 val_unsquared_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS) ../../validate/defaultvalidation.lo ../../validate/geospatial.lo ../../validate/semantic.lo
+
+raw_test_SOURCES = raw-test.cc
+raw_test_LDFLAGS = -L../..
+raw_test_CPPFLAGS = -DDATADIR=\"$(TOPSRC)\" -I$(TOPSRC)
+raw_test_LDADD = -lpqxx -lunderpass $(BOOST_LIBS)
 
 # Test the replication classes
 #replication_test_SOURCES = replication-test.cc
