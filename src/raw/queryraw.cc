@@ -225,7 +225,7 @@ QueryRaw::applyChange(const OsmWay &way) const
         ss << std::setprecision(12) << boost::geometry::wkt(way.linestring);
     }
     std::string geostring = ss.str();
-    
+
     if (way.refs.size() > 2
         && (way.action == osmobjects::create || way.action == osmobjects::modify)) {
         if ((way.refs.front() != way.refs.back() && way.refs.size() == boost::geometry::num_points(way.linestring)) ||
@@ -306,7 +306,7 @@ QueryRaw::applyChange(const OsmRelation &relation) const
     // TODO: support for both multipolygon & multilinestring
     // ss << std::setprecision(12) << boost::geometry::wkt(relation.multilinestring);
     std::string geostring = ss.str();
-    
+
     if (relation.action == osmobjects::create || relation.action == osmobjects::modify) {
 
         query = "INSERT INTO relations as r (osm_id, tags, refs, geom, timestamp, version, \"user\", uid, changeset) VALUES(";
@@ -568,7 +568,6 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
                 } else {
                     osmchanges->waycache.insert(std::make_pair(way->id, std::make_shared<osmobjects::OsmWay>(*way)));
                 }
-                
             }
         }
     }
@@ -657,8 +656,7 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
                 }
             }
         }
-    }    
-
+    }
 }
 
 void
@@ -838,7 +836,7 @@ QueryRaw::getWaysFromDBWithoutRefs(long lastid, int pageSize, const std::string 
     } else {
         waysQuery += ", tags FROM " + tableName + " order by osm_id desc limit " + std::to_string(pageSize) + ";";
     }
-    
+
     auto ways_result = dbconn->query(waysQuery);
     // Fill vector of OsmWay objects
     auto ways = std::make_shared<std::vector<OsmWay>>();

@@ -451,7 +451,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
 
             try {
                 osmchanges->nodecache.clear();
-                osmchanges->readXML(changes_xml);  
+                osmchanges->readXML(changes_xml);
                 if (osmchanges->changes.size() > 0) {
                     task.timestamp = osmchanges->changes.back()->final_entry;
                     log_debug("OsmChange final_entry: %1%", task.timestamp);
@@ -496,7 +496,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
     auto removed_ways = std::make_shared<std::vector<long>>();
     auto removed_relations = std::make_shared<std::vector<long>>();
     auto validation_removals = std::make_shared<std::vector<long>>();
-    
+
     // Raw data and validation
     if (!config->disable_validation || !config->disable_raw) {
         for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {

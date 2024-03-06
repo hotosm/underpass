@@ -183,7 +183,7 @@ Semantic::checkWay(const osmobjects::OsmWay &way, const std::string &type, yaml:
     yaml::Node required_tags;
     if (check_incomplete) {
         required_tags = tests.get("required_tags");
-    } 
+    }
 
     // List of valid tags to be validated
     yaml::Node tags;
@@ -237,7 +237,7 @@ Semantic::checkRelation(const osmobjects::OsmRelation &relation, const std::stri
     yaml::Node required_tags;
     if (check_incomplete) {
         required_tags = tests.get("required_tags");
-    } 
+    }
 
     // List of valid tags to be validated
     yaml::Node tags;

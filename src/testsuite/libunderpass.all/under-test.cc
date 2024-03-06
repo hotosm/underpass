@@ -46,9 +46,9 @@ int
 main(int argc, char* argv[])
 {
     std::string basedir = DATADIR;
-    
+
     Underpass under("underpass");
-    
+
     if (under.sdb->is_open()) {
         runtest.pass("Underpass::connect");
     } else {

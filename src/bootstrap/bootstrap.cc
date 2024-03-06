@@ -58,7 +58,7 @@ Bootstrap::allTasksQueries(std::shared_ptr<std::vector<BootstrapTask>> tasks) {
     return queries;
 }
 
-void 
+void
 Bootstrap::start(const underpassconfig::UnderpassConfig &config) {
     std::cout << "Connecting to the database ... " << std::endl;
     db = std::make_shared<Pq>();
@@ -97,14 +97,14 @@ Bootstrap::start(const underpassconfig::UnderpassConfig &config) {
 
 }
 
-void 
+void
 Bootstrap::processWays() {
 
     std::vector<std::string> tables = {
         QueryRaw::polyTable,
         QueryRaw::lineTable
     };
-    
+
     for (auto table_it = tables.begin(); table_it != tables.end(); ++table_it) {
         std::cout << std::endl << "Processing ways ... ";
         long int total = queryraw->getCount(*table_it);
@@ -138,7 +138,7 @@ Bootstrap::processWays() {
                     std::ref(ways),
                 };
                 std::cout << "\r" << "Processing " << *table_it << ": " << count << "/" << total << " (" << percentage << "%)";
-                
+
                 boost::asio::post(pool, boost::bind(&Bootstrap::threadBootstrapWayTask, this, wayTask));
             }
 
@@ -157,9 +157,9 @@ Bootstrap::processWays() {
 
 }
 
-void 
+void
 Bootstrap::processNodes() {
-    
+
     std::cout << "Processing nodes ... ";
     long int total = queryraw->getCount("nodes");
     long int count = 0;
@@ -205,9 +205,9 @@ Bootstrap::processNodes() {
 
 }
 
-void 
+void
 Bootstrap::processRelations() {
-    
+
     std::cout << "Processing relations ... ";
     long int total = queryraw->getCount("relations");
     long int count = 0;

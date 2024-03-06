@@ -425,7 +425,7 @@ OsmChange::dump(void)
         }
     }
     std::cerr << "Final timestamp: " << to_simple_string(final_entry) << std::endl;
-    
+
 }
 
 void

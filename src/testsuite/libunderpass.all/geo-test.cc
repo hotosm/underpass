@@ -49,7 +49,7 @@ main(int argc, char* argv[])
     dbglogfile.setWriteDisk(true);
     dbglogfile.setLogFilename("geo-test.log");
     dbglogfile.setVerbosity(3);
-    
+
     TestGU tgu;
 
     std::string test_data_dir(DATADIR);
@@ -59,15 +59,15 @@ main(int argc, char* argv[])
     } else {
         runtest.fail("Read file with bad relative path");
         return 1;
-    }   
+    }
 
     if (tgu.readFile("/etc/underpass/priority.geojson")) {
         runtest.pass("Read file with absolute path");
     } else {
         runtest.fail("Read file with absolute path");
         return 1;
-    }   
-        
+    }
+
 };
 
 // local Variables:

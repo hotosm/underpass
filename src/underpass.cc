@@ -182,7 +182,7 @@ main(int argc, char *argv[])
     } else {
         config.concurrency = std::thread::hardware_concurrency();
     }
-    
+
     if (vm.count("timestamp") || vm.count("url")) {
         // Planet server
         if (vm.count("planet")) {
@@ -335,7 +335,7 @@ main(int argc, char *argv[])
         exit(0);
 
     }
-    
+
     if (vm.count("bootstrap")){
         std::thread bootstrapThread;
         std::cout << "Starting bootstrapping process ..." << std::endl;

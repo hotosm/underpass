@@ -46,7 +46,7 @@ main(int argc, char *argv[])
     std::string filespec = DATADIR;
     filespec += "/testsuite/libunderpass.all/test.yaml";
     yaml.read(filespec);
-    
+
     if (yaml.get("tags").children.size() > 0) {
         runtest.pass("Yaml::get().children");
     } else {

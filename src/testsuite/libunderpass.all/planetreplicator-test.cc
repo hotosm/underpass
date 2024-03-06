@@ -55,7 +55,7 @@ void testPath(underpassconfig::UnderpassConfig config) {
     TestCO change;
     if (boost::filesystem::exists(osmchange->filespec)) {
         change.readChanges(osmchange->filespec);
-    } else { 
+    } else {
         TestPlanet planet;
         auto data = planet.downloadFile(osmchange->getURL()).data;
         auto xml = planet.processData(osmchange->filespec, *data);
@@ -128,7 +128,7 @@ main(int argc, char *argv[]) {
             }
         }
     }
-    
+
 }
 
 // local Variables:

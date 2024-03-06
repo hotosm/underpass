@@ -60,7 +60,7 @@ GeoUtil::readFile(const std::string &filespec)
     if (!std::filesystem::exists(boundary_file)) {
         log_error("File not found: %1%", boundary_file);
         return false;
-    }    
+    }
     log_debug("Opening geo data file: %1%", boundary_file);
     std::string foo = boundary_file.string();
     GDALDataset *poDS = (GDALDataset *)GDALOpenEx(foo.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
