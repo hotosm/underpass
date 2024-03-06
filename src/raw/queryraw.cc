@@ -87,6 +87,72 @@ QueryRaw::buildTagsQuery(std::map<std::string, std::string> tags) const {
 }
 
 std::string
+buildMembersQuery(std::list<OsmRelationMember> members) {
+    if (members.size() > 0) {
+        std::string membersStr = "jsonb_build_array(";
+        int count = 0;
+        for (auto mit = std::begin(members); mit != std::end(members); ++mit) {
+            membersStr += "jsonb_build_object(";
+            std::string member_format = "'%s', '%s',";
+            boost::format member_fmt(member_format);
+            member_fmt % "role";
+            member_fmt % mit->role;
+            membersStr += member_fmt.str();
+            member_fmt % "type";
+            member_fmt % mit->type;
+            membersStr += member_fmt.str();
+            member_fmt % "ref";
+            member_fmt % mit->ref;
+            membersStr += member_fmt.str();
+            membersStr.erase(membersStr.size() - 1);
+            membersStr += "),";
+        }
+        membersStr.erase(membersStr.size() - 1);
+        return membersStr += ")";
+    } else {
+        return "null";
+    }
+}
+
+std::map<std::string, std::string> parseJSONObjectStr(std::string input) {
+    std::map<std::string, std::string> obj;
+    boost::property_tree::ptree pt;
+    try {
+        std::istringstream jsonStream(input);
+        boost::property_tree::read_json(jsonStream, pt);
+    } catch (const boost::property_tree::json_parser::json_parser_error& e) {
+        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
+        return obj;
+    }
+    for (const auto& pair : pt) {
+        obj[pair.first] = pair.second.get_value<std::string>();
+    }
+    return obj;
+}
+
+std::vector<std::map<std::string, std::string>> parseJSONArrayStr(std::string input) {
+    std::vector<std::map<std::string, std::string>> arr;
+    boost::property_tree::ptree pt;
+    try {
+        std::istringstream jsonStream(input);
+        boost::property_tree::read_json(jsonStream, pt);
+    } catch (const boost::property_tree::json_parser::json_parser_error& e) {
+        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
+        return arr;
+    }
+
+    for (const auto& item : pt) {
+        std::map<std::string, std::string> obj;
+        for (const auto& pair : item.second) {
+            obj[pair.first] = pair.second.get_value<std::string>();
+        }
+        arr.push_back(obj);
+    }
+
+    return arr;
+}
+
+std::string
 QueryRaw::applyChange(const OsmNode &node) const
 {
     std::string query;
@@ -251,17 +317,12 @@ QueryRaw::applyChange(const OsmRelation &relation) const
         // osm_id
         fmt % relation.id;
 
-        //tags
+        // tags
         auto tags = buildTagsQuery(relation.tags);
         fmt % tags;
 
         // refs
-        std::string refs = "";
-        for (auto it = std::begin(relation.members); it != std::end(relation.members); ++it) {
-            refs += std::to_string(it->ref) + ",";
-        }
-        refs.erase(refs.size() - 1);
-        refs = "ARRAY[" + refs + "]";
+        auto refs = buildMembersQuery(relation.members);
         fmt % refs;
 
         // geometry
@@ -293,6 +354,11 @@ QueryRaw::applyChange(const OsmRelation &relation) const
         fmt % relation.version;
 
         query += fmt.str();
+
+        for (auto it = std::begin(relation.members); it != std::end(relation.members); ++it) {
+            query += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(it->ref) + ");";
+        }
+
     } else if (relation.action == osmobjects::remove) {
         query += "DELETE FROM relations where osm_id = " + std::to_string(relation.id) + ";";
     }
@@ -309,6 +375,49 @@ std::vector<long> arrayStrToVector(std::string &refs_str) {
         refs.push_back(std::stod(token));
     }
     return refs;
+}
+
+std::list<std::shared_ptr<OsmRelation>>
+QueryRaw::getRelationsByWaysRefs(std::string &wayIds) const
+{
+#ifdef TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("getRelationsByWaysRefs(wayIds): took %w seconds\n");
+#endif
+    // Get all relations that have references to ways
+    std::list<std::shared_ptr<osmobjects::OsmRelation>> rels;
+
+    std::string relsQuery = "SELECT distinct(osm_id), refs, version, tags, uid, changeset from rel_refs join relations r on r.osm_id = rel_id where way_id = any(ARRAY[" + wayIds + "])";
+    auto rels_result = dbconn->query(relsQuery);
+
+    // Fill vector of OsmRelation objects
+    for (auto rel_it = rels_result.begin(); rel_it != rels_result.end(); ++rel_it) {
+        auto rel = std::make_shared<OsmRelation>();
+        rel->id = (*rel_it)[0].as<long>();
+        std::string refs_str = (*rel_it)[1].as<std::string>();
+        auto members = parseJSONArrayStr(refs_str);
+        for (auto mit = members.begin(); mit != members.end(); ++mit) {
+            rel->addMember(std::stol(mit->at("ref")), osmobjects::osmtype_t::way, mit->at("role"));
+        }
+        rel->version = (*rel_it)[2].as<long>();
+        auto tags = (*rel_it)[3];
+        if (!tags.is_null()) {
+            auto tags = parseJSONObjectStr((*rel_it)[3].as<std::string>());
+            for (auto const& [key, val] : tags)
+            {
+                rel->addTag(key, val);
+            }
+        }
+        auto uid = (*rel_it)[4];
+        if (!uid.is_null()) {
+            rel->uid = (*rel_it)[4].as<long>();
+        }
+        auto changeset = (*rel_it)[5];
+        if (!changeset.is_null()) {
+            rel->changeset = (*rel_it)[5].as<long>();
+        }
+        rels.push_back(rel);
+    }
+    return rels;
 }
 
 void
@@ -337,7 +446,9 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
 #endif
     std::string referencedNodeIds;
     std::string modifiedNodesIds;
+    std::string modifiedWaysIds;
     std::vector<long> removedWays;
+    std::vector<long> removedRelations;
 
     for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); it++) {
         OsmChange *change = it->get();
@@ -351,7 +462,7 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
                     }
                 }
                 // Save ways for later use
-                if (way->linestring.size() == way->refs.size()) {
+                if (way->isClosed()) {
                     // Save only ways with a geometry that are inside the priority area
                     // these are mostly created ways
                     if (poly.empty() || boost::geometry::within(way->linestring, poly)) {
@@ -373,6 +484,11 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
                 }
             }
         }
+
+        for (auto rel_it = std::begin(change->relations); rel_it != std::end(change->relations); ++rel_it) {
+            OsmRelation *relation = rel_it->get();
+            removedRelations.push_back(relation->id);
+        }
     }
 
     // Add indirectly modified ways to osmchanges
@@ -392,6 +508,24 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
            if (std::find(removedWays.begin(), removedWays.end(), way->id) == removedWays.end()) {
                 way->action = osmobjects::modify;
                 change->ways.push_back(way);
+                modifiedWaysIds += std::to_string(way->id) + ",";
+           }
+        }
+        osmchanges->changes.push_back(change);
+    }
+
+    // Add indirectly modified relations to osmchanges
+    if (modifiedWaysIds.size() > 1) {
+        modifiedWaysIds.erase(modifiedWaysIds.size() - 1);
+        auto modifiedRelations = getRelationsByWaysRefs(modifiedWaysIds);
+        auto change = std::make_shared<OsmChange>(none);
+        for (auto rel_it = modifiedRelations.begin(); rel_it != modifiedRelations.end(); ++rel_it) {
+           auto relation = std::make_shared<OsmRelation>(*rel_it->get());
+           // If the relation is not marked as removed, mark it as modified
+           if (std::find(removedRelations.begin(), removedRelations.end(), relation->id) == removedRelations.end()) {
+                relation->action = osmobjects::modify;
+                change->relations.push_back(relation);
+
            }
         }
         osmchanges->changes.push_back(change);
@@ -418,20 +552,23 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
         OsmChange *change = it->get();
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
             OsmWay *way = wit->get();
-            if (way->linestring.size() != way->refs.size()) {
-                way->linestring.clear();
-                for (auto rit = way->refs.begin(); rit != way->refs.end(); ++rit) {
-                    if (osmchanges->nodecache.count(*rit)) {
-                        boost::geometry::append(way->linestring, osmchanges->nodecache.at(*rit));
-                    }
+            way->linestring.clear();
+            for (auto rit = way->refs.begin(); rit != way->refs.end(); ++rit) {
+                if (osmchanges->nodecache.count(*rit)) {
+                    boost::geometry::append(way->linestring, osmchanges->nodecache.at(*rit));
                 }
-                if (way->isClosed()) {
-                    way->polygon = { {std::begin(way->linestring), std::end(way->linestring)} };
-                }
+            }
+            if (way->isClosed()) {
+                way->polygon = { {std::begin(way->linestring), std::end(way->linestring)} };
             }
             // Save way pointer for later use
             if (poly.empty() || boost::geometry::within(way->linestring, poly)) {
-                osmchanges->waycache.insert(std::make_pair(way->id, std::make_shared<osmobjects::OsmWay>(*way)));
+                if (osmchanges->waycache.count(way->id)) {
+                    osmchanges->waycache.at(way->id)->polygon = way->polygon;
+                } else {
+                    osmchanges->waycache.insert(std::make_pair(way->id, std::make_shared<osmobjects::OsmWay>(*way)));
+                }
+                
             }
         }
     }
@@ -486,7 +623,8 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
                         break;
                     }
                     auto way = osmchanges->waycache.at(mit->ref);
-                    if (boost::geometry::num_points(way->linestring) == 0 ||
+
+                    if (boost::geometry::num_points(way->linestring) == 0 &&
                         boost::geometry::num_points(way->polygon) == 0
                     ) {
                         noWay = true;
@@ -553,44 +691,6 @@ QueryRaw::getNodeCacheFromWays(std::shared_ptr<std::vector<OsmWay>> ways, std::m
             nodecache.insert(std::make_pair(node_id, point));
         }
     }
-}
-
-std::map<std::string, std::string> parseJSONObjectStr(std::string input) {
-    std::map<std::string, std::string> obj;
-    boost::property_tree::ptree pt;
-    try {
-        std::istringstream jsonStream(input);
-        boost::property_tree::read_json(jsonStream, pt);
-    } catch (const boost::property_tree::json_parser::json_parser_error& e) {
-        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
-        return obj;
-    }
-    for (const auto& pair : pt) {
-        obj[pair.first] = pair.second.get_value<std::string>();
-    }
-    return obj;
-}
-
-std::vector<std::map<std::string, std::string>> parseJSONArrayStr(std::string input) {
-    std::vector<std::map<std::string, std::string>> arr;
-    boost::property_tree::ptree pt;
-    try {
-        std::istringstream jsonStream(input);
-        boost::property_tree::read_json(jsonStream, pt);
-    } catch (const boost::property_tree::json_parser::json_parser_error& e) {
-        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
-        return arr;
-    }
-
-    for (const auto& item : pt) {
-        std::map<std::string, std::string> obj;
-        for (const auto& pair : item.second) {
-            obj[pair.first] = pair.second.get_value<std::string>();
-        }
-        arr.push_back(obj);
-    }
-
-    return arr;
 }
 
 std::list<std::shared_ptr<OsmWay>>

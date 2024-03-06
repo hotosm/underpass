@@ -60,7 +60,7 @@ Bootstrap::allTasksQueries(std::shared_ptr<std::vector<BootstrapTask>> tasks) {
 
 void 
 Bootstrap::start(const underpassconfig::UnderpassConfig &config) {
-    std::cout << "Connecting to the database ..." << std::endl;
+    std::cout << "Connecting to the database ... " << std::endl;
     db = std::make_shared<Pq>();
     if (!db->connect(config.underpass_db_url)) {
         std::cout << "Could not connect to Underpass DB, aborting bootstrapping thread!" << std::endl;
@@ -348,10 +348,10 @@ Bootstrap::threadBootstrapRelationTask(RelationTask relationTask)
         if (i < relations->size()) {
             auto relation = relations->at(i);
             // relationval->push_back(validator->checkRelation(way, "building"));
-            // Fill the rel_members table
-            // for (auto ref = relation.refs.begin(); ref != relation.refs.end(); ++ref) {
-            //     task.query += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(rel.id) + "," + std::to_string(*ref) + "); ";
-            // }
+            // Fill the rel_refs table
+            for (auto mit = relation.members.begin(); mit != relation.members.end(); ++mit) {
+                task.query += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(mit->ref) + "); ";
+            }
             ++processed;
         }
     }

@@ -37,6 +37,9 @@ Add the alias in your `~/.bashrc` file:
 
 ### With LLDB
 
+When running Underpass on a MacOS system with an Arm64 architecture, `gdb` might be not available.
+You can use `lldb` instead.
+
 `lldb -- src/testsuite/libunderpass.all/yaml-test`
 `lldb -- .libs/underpass --bootstrap`
 

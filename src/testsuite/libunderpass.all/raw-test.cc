@@ -108,14 +108,24 @@ bool processFile(const std::string &filename, std::shared_ptr<Pq> &db) {
 const std::map<long, std::string> expectedGeometries = {
     {101874, "POLYGON((21.726001473 4.62042952837,21.726086573 4.62042742837,21.726084973 4.62036492836,21.725999873 4.62036702836,21.726001473 4.62042952837))"},
     {101875, "POLYGON((21.726001473 4.62042952837,21.726086573 4.62042742837,21.726084973 4.62036492836,21.725999873 4.62036702836,21.726001473 4.62042952837))"},
-    {-101875, "POLYGON((21.72600148 4.62042953,21.726086573 4.62042742837,21.726084973 4.62036492836,21.725999873 4.62036702836,21.72600148 4.62042953))"}
+    {101875-2, "POLYGON((21.72600148 4.62042953,21.726086573 4.62042742837,21.726084973 4.62036492836,21.725999873 4.62036702836,21.72600148 4.62042953))"},
+    {211766, "MULTIPOLYGON(((21.72600148 4.62042953,21.726086573 4.62042742837,21.726084973 4.62036492836,21.725999873 4.62036702836,21.72600148 4.62042953),(21.7260170728 4.62041343508,21.7260713875 4.62041326798,21.7260708846 4.62037684165,21.7260165699 4.62038035061,21.7260170728 4.62041343508)))"},
+    {211766-2, "MULTIPOLYGON(((21.72600148 4.62042953,21.726086573 4.62042742837,21.7260807753 4.62037032501,21.725999873 4.62036702836,21.72600148 4.62042953),(21.7260170728 4.62041343508,21.7260713875 4.62041326798,21.7260708846 4.62037684165,21.7260165699 4.62038035061,21.7260170728 4.62041343508)))"}
 };
 
 std::string
-getWKT(polygon_t polygon) {
+getWKT(const polygon_t &polygon) {
     std::stringstream ss;
     ss << std::setprecision(12) << boost::geometry::wkt(polygon);
     return ss.str();
+}
+
+std::string
+getWKTFromDB(const std::string &table, const long id, std::shared_ptr<Pq> &db) {
+    auto result = db->query("SELECT ST_AsText(geom, 4326) from relations where osm_id=" + std::to_string(id));
+    for (auto r_it = result.begin(); r_it != result.end(); ++r_it) {
+        return (*r_it)[0].as<std::string>();
+    }
 }
 
 int
@@ -170,18 +180,31 @@ main(int argc, char *argv[])
         waycache.erase(101875);
         queryraw->getWaysByIds(waysIds, waycache);
 
-        if ( getWKT(waycache.at(101875)->polygon).compare(expectedGeometries.at(-101875)) == 0) {
-            runtest.pass("1 modified node, indirectly modify other existing ways (different changesets)");
+        if ( getWKT(waycache.at(101875)->polygon).compare(expectedGeometries.at(101875-2)) == 0) {
+            runtest.pass("1 modified Node, indirectly modify other existing Ways (different changesets)");
         } else {
-            runtest.fail("1 modified node, indirectly modify other existing ways (different changesets)");
+            runtest.fail("1 modified Node, indirectly modify other existing Ways (different changesets)");
             return 1;
         }
 
-        // TODO: relations
-        // 1 created Relation using existing ways
-        // 1 modified node, indirectly modify other existing ways and relation
+        // 1 created Relation referencing 1 created Way and 1 existing Way
+        processFile("raw-case-4.osc", db);
+        if ( getWKTFromDB("relations", 211766, db).compare(expectedGeometries.at(211766)) == 0) {
+            runtest.pass("1 created Relation referencing 1 created Way and 1 existing Way (different changesets)");
+        } else {
+            runtest.fail("1 created Relation referencing 1 created Way and 1 existing Way (different changesets)");
+            return 1;
+        }
 
+        // 1 modified Node, indirectly modify other existing Ways and 1 Relation
+        processFile("raw-case-5.osc", db);
 
+        if ( getWKTFromDB("relations", 211766, db).compare(expectedGeometries.at(211766-2)) == 0) {
+            runtest.pass("1 modified Node, indirectly modify other existing Ways and 1 Relation (different changesets)");
+        } else {
+            runtest.fail("1 modified Node, indirectly modify other existing Ways and 1 Relation (different changesets)");
+            return 1;
+        }
     }
 
 

@@ -555,7 +555,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
 
                 //  Update relations, ignore new ones outside priority area
                 if (!config->disable_raw) {
-                    task.query += queryraw->applyChange(*relation);
+                    // task.query += queryraw->applyChange(*relation);
                 }
             }
 
