@@ -218,7 +218,7 @@ class OsmRelation : public OsmObject {
   public:
     OsmRelation(void) { type = relation; };
 
-    multilinestring_t multilinestring; ///< Store the members as a linestring
+    multilinestring_t multilinestring; ///< Store the members as a multilinestring
     multipolygon_t multipolygon; ///< Store the members as a multipolygon
     point_t center;          ///< Store the centroid of the relation
 
@@ -230,6 +230,24 @@ class OsmRelation : public OsmObject {
 
     /// Dump internal data to the terminal, only for debugging
     void dump(void) const;
+
+    /// Relation can be composed of closed ways, resulting in a multipolygon
+    bool isMultiPolygon(void) const
+    {
+        return (tags.count("type") &&
+            (tags.at("type") == "multipolygon" ||
+            tags.at("type") == "boundary")
+        );
+    };
+
+    /// Relation can be componed of open ways, resulting in a multilinestring
+    bool isMultiLineString(void) const
+    {
+        return (tags.count("type") &&
+            tags.at("type") == "multilinestring"
+        );
+    };
+
 };
 
 } // namespace osmobjects
