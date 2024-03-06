@@ -633,8 +633,8 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
                         }
                         auto way = osmchanges->waycache.at(mit->ref);
 
-                        if (boost::geometry::num_points(way->linestring) == 0 &&
-                            boost::geometry::num_points(way->polygon) == 0
+                        if ((!isMultiPolygon && boost::geometry::num_points(way->linestring) == 0) ||
+                            (isMultiPolygon && boost::geometry::num_points(way->polygon) == 0)
                         ) {
                             noWay = true;
                             break;
@@ -653,7 +653,7 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
                         }
                         
                         geometry.erase(geometry.size() - 1);
-                        if (first && (mit->role == "outer" || mit->role == "")) {
+                        if (first && (mit->role == "outer")) {
                             geometry_str += geometry + ",";
                         } else {
                             if (mit->role == "inner") {
