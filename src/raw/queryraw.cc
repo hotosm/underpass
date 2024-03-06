@@ -640,16 +640,20 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
                             break;
                         }
                         std::stringstream ss;
+                        std::string geometry;
+
                         if (isMultiPolygon) {
                             ss << std::setprecision(12) << boost::geometry::wkt(way->polygon);
+                            geometry = ss.str();
+                            geometry.erase(0,8);
                         } else {
                             ss << std::setprecision(12) << boost::geometry::wkt(way->linestring);
+                            geometry = ss.str();
+                            geometry.erase(0,11);
                         }
                         
-                        std::string geometry = ss.str();
-                        geometry.erase(0,8);
                         geometry.erase(geometry.size() - 1);
-                        if (first && mit->role == "outer") {
+                        if (first && (mit->role == "outer" || mit->role == "")) {
                             geometry_str += geometry + ",";
                         } else {
                             if (mit->role == "inner") {
@@ -915,7 +919,7 @@ QueryRaw::getRelationsFromDB(long lastid, int pageSize) {
             std::string geometry = (*rel_it)[2].as<std::string>();
             if (geometry.substr(0, 12) == "MULTIPOLYGON") {
                 boost::geometry::read_wkt(geometry, relation.multipolygon);
-            } else if (geometry.substr(0, 12) == "MULTILINESTRING") { 
+            } else if (geometry.substr(0, 15) == "MULTILINESTRING") { 
                 boost::geometry::read_wkt(geometry, relation.multilinestring);
             }
             relation.version = (*rel_it)[3].as<long>();
