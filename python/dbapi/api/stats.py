@@ -45,25 +45,39 @@ class Stats:
                 select {0}.osm_id from {0} \
                 left join changesets c on changeset = c.id \
                 where {1} {2} {3} {4} {5} \
-            ), \
-            count_validated_features as ( \
-                select count(distinct(all_features.osm_id)) as count from all_features \
-                left join validation v on all_features.osm_id = v.osm_id \
-                where v.status = '{6}' \
-            ), count_features as (\
-                select count(distinct(all_features.osm_id)) as total from all_features \
-            ) \
-            select count, total from  count_validated_features, count_features".format(
+            ".format(
                 table,
                 "created_at >= '{0}'".format(dateFrom) if (dateFrom) else "1=1",
                 "AND created_at <= '{0}'".format(dateTo) if (dateTo) else "",
                 "AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "",
                 "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
                 "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
-                status
             )
+
+            query += " union \
+                select relations.osm_id from relations \
+                left join changesets c on changeset = c.id \
+                where {0} {1} {2} {3} {4} \
+            ".format(
+                "created_at >= '{0}'".format(dateFrom) if (dateFrom) else "1=1",
+                "AND created_at <= '{0}'".format(dateTo) if (dateTo) else "",
+                "AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "",
+                "AND (" + tagsQueryFilter(tags, "relations") + ")" if tags else "",
+                "AND " + hashtagQueryFilter(hashtag, "relations") if hashtag else "",
+            )
+            
+            query += "), count_validated_features as ( \
+                select count(distinct(all_features.osm_id)) as count from all_features \
+                left join validation v on all_features.osm_id = v.osm_id \
+                where v.status = '{0}' \
+            ), count_features as (\
+                select count(distinct(all_features.osm_id)) as total from all_features \
+            ) \
+            select count, total from  count_validated_features, count_features".format(status)
+
         else:
-           query = "select count(distinct {0}.osm_id) as count from {0} \
+           query = "WITH counts AS ("
+           query += "select distinct {0}.osm_id from {0} \
             left join changesets c on changeset = c.id \
             where {1} {2} {3} {4} {5}".format(
                 table,
@@ -73,6 +87,18 @@ class Stats:
                 "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
                 "AND " + hashtagQueryFilter(hashtag, table) if hashtag else ""
             )
+           query += " union "
+           query += "select distinct relations.osm_id from relations \
+            left join changesets c on changeset = c.id \
+            where {0} {1} {2} {3} {4}".format(
+                "created_at >= '{0}'".format(dateFrom) if (dateFrom) else "1=1",
+                "AND created_at <= '{0}'".format(dateTo) if (dateTo) else "",
+                "AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "",
+                "AND (" + tagsQueryFilter(tags, "relations") + ")" if tags else "",
+                "AND " + hashtagQueryFilter(hashtag, "relations") if hashtag else ""
+            )
+           query += ") SELECT COUNT(osm_id) FROM counts;"
+
         return(await self.underpassDB.run(query, True))
 
     

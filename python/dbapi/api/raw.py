@@ -29,6 +29,11 @@ def getGeoType(table):
         return "LineString"
     return "Node"
 
+def getRelationsGeoType(table):
+    if table == "ways_poly":
+        return "MultiPolygon"
+    return "MultiLineString"
+
 def geoFeaturesQuery(
         area = None,
         tags = None,
@@ -40,21 +45,29 @@ def geoFeaturesQuery(
         table = None):
 
         geoType = getGeoType(table)
-        query = "with t_ways AS ( \
+        query = "with t_data AS ( \
             SELECT '" + geoType + "' as type, " + table + ".osm_id as id, " + table + ".timestamp, geom as geometry, tags, status, hashtags, editor, created_at FROM " + table + " \
             LEFT JOIN validation ON validation.osm_id = " + table + ".osm_id \
-            LEFT JOIN changesets c ON c.id = " + table + ".changeset \
-            WHERE \
+            LEFT JOIN changesets c ON c.id = " + table + ".changeset"
+        
+        if table != "nodes":
+            query += " UNION \
+            SELECT '" + getRelationsGeoType(table) + "' as type, relations.osm_id as id, relations.timestamp, geom as geometry, tags, status, hashtags, editor, created_at FROM relations \
+            LEFT JOIN validation ON validation.osm_id = relations.osm_id \
+            LEFT JOIN changesets c ON c.id = relations.changeset \
+            WHERE (tags->>'type' = '"  + getRelationsGeoType(table).lower() + "')"
+        
+        query += "), t_results as (select * from t_data WHERE \
             {0} {1} {2} {3} {4} {5} \
         ), \
         t_features AS (  \
-            SELECT jsonb_build_object( 'type', 'Feature', 'id', id, 'properties', to_jsonb(t_ways) \
-            - 'geometry' , 'geometry', ST_AsGeoJSON(geometry)::jsonb ) AS feature FROM t_ways  \
+            SELECT jsonb_build_object( 'type', 'Feature', 'id', id, 'properties', to_jsonb(t_results) \
+            - 'geometry' , 'geometry', ST_AsGeoJSON(geometry)::jsonb ) AS feature FROM t_results  \
         ) SELECT jsonb_build_object( 'type', 'FeatureCollection', 'features', jsonb_agg(t_features.feature) ) \
         as result FROM t_features;".format(
-            "ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "1=1 ",
-            "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
-            "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
+            "ST_Intersects(\"geometry\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "1=1 ",
+            "AND (" + tagsQueryFilter(tags, "t_data") + ")" if tags else "",
+            "AND " + hashtagQueryFilter(hashtag, "t_data") if hashtag else "",
             "AND created_at >= {0} AND created_at <= {1}".format(dateFrom, dateTo) if dateFrom and dateTo else "",
             "AND status = '{0}'".format(status) if (status) else "",
             "LIMIT " + str(RESULTS_PER_PAGE),
@@ -74,25 +87,33 @@ def listAllFeaturesQuery(
     ):
 
         geoType = getGeoType(table)
+        relationsGeoType = getRelationsGeoType(table)
         if table == "nodes":
             osmType = "node"
         else:
             osmType = "way"
 
-        query = "\
-            ( \
+        query = "with t_data AS ( \
             SELECT '" + osmType + "' as type, '" + geoType + "' as geotype, " + table + ".osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, " + table + ".timestamp, tags, " + table + ".changeset, c.created_at, v.status FROM " + table + " \
             LEFT JOIN changesets c ON c.id = " + table + ".changeset \
-            LEFT JOIN validation v ON v.osm_id = " + table + ".osm_id \
+            LEFT JOIN validation v ON v.osm_id = " + table + ".osm_id"
+            
+        if table != "nodes":
+            query += " UNION \
+            SELECT '" + osmType + "' as type, '" + relationsGeoType + "' as geotype, relations.osm_id as id, ST_X(ST_Centroid(geom)) as lat, ST_Y(ST_Centroid(geom)) as lon, relations.timestamp, tags, relations.changeset, c.created_at, v.status FROM relations \
+            LEFT JOIN validation v ON v.osm_id = relations.osm_id \
+            LEFT JOIN changesets c ON c.id = relations.changeset \
+            WHERE (tags->>'type' = '"  + getRelationsGeoType(table).lower() + "')"
+
+        query += ") select * from t_data \
             WHERE {0} {1} {2} {3} {4} {5} {6} \
-            )\
         ".format(
             "created_at >= '{0}'".format(dateFrom) if (dateFrom) else "1=1",
             "AND created_at <= '{0}'".format(dateTo) if (dateTo) else "",
             "AND status = '{0}'".format(status) if (status) else "",
-            "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
+            "AND " + hashtagQueryFilter(hashtag, "t_data") if hashtag else "",
             "AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "",
-            "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
+            "AND (" + tagsQueryFilter(tags, "t_data") + ")" if tags else "",
             "AND " + orderBy + " IS NOT NULL ORDER BY " + orderBy + " DESC LIMIT " + str(RESULTS_PER_PAGE_LIST) + (" OFFSET {0}" \
                 .format(page * RESULTS_PER_PAGE_LIST) if page else ""),
         ).replace("WHERE 1=1 AND", "WHERE")
@@ -152,19 +173,8 @@ class Raw:
                 orderBy,
                 page
             )
-        elif featureType == "polygon":
-            return self.getPolygonsList(
-                area,
-                tags,
-                hashtag,
-                dateFrom,
-                dateTo,
-                status,
-                orderBy,
-                page
-            )
-        else:
-            return self.getAllList(
+        
+        return self.getPolygonsList(
                 area,
                 tags,
                 hashtag,
@@ -206,18 +216,8 @@ class Raw:
                 status,
                 page
             )
-        elif featureType == "polygon":
-            return self.getPolygons(
-                area,
-                tags,
-                hashtag,
-                dateFrom,
-                dateTo,
-                status,
-                page
-            )
-        else:
-            return self.getAll(
+
+        return self.getPolygons(
                 area,
                 tags,
                 hashtag,
@@ -362,7 +362,7 @@ class Raw:
             tags,
             hashtag,
             status,
-            orderBy or "ways_poly.osm_id",
+            orderBy or "id",
             page or 0,
             dateFrom,
             dateTo,
@@ -372,7 +372,7 @@ class Raw:
             " UNION ".join([queryPolygons]),
             dateFrom,
             dateTo,
-            orderBy or "osm_id"
+            orderBy or "id"
         )
         return await self.underpassDB.run(query)
 
@@ -393,7 +393,7 @@ class Raw:
             tags,
             hashtag,
             status,
-            orderBy or "ways_line.osm_id",
+            orderBy or "id",
             page or 0,
             dateFrom,
             dateTo,
@@ -403,7 +403,7 @@ class Raw:
             " UNION ".join([queryLines]),
             dateFrom,
             dateTo,
-            orderBy or "osm_id"
+            orderBy or "id"
         )
         return await self.underpassDB.run(query)
 
@@ -424,7 +424,7 @@ class Raw:
             tags,
             hashtag,
             status,
-            orderBy or "nodes.osm_id",
+            orderBy or "id",
             page or 0,
             dateFrom,
             dateTo,
@@ -434,7 +434,7 @@ class Raw:
             " UNION ".join([queryNodes]),
             dateFrom,
             dateTo,
-            orderBy or "osm_id"
+            orderBy or "id"
         )
         return await self.underpassDB.run(query)
         
@@ -455,7 +455,7 @@ class Raw:
         tags,
         hashtag,
         status,
-        orderBy or "ways_poly.osm_id",
+        orderBy or "id",
         page or 0,
         dateFrom,
         dateTo,
@@ -466,7 +466,7 @@ class Raw:
         tags,
         hashtag,
         status,
-        orderBy or "ways_line.osm_id",
+        orderBy or "id",
         page or 0,
         dateFrom,
         dateTo,
@@ -477,7 +477,7 @@ class Raw:
         tags,
         hashtag,
         status,
-        orderBy or "nodes.osm_id",
+        orderBy or "id",
         page or 0,
         dateFrom,
         dateTo,
@@ -487,6 +487,6 @@ class Raw:
             " UNION ".join([queryPolygons, queryLines, queryNodes]),
             dateFrom,
             dateTo,
-            orderBy or "osm_id"
+            orderBy or "id"
         )
         return await self.underpassDB.run(query)
