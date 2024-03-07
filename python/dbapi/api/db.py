@@ -61,9 +61,12 @@ class UnderpassDB():
                     return result[0]
                 return json.loads((result[0]['result']))
             except Exception as e: 
-                print("\n******* \n" + query + "\n******* \n")
+                # print("\n******* \n" + query + "\n******* \n")
                 print(e)
-                return None
+                if singleObject:
+                    return {}
+                else:
+                    return []
             finally:
                 await self.pool.release(conn)
         return None

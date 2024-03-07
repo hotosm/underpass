@@ -919,7 +919,7 @@ QueryRaw::getRelationsFromDB(long lastid, int pageSize) {
             std::string geometry = (*rel_it)[2].as<std::string>();
             if (geometry.substr(0, 12) == "MULTIPOLYGON") {
                 boost::geometry::read_wkt(geometry, relation.multipolygon);
-            } else if (geometry.substr(0, 15) == "MULTILINESTRING") { 
+            } else if (geometry.substr(0, 15) == "MULTILINESTRING") {
                 boost::geometry::read_wkt(geometry, relation.multilinestring);
             }
             relation.version = (*rel_it)[3].as<long>();
