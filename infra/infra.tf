@@ -3,11 +3,11 @@
 # Cloudwatch Alarms
 # Load Balancer?
 
-data "aws_s3_bucket" "galaxy-website" {
-  bucket = "galaxy-ui-website"
+data "aws_s3_bucket" "underpass-website" {
+  bucket = "underpass-ui-website"
 }
 
-data "aws_acm_certificate" "hotosm-wildcard" {
+data "aws_acm_certificate" "hotosm-wildcard" { // specify underpass.hotosm.org?
   domain      = "hotosm.org"
   statuses    = ["ISSUED"]
   types       = ["AMAZON_ISSUED"]
@@ -15,27 +15,27 @@ data "aws_acm_certificate" "hotosm-wildcard" {
 
 }
 
-data "aws_cloudfront_cache_policy" "galaxy" {
+data "aws_cloudfront_cache_policy" "underpass" {
   name = "Managed-CachingOptimized"
 }
 
-data "aws_cloudfront_origin_request_policy" "galaxy" {
+data "aws_cloudfront_origin_request_policy" "underpass" {
   name = "Managed-UserAgentRefererHeaders"
 }
 
 ## TODO:
 # Add Origin Access Policy
 
-resource "aws_cloudfront_distribution" "galaxy" {
-  aliases = ["galaxy1.hotosm.org"]
-  comment = "Galaxy production CDN"
+resource "aws_cloudfront_distribution" "underpass" {
+  aliases = ["underpass.hotosm.org"]
+  comment = "underpass production CDN"
 
   enabled         = true
   is_ipv6_enabled = true
 
   origin {
-    domain_name = data.aws_s3_bucket.galaxy-website.bucket_regional_domain_name
-    origin_id   = "galaxy-website"
+    domain_name = data.aws_s3_bucket.underpass-website.bucket_regional_domain_name
+    origin_id   = "underpass-website"
   }
 
   default_cache_behavior {
@@ -43,10 +43,10 @@ resource "aws_cloudfront_distribution" "galaxy" {
     cached_methods         = ["HEAD", "GET"]
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
-    target_origin_id       = "galaxy-website"
+    target_origin_id       = "underpass-website"
 
-    cache_policy_id          = data.aws_cloudfront_cache_policy.galaxy.id
-    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.galaxy.id
+    cache_policy_id          = data.aws_cloudfront_cache_policy.underpass.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.underpass.id
 
   }
 
@@ -85,7 +85,7 @@ data "aws_iam_policy_document" "instance-connect" {
   statement {
     actions = ["ec2-instance-connect:SendSSHPublicKey"]
     resources = [
-      "arn:aws:ec2:region:account-id:instance/i-1234567890abcdef0",
+      "arn:aws:ec2:region:account-id:instance/i-1234567890abcdef0", //todo: check this
       "arn:aws:ec2:region:account-id:instance/i-0598c7d356eba48d7"
     ]
   }
@@ -155,7 +155,7 @@ resource "aws_iam_role" "underpass" {
 
 resource "aws_instance" "jumphost" {
   ami           = data.aws_ami.debian_bullseye.id
-  instance_type = lookup(var.instance_types, "jump_host", "t3.large")
+  instance_type = lookup(var.instance_types, "jump_host", "t3.small")
 
   subnet_id              = aws_subnet.public[2].id
   vpc_security_group_ids = [aws_security_group.remote-access.id]
@@ -170,7 +170,7 @@ resource "aws_instance" "jumphost" {
   key_name             = var.ssh_key_pair_name
 
   tags = {
-    Name = "galaxy-jump.hotosm.org"
+    Name = "underpass-jump.hotosm.org"
     Role = "SSH Jump Host"
   }
 
@@ -248,43 +248,44 @@ resource "aws_instance" "file-processor" {
   }
 }
 
-resource "aws_instance" "file-processor-2" {
-  ami           = data.aws_ami.ubuntu_latest_arm.id
-  instance_type = lookup(var.instance_types, "file_processor", "r6g.xlarge")
+# why 2 file processors?
+# resource "aws_instance" "file-processor-2" {
+#   ami           = data.aws_ami.ubuntu_latest_arm.id
+#   instance_type = lookup(var.instance_types, "file_processor", "r6g.xlarge")
 
-  subnet_id              = aws_subnet.private[2].id
-  vpc_security_group_ids = [aws_security_group.app.id]
+#   subnet_id              = aws_subnet.private[2].id
+#   vpc_security_group_ids = [aws_security_group.app.id]
 
-  root_block_device {
-    volume_size = lookup(var.disk_sizes, "file_processor_root", 10)
-    volume_type = "gp3"
-    throughput  = 125
-  }
+#   root_block_device {
+#     volume_size = lookup(var.disk_sizes, "file_processor_root", 10)
+#     volume_type = "gp3"
+#     throughput  = 125
+#   }
 
-  ebs_block_device {
-    device_name = "/dev/sdb"
-    volume_size = lookup(var.disk_sizes, "file_processor_extra", 1000)
-    volume_type = "gp3"
-    throughput  = 125
-  }
+#   ebs_block_device {
+#     device_name = "/dev/sdb"
+#     volume_size = lookup(var.disk_sizes, "file_processor_extra", 1000)
+#     volume_type = "gp3"
+#     throughput  = 125
+#   }
 
-  iam_instance_profile = aws_iam_instance_profile.underpass.name
-  key_name             = var.ssh_key_pair_name
+#   iam_instance_profile = aws_iam_instance_profile.underpass.name
+#   key_name             = var.ssh_key_pair_name
 
-  tags = {
-    Name = "underpass-processor"
-    Role = "Changefile processor server"
-  }
+#   tags = {
+#     Name = "underpass-processor"
+#     Role = "Changefile processor server"
+#   }
 
-  lifecycle {
-    create_before_destroy = false
-    prevent_destroy       = false
-    ignore_changes = [
-      # Ignore changes to AMI
-      ami,
-    ]
-  }
-}
+#   lifecycle {
+#     create_before_destroy = false
+#     prevent_destroy       = false
+#     ignore_changes = [
+#       # Ignore changes to AMI
+#       ami,
+#     ]
+#   }
+# }
 
 resource "aws_eip" "jumphost" {
   instance = aws_instance.jumphost.id
@@ -292,17 +293,17 @@ resource "aws_eip" "jumphost" {
 }
 
 //
-data "aws_route53_zone" "hotosm-org" {
+data "aws_route53_zone" "hotosm-org" { ## todo: set to underpass.hotosm.org?
   name = "hotosm.org."
 }
 
-resource "aws_route53_record" "galaxy-api-lb" {
+resource "aws_route53_record" "underpass-api-lb" {
   zone_id = data.aws_route53_zone.hotosm-org.zone_id
-  name    = "galaxy-api.${data.aws_route53_zone.hotosm-org.name}"
+  name    = "underpass-api.${data.aws_route53_zone.hotosm-org.name}"
   type    = "A"
 
   alias {
-    name                   = aws_lb.galaxy-api.dns_name
+    name                   = aws_lb.galaxy-api.dns_name //todo: swap to ECS
     zone_id                = aws_lb.galaxy-api.zone_id
     evaluate_target_health = true
   }
@@ -310,16 +311,16 @@ resource "aws_route53_record" "galaxy-api-lb" {
 
 resource "aws_route53_record" "jumphost" {
   zone_id = data.aws_route53_zone.hotosm-org.zone_id
-  name    = "galaxy-bastion.${data.aws_route53_zone.hotosm-org.name}"
+  name    = "underpass-jump.${data.aws_route53_zone.hotosm-org.name}"
   type    = "A"
   ttl     = "300"
   records = [aws_eip.jumphost.public_ip]
 }
 
-resource "aws_route53_record" "galaxy-homepage" {
+resource "aws_route53_record" "underpass-homepage" {
   zone_id = data.aws_route53_zone.hotosm-org.zone_id
-  name    = "galaxy1.${data.aws_route53_zone.hotosm-org.name}"
-  type    = "A"
+  name    = "underpass.${data.aws_route53_zone.hotosm-org.name}"
+  type    = "A" //todo: swap to AAAA
   ttl     = "300"
   records = [aws_eip.jumphost.public_ip]
 }

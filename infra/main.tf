@@ -7,87 +7,35 @@ data "aws_vpc" "tasking-manager" {
   id = var.tasking-manager_vpc_id
 }
 
-resource "aws_vpc" "galaxy" {
-  cidr_block           = var.vpc_cidr
-  enable_dns_hostnames = true
+module "vpc" {
+  source = "git::https://gitlab.com/eternaltyro/terraform-aws-vpc.git"
+  # vpc_id = var.vpc_id
+  # cidr_block = var.cidr_block
 
-  // Amazon-provided IPv6 CIDR block with a /56 prefix
-  assign_generated_ipv6_cidr_block = true
+  project_meta = {
+    name = "underpass"
+    short_name = "underpass"
+    version = "stable"
+    url = "underpass.hotosm.org"
+  }
 
-  tags = {
-    Name       = "Galaxy"
-    Maintainer = "Yogesh Girikumar"
-    Terraform  = "true"
+  deployment_environment = var.deployment_environment
+
+  default_tags = {
+    project        = "underpass"
+    maintainer     = "dk"
+    documentation  = "docs.underpass.org" /* update */
+    cost_center    = null
+    IaC_Management = "Terraform"
   }
 }
 
-resource "aws_subnet" "public" {
-  count             = var.subnet_count
-  vpc_id            = aws_vpc.galaxy.id
-  availability_zone = data.aws_availability_zones.available.names[count.index]
 
-  cidr_block      = cidrsubnet(aws_vpc.galaxy.cidr_block, 8, "${count.index + 1}")
-  ipv6_cidr_block = cidrsubnet(aws_vpc.galaxy.ipv6_cidr_block, 8, "${count.index + 16}")
-
+resource "aws_vpc_peering_connection" "underpass-tasking-manager" {
   tags = {
-    Name = "galaxy-public${count.index + 1}"
+    Name = "underpass-taskingmanager"
   }
-
-}
-
-resource "aws_subnet" "private" {
-  count             = var.subnet_count
-  vpc_id            = aws_vpc.galaxy.id
-  availability_zone = data.aws_availability_zones.available.names[count.index]
-
-  cidr_block      = cidrsubnet(aws_vpc.galaxy.cidr_block, 8, "${count.index + var.subnet_count + 1}")
-  ipv6_cidr_block = cidrsubnet(aws_vpc.galaxy.ipv6_cidr_block, 8, "${count.index + 64}")
-
-  tags = {
-    Name = "galaxy-private${count.index + 1}"
-  }
-
-}
-
-# ec2 instances etc should explicitly depend on this
-resource "aws_internet_gateway" "internet" {
-  vpc_id = aws_vpc.galaxy.id
-
-  tags = {
-    Name = "main"
-  }
-}
-
-resource "aws_eip" "nat" {
-  vpc = true
-
-  tags = {
-    Name = "Galaxy NAT Gateway"
-  }
-}
-
-resource "aws_nat_gateway" "nat" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public[1].id
-
-  tags = {
-    Name = "Galaxy"
-  }
-}
-
-resource "aws_egress_only_internet_gateway" "ipv6-egress" {
-  vpc_id = aws_vpc.galaxy.id
-
-  tags = {
-    Name = "Galaxy"
-  }
-}
-
-resource "aws_vpc_peering_connection" "galaxy-tasking-manager" {
-  tags = {
-    Name = "galaxy-taskingmanager"
-  }
-  vpc_id      = aws_vpc.galaxy.id
+  vpc_id      = module.vpc.vpc_id
   peer_vpc_id = data.aws_vpc.tasking-manager.id
   auto_accept = true
 
@@ -100,82 +48,23 @@ resource "aws_vpc_peering_connection" "galaxy-tasking-manager" {
   }
 }
 
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.galaxy.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.internet.id
-  }
-
-  route {
-    ipv6_cidr_block             = "::/0"
-    egress_only_gateway_id = aws_egress_only_internet_gateway.ipv6-egress.id
-  }
-
-  route {
-    cidr_block                = data.aws_vpc.tasking-manager.cidr_block
-    vpc_peering_connection_id = aws_vpc_peering_connection.galaxy-tasking-manager.id
-  }
-
-  tags = {
-    Name = "galaxy-public"
-  }
-}
-
-resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.galaxy.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat.id
-  }
-
-  route {
-    ipv6_cidr_block             = "::/0"
-    egress_only_gateway_id = aws_egress_only_internet_gateway.ipv6-egress.id
-  }
-
-  route {
-    cidr_block                = data.aws_vpc.tasking-manager.cidr_block
-    vpc_peering_connection_id = aws_vpc_peering_connection.galaxy-tasking-manager.id
-  }
-
-  tags = {
-    Name = "galaxy-private"
-  }
-}
-
-// EXPLICIT ASSOCIATIONS
-resource "aws_route_table_association" "private" {
-  count          = var.subnet_count
-  subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private.id
-}
-
-resource "aws_route_table_association" "public" {
-  count          = var.subnet_count
-  subnet_id      = aws_subnet.public[count.index].id
-  route_table_id = aws_route_table.public.id
-}
-
 /********************************************
 ** THIS BLOCK EDITS TASKING MANAGER VPC
 **               WHICH IS
-** OUTSIDE THE SCOPE OF GALAXY / UNDERPASS
+** OUTSIDE THE SCOPE OF UNDERPASS
 *********************************************/
 resource "aws_route" "tasking-manager-vpc-to-peering-connection" {
   route_table_id            = data.aws_vpc.tasking-manager.main_route_table_id
-  destination_cidr_block    = aws_vpc.galaxy.cidr_block
-  vpc_peering_connection_id = aws_vpc_peering_connection.galaxy-tasking-manager.id
-  depends_on                = [aws_vpc.galaxy, aws_vpc_peering_connection.galaxy-tasking-manager]
+  destination_cidr_block    = module.vpc.cidr_block
+  vpc_peering_connection_id = aws_vpc_peering_connection.underpass-tasking-manager.id
+  depends_on                = [module.vpc, aws_vpc_peering_connection.underpass-tasking-manager]
 
 }
 
 resource "aws_security_group" "app" {
   name        = "app"
   description = "Underpass Application Firewall"
-  vpc_id      = aws_vpc.galaxy.id
+  vpc_id      = module.vpc.vpc_id
 
   ingress {
     description      = "All TLS connections"
@@ -215,7 +104,7 @@ resource "aws_security_group" "app" {
   }
 
   tags = {
-    Name = "galaxy-app"
+    Name = "underpass-app"
   }
 
 }
@@ -223,7 +112,7 @@ resource "aws_security_group" "app" {
 resource "aws_security_group" "remote-access" {
   name        = "remote-access"
   description = "Underpass Backend API Firewall"
-  vpc_id      = aws_vpc.galaxy.id
+  vpc_id      = module.vpc.vpc_id
 
   ingress {
     description = "Allow SSH from nobody do not remove"
@@ -242,7 +131,7 @@ resource "aws_security_group" "remote-access" {
   }
 
   tags = {
-    Name = "galaxy-remote-user-access"
+    Name = "underpass-remote-user-access"
   }
 
   lifecycle {
@@ -256,7 +145,7 @@ resource "aws_security_group" "remote-access" {
 resource "aws_security_group" "api" {
   name        = "api"
   description = "Underpass Backend API Firewall"
-  vpc_id      = aws_vpc.galaxy.id
+  vpc_id      = module.vpc.vpc_id
 
   ingress {
     description      = "Allow HTTPS from World"
@@ -299,7 +188,7 @@ resource "aws_security_group" "api" {
   }
 
   tags = {
-    Name = "galaxy-api"
+    Name = "underpass-api"
   }
 
 }
@@ -307,14 +196,14 @@ resource "aws_security_group" "api" {
 resource "aws_security_group" "vpc-endpoint" {
   name        = "vpc-endpoint"
   description = "Firewall for to VPC endpoints from containers and instances"
-  vpc_id      = aws_vpc.galaxy.id
+  vpc_id      = module.vpc.vpc_id
 
   ingress {
     description      = "Allow secure access from interfaces in VPC"
     from_port        = 443
     to_port          = 443
     protocol         = "tcp"
-    cidr_blocks      = [aws_vpc.galaxy.cidr_block]
+    cidr_blocks      = [module.vpc.cidr_block]
     ipv6_cidr_blocks = ["::/0"]
   }
 
@@ -327,13 +216,13 @@ resource "aws_security_group" "vpc-endpoint" {
   }
 
   tags = {
-    Name = "galaxy-vpc-endpoint"
+    Name = "underpass-vpc-endpoint"
   }
 
 }
 
 resource "aws_vpc_endpoint" "secretsmanager" {
-  vpc_id = aws_vpc.galaxy.id
+  vpc_id = module.vpc.vpc_id
 
   vpc_endpoint_type = "Interface"
   service_name      = "com.amazonaws.us-east-1.secretsmanager" // TODO: use var.aws_region
@@ -347,7 +236,7 @@ resource "aws_vpc_endpoint" "secretsmanager" {
 }
 
 resource "aws_vpc_endpoint" "awslogs" {
-  vpc_id = aws_vpc.galaxy.id
+  vpc_id = module.vpc.vpc_id
 
   vpc_endpoint_type = "Interface"
   service_name      = "com.amazonaws.us-east-1.logs" // TODO: use var.aws_region

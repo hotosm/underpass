@@ -1,5 +1,7 @@
 
-resource "random_password" "galaxy_database_admin_password" {
+## Do we want to replace this with eternaltyro aurora rds?
+
+resource "random_password" "underpass_database_admin_password" {
   length  = 32
   special = false
   numeric = true
@@ -12,19 +14,19 @@ resource "random_password" "galaxy_database_admin_password" {
   }
 }
 
-resource "aws_secretsmanager_secret" "galaxy_database_credentials" {
-  name = "${var.deployment_environment}/galaxy/database"
+resource "aws_secretsmanager_secret" "underpass_database_credentials" {
+  name = "${var.deployment_environment}/underpass/database"
 
-  description = "Galaxy database password and connection string params"
+  description = "Underpass database password and connection string params"
 
   tags = {
-    name = "Galaxy Database Admin Credentials"
+    name = "Underpass Database Admin Credentials"
     Role = "Database access credentials"
   }
 }
 
-resource "aws_secretsmanager_secret_version" "galaxy_database_credentials" {
-  secret_id = aws_secretsmanager_secret.galaxy_database_credentials.id
+resource "aws_secretsmanager_secret_version" "underpass_database_credentials" {
+  secret_id = aws_secretsmanager_secret.underpass_database_credentials.id
   secret_string = jsonencode(zipmap(
     [
       "dbinstanceidentifier",
@@ -36,18 +38,18 @@ resource "aws_secretsmanager_secret_version" "galaxy_database_credentials" {
       "password",
     ],
     [
-      aws_db_instance.galaxy.id,
-      aws_db_instance.galaxy.db_name,
-      aws_db_instance.galaxy.engine,
-      aws_db_instance.galaxy.address,
-      aws_db_instance.galaxy.port,
-      aws_db_instance.galaxy.username,
-      random_password.galaxy_database_admin_password.result,
+      aws_db_instance.underpass.id,
+      aws_db_instance.underpass.db_name,
+      aws_db_instance.underpass.engine,
+      aws_db_instance.underpass.address,
+      aws_db_instance.underpass.port,
+      aws_db_instance.underpass.username,
+      random_password.underpass_database_admin_password.result,
     ]
   ))
 }
 
-data "aws_iam_policy_document" "access-galaxy-database-credentials" {
+data "aws_iam_policy_document" "access-underpass-database-credentials" {
 
   statement {
     sid = "1"
@@ -57,7 +59,7 @@ data "aws_iam_policy_document" "access-galaxy-database-credentials" {
     ]
 
     resources = [
-      aws_secretsmanager_secret.galaxy_database_credentials.arn,
+      aws_secretsmanager_secret.underpass_database_credentials.arn,
     ]
 
   }
@@ -87,28 +89,28 @@ data "aws_iam_policy_document" "rds-proxy-assume-role" {
   }
 }
 
-resource "aws_iam_role" "access-galaxy-database-credentials" {
-  name_prefix = "galaxy-db-cred-access"
-  path        = "/galaxy/"
+resource "aws_iam_role" "access-underpass-database-credentials" {
+  name_prefix = "underpass-db-cred-access"
+  path        = "/underpass/"
 
   assume_role_policy = data.aws_iam_policy_document.rds-proxy-assume-role.json
 
   inline_policy {
     name   = "access-database-credentials"
-    policy = data.aws_iam_policy_document.access-galaxy-database-credentials.json
+    policy = data.aws_iam_policy_document.access-underpass-database-credentials.json
   }
 
 }
 
-resource "aws_db_subnet_group" "galaxy" {
-  name       = "galaxy"
+resource "aws_db_subnet_group" "underpass" {
+  name       = "underpass"
   subnet_ids = [for subnet in aws_subnet.private : subnet.id]
 }
 
 resource "aws_security_group" "database" {
   name        = "database"
   description = "Underpass Database"
-  vpc_id      = aws_vpc.galaxy.id
+  vpc_id      = module.vpc.vpc_id
 
   ingress {
     description = "Allow from self"
@@ -135,15 +137,15 @@ resource "aws_security_group" "database" {
   }
 
   tags = {
-    Name = "galaxy-database"
+    Name = "underpass-database"
   }
 
 }
 
 resource "aws_security_group" "database-administration" {
   name        = "database-administration"
-  description = "Ephemeral user access to Galaxy Database"
-  vpc_id      = aws_vpc.galaxy.id
+  description = "Ephemeral user access to underpass Database"
+  vpc_id      = module.vpc.vpc_id
 
   revoke_rules_on_delete = true
 
@@ -172,7 +174,7 @@ resource "aws_security_group" "database-administration" {
   }
 
   tags = {
-    Name = "galaxy-database"
+    Name = "underpass-database"
   }
 
 }
@@ -189,7 +191,7 @@ resource "aws_security_group" "database-administration" {
 * Backup:
 *   - Backup and snapshot expiry
 */
-resource "aws_db_instance" "galaxy" {
+resource "aws_db_instance" "underpass" {
   lifecycle {
     ignore_changes = [
       engine_version,
@@ -201,7 +203,7 @@ resource "aws_db_instance" "galaxy" {
     join(
       "-",
       [
-        "galaxy",
+        "underpass",
         lookup(var.name_suffix, var.deployment_environment, "0")
       ]
     ),
@@ -219,7 +221,7 @@ resource "aws_db_instance" "galaxy" {
 
   db_name  = var.database_name
   username = var.database_username
-  password = random_password.galaxy_database_admin_password.result
+  password = random_password.underpass_database_admin_password.result
 
   skip_final_snapshot       = true
   final_snapshot_identifier = var.database_final_snapshot_identifier
@@ -230,21 +232,21 @@ resource "aws_db_instance" "galaxy" {
     aws_security_group.database.id,
     aws_security_group.database-administration.id
   ]
-  db_subnet_group_name = aws_db_subnet_group.galaxy.name
+  db_subnet_group_name = aws_db_subnet_group.underpass.name
 
   tags = {
-    Name = "galaxy-db"
+    Name = "underpass-db"
     Role = "Database server"
   }
 
 }
 
-resource "aws_db_proxy" "galaxy" {
-  name                = "galaxy"
+resource "aws_db_proxy" "underpass" {
+  name                = "underpass"
   engine_family       = "POSTGRESQL"
   idle_client_timeout = 1800
   require_tls         = true
-  role_arn            = aws_iam_role.access-galaxy-database-credentials.arn
+  role_arn            = aws_iam_role.access-underpass-database-credentials.arn
   vpc_security_group_ids = [
     aws_security_group.database.id,
     aws_security_group.database-administration.id
@@ -253,14 +255,14 @@ resource "aws_db_proxy" "galaxy" {
 
   auth {
     auth_scheme = "SECRETS"
-    description = "Galaxy database admin credentials"
+    description = "underpass database admin credentials"
     iam_auth    = "DISABLED"
-    secret_arn  = aws_secretsmanager_secret.galaxy_database_credentials.arn
+    secret_arn  = aws_secretsmanager_secret.underpass_database_credentials.arn
   }
 }
 
-resource "aws_db_proxy_default_target_group" "galaxy" {
-  db_proxy_name = aws_db_proxy.galaxy.name
+resource "aws_db_proxy_default_target_group" "underpass" {
+  db_proxy_name = aws_db_proxy.underpass.name
 
   connection_pool_config {
     connection_borrow_timeout = 120
@@ -271,15 +273,15 @@ resource "aws_db_proxy_default_target_group" "galaxy" {
   }
 }
 
-resource "aws_db_proxy_target" "galaxy" {
-  db_instance_identifier = aws_db_instance.galaxy.id
-  db_proxy_name          = aws_db_proxy.galaxy.name
-  target_group_name      = aws_db_proxy_default_target_group.galaxy.name
+resource "aws_db_proxy_target" "underpass" {
+  db_instance_identifier = aws_db_instance.underpass.id
+  db_proxy_name          = aws_db_proxy.underpass.name
+  target_group_name      = aws_db_proxy_default_target_group.underpass.name
 }
 
-resource "aws_db_proxy_endpoint" "galaxy-readonly" {
-  db_proxy_name          = aws_db_proxy.galaxy.name
-  db_proxy_endpoint_name = "galaxy-readonly"
+resource "aws_db_proxy_endpoint" "underpass-readonly" {
+  db_proxy_name          = aws_db_proxy.underpass.name
+  db_proxy_endpoint_name = "underpass-readonly"
   vpc_subnet_ids         = [for subnet in aws_subnet.private : subnet.id]
   vpc_security_group_ids = [
     aws_security_group.database.id,

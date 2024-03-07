@@ -1,7 +1,7 @@
 variable "project_name" {
   type = string
 
-  default = "galaxy"
+  default = "underpass"
 }
 
 /*****************************************
@@ -142,12 +142,12 @@ variable "database_engine_version" {
 
 variable "database_name" {
   type    = string
-  default = "galaxy"
+  default = "underpass"
 }
 
 variable "database_username" {
   type    = string
-  default = "galaxy"
+  default = "underpass"
 }
 
 variable "database_final_snapshot_identifier" {
@@ -199,7 +199,7 @@ variable "tasking-manager_vpc_id" {
 
 variable "container_image_uri" {
   type    = string
-  default = "quay.io/hotosm/galaxy-api"
+  default = "quay.io/hotosm/underpass-api"
 }
 
 variable "container_image_tag" {
@@ -221,7 +221,7 @@ variable "alb_tls_policy" {
 
 variable "api_host" {
   type    = string
-  default = "galaxy-api.hotosm.org"
+  default = "underpass-api.hotosm.org"
 }
 
 variable "api_port" {
@@ -253,7 +253,7 @@ variable "sentry" {
   type = map(string)
   default = {
     dsn             = ""
-    app_release_tag = "galaxy-api@v1.0.0"
+    app_release_tag = "underpass-api@v1.0.0"
   }
 
   description = "Data-source Name and app release tag to be displayed in Sentry.io dashboard"
