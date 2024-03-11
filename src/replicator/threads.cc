@@ -130,7 +130,7 @@ getClosest(std::shared_ptr<std::vector<ReplicationTask>> tasks, ptime now) {
 void
 startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
                const multipolygon_t &poly,
-               const UnderpassConfig &config)
+               const UnderpassConfig config)
 {
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("startMonitorChangesets: took %w seconds\n");
@@ -172,6 +172,7 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     auto last_task = std::make_shared<ReplicationTask>();
     bool caughtUpWithNow = false;
     bool monitoring = true;
+
     while (monitoring) {
         auto tasks = std::make_shared<std::vector<ReplicationTask>>();
         i = cores*2;
@@ -180,7 +181,7 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
             std::this_thread::sleep_for(delay);
             if (last_task->status == reqfile_t::success ||
                 (last_task->status == reqfile_t::remoteNotFound && !caughtUpWithNow)) {
-                remote->Increment();
+                remote->increment();
                 if (!config.silent) {
                     remote->dump();
                 }
@@ -314,7 +315,7 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
             std::this_thread::sleep_for(delay);
             if (last_task->status == reqfile_t::success ||
                 (last_task->status == reqfile_t::remoteNotFound && !caughtUpWithNow)) {
-                remote->Increment();
+                remote->increment();
                 if (!config.silent) {
                     remote->dump();
                 }

@@ -228,9 +228,9 @@ class RemoteURL {
     /// Dump internal data for debugging
     void dump(void);
     /// Increment the numerical part of the path by one file
-    void Increment(void);
+    void increment(void);
     /// Decrement the numerical part of the path by one file
-    void Decrement(void);
+    void decrement(void);
     /// Copy one remote object to another
     RemoteURL &operator=(const RemoteURL &inr);
     long sequence() const;    ///< The sequence number of this path

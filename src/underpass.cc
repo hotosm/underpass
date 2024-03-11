@@ -84,9 +84,6 @@ int
 main(int argc, char *argv[])
 {
 
-    // The changesets URL path (e.g. "/001/001/999")
-    std::string starting_url_path;
-
     std::string datadir = "replication/";
     std::string boundary = "/etc/underpass/priority.geojson";
 
@@ -153,17 +150,18 @@ main(int argc, char *argv[])
     if (vm.count("debug")) {
         dbglogfile.setVerbosity();
     }
+    if (vm.count("silent")) {
+        config.silent = true;
+    }
 
+    // Database
     if (vm.count("server")) {
         config.underpass_db_url = vm["server"].as<std::string>();
     }
 
+    // Local cache 
     if (vm.count("destdir_base")) {
         config.destdir_base = vm["destdir_base"].as<std::string>();
-    }
-
-    if (vm.count("silent")) {
-        config.silent = true;
     }
 
     // Concurrency
@@ -184,6 +182,7 @@ main(int argc, char *argv[])
     }
 
     if (vm.count("timestamp") || vm.count("url")) {
+
         // Planet server
         if (vm.count("planet")) {
             config.planet_server = vm["planet"].as<std::string>();
@@ -199,14 +198,18 @@ main(int argc, char *argv[])
             config.planet_server = config.planet_servers[0].domain;
         }
 
+        // Priority boundary
+        multipolygon_t poly;
         if (vm.count("boundary")) {
             boundary = vm["boundary"].as<std::string>();
         }
-
-        // Boundary
         geoutil::GeoUtil geou;
         if (!geou.readFile(boundary)) {
             log_debug("Could not find '%1%' area file!", boundary);
+        }
+        multipolygon_t * oscboundary = &poly;
+        if (!vm.count("oscnoboundary")) {
+            oscboundary = &geou.boundary;
         }
 
         // Features
@@ -222,15 +225,13 @@ main(int argc, char *argv[])
 
         // Replication
         planetreplicator::PlanetReplicator replicator;
-
         std::shared_ptr<std::vector<unsigned char>> data;
-
-        if (!starting_url_path.empty() && vm.count("timestamp")) {
+        if (vm.count("url") && vm.count("timestamp")) {
             log_debug("ERROR: 'url' takes precedence over 'timestamp' arguments are mutually exclusive!");
             exit(-1);
         }
 
-        // This is the default data directory on that server
+        // Default data directory on the server
         if (vm.count("datadir")) {
             datadir = vm["datadir"].as<std::string>();
         }
@@ -238,10 +239,9 @@ main(int argc, char *argv[])
         if (tmp != 0) {
             datadir = tmp;
         }
-
-        // Add datadir to config
         config.datadir = datadir;
 
+        // Frequency: minutely, hourly, daily
         if (vm.count("frequency")) {
             const auto strfreq = vm["frequency"].as<std::string>();
             if (strfreq[0] == 'm') {
@@ -276,55 +276,52 @@ main(int argc, char *argv[])
             }
         } else if (vm.count("url")) {
             replicator.connectServer("https://" + config.planet_server);
-            // This is the changesets path part (ex. 000/075/000), takes precedence over 'timestamp'
-            // option. This only applies to the osm change files, as it's timestamp is used to
-            // start the changesets.
             std::string fullurl = "https://" + config.planet_server + "/replication/" + StateFile::freq_to_string(config.frequency);
             std::vector<std::string> parts;
             boost::split(parts, vm["url"].as<std::string>(), boost::is_any_of("/"));
-            // fullurl += "/" + vm["url"].as<std::string>() + "/" + parts[2] + ".state.txt";
             fullurl += "/" + vm["url"].as<std::string>() + ".state.txt";
+
             osmchange->parse(fullurl);
             osmchange->destdir_base = config.destdir_base;
             auto data = replicator.downloadFile(*osmchange).data;
             StateFile start(osmchange->filespec, false);
-            //start.dump();
             config.start_time = start.timestamp;
             boost::algorithm::replace_all(osmchange->filespec, ".state.txt", ".osc.gz");
         }
 
-        std::thread changesetThread;
+        // OsmChanges
         std::thread osmChangeThread;
-
-        multipolygon_t poly;
         if (!vm.count("changesets")) {
             multipolygon_t * osmboundary = &poly;
             if (!vm.count("osmnoboundary")) {
                 osmboundary = &geou.boundary;
             }
             osmchange->destdir_base = config.destdir_base;
+            osmchange->dump();
             osmChangeThread = std::thread(replicatorthreads::startMonitorChanges, std::ref(osmchange),
-                            std::ref(*osmboundary), std::ref(config));
+                            std::ref(*osmboundary), config);
         }
-        config.frequency = replication::changeset;
-        auto changeset = replicator.findRemotePath(config, config.start_time);
-        changeset->destdir_base = config.destdir_base;
-        if (vm.count("changeseturl")) {
+
+        // Changesets
+        std::thread changesetThread;
+        if (vm.count("changeseturl") || vm.count("timestamp")) {
+            config.frequency = replication::changeset;
+            auto changeset = replicator.findRemotePath(config, config.start_time);
+            changeset->destdir_base = config.destdir_base;
             std::vector<std::string> parts;
             boost::split(parts, vm["changeseturl"].as<std::string>(), boost::is_any_of("/"));
             changeset->updatePath(stoi(parts[0]),stoi(parts[1]),stoi(parts[2]));
             if (!config.silent) {
                 changeset->dump();
             }
-        }
-        if (!vm.count("osmchanges")) {
-            multipolygon_t * oscboundary = &poly;
-            if (!vm.count("oscnoboundary")) {
-                oscboundary = &geou.boundary;
+            if (!vm.count("osmchanges")) {
+                changesetThread = std::thread(replicatorthreads::startMonitorChangesets, std::ref(changeset),
+                                std::ref(*oscboundary), std::ref(config));
             }
-            changesetThread = std::thread(replicatorthreads::startMonitorChangesets, std::ref(changeset),
-                            std::ref(*oscboundary), std::ref(config));
         }
+
+        // Start processing
+
         if (changesetThread.joinable()) {
             changesetThread.join();
         }
@@ -336,6 +333,7 @@ main(int argc, char *argv[])
 
     }
 
+    // Bootstrapping
     if (vm.count("bootstrap")){
         std::thread bootstrapThread;
         std::cout << "Starting bootstrapping process ..." << std::endl;

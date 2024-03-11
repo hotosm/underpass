@@ -675,18 +675,19 @@ RemoteURL::updatePath(int _major, int _minor, int _index)
 }
 
 void
-RemoteURL::Increment(void)
+RemoteURL::increment(void)
 {
+
     boost::format majorfmt("%03d");
     boost::format minorfmt("%03d");
     boost::format indexfmt("%03d");
     std::string newpath;
-    if (minor == 999) {
+
+    if (minor == 999 && index == 999) {
         major++;
         minor = 0;
         index = 0;
-    }
-    if (index == 999) {
+    } else if (index == 999) {
         minor++;
         index = 0;
     } else {
@@ -701,20 +702,20 @@ RemoteURL::Increment(void)
 }
 
 void
-RemoteURL::Decrement(void)
+RemoteURL::decrement(void)
 {
     boost::format majorfmt("%03d");
     boost::format minorfmt("%03d");
     boost::format indexfmt("%03d");
     std::string newpath;
-    if (minor == 0) {
+
+    if (minor == 000 && index == 000) {
         major--;
-        minor = 0;
-        index = 0;
-    }
-    if (index == 0) {
+        minor = 999;
+        index = 999;
+    } else if (index == 000) {
         minor--;
-        index = 0;
+        index = 999;
     } else {
         index--;
     }
@@ -723,10 +724,7 @@ RemoteURL::Decrement(void)
     minorfmt % (minor);
     indexfmt % (index);
 
-    newpath = majorfmt.str() + "/" + minorfmt.str() + "/" + indexfmt.str();
-    boost::algorithm::replace_all(destdir, subpath, newpath);
-    boost::algorithm::replace_all(filespec, subpath, newpath);
-    subpath = newpath;
+    updatePath(major, minor, index);
 }
 
 RemoteURL &
