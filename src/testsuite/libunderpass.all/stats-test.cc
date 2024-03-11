@@ -125,7 +125,7 @@ class TestStats {
                 auto stats = change.collectStats(boundary);
                 jsonstr += statsToJSON(stats, osmchange->filespec);
 
-                osmchange->Increment();
+                osmchange->increment();
             }
 
             jsonstr.erase(jsonstr.size() - 2);
