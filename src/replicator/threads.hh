@@ -105,7 +105,7 @@ struct ReplicationTask {
 extern void
 startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     const multipolygon_t &poly,
-    const underpassconfig::UnderpassConfig &config
+    const underpassconfig::UnderpassConfig config
 );
 
 /// This updates several fields in the changesets table, which are part of
