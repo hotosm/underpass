@@ -33,13 +33,34 @@ class TestOsmChange : public osmchange::OsmChangeFile {};
 
 int
 countFeatures(TestOsmChange &osmchange) {
-    int count = 0;
+    int nodeCount = 0;
+    int wayCount = 0;
+    int relCount = 0;
     for (auto cit = std::begin(osmchange.changes); cit != std::end(osmchange.changes); ++cit) {
         osmchange::OsmChange *testOsmChange = cit->get();
-        count += testOsmChange->nodes.size();
-        count += testOsmChange->ways.size();
+        for (auto nit = std::begin(testOsmChange->nodes); nit != std::end(testOsmChange->nodes); ++nit) {
+            osmobjects::OsmNode *node = nit->get();
+            if (node->priority) {
+                nodeCount++;
+            }
+        }
+        for (auto wit = std::begin(testOsmChange->ways); wit != std::end(testOsmChange->ways); ++wit) {
+            osmobjects::OsmWay *way = wit->get();
+            if (way->priority) {
+                wayCount++;
+            }
+        }
+        for (auto rit = std::begin(testOsmChange->relations); rit != std::end(testOsmChange->relations); ++rit) {
+            osmobjects::OsmRelation *relation = rit->get();
+            if (relation->priority) {
+                relCount++;
+            }
+        }
     }
-    return count;
+    // std::cout << "nodeCount: " << nodeCount << std::endl;
+    // std::cout << "wayCount: " << wayCount << std::endl;
+    // std::cout << "relCount: " << relCount << std::endl;
+    return nodeCount + wayCount + relCount;
 }
 
 int
@@ -68,6 +89,11 @@ getPriority(TestOsmChange &osmchange, bool debug = false) {
     return result;
 }
 
+void
+clearChanges(TestOsmChange &osmchange) {
+    osmchange.changes.clear();
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -77,7 +103,11 @@ main(int argc, char *argv[])
     boost::geometry::read_wkt("MULTIPOLYGON (((20 35, 45 20, 30 5, 10 10, 10 30, 20 35)))", polySmallArea);
     multipolygon_t polyHalf;
     boost::geometry::read_wkt("MULTIPOLYGON(((91.08473230447439 25.195528629552243,91.08475247411987 25.192143075605387,91.08932089882008 25.192152201214213,91.08927047470638 25.195501253482632,91.08473230447439 25.195528629552243)))", polyHalf);
+    multipolygon_t polyHalfSmall;
+    boost::geometry::read_wkt("MULTIPOLYGON(((91.08695983886719 25.195485830324174,91.08697056770325 25.192155906163805,91.08929872512817 25.192126781061106,91.08922362327574 25.195505246524604,91.08695983886719 25.195485830324174)))", polyHalfSmall);
     multipolygon_t polyEmpty;
+
+    // -- ChangeSets
 
     // Small changeset in Bangladesh
     std::string changesetFile(DATADIR);
@@ -131,52 +161,50 @@ main(int argc, char *argv[])
         return 1;
     }
 
-    // OsmChange - Small area in North Africa
-    // FIXME
-    // osmchange.readChanges(osmchangeFile);
-    // osmchange.areaFilter(polySmallArea);
-    // if (countFeatures(osmchange) == 0) {
-    //     runtest.pass("OsmChange areaFilter - false (small area)");
-    // } else {
-    //     runtest.fail("OsmChange areaFilter - false (small area)");
-    //     return 1;
-    // }
+    // -- OsmChanges
+
+    // OsmChange - Empty poly
+    osmchange.readChanges(osmchangeFile);
+    osmchange.areaFilter(polyEmpty);
+    if (getPriority(osmchange) && countFeatures(osmchange) == 62) {
+        runtest.pass("OsmChange areaFilter - true (Empty poly)");
+    } else {
+        runtest.fail("OsmChange areaFilter - true (Empty poly)");
+        return 1;
+    }
 
     // OsmChange - Whole world
-    osmchange.readChanges(osmchangeFile);
+    osmchange.buildGeometriesFromNodeCache();
     osmchange.areaFilter(polyWholeWorld);
-    if (getPriority(osmchange) && countFeatures(osmchange) == 48) {
+    if (getPriority(osmchange) && countFeatures(osmchange) == 62) {
         runtest.pass("OsmChange areaFilter - true (whole world)");
     } else {
         runtest.fail("OsmChange areaFilter - true (whole world)");
         return 1;
     }
-    // Delete all changes
-    osmchange.areaFilter(polySmallArea);
 
-    // OsmChange - Empty polygon
-    // FIXME
-    // osmchange.readChanges(osmchangeFile);
-    // osmchange.areaFilter(polyEmpty);
-    // if (getPriority(osmchange) && countFeatures(osmchange) == 48) {
-    //     runtest.pass("OsmChange areaFilter - true (empty)");
-    // } else {
-    //     runtest.fail("OsmChange areaFilter - true (empty)");
-    //     return 1;
-    // }
-    // Delete all changes
-    // osmchange.areaFilter(polySmallArea);
+    // OsmChange - Small area
+    clearChanges(osmchange);
+    osmchange.readChanges(osmchangeFile);
+    osmchange.areaFilter(polyHalf);
+    if (countFeatures(osmchange) == 35) {
+        runtest.pass("OsmChange areaFilter - true (small area)");
+    } else {
+        runtest.fail("OsmChange areaFilter - true (small area)");
+        return 1;
+    }
 
-    // OsmChange - Half area
-    // FIXME!
-    // osmchange.readChanges(osmchangeFile);
-    // osmchange.areaFilter(polyHalf);
-    // if (getPriority(osmchange, true) && countFeatures(osmchange) == 28) {
-    //     runtest.pass("OsmChange areaFilter - true (half area)");
-    // } else {
-    //     runtest.fail("OsmChange areaFilter - true (half area)");
-    //     return 1;
-    // }
+    // OsmChange - Smaller area
+    clearChanges(osmchange);
+    osmchange.readChanges(osmchangeFile);
+    osmchange.areaFilter(polyHalfSmall);
+    if (countFeatures(osmchange) == 17) {
+        runtest.pass("OsmChange areaFilter - true (smaller area)");
+    } else {
+        runtest.fail("OsmChange areaFilter - true (smaller area)");
+        return 1;
+    }
+
 
 }
 

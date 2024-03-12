@@ -246,6 +246,8 @@ class OsmChangeFile
     void areaFilter(const multipolygon_t &poly);
 
     void buildGeometriesFromNodeCache();
+    void buildRelationGeometry(osmobjects::OsmRelation &relation);
+
 
 #ifdef LIBXML
     /// Called by libxml++ for each element of the XML file

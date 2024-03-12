@@ -614,70 +614,7 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
         for (auto rel_it = std::begin(change->relations); rel_it != std::end(change->relations); ++rel_it) {
             OsmRelation *relation = rel_it->get();
             if (relation->priority) {
-                bool first = true;
-                bool isMultiPolygon = relation->isMultiPolygon();
-                bool isMultiLineString = relation->isMultiLineString();
-                if (isMultiPolygon || isMultiLineString) {
-                    std::string innerGeoStr;
-                    std::string geometry_str;
-                    if (isMultiPolygon) {
-                        geometry_str = "MULTIPOLYGON((";
-                    } else {
-                        geometry_str = "MULTILINESTRING((";
-                    }
-                    bool noWay = false;
-                    for (auto mit = relation->members.begin(); mit != relation->members.end(); ++mit) {
-                        if (!osmchanges->waycache.count(mit->ref)) {
-                            noWay = true;
-                            break;
-                        }
-                        auto way = osmchanges->waycache.at(mit->ref);
-
-                        if ((!isMultiPolygon && boost::geometry::num_points(way->linestring) == 0) ||
-                            (isMultiPolygon && boost::geometry::num_points(way->polygon) == 0)
-                        ) {
-                            noWay = true;
-                            break;
-                        }
-                        std::stringstream ss;
-                        std::string geometry;
-
-                        if (isMultiPolygon) {
-                            ss << std::setprecision(12) << boost::geometry::wkt(way->polygon);
-                            geometry = ss.str();
-                            geometry.erase(0,8);
-                        } else {
-                            ss << std::setprecision(12) << boost::geometry::wkt(way->linestring);
-                            geometry = ss.str();
-                            geometry.erase(0,11);
-                        }
-                        
-                        geometry.erase(geometry.size() - 1);
-                        if (first && (mit->role == "outer")) {
-                            geometry_str += geometry + ",";
-                        } else {
-                            if (mit->role == "inner") {
-                                innerGeoStr += geometry + ",";
-                            } else {
-                                geometry_str += geometry + ",";
-                                geometry_str += innerGeoStr;
-                                innerGeoStr = "";
-                            }
-                        }
-                    }
-                    if (innerGeoStr.size() > 0) {
-                        geometry_str += innerGeoStr;
-                    }
-                    geometry_str.erase(geometry_str.size() - 1);
-                    geometry_str += "))";
-                    if (!noWay) {
-                        if (isMultiPolygon) {
-                            boost::geometry::read_wkt(geometry_str, relation->multipolygon);
-                        } else {
-                            boost::geometry::read_wkt(geometry_str, relation->multilinestring);
-                        }
-                    }
-                }
+                osmchanges->buildRelationGeometry(*relation);
             }
         }
     }

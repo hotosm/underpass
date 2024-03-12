@@ -1,126 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <osmChange version="0.6" generator="CGImap 0.8.6 (1058405 spike-07.openstreetmap.org)" copyright="OpenStreetMap and contributors" attribution="http://www.openstreetmap.org/copyright" license="http://opendatacommons.org/licenses/odbl/1-0/">
- <create>
+<create> 
   <node id="9895174193" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1944736" lon="91.0828973"/>
- </create>
- <create>
   <node id="9895174194" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1944747" lon="91.0829681"/>
- </create>
- <create>
   <node id="9895174195" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1944242" lon="91.0829691"/>
- </create>
- <create>
   <node id="9895174196" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1944231" lon="91.0828983"/>
- </create>
- <create>
   <node id="9895174197" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1944635" lon="91.0830273"/>
- </create>
- <create>
   <node id="9895174198" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1944666" lon="91.0831016"/>
- </create>
- <create>
   <node id="9895174199" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1944158" lon="91.0831042"/>
- </create>
- <create>
   <node id="9895174200" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1944127" lon="91.0830299"/>
- </create>
- <create>
   <node id="9895174201" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1943272" lon="91.0833670"/>
- </create>
- <create>
   <node id="9895174202" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1943302" lon="91.0834576"/>
- </create>
- <create>
   <node id="9895174203" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1942681" lon="91.0834602"/>
- </create>
- <create>
   <node id="9895174204" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1942651" lon="91.0833695"/>
- </create>
- <create>
   <node id="9895174205" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1942547" lon="91.0833691"/>
- </create>
- <create>
   <node id="9895174206" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1942554" lon="91.0834093"/>
- </create>
- <create>
   <node id="9895174207" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1942011" lon="91.0834103"/>
- </create>
- <create>
   <node id="9895174208" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1942005" lon="91.0833702"/>
- </create>
- <create>
   <node id="9895174209" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1945818" lon="91.0851439"/>
- </create>
- <create>
   <node id="9895174210" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1944844" lon="91.0851335"/>
- </create>
- <create>
   <node id="9895174211" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1944894" lon="91.0850765"/>
- </create>
- <create>
   <node id="9895174212" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1945868" lon="91.0850870"/>
- </create>
- <create>
   <node id="9895174213" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1932434" lon="91.0866650"/>
- </create>
- <create>
   <node id="9895174214" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1932439" lon="91.0867112"/>
- </create>
- <create>
   <node id="9895174215" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1932622" lon="91.0867110"/>
- </create>
- <create>
   <node id="9895174216" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1932626" lon="91.0867404"/>
- </create>
- <create>
   <node id="9895210817" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1932465" lon="91.0867407"/>
- </create>
- <create>
   <node id="9895210818" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1932472" lon="91.0868006"/>
- </create>
- <create>
   <node id="9895210819" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1932670" lon="91.0868003"/>
- </create>
- <create>
   <node id="9895210820" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1932672" lon="91.0868213"/>
- </create>
- <create>
   <node id="9895210821" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1932439" lon="91.0868217"/>
- </create>
- <create>
   <node id="9895210822" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1932444" lon="91.0868630"/>
- </create>
- <create>
   <node id="9895210823" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1931998" lon="91.0868637"/>
- </create>
- <create>
   <node id="9895210824" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1931974" lon="91.0866657"/>
- </create>
- <create>
   <node id="9895210825" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1932214" lon="91.0870260"/>
- </create>
- <create>
   <node id="9895210826" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1932211" lon="91.0870569"/>
- </create>
- <create>
   <node id="9895210827" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1931733" lon="91.0870562"/>
- </create>
- <create>
   <node id="9895210828" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1931736" lon="91.0870254"/>
- </create>
- <create>
   <node id="9895210829" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1930973" lon="91.0873711"/>
- </create>
- <create>
   <node id="9895210830" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1930980" lon="91.0874245"/>
- </create>
- <create>
   <node id="9895210831" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1930740" lon="91.0874248"/>
- </create>
- <create>
   <node id="9895210832" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1930733" lon="91.0873714"/>
- </create>
- <create>
   <way id="1079461167" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
    <nd ref="9895174193"/>
    <nd ref="9895174194"/>
@@ -129,8 +49,6 @@
    <nd ref="9895174193"/>
    <tag k="building" v="yes"/>
   </way>
- </create>
- <create>
   <way id="1079461168" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
    <nd ref="9895174197"/>
    <nd ref="9895174198"/>
@@ -139,8 +57,6 @@
    <nd ref="9895174197"/>
    <tag k="building" v="yes"/>
   </way>
- </create>
- <create>
   <way id="1079461169" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
    <nd ref="9895174201"/>
    <nd ref="9895174202"/>
@@ -149,8 +65,6 @@
    <nd ref="9895174201"/>
    <tag k="building" v="yes"/>
   </way>
- </create>
- <create>
   <way id="1079461170" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
    <nd ref="9895174205"/>
    <nd ref="9895174206"/>
@@ -159,8 +73,6 @@
    <nd ref="9895174205"/>
    <tag k="building" v="yes"/>
   </way>
- </create>
- <create>
   <way id="1079461171" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
    <nd ref="9895174209"/>
    <nd ref="9895174210"/>
@@ -169,8 +81,6 @@
    <nd ref="9895174209"/>
    <tag k="building" v="yes"/>
   </way>
- </create>
- <create>
   <way id="1079461172" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
    <nd ref="9895174213"/>
    <nd ref="9895174214"/>
@@ -187,8 +97,6 @@
    <nd ref="9895174213"/>
    <tag k="building" v="yes"/>
   </way>
- </create>
- <create>
   <way id="1079461173" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
    <nd ref="9895210825"/>
    <nd ref="9895210826"/>
@@ -197,8 +105,6 @@
    <nd ref="9895210825"/>
    <tag k="building" v="yes"/>
   </way>
- </create>
- <create>
   <way id="1079461174" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
    <nd ref="9895210829"/>
    <nd ref="9895210830"/>
@@ -207,5 +113,47 @@
    <nd ref="9895210829"/>
    <tag k="building" v="yes"/>
   </way>
- </create>
-</osmChange>
+  <node id="9895210833" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.193091394691464" lon="91.08738044276834"/>
+  <node id="9895210834" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.193092380689848" lon="91.08741832897067"/>
+  <node id="9895210835" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.193077742405293" lon="91.0874186642468"/>
+  <node id="9895210836" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.193091394691464" lon="91.08738044276834"/>
+  <way id="1079461175" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
+   <nd ref="9895210833"/>
+   <nd ref="9895210834"/>
+   <nd ref="9895210835"/>
+   <nd ref="9895210836"/>
+   <nd ref="9895210833"/>
+  </way>
+  <relation id="999996" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
+    <member type="way" ref="1079461174" role="outer" />
+    <member type="way" ref="1079461175" role="inner" />
+    <tag k="type" v="multipolygon" />
+  </relation>
+  <relation id="999997" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
+    <member type="way" ref="1079461174" role="outer" />
+    <member type="way" ref="1079461175" role="inner" />
+    <tag k="type" v="multilinestring" />
+  </relation>
+  <node id="9895210837" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="-65.1930973" lon="-51.0873711"/>
+  <node id="9895210838" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="-65.1930980" lon="-91.0874245"/>
+  <node id="9895210839" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="-65.1930740" lon="-91.0874248"/>
+  <node id="9895210840" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="-65.1930733" lon="-91.0873714"/>
+  <way id="1079461176" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
+   <nd ref="9895210837"/>
+   <nd ref="9895210838"/>
+   <nd ref="9895210839"/>
+   <nd ref="9895210840"/>
+   <nd ref="9895210837"/>
+   <tag k="building" v="yes"/>
+  </way>
+  <relation id="999998" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
+    <member type="way" ref="1079461176" role="outer" />
+    <tag k="type" v="multilinestring" />
+  </relation>
+  <relation id="999999" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
+    <member type="way" ref="1079461176" role="outer" />
+    <tag k="type" v="multilinestring" />
+  </relation>
+
+</create>
+ </osmChange>

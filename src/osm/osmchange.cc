@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021, 2023 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2023, 2024 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -139,6 +139,80 @@ OsmChangeFile::buildGeometriesFromNodeCache() {
             }
             if (way->isClosed()) {
                 way->polygon = { {std::begin(way->linestring), std::end(way->linestring)} };
+            }
+            waycache.insert(std::pair(way->id, std::make_shared<osmobjects::OsmWay>(*way)));
+        }
+        for (auto rit = std::begin(change->relations); rit != std::end(change->relations); ++rit) {
+            osmobjects::OsmRelation *relation = rit->get();
+            buildRelationGeometry(*relation);
+        }
+    }
+}
+
+void
+OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
+    bool first = true;
+    bool isMultiPolygon = relation.isMultiPolygon();
+    bool isMultiLineString = relation.isMultiLineString();
+    if (isMultiPolygon || isMultiLineString) {
+        std::string innerGeoStr;
+        std::string geometry_str;
+        if (isMultiPolygon) {
+            geometry_str = "MULTIPOLYGON((";
+        } else {
+            geometry_str = "MULTILINESTRING((";
+        }
+        bool noWay = false;
+        for (auto mit = relation.members.begin(); mit != relation.members.end(); ++mit) {
+            if (!waycache.count(mit->ref)) {
+                noWay = true;
+                break;
+            }
+            auto way = waycache.at(mit->ref);
+
+            if ((!isMultiPolygon && boost::geometry::num_points(way->linestring) == 0) ||
+                (isMultiPolygon && boost::geometry::num_points(way->polygon) == 0)
+            ) {
+                noWay = true;
+                break;
+            }
+            std::stringstream ss;
+            std::string geometry;
+
+            if (isMultiPolygon) {
+                ss << std::setprecision(12) << boost::geometry::wkt(way->polygon);
+                geometry = ss.str();
+                geometry.erase(0,8);
+            } else {
+                ss << std::setprecision(12) << boost::geometry::wkt(way->linestring);
+                geometry = ss.str();
+                geometry.erase(0,11);
+            }
+            
+            geometry.erase(geometry.size() - 1);
+            if (first && (mit->role == "outer")) {
+                geometry_str += geometry + ",";
+            } else {
+                if (mit->role == "inner") {
+                    innerGeoStr += geometry + ",";
+                } else {
+                    geometry_str += geometry + ",";
+                    geometry_str += innerGeoStr;
+                    innerGeoStr = "";
+                }
+            }
+        }
+        if (innerGeoStr.size() > 0) {
+            geometry_str += innerGeoStr;
+        }
+        geometry_str.erase(geometry_str.size() - 1);
+        geometry_str += "))";
+
+        if (!noWay) {
+            if (isMultiPolygon) {
+                boost::geometry::read_wkt(geometry_str, relation.multipolygon);
+            } else {
+                boost::geometry::read_wkt(geometry_str, relation.multilinestring);
             }
         }
     }
@@ -326,7 +400,6 @@ OsmChangeFile::on_start_element(const Glib::ustring &name,
                           a.name);
             }
         }
-        // FIXME: is role mandatory?
         if (ref != -1 && type != osmobjects::osmtype_t::empty) {
             changes.back()->addMember(ref, type, role);
         } else {
@@ -469,7 +542,7 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
             if (poly.empty() || boost::geometry::within(node->point, poly)) {
                 node->priority = true;
                 nodecache[node->id] = node->point;
-            } if (!boost::geometry::within(node->point, poly)) {
+            } else if (!boost::geometry::within(node->point, poly)) {
                 node->priority = false;
             }
         }
@@ -484,27 +557,38 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
                 for (auto rit = std::begin(way->refs); rit != std::end(way->refs); ++rit) {
                     if (nodecache.count(*rit) && boost::geometry::within(nodecache[*rit], poly)) {
                         way->priority = true;
-                        continue;
+                        if (boost::geometry::within(nodecache[*rit], poly)) {
+                            std::stringstream ss;
+                            ss << std::setprecision(12) << boost::geometry::wkt(nodecache[*rit]);
+                        }
+                        break;
+                    }
+                }
+            }
+            if (waycache.count(way->id)) {
+                waycache.at(way->id)->priority = way->priority;
+            }
+            
+        }
+
+        // Filter relations
+        for (auto rit = std::begin(change->relations); rit != std::end(change->relations); ++rit) {
+            OsmRelation *relation = rit->get();
+            if (poly.empty()) {
+                relation->priority = true;
+            } else {
+                relation->priority = false;
+                for (auto mit = std::begin(relation->members); mit != std::end(relation->members); ++mit) {
+                    if (waycache.count(mit->ref)) {
+                        auto way = waycache.at(mit->ref);
+                        if (way->priority) {
+                            relation->priority = true;
+                            break;
+                        }
                     }
                 }
             }
         }
-
-        // Filter relations
-        // for (auto rit = std::begin(change->relations); rit != std::end(change->relations); ++rit) {
-        //     OsmRelation *relation = rit->get();
-        //     if (poly.empty()) {
-        //         relation->priority = true;
-        //     } else {
-        //         relation->priority = false;
-        //         for (auto mit = std::begin(relation->members); mit != std::end(relation->members); ++mit) {
-        //             if (nodecache.count(mit->ref) && boost::geometry::within(nodecache[mit->ref], poly)) {
-        //                 relation->priority = true;
-        //                 continue;
-        //             }
-        //         }
-        //     }
-        // }
     }
 }
 
