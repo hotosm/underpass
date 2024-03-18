@@ -157,64 +157,149 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
     if (isMultiPolygon || isMultiLineString) {
         std::string innerGeoStr;
         std::string geometry_str;
-        if (isMultiPolygon) {
-            geometry_str = "MULTIPOLYGON((";
-        } else {
-            geometry_str = "MULTILINESTRING((";
-        }
+
         bool noWay = false;
+        std::string linestring_tmp;
+        bool using_linestring_tmp = false;
+        linestring_t lastLinestring;
+
         for (auto mit = relation.members.begin(); mit != relation.members.end(); ++mit) {
-            if (!waycache.count(mit->ref)) {
-                noWay = true;
-                break;
-            }
-            auto way = waycache.at(mit->ref);
+            if (mit->type == osmobjects::way) {
 
-            if ((!isMultiPolygon && boost::geometry::num_points(way->linestring) == 0) ||
-                (isMultiPolygon && boost::geometry::num_points(way->polygon) == 0)
-            ) {
-                noWay = true;
-                break;
-            }
-            std::stringstream ss;
-            std::string geometry;
+                if (!waycache.count(mit->ref)) { 
+                    noWay = true;
+                    break;
+                }
+                auto way = waycache.at(mit->ref);
 
-            if (isMultiPolygon) {
-                ss << std::setprecision(12) << boost::geometry::wkt(way->polygon);
-                geometry = ss.str();
-                geometry.erase(0,8);
-            } else {
-                ss << std::setprecision(12) << boost::geometry::wkt(way->linestring);
-                geometry = ss.str();
-                geometry.erase(0,11);
-            }
-            
-            geometry.erase(geometry.size() - 1);
-            if (first && (mit->role == "outer")) {
-                geometry_str += geometry + ",";
-            } else {
-                if (mit->role == "inner") {
-                    innerGeoStr += geometry + ",";
+                // When Relation is MultiPolygon but way's geometry is LineString
+                // append LineString to points to convert it later to a Polygon
+                if (using_linestring_tmp || (isMultiPolygon &&
+                    boost::geometry::num_points(way->linestring) > 0 &&
+                    boost::geometry::num_points(way->polygon) == 0)
+                ) {
+
+                    // MultiPolygon made of multiple LineStrings
+                    
+                    using_linestring_tmp = true;
+                    std::stringstream ss;
+                    std::string geometry;
+                    if (boost::geometry::num_points(way->polygon) > 0) {
+                        ss << std::setprecision(12) << boost::geometry::wkt(way->polygon.outer());
+                        geometry = ss.str();
+                        geometry.erase(geometry.size() - 1);
+                    } else {
+
+                        if (!first) {
+                            // Check if linestrings needs to be reversed
+                            bool reverse_line = bg::equals(lastLinestring.front(), way->linestring.front()) ||
+                            bg::equals(lastLinestring.front(), way->linestring.back()) ||
+                            bg::equals(lastLinestring.back(), way->linestring.front()) ||
+                            bg::equals(lastLinestring.back(), way->linestring.back());
+                            if (reverse_line) {
+                                bg::reverse(way->linestring);
+                            }
+                        }
+                        lastLinestring = way->linestring;
+
+                        ss << std::setprecision(12) << boost::geometry::wkt(way->linestring);
+                        geometry = ss.str();
+                    }
+                    geometry.erase(0,11);
+                    geometry.erase(geometry.size() - 1);
+                    linestring_tmp += "(" + geometry + "),";
+
                 } else {
-                    geometry_str += geometry + ",";
-                    geometry_str += innerGeoStr;
-                    innerGeoStr = "";
+
+                    // MultiPolygon or MultiLineString
+
+                    // When Relation is MultiLineString but way's geometry is Polygon
+                    if (isMultiLineString && boost::geometry::num_points(way->linestring) == 0 &&
+                        boost::geometry::num_points(way->polygon) > 0
+                    ) {
+                        // Convert way's Polygon to LineString
+                        bg::assign_points(way->linestring, way->polygon.outer());
+                    }
+
+                    std::stringstream ss;
+                    std::string geometry;
+
+                    if (isMultiPolygon) {
+                        ss << std::setprecision(12) << boost::geometry::wkt(way->polygon);
+                        geometry = ss.str();
+                        // Erase "POLYGON("
+                        geometry.erase(0,8);
+                    } else {
+                        ss << std::setprecision(12) << boost::geometry::wkt(way->linestring);
+                        geometry = ss.str();
+                        // Erase "LINESTRING("
+                        geometry.erase(0,11);
+                    }
+                    
+                    // Erase ")"
+                    geometry.erase(geometry.size() - 1);
+                    
+                    if (isMultiLineString) {
+                        geometry = "(" + geometry + ")";
+                    }
+
+                    if (first && (mit->role != "inner")) {
+                        first = false;
+                        geometry_str += geometry + ",";
+                    } else {
+                        if (mit->role == "inner" && isMultiPolygon) {
+                            innerGeoStr += geometry + ",";
+                        } else {
+                            geometry_str += geometry + ",";
+                            geometry_str += innerGeoStr;
+                            innerGeoStr = "";
+                        }
+                    }
                 }
             }
         }
-        if (innerGeoStr.size() > 0) {
-            geometry_str += innerGeoStr;
-        }
-        geometry_str.erase(geometry_str.size() - 1);
-        geometry_str += "))";
 
         if (!noWay) {
+            if (linestring_tmp.size() == 0) {
+                if (isMultiLineString) {
+                    geometry_str.erase(geometry_str.size() - 1);
+                    geometry_str = "MULTILINESTRING(" + geometry_str;
+                } else {
+                    geometry_str = "MULTIPOLYGON((" + geometry_str;
+                }
+                if (innerGeoStr.size() > 0) {
+                    geometry_str += innerGeoStr;
+                }
+                geometry_str.erase(geometry_str.size() - 1);
+                geometry_str += "))";
+            } else {
+                linestring_tmp.erase(linestring_tmp.size() - 1);
+                geometry_str = "MULTILINESTRING(" + linestring_tmp + ")";
+                                
+                boost::geometry::read_wkt(geometry_str, relation.multilinestring);
+                linestring_t mergedLineString;
+                for (auto& line : relation.multilinestring) {
+                    bg::append(mergedLineString, line);
+                }
+                // Create a polygon from the linestring
+                polygon_t polygon;
+                bg::append(polygon.outer(), mergedLineString);
+                std::stringstream ss;
+                ss << std::setprecision(12) << boost::geometry::wkt(polygon);
+                geometry_str = ss.str();
+                // Erase "POLYGON"
+                geometry_str.erase(0, 8);
+                geometry_str = "MULTIPOLYGON((" + geometry_str + ")";
+
+            }
+
             if (isMultiPolygon) {
                 boost::geometry::read_wkt(geometry_str, relation.multipolygon);
             } else {
                 boost::geometry::read_wkt(geometry_str, relation.multilinestring);
             }
         }
+
     }
 }
 
@@ -535,10 +620,14 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
     for (auto it = std::begin(changes); it != std::end(changes); it++) {
 
         OsmChange *change = it->get();
+        bool debug = false;
 
         // Filter nodes
         for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
             OsmNode *node = nit->get();
+            if (node->id == 1508976013) {
+                debug = true;
+            }
             if (poly.empty() || boost::geometry::within(node->point, poly)) {
                 node->priority = true;
                 nodecache[node->id] = node->point;
@@ -557,10 +646,6 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
                 for (auto rit = std::begin(way->refs); rit != std::end(way->refs); ++rit) {
                     if (nodecache.count(*rit) && boost::geometry::within(nodecache[*rit], poly)) {
                         way->priority = true;
-                        if (boost::geometry::within(nodecache[*rit], poly)) {
-                            std::stringstream ss;
-                            ss << std::setprecision(12) << boost::geometry::wkt(nodecache[*rit]);
-                        }
                         break;
                     }
                 }
@@ -581,10 +666,13 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
                 for (auto mit = std::begin(relation->members); mit != std::end(relation->members); ++mit) {
                     if (waycache.count(mit->ref)) {
                         auto way = waycache.at(mit->ref);
-                        if (way->priority) {
-                            relation->priority = true;
+                        if (!way->priority) {
+                            relation->priority = false;
                             break;
                         }
+                    } else {
+                        relation->priority = false;
+                        break;
                     }
                 }
             }

@@ -57,9 +57,6 @@ countFeatures(TestOsmChange &osmchange) {
             }
         }
     }
-    // std::cout << "nodeCount: " << nodeCount << std::endl;
-    // std::cout << "wayCount: " << wayCount << std::endl;
-    // std::cout << "relCount: " << relCount << std::endl;
     return nodeCount + wayCount + relCount;
 }
 

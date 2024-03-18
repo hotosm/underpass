@@ -134,7 +134,13 @@ OsmRelationMember::dump() const
 {
     std::cerr << "\t\tDumping Relation member" << std::endl;
     std::cerr << "\t\t\tRef: " << ref << std::endl;
-    std::cerr << "\t\t\type: " << type << std::endl;
+    if (type == node) {
+        std::cerr << "\t\t\tType: OsmNode" << std::endl;
+    } else if (type == way) {
+        std::cerr << "\t\t\tType: OsmWay" << std::endl;
+    } else if (type == relation) {
+        std::cerr << "\t\t\tType: OsmRelation" << std::endl;
+    }
     std::cerr << "\t\t\tRole: " << role << std::endl;
 }
 

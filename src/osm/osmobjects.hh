@@ -235,8 +235,7 @@ class OsmRelation : public OsmObject {
     bool isMultiPolygon(void) const
     {
         return (tags.count("type") &&
-            (tags.at("type") == "multipolygon" ||
-            tags.at("type") == "boundary")
+            (tags.at("type") == "multipolygon")
         );
     };
 
@@ -244,7 +243,7 @@ class OsmRelation : public OsmObject {
     bool isMultiLineString(void) const
     {
         return (tags.count("type") &&
-            tags.at("type") == "multilinestring"
+            (tags.at("type") != "multipolygon")
         );
     };
 

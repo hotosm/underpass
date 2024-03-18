@@ -548,7 +548,6 @@ threadOsmChange(OsmChangeTask osmChangeTask)
                 if (relation->action != osmobjects::remove && !relation->priority) {
                     continue;
                 }
-
                 // Remove deleted relations from validation table
                 if (!config->disable_validation && relation->action == osmobjects::remove) {
                     removed_relations->push_back(relation->id);
@@ -556,7 +555,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
 
                 //  Update relations, ignore new ones outside priority area
                 if (!config->disable_raw) {
-                    // task.query += queryraw->applyChange(*relation);
+                    task.query += queryraw->applyChange(*relation);
                 }
             }
 

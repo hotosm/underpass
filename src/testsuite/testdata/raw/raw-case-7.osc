@@ -1,0 +1,229 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version="0.6" generator="Osmosis 0.47.4">
+  <create>
+    <node id="4082354743" visible="true" version="1" changeset="148486102" timestamp="2024-03-11T02:27:57Z" user="emiigon" uid="2998234" lat="-36.7459070" lon="-59.8482593"/>
+    <node id="4082354730" visible="true" version="1" changeset="38112096" timestamp="2016-03-28T05:42:30Z" user="fernandogordon" uid="3753949" lat="-36.7515154" lon="-59.8408639"/>
+    <node id="4082354731" visible="true" version="1" changeset="148486102" timestamp="2024-03-11T02:27:57Z" user="emiigon" uid="2998234" lat="-36.7483355" lon="-59.8370667"/>
+    <node id="11715198644" visible="true" version="1" changeset="148486102" timestamp="2024-03-11T02:27:57Z" user="emiigon" uid="2998234" lat="-36.7480926" lon="-59.8368532"/>
+    <node id="4082354732" visible="true" version="1" changeset="148486102" timestamp="2024-03-11T02:27:57Z" user="emiigon" uid="2998234" lat="-36.7452085" lon="-59.8353203"/>
+    <node id="7597361842" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7448782" lon="-59.8355946"/>
+    <node id="7613942956" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7452032" lon="-59.8486299"/>
+    <node id="5284501782" visible="true" version="1" changeset="54632608" timestamp="2017-12-14T18:37:03Z" user="HerrNebel" uid="7239149" lat="-36.7453269" lon="-59.8485320"/>
+    <node id="7613942960" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7456167" lon="-59.8483958"/>
+    <node id="7613942954" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7451521" lon="-59.8486213"/>
+    <node id="6090411560" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7432981" lon="-59.8481455"/>
+    <node id="1326976484" visible="true" version="1" changeset="64871560" timestamp="2018-11-25T16:51:47Z" user="CorazonDelator" uid="8127216" lat="-36.7425679" lon="-59.8478834"/>
+    <node id="4082354759" visible="true" version="1" changeset="148486102" timestamp="2024-03-11T02:27:57Z" user="emiigon" uid="2998234" lat="-36.7423963" lon="-59.8478326"/>
+    <node id="6090411559" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7422529" lon="-59.8477902"/>
+    <node id="7613942952" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7422007" lon="-59.8477764"/>
+    <node id="7613942951" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7421500" lon="-59.8477733"/>
+    <node id="7613942953" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7420950" lon="-59.8477773"/>
+    <node id="7613942949" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7420329" lon="-59.8477972"/>
+    <node id="7613942950" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7419783" lon="-59.8478247"/>
+    <node id="6090411558" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7419236" lon="-59.8478609"/>
+    <node id="7613942948" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7418808" lon="-59.8479126"/>
+    <node id="7613942947" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7418607" lon="-59.8479500"/>
+    <node id="6090411557" visible="true" version="1" changeset="64871560" timestamp="2018-11-25T16:51:47Z" user="CorazonDelator" uid="8127216" lat="-36.7418147" lon="-59.8480462"/>
+    <node id="7613942946" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7417819" lon="-59.8480692"/>
+    <node id="7613942945" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7417548" lon="-59.8480709"/>
+    <node id="1326976477" visible="true" version="1" changeset="64871560" timestamp="2018-11-25T16:51:47Z" user="CorazonDelator" uid="8127216" lat="-36.7416893" lon="-59.8480673"/>
+    <node id="6090411556" visible="true" version="1" changeset="64871560" timestamp="2018-11-25T16:51:47Z" user="CorazonDelator" uid="8127216" lat="-36.7411630" lon="-59.8479835"/>
+    <node id="7613942944" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7411211" lon="-59.8479787"/>
+    <node id="7613942942" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7410819" lon="-59.8479562"/>
+    <node id="7613942943" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7410414" lon="-59.8479230"/>
+    <node id="6090411555" visible="true" version="1" changeset="64871560" timestamp="2018-11-25T16:51:47Z" user="CorazonDelator" uid="8127216" lat="-36.7410094" lon="-59.8478722"/>
+    <node id="1326976370" visible="true" version="1" changeset="64871560" timestamp="2018-11-25T16:51:47Z" user="CorazonDelator" uid="8127216" lat="-36.7408127" lon="-59.8475273"/>
+    <node id="7613942939" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7407496" lon="-59.8474352"/>
+    <node id="7613942941" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7406912" lon="-59.8473715"/>
+    <node id="7613942940" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7406329" lon="-59.8473254"/>
+    <node id="1326976380" visible="true" version="1" changeset="64871560" timestamp="2018-11-25T16:51:47Z" user="CorazonDelator" uid="8127216" lat="-36.7405588" lon="-59.8472829"/>
+    <node id="7613942931" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7404962" lon="-59.8472494"/>
+    <node id="7613942929" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7404251" lon="-59.8472589"/>
+    <node id="7613942930" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7403582" lon="-59.8472978"/>
+    <node id="6090411554" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7403200" lon="-59.8473424"/>
+    <node id="7613942938" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7402921" lon="-59.8473864"/>
+    <node id="7613942936" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7402740" lon="-59.8474375"/>
+    <node id="7613942937" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7402560" lon="-59.8474922"/>
+    <node id="7613942932" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7402465" lon="-59.8475468"/>
+    <node id="7613942935" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7402304" lon="-59.8476241"/>
+    <node id="7613942934" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7402171" lon="-59.8476784"/>
+    <node id="7613942933" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7401919" lon="-59.8477563"/>
+    <node id="1326976421" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7401545" lon="-59.8478265"/>
+    <node id="7613942927" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7400779" lon="-59.8479128"/>
+    <node id="7613942926" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7399885" lon="-59.8479937"/>
+    <node id="7613942928" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7398796" lon="-59.8480801"/>
+    <node id="6090391730" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7397665" lon="-59.8481504"/>
+    <node id="6090391729" visible="true" version="1" changeset="86541190" timestamp="2020-06-12T03:40:30Z" user="Camello_AR" uid="657643" lat="-36.7391216" lon="-59.8484110"/>
+    <node id="1326976479" visible="true" version="1" changeset="64871213" timestamp="2018-11-25T16:38:55Z" user="CorazonDelator" uid="8127216" lat="-36.7390280" lon="-59.8484023"/>
+    <node id="7597361851" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7389343" lon="-59.8483557"/>
+    <node id="6090391728" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7388702" lon="-59.8482783"/>
+    <node id="7597361850" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7388242" lon="-59.8482200"/>
+    <node id="6090391727" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7388079" lon="-59.8481308"/>
+    <node id="7597361849" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7387583" lon="-59.8480003"/>
+    <node id="1326976392" visible="true" version="1" changeset="64871213" timestamp="2018-11-25T16:38:55Z" user="CorazonDelator" uid="8127216" lat="-36.7386841" lon="-59.8478575"/>
+    <node id="7597361847" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7386180" lon="-59.8477933"/>
+    <node id="7597361848" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7385158" lon="-59.8477365"/>
+    <node id="7597361846" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7384235" lon="-59.8477106"/>
+    <node id="7597361845" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7382963" lon="-59.8477053"/>
+    <node id="1326976457" visible="true" version="1" changeset="64871213" timestamp="2018-11-25T16:38:55Z" user="CorazonDelator" uid="8127216" lat="-36.7381998" lon="-59.8477134"/>
+    <node id="7597361853" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7381126" lon="-59.8477433"/>
+    <node id="7597361854" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7380220" lon="-59.8478321"/>
+    <node id="7597361855" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7379644" lon="-59.8479105"/>
+    <node id="7597361852" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7379216" lon="-59.8480011"/>
+    <node id="7597361856" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7378122" lon="-59.8482127"/>
+    <node id="7597361858" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7377698" lon="-59.8482877"/>
+    <node id="6090391726" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7377126" lon="-59.8483566"/>
+    <node id="7597361859" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7376320" lon="-59.8483930"/>
+    <node id="7597361857" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7375366" lon="-59.8484294"/>
+    <node id="1326976470" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7372026" lon="-59.8485761"/>
+    <node id="7597361862" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7370773" lon="-59.8486050"/>
+    <node id="7597361860" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7369372" lon="-59.8486246"/>
+    <node id="7597361861" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7368366" lon="-59.8486196"/>
+    <node id="6090391725" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7367015" lon="-59.8485807"/>
+    <node id="7597361863" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7365836" lon="-59.8485290"/>
+    <node id="7597361864" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7364835" lon="-59.8484717"/>
+    <node id="1326976522" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7363497" lon="-59.8483887"/>
+    <node id="1326976426" visible="true" version="1" changeset="9319378" timestamp="2011-09-16T20:48:36Z" user="pablopareja" uid="211657" lat="-36.7356502" lon="-59.8477548"/>
+    <node id="7597361832" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7356248" lon="-59.8477339"/>
+    <node id="7597361841" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7428388" lon="-59.8382250"/>
+    <node id="7597361840" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7424968" lon="-59.8386641"/>
+    <node id="7597361839" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7396527" lon="-59.8423067"/>
+    <node id="7597361838" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7395354" lon="-59.8424572"/>
+    <node id="7597361837" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7378250" lon="-59.8447338"/>
+    <node id="7597361836" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7361243" lon="-59.8469617"/>
+    <node id="7597361835" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7358571" lon="-59.8473073"/>
+    <node id="7597361834" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7357691" lon="-59.8474292"/>
+    <node id="7597361833" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643" lat="-36.7357007" lon="-59.8475634"/>
+    <way id="406128128" visible="true" version="1" changeset="148486102" timestamp="2024-03-11T02:27:57Z" user="emiigon" uid="2998234">
+        <nd ref="7597361842"/>
+        <nd ref="4082354732"/>
+        <nd ref="11715198644"/>
+        <nd ref="4082354731"/>
+        <nd ref="4082354730"/>
+        <nd ref="4082354743"/>
+    </way>
+    <way id="1260418567" visible="true" version="1" changeset="148486102" timestamp="2024-03-11T02:27:57Z" user="emiigon" uid="2998234">
+        <nd ref="7613942956"/>
+        <nd ref="5284501782"/>
+        <nd ref="7613942960"/>
+        <nd ref="4082354743"/>
+    </way>
+    <way id="1260418566" visible="true" version="1" changeset="148486102" timestamp="2024-03-11T02:27:57Z" user="emiigon" uid="2998234">
+        <nd ref="7613942956"/>
+        <nd ref="7613942954"/>
+        <nd ref="6090411560"/>
+        <nd ref="1326976484"/>
+        <nd ref="4082354759"/>
+        <tag k="name" v="Arroyo Azul"/>
+        <tag k="waterway" v="river"/>
+        <tag k="width" v="30"/>
+    </way>
+    <way id="1260418569" visible="true" version="1" changeset="148486102" timestamp="2024-03-11T02:27:57Z" user="emiigon" uid="2998234">
+        <nd ref="4082354759"/>
+        <nd ref="6090411559"/>
+        <nd ref="7613942952"/>
+        <nd ref="7613942951"/>
+        <nd ref="7613942953"/>
+        <nd ref="7613942949"/>
+        <nd ref="7613942950"/>
+        <nd ref="6090411558"/>
+        <nd ref="7613942948"/>
+        <nd ref="7613942947"/>
+        <nd ref="6090411557"/>
+        <nd ref="7613942946"/>
+        <nd ref="7613942945"/>
+        <nd ref="1326976477"/>
+        <nd ref="6090411556"/>
+        <nd ref="7613942944"/>
+        <nd ref="7613942942"/>
+        <nd ref="7613942943"/>
+        <nd ref="6090411555"/>
+        <nd ref="1326976370"/>
+        <nd ref="7613942939"/>
+        <nd ref="7613942941"/>
+        <nd ref="7613942940"/>
+        <nd ref="1326976380"/>
+        <nd ref="7613942931"/>
+        <nd ref="7613942929"/>
+        <nd ref="7613942930"/>
+        <nd ref="6090411554"/>
+        <nd ref="7613942938"/>
+        <nd ref="7613942936"/>
+        <nd ref="7613942937"/>
+        <nd ref="7613942932"/>
+        <nd ref="7613942935"/>
+        <nd ref="7613942934"/>
+        <nd ref="7613942933"/>
+        <nd ref="1326976421"/>
+        <nd ref="7613942927"/>
+        <nd ref="7613942926"/>
+        <nd ref="7613942928"/>
+        <nd ref="6090391730"/>
+        <nd ref="6090391729"/>
+        <nd ref="1326976479"/>
+        <nd ref="7597361851"/>
+        <nd ref="6090391728"/>
+        <nd ref="7597361850"/>
+        <nd ref="6090391727"/>
+        <nd ref="7597361849"/>
+        <nd ref="1326976392"/>
+        <nd ref="7597361847"/>
+        <nd ref="7597361848"/>
+        <nd ref="7597361846"/>
+        <nd ref="7597361845"/>
+        <nd ref="1326976457"/>
+        <nd ref="7597361853"/>
+        <nd ref="7597361854"/>
+        <nd ref="7597361855"/>
+        <nd ref="7597361852"/>
+        <nd ref="7597361856"/>
+        <nd ref="7597361858"/>
+        <nd ref="6090391726"/>
+        <nd ref="7597361859"/>
+        <nd ref="7597361857"/>
+        <nd ref="1326976470"/>
+        <nd ref="7597361862"/>
+        <nd ref="7597361860"/>
+        <nd ref="7597361861"/>
+        <nd ref="6090391725"/>
+        <nd ref="7597361863"/>
+        <nd ref="7597361864"/>
+        <nd ref="1326976522"/>
+        <nd ref="1326976426"/>
+        <nd ref="7597361832"/>
+        <tag k="name" v="Arroyo Azul"/>
+        <tag k="waterway" v="river"/>
+        <tag k="width" v="30"/>
+    </way>
+    <way id="813336349" visible="true" version="1" changeset="86268617" timestamp="2020-06-06T05:20:48Z" user="Camello_AR" uid="657643">
+        <nd ref="7597361832"/>
+        <nd ref="7597361833"/>
+        <nd ref="7597361834"/>
+        <nd ref="7597361835"/>
+<nd ref="7597361836"/>
+<nd ref="7597361837"/>
+<nd ref="7597361838"/>
+<nd ref="7597361839"/>
+<nd ref="7597361840"/>
+<nd ref="7597361841"/>
+        <nd ref="7597361842"/>
+        
+        
+        
+        
+        
+        
+        <tag k="waterway" v="drain"/>
+    </way>
+    <relation id="17331328" visible="true" version="1" changeset="148486102" timestamp="2024-03-11T02:27:57Z" user="emiigon" uid="2998234">
+        <member type="way" ref="406128128" role="outer"/>
+        <member type="way" ref="1260418567" role="outer"/>
+        <member type="way" ref="1260418566" role="outer"/>
+        <member type="way" ref="1260418569" role="outer"/>
+        <member type="way" ref="813336349" role="outer"/>
+        <tag k="amenity" v="university"/>
+        <tag k="name" v="Campo Frutal Universidad de Agronomía de Azul"/>
+        <tag k="type" v="multipolygon"/>
+    </relation>
+  </create>
+</osmChange>

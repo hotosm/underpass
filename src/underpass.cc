@@ -297,7 +297,9 @@ main(int argc, char *argv[])
                 osmboundary = &geou.boundary;
             }
             osmchange->destdir_base = config.destdir_base;
-            osmchange->dump();
+            if (!config.silent) {
+                osmchange->dump();
+            }
             osmChangeThread = std::thread(replicatorthreads::startMonitorChanges, std::ref(osmchange),
                             std::ref(*osmboundary), config);
         }
