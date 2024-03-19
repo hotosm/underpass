@@ -16,26 +16,9 @@ url=https://www.openstreetmap.org
 scope=read_prefs
 login_redirect_uri=${api_url}/v1/auth/callback/
 
-; Insights database access credentials
-[INSIGHTS]
-%{ for k, v in insights_db_creds ~}
-${k}=${v}
-%{ endfor ~}
-
 ; Underpass database access credentials
 [UNDERPASS]
 %{ for k, v in underpass_db_creds ~}
-${k}=${v}
-%{ endfor ~}
-
-[RAW_DATA]
-%{ for k, v in galaxy_db_creds ~}
-${k}=${v}
-%{ endfor ~}
-
-; Tasking Manager database access credentials
-[TM]
-%{ for k, v in tasking_manager_db_creds ~}
 ${k}=${v}
 %{ endfor ~}
 
@@ -45,8 +28,3 @@ url=${sentry_dsn}
 environment=${sentry_app_environment}
 release=${sentry_app_release_tag}
 rate=1.0
-
-; ACCESS KEY AND SECRET KEY implicit
-[EXPORT_UPLOAD]
-FILE_UPLOAD_METHOD=s3
-BUCKET_NAME=${export_upload_bucket_name}

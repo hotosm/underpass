@@ -45,7 +45,7 @@ data "aws_ami" "ubuntu_latest" {
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-hirsute-21.04-amd64-server-*"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-lunar-23.04-amd64-server-*"]
   }
 
   filter {
@@ -66,7 +66,7 @@ data "aws_ami" "ubuntu_latest_arm" {
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-hirsute-21.04-arm64-server-*"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-lunar-23.04-arm64-server-*"]
   }
 
   filter {

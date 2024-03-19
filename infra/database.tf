@@ -104,7 +104,7 @@ resource "aws_iam_role" "access-underpass-database-credentials" {
 
 resource "aws_db_subnet_group" "underpass" {
   name       = "underpass"
-  subnet_ids = [for subnet in aws_subnet.private : subnet.id]
+  subnet_ids = module.vpc.private_subnets
 }
 
 resource "aws_security_group" "database" {
@@ -125,7 +125,7 @@ resource "aws_security_group" "database" {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [aws_security_group.api.id, aws_security_group.app.id]
+    security_groups = [module.vpc.default_security_group_id]
   }
 
   egress {
@@ -251,7 +251,7 @@ resource "aws_db_proxy" "underpass" {
     aws_security_group.database.id,
     aws_security_group.database-administration.id
   ]
-  vpc_subnet_ids = [for subnet in aws_subnet.private : subnet.id]
+  vpc_subnet_ids = module.vpc.private_subnets
 
   auth {
     auth_scheme = "SECRETS"
@@ -282,7 +282,7 @@ resource "aws_db_proxy_target" "underpass" {
 resource "aws_db_proxy_endpoint" "underpass-readonly" {
   db_proxy_name          = aws_db_proxy.underpass.name
   db_proxy_endpoint_name = "underpass-readonly"
-  vpc_subnet_ids         = [for subnet in aws_subnet.private : subnet.id]
+  vpc_subnet_ids         = module.vpc.private_subnets
   vpc_security_group_ids = [
     aws_security_group.database.id,
     aws_security_group.database-administration.id

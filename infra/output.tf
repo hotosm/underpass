@@ -17,16 +17,3 @@ output "db-security-group" {
 output "db-connection-pool-endpoint" {
   value = aws_db_proxy.underpass.endpoint
 }
-
-output "website_endpoint" {
-  value = data.aws_s3_bucket.underpass-website.website_endpoint
-}
-
-output "website_domain" {
-  value = data.aws_s3_bucket.underpass-website.website_domain
-}
-
-
-output "s3_origin_regional_domain_name" {
-  value = data.aws_s3_bucket.underpass-website.bucket_regional_domain_name
-}
