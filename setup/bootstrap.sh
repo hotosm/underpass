@@ -119,7 +119,7 @@ then
         then
             docker exec -w /code/build -t underpass underpass --bootstrap
         else
-            underpass --bootstrap
+            underpass --bootstrap  --server=$USER:$PASS@$HOST:$PORT/$DB
         fi
         echo "Done."
         echo " "
