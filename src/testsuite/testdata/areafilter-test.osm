@@ -41,6 +41,10 @@
   <node id="9895210830" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1930980" lon="91.0874245"/>
   <node id="9895210831" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1930740" lon="91.0874248"/>
   <node id="9895210832" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1930733" lon="91.0873714"/>
+  <node id="9895210833" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1930914" lon="91.0873793"/>
+  <node id="9895210834" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1930922" lon="91.0874188"/>
+  <node id="9895210835" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1930780" lon="91.0874193"/>
+  <node id="9895210836" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.1930785" lon="91.0873790"/>
   <way id="1079461167" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
    <nd ref="9895174193"/>
    <nd ref="9895174194"/>
@@ -113,47 +117,18 @@
    <nd ref="9895210829"/>
    <tag k="building" v="yes"/>
   </way>
-  <node id="9895210833" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.193091394691464" lon="91.08738044276834"/>
-  <node id="9895210834" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.193092380689848" lon="91.08741832897067"/>
-  <node id="9895210835" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.193077742405293" lon="91.0874186642468"/>
-  <node id="9895210836" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="25.193091394691464" lon="91.08738044276834"/>
   <way id="1079461175" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
    <nd ref="9895210833"/>
    <nd ref="9895210834"/>
    <nd ref="9895210835"/>
    <nd ref="9895210836"/>
    <nd ref="9895210833"/>
+   <tag k="building" v="yes"/>
   </way>
-  <relation id="999996" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
+  <relation id="2000000000"  version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
     <member type="way" ref="1079461174" role="outer" />
     <member type="way" ref="1079461175" role="inner" />
     <tag k="type" v="multipolygon" />
   </relation>
-  <relation id="999997" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
-    <member type="way" ref="1079461174" role="outer" />
-    <member type="way" ref="1079461175" role="inner" />
-    <tag k="type" v="multilinestring" />
-  </relation>
-  <node id="9895210837" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="-65.1930973" lon="-51.0873711"/>
-  <node id="9895210838" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="-65.1930980" lon="-91.0874245"/>
-  <node id="9895210839" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="-65.1930740" lon="-91.0874248"/>
-  <node id="9895210840" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786" lat="-65.1930733" lon="-91.0873714"/>
-  <way id="1079461176" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
-   <nd ref="9895210837"/>
-   <nd ref="9895210838"/>
-   <nd ref="9895210839"/>
-   <nd ref="9895210840"/>
-   <nd ref="9895210837"/>
-   <tag k="building" v="yes"/>
-  </way>
-  <relation id="999998" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
-    <member type="way" ref="1079461176" role="outer" />
-    <tag k="type" v="multilinestring" />
-  </relation>
-  <relation id="999999" visible="true" version="1" changeset="123762961" timestamp="2022-07-18T12:42:35Z" user="Nico Geo" uid="4712786">
-    <member type="way" ref="1079461176" role="outer" />
-    <tag k="type" v="multilinestring" />
-  </relation>
-
 </create>
  </osmChange>

@@ -128,6 +128,7 @@ OsmChangeFile::readChanges(const std::string &file)
     return true;
 }
 
+// Used for testing
 void
 OsmChangeFile::buildGeometriesFromNodeCache() {
     for (auto it = std::begin(changes); it != std::end(changes); ++it) {
@@ -140,6 +141,12 @@ OsmChangeFile::buildGeometriesFromNodeCache() {
             if (way->isClosed()) {
                 way->polygon = { {std::begin(way->linestring), std::end(way->linestring)} };
             }
+            std::stringstream ss;
+            if (way->isClosed()) {
+                ss << std::setprecision(12) << boost::geometry::wkt(way->polygon);
+            } else {
+                ss << std::setprecision(12) << boost::geometry::wkt(way->linestring);
+            }
             waycache.insert(std::pair(way->id, std::make_shared<osmobjects::OsmWay>(*way)));
         }
         for (auto rit = std::begin(change->relations); rit != std::end(change->relations); ++rit) {
@@ -149,23 +156,28 @@ OsmChangeFile::buildGeometriesFromNodeCache() {
     }
 }
 
+// FIXME
 void
 OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
     bool first = true;
     bool isMultiPolygon = relation.isMultiPolygon();
     bool isMultiLineString = relation.isMultiLineString();
+
     if (isMultiPolygon || isMultiLineString) {
         std::string innerGeoStr;
         std::string geometry_str;
 
+        // A way is missing from cache
         bool noWay = false;
+        // There are not Way relation members
+        bool noWayMembers = true;
         std::string linestring_tmp;
         bool using_linestring_tmp = false;
         linestring_t lastLinestring;
 
         for (auto mit = relation.members.begin(); mit != relation.members.end(); ++mit) {
             if (mit->type == osmobjects::way) {
-
+                noWayMembers = false;
                 if (!waycache.count(mit->ref)) { 
                     noWay = true;
                     break;
@@ -192,12 +204,14 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
 
                         if (!first) {
                             // Check if linestrings needs to be reversed
-                            bool reverse_line = bg::equals(lastLinestring.front(), way->linestring.front()) ||
-                            bg::equals(lastLinestring.front(), way->linestring.back()) ||
-                            bg::equals(lastLinestring.back(), way->linestring.front()) ||
-                            bg::equals(lastLinestring.back(), way->linestring.back());
-                            if (reverse_line) {
-                                bg::reverse(way->linestring);
+                            if (lastLinestring.size() > 0 && way->linestring.size() > 0) {
+                                bool reverse_line = bg::equals(lastLinestring.front(), way->linestring.front()) ||
+                                bg::equals(lastLinestring.front(), way->linestring.back()) ||
+                                bg::equals(lastLinestring.back(), way->linestring.front()) ||
+                                bg::equals(lastLinestring.back(), way->linestring.back());
+                                if (reverse_line) {
+                                    bg::reverse(way->linestring);
+                                }
                             }
                         }
                         lastLinestring = way->linestring;
@@ -259,7 +273,7 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
             }
         }
 
-        if (!noWay) {
+        if (!noWay && !noWayMembers) {
             if (linestring_tmp.size() == 0) {
                 if (isMultiLineString) {
                     geometry_str.erase(geometry_str.size() - 1);
@@ -298,8 +312,8 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
             } else {
                 boost::geometry::read_wkt(geometry_str, relation.multilinestring);
             }
-        }
 
+        }
     }
 }
 
@@ -625,9 +639,6 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
         // Filter nodes
         for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
             OsmNode *node = nit->get();
-            if (node->id == 1508976013) {
-                debug = true;
-            }
             if (poly.empty() || boost::geometry::within(node->point, poly)) {
                 node->priority = true;
                 nodecache[node->id] = node->point;
@@ -659,10 +670,8 @@ OsmChangeFile::areaFilter(const multipolygon_t &poly)
         // Filter relations
         for (auto rit = std::begin(change->relations); rit != std::end(change->relations); ++rit) {
             OsmRelation *relation = rit->get();
-            if (poly.empty()) {
-                relation->priority = true;
-            } else {
-                relation->priority = false;
+            relation->priority = true;
+            if (!poly.empty()) {
                 for (auto mit = std::begin(relation->members); mit != std::end(relation->members); ++mit) {
                     if (waycache.count(mit->ref)) {
                         auto way = waycache.at(mit->ref);

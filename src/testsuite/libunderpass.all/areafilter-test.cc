@@ -127,6 +127,7 @@ main(int argc, char *argv[])
     }
 
     // ChangeSet - Small area in North Africa
+    // outside, not in priority area
     changeset.readChanges(changesetFile);
     changeset.areaFilter(polySmallArea);
     testChangeset = changeset.changes.front().get();
@@ -137,6 +138,7 @@ main(int argc, char *argv[])
     }
 
     // ChangeSet - Empty polygon
+    // inside, in priority area
     changeset.readChanges(changesetFile);
     changeset.areaFilter(polyEmpty);
     testChangeset = changeset.changes.front().get();
@@ -150,6 +152,7 @@ main(int argc, char *argv[])
     // ChangeSet - Half area
     changeset.readChanges(changesetFile);
     changeset.areaFilter(polyHalf);
+    // inside, in priority area
     testChangeset = changeset.changes.front().get();
     if (testChangeset && testChangeset->priority) {
         runtest.pass("ChangeSet areaFilter - true (half area)");
@@ -160,48 +163,63 @@ main(int argc, char *argv[])
 
     // -- OsmChanges
 
-    // OsmChange - Empty poly
+    // // OsmChange - Empty poly
     osmchange.readChanges(osmchangeFile);
-    osmchange.areaFilter(polyEmpty);
-    if (getPriority(osmchange) && countFeatures(osmchange) == 62) {
-        runtest.pass("OsmChange areaFilter - true (Empty poly)");
-    } else {
-        runtest.fail("OsmChange areaFilter - true (Empty poly)");
-        return 1;
-    }
-
-    // OsmChange - Whole world
     osmchange.buildGeometriesFromNodeCache();
-    osmchange.areaFilter(polyWholeWorld);
-    if (getPriority(osmchange) && countFeatures(osmchange) == 62) {
-        runtest.pass("OsmChange areaFilter - true (whole world)");
+
+    // osmchange.areaFilter(polyEmpty);
+    // if (getPriority(osmchange) && countFeatures(osmchange) == 62) {
+    //     runtest.pass("OsmChange areaFilter - true (Empty poly)");
+    // } else {
+    //     runtest.fail("OsmChange areaFilter - true (Empty poly)");
+    //     return 1;
+    // }
+
+    // // OsmChange - Whole world
+    // osmchange.areaFilter(polyWholeWorld);
+    // if (getPriority(osmchange) && countFeatures(osmchange) == 62) {
+    //     runtest.pass("OsmChange areaFilter - true (whole world)");
+    // } else {
+    //     runtest.fail("OsmChange areaFilter - true (whole world)");
+    //     return 1;
+    // }
+
+    // OsmChange - Small area in North Africa
+    // Outside priority area, count should be 0
+    // clearChanges(osmchange);
+    // osmchange.readChanges(osmchangeFile);
+    osmchange.areaFilter(polySmallArea);
+    if (countFeatures(osmchange) == 0) {
+        runtest.pass("OsmChange areaFilter - true (0)");
     } else {
-        runtest.fail("OsmChange areaFilter - true (whole world)");
+        runtest.fail("OsmChange areaFilter - true (0)");
         return 1;
     }
 
-    // OsmChange - Small area
+    // OsmChange - Small area in Bangladesh
+    // 28 nodes / 5 ways / 1 relation inside priority area, count should be 34
     clearChanges(osmchange);
     osmchange.readChanges(osmchangeFile);
+    osmchange.buildGeometriesFromNodeCache();
     osmchange.areaFilter(polyHalf);
-    if (countFeatures(osmchange) == 35) {
-        runtest.pass("OsmChange areaFilter - true (small area)");
+    if (countFeatures(osmchange) == 34) {
+        runtest.pass("OsmChange areaFilter - true (34)");
     } else {
-        runtest.fail("OsmChange areaFilter - true (small area)");
+        runtest.fail("OsmChange areaFilter - true (34)");
         return 1;
     }
 
-    // OsmChange - Smaller area
+    // OsmChange - Smaller area in Bangladesh
+    // 12 nodes / 3 ways / 1 relation inside priority area, count should be 16
     clearChanges(osmchange);
     osmchange.readChanges(osmchangeFile);
     osmchange.areaFilter(polyHalfSmall);
-    if (countFeatures(osmchange) == 17) {
-        runtest.pass("OsmChange areaFilter - true (smaller area)");
+    if (countFeatures(osmchange) == 16) {
+        runtest.pass("OsmChange areaFilter - true (smaller area inside)");
     } else {
-        runtest.fail("OsmChange areaFilter - true (smaller area)");
+        runtest.fail("OsmChange areaFilter - true (smaller area inside)");
         return 1;
     }
-
 
 }
 

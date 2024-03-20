@@ -220,6 +220,15 @@ main(int argc, char *argv[])
             return 1;
         }
 
+        // 
+        processFile("raw-case-8.osc", db);
+        // if ( getWKTFromDB("relations", 17331328, db).compare(expectedGeometries[6]) == 0) {
+        //     runtest.pass("Complex, 1 polygon relation made of multiple ways (same changeset)");
+        // } else {
+        //     runtest.fail("Complex, 1 polygon relation made of multiple ways (same changeset)");
+        //     return 1;
+        // }
+
 
     }
 
