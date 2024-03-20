@@ -17,8 +17,9 @@ postgres=# CREATE USER underpass WITH PASSWORD 'your_password';
 postgres=# CREATE DATABASE underpass;
 postgres=# GRANT ALL PRIVILEGES ON DATABASE "underpass" to underpass;
 postgres=# ALTER ROLE underpass SUPERUSER;
+postgres=# exit
 exit
-psql postgresql://underpass:your_password@localhost:5432/underpass < setup/underpass.sql
+psql postgresql://underpass:your_password@localhost:5432/underpass < setup/db/underpass.sql
 ```
 
 #### Requirements
@@ -26,6 +27,7 @@ psql postgresql://underpass:your_password@localhost:5432/underpass < setup/under
 ```
 sudo apt install python3-pip -y
 sudo apt install python3.11-venv
+python3 -m venv ~/venv
 source ~/venv/bin/activate
 pip install fiona
 pip install shapely
@@ -36,7 +38,9 @@ apt install osm2pgsql
 
 Go to the `setup` directory and run the boostrap script:
 
+```
 cd utils
+chmod +x bootstrap.sh
 ./bootstrap.sh -r south-america -c uruguay
 ```
 
