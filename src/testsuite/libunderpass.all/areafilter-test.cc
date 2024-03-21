@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021, 2022, 2023 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022, 2023, 2024 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -86,11 +86,6 @@ getPriority(TestOsmChange &osmchange, bool debug = false) {
     return result;
 }
 
-void
-clearChanges(TestOsmChange &osmchange) {
-    osmchange.changes.clear();
-}
-
 int
 main(int argc, char *argv[])
 {
@@ -167,57 +162,50 @@ main(int argc, char *argv[])
     osmchange.readChanges(osmchangeFile);
     osmchange.buildGeometriesFromNodeCache();
 
-    // osmchange.areaFilter(polyEmpty);
-    // if (getPriority(osmchange) && countFeatures(osmchange) == 62) {
-    //     runtest.pass("OsmChange areaFilter - true (Empty poly)");
-    // } else {
-    //     runtest.fail("OsmChange areaFilter - true (Empty poly)");
-    //     return 1;
-    // }
+    osmchange.areaFilter(polyEmpty);
+    if (getPriority(osmchange) && countFeatures(osmchange) == 54) {
+        runtest.pass("OsmChange areaFilter - 54 (empty poly)");
+    } else {
+        runtest.fail("OsmChange areaFilter - 54 (empty poly)");
+        return 1;
+    }
 
-    // // OsmChange - Whole world
-    // osmchange.areaFilter(polyWholeWorld);
-    // if (getPriority(osmchange) && countFeatures(osmchange) == 62) {
-    //     runtest.pass("OsmChange areaFilter - true (whole world)");
-    // } else {
-    //     runtest.fail("OsmChange areaFilter - true (whole world)");
-    //     return 1;
-    // }
+    // OsmChange - Whole world
+    osmchange.areaFilter(polyWholeWorld);
+    if (getPriority(osmchange) && countFeatures(osmchange) == 54) {
+        runtest.pass("OsmChange areaFilter - 54 (whole world)");
+    } else {
+        runtest.fail("OsmChange areaFilter - 54 (Whole world)");
+        return 1;
+    }
 
     // OsmChange - Small area in North Africa
     // Outside priority area, count should be 0
-    // clearChanges(osmchange);
-    // osmchange.readChanges(osmchangeFile);
     osmchange.areaFilter(polySmallArea);
     if (countFeatures(osmchange) == 0) {
-        runtest.pass("OsmChange areaFilter - true (0)");
+        runtest.pass("OsmChange areaFilter - 0 (Small area)");
     } else {
-        runtest.fail("OsmChange areaFilter - true (0)");
+        runtest.fail("OsmChange areaFilter - 0 (small area)");
         return 1;
     }
 
     // OsmChange - Small area in Bangladesh
     // 28 nodes / 5 ways / 1 relation inside priority area, count should be 34
-    clearChanges(osmchange);
-    osmchange.readChanges(osmchangeFile);
-    osmchange.buildGeometriesFromNodeCache();
     osmchange.areaFilter(polyHalf);
     if (countFeatures(osmchange) == 34) {
-        runtest.pass("OsmChange areaFilter - true (34)");
+        runtest.pass("OsmChange areaFilter - 34 (small area)");
     } else {
-        runtest.fail("OsmChange areaFilter - true (34)");
+        runtest.fail("OsmChange areaFilter - 34 (sSmall area)");
         return 1;
     }
 
     // OsmChange - Smaller area in Bangladesh
     // 12 nodes / 3 ways / 1 relation inside priority area, count should be 16
-    clearChanges(osmchange);
-    osmchange.readChanges(osmchangeFile);
     osmchange.areaFilter(polyHalfSmall);
     if (countFeatures(osmchange) == 16) {
-        runtest.pass("OsmChange areaFilter - true (smaller area inside)");
+        runtest.pass("OsmChange areaFilter - 16 (smaller area)");
     } else {
-        runtest.fail("OsmChange areaFilter - true (smaller area inside)");
+        runtest.fail("OsmChange areaFilter - 16 (smaller area)");
         return 1;
     }
 

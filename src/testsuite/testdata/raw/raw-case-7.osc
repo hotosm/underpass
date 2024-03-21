@@ -200,19 +200,13 @@
         <nd ref="7597361833"/>
         <nd ref="7597361834"/>
         <nd ref="7597361835"/>
-<nd ref="7597361836"/>
-<nd ref="7597361837"/>
-<nd ref="7597361838"/>
-<nd ref="7597361839"/>
-<nd ref="7597361840"/>
-<nd ref="7597361841"/>
+        <nd ref="7597361836"/>
+        <nd ref="7597361837"/>
+        <nd ref="7597361838"/>
+        <nd ref="7597361839"/>
+        <nd ref="7597361840"/>
+        <nd ref="7597361841"/>
         <nd ref="7597361842"/>
-        
-        
-        
-        
-        
-        
         <tag k="waterway" v="drain"/>
     </way>
     <relation id="17331328" visible="true" version="1" changeset="148486102" timestamp="2024-03-11T02:27:57Z" user="emiigon" uid="2998234">

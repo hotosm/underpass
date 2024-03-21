@@ -239,14 +239,6 @@ class OsmRelation : public OsmObject {
         );
     };
 
-    /// Relation can be componed of open ways, resulting in a multilinestring
-    bool isMultiLineString(void) const
-    {
-        return (tags.count("type") &&
-            (tags.at("type") != "multipolygon")
-        );
-    };
-
 };
 
 } // namespace osmobjects

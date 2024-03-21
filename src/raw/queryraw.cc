@@ -511,10 +511,10 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
             }
         }
 
-        for (auto rel_it = std::begin(change->relations); rel_it != std::end(change->relations); ++rel_it) {
-            OsmRelation *relation = rel_it->get();
-            removedRelations.push_back(relation->id);
-        }
+        // for (auto rel_it = std::begin(change->relations); rel_it != std::end(change->relations); ++rel_it) {
+        //     OsmRelation *relation = rel_it->get();
+        //     removedRelations.push_back(relation->id);
+        // }
     }
 
     // Add indirectly modified ways to osmchanges
@@ -541,20 +541,20 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
     }
 
     // Add indirectly modified relations to osmchanges
-    if (modifiedWaysIds.size() > 1) {
-        modifiedWaysIds.erase(modifiedWaysIds.size() - 1);
-        auto modifiedRelations = getRelationsByWaysRefs(modifiedWaysIds);
-        auto change = std::make_shared<OsmChange>(none);
-        for (auto rel_it = modifiedRelations.begin(); rel_it != modifiedRelations.end(); ++rel_it) {
-           auto relation = std::make_shared<OsmRelation>(*rel_it->get());
-           // If the relation is not marked as removed, mark it as modified
-           if (std::find(removedRelations.begin(), removedRelations.end(), relation->id) == removedRelations.end()) {
-                relation->action = osmobjects::modify;
-                change->relations.push_back(relation);
-           }
-        }
-        osmchanges->changes.push_back(change);
-    }
+    // if (modifiedWaysIds.size() > 1) {
+    //     modifiedWaysIds.erase(modifiedWaysIds.size() - 1);
+    //     auto modifiedRelations = getRelationsByWaysRefs(modifiedWaysIds);
+    //     auto change = std::make_shared<OsmChange>(none);
+    //     for (auto rel_it = modifiedRelations.begin(); rel_it != modifiedRelations.end(); ++rel_it) {
+    //        auto relation = std::make_shared<OsmRelation>(*rel_it->get());
+    //        // If the relation is not marked as removed, mark it as modified
+    //        if (std::find(removedRelations.begin(), removedRelations.end(), relation->id) == removedRelations.end()) {
+    //             relation->action = osmobjects::modify;
+    //             change->relations.push_back(relation);
+    //        }
+    //     }
+    //     osmchanges->changes.push_back(change);
+    // }
 
     // Fill nodecache with referenced nodes
     if (referencedNodeIds.size() > 1) {
@@ -599,44 +599,44 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
     }
 
     // Relations
-    std::string relsForWayCacheIds;
-    bool debug = false;
-    for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); it++) {
-        OsmChange *change = it->get();
-        for (auto rel_it = std::begin(change->relations); rel_it != std::end(change->relations); ++rel_it) {
-            OsmRelation *relation = rel_it->get();
-            if (relation->isMultiPolygon() || relation->isMultiLineString()) {
-                bool getWaysForRelation = false;
-                for (auto mit = relation->members.begin(); mit != relation->members.end(); ++mit) {
-                    if (osmchanges->waycache.count(mit->ref)) {
-                        getWaysForRelation = true;
-                        break;
-                    }
-                }
-                if (getWaysForRelation) {
-                    for (auto mit = relation->members.begin(); mit != relation->members.end(); ++mit) {
-                        if (!osmchanges->waycache.count(mit->ref)) {
-                           relsForWayCacheIds += std::to_string(mit->ref) + ",";
-                        }
-                    }
-                }
-            }
-        }
-    }
-    // Get all missing ways geometries for relations
-    if (relsForWayCacheIds != "") {
-        relsForWayCacheIds.erase(relsForWayCacheIds.size() - 1);
-        getWaysByIds(relsForWayCacheIds, osmchanges->waycache);
-    }
+    // std::string relsForWayCacheIds;
+    // bool debug = false;
+    // for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); it++) {
+    //     OsmChange *change = it->get();
+    //     for (auto rel_it = std::begin(change->relations); rel_it != std::end(change->relations); ++rel_it) {
+    //         OsmRelation *relation = rel_it->get();
+    //         if (relation->isMultiPolygon()) {
+    //             bool getWaysForRelation = false;
+    //             for (auto mit = relation->members.begin(); mit != relation->members.end(); ++mit) {
+    //                 if (osmchanges->waycache.count(mit->ref)) {
+    //                     getWaysForRelation = true;
+    //                     break;
+    //                 }
+    //             }
+    //             if (getWaysForRelation) {
+    //                 for (auto mit = relation->members.begin(); mit != relation->members.end(); ++mit) {
+    //                     if (!osmchanges->waycache.count(mit->ref)) {
+    //                        relsForWayCacheIds += std::to_string(mit->ref) + ",";
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+    // // Get all missing ways geometries for relations
+    // if (relsForWayCacheIds != "") {
+    //     relsForWayCacheIds.erase(relsForWayCacheIds.size() - 1);
+    //     getWaysByIds(relsForWayCacheIds, osmchanges->waycache);
+    // }
 
     // Build relation geometries
-    for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); it++) {
-        OsmChange *change = it->get();
-        for (auto rel_it = std::begin(change->relations); rel_it != std::end(change->relations); ++rel_it) {
-            OsmRelation *relation = rel_it->get();
-            osmchanges->buildRelationGeometry(*relation);
-        }
-    }
+    // for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); it++) {
+    //     OsmChange *change = it->get();
+    //     for (auto rel_it = std::begin(change->relations); rel_it != std::end(change->relations); ++rel_it) {
+    //         OsmRelation *relation = rel_it->get();
+    //         osmchanges->buildRelationGeometry(*relation);
+    //     }
+    // }
 }
 
 void
