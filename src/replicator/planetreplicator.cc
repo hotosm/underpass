@@ -182,10 +182,6 @@ std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const underpassconfi
     fullurl = "https://" + config.planet_server + "/" + cached;
     remote->parse(fullurl);
     remote->updatePath(major, minor, index);
-    if (!config.silent) {
-        remote->dump();
-    }
-
     return remote;
 };
 

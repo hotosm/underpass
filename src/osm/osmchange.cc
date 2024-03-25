@@ -508,6 +508,7 @@ void
 OsmChangeFile::on_start_element(const Glib::ustring &name,
                                 const AttributeList &attributes)
 {
+
     // If a change is in progress, apply to to that instance
     std::shared_ptr<OsmChange> change;
     // log_debug("NAME: %1%", name);

@@ -224,11 +224,6 @@ main(int argc, char *argv[])
         }
         
         planetreplicator::PlanetReplicator replicator;
-        replicator.connectServer("https://" + config.planet_server);
-
-
-        std::string fullurl = "https://" + config.planet_server + "/replication/" + StateFile::freq_to_string(config.frequency);
-            std::vector<std::string> parts;
 
         // Priority boundary
         multipolygon_t poly;
@@ -280,6 +275,7 @@ main(int argc, char *argv[])
                 exit(-1);
             }
         } else if (vm.count("url")) {
+            replicator.connectServer("https://" + config.planet_server);
             std::string fullurl = "https://" + config.planet_server + "/replication/" + StateFile::freq_to_string(config.frequency);
             std::vector<std::string> parts;
             boost::split(parts, vm["url"].as<std::string>(), boost::is_any_of("/"));
