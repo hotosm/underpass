@@ -161,7 +161,6 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     while (i <= cores/4) {
         std::rotate(servers.begin(), servers.begin()+1, servers.end());
         auto replicationPlanet = std::make_shared<replication::Planet>(*remote);
-        replicationPlanet->connectServer(servers.front());
         planets.push_back(replicationPlanet);
         i++;
     }
@@ -292,7 +291,6 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     while (i <= cores/4) {
         std::rotate(servers.begin(), servers.begin()+1, servers.end());
         auto replicationPlanet = std::make_shared<replication::Planet>(*remote);
-        replicationPlanet->connectServer(servers.front());
         planets.push_back(replicationPlanet);
         i++;
     }

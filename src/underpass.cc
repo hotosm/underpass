@@ -223,8 +223,6 @@ main(int argc, char *argv[])
             }
         }
         
-        planetreplicator::PlanetReplicator replicator;
-
         // Priority boundary
         multipolygon_t poly;
         if (vm.count("boundary")) {
@@ -255,6 +253,8 @@ main(int argc, char *argv[])
             log_debug("ERROR: 'url' takes precedence over 'timestamp' arguments are mutually exclusive!");
             exit(-1);
         }
+
+        planetreplicator::PlanetReplicator replicator;
 
         auto osmchange = std::make_shared<RemoteURL>();
         // Specify a timestamp used by other options
@@ -305,13 +305,12 @@ main(int argc, char *argv[])
 
         // Changesets
         std::thread changesetThread;
-        if (vm.count("changeseturl")) {
-            auto changeset = std::make_shared<RemoteURL>();
+        auto changeset = std::make_shared<RemoteURL>();
+        if (vm.count("changeseturl") && !vm.count("osmchanges")) {
             auto changeseturl = vm["changeseturl"].as<std::string>();
             config.frequency = replication::changeset;
             std::string fullurl = "https://" + config.planet_server + 
-                "/replication/" + StateFile::freq_to_string(config.frequency) +
-                "/" + changeseturl + ".osm.gz";
+                "/replication/changesets/" + changeseturl + ".osm.gz";
             changeset->parse(fullurl);
             changeset->destdir_base = config.destdir_base;
             std::vector<std::string> parts;
@@ -320,10 +319,8 @@ main(int argc, char *argv[])
             if (!config.silent) {
                 changeset->dump();
             }
-            if (!vm.count("osmchanges")) {
-                changesetThread = std::thread(replicatorthreads::startMonitorChangesets, 
-                    std::ref(changeset), std::ref(*oscboundary), std::ref(config));
-            }
+            changesetThread = std::thread(replicatorthreads::startMonitorChangesets, 
+                std::ref(changeset), std::ref(*oscboundary), config);
         }
 
         // Start processing
