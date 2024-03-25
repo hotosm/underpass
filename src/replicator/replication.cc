@@ -497,15 +497,12 @@ Planet::connectServer(const std::string &planet)
     ctx.set_verify_mode(ssl::verify_none);
     // Strip off the https part
     std::string tmp;
-    std::cout << "planet: " << planet << std::endl;
     auto pos = planet.find(":");
     if (pos != std::string::npos) {
         tmp = planet.substr(pos + 3);
     } else {
         tmp = planet;
     }
-    std::cout << "tmp: " << tmp << std::endl;
-
     ssl::context ctx{ssl::context::sslv23_client};
     boost::asio::io_context ioc;
 
