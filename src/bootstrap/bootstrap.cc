@@ -93,7 +93,7 @@ Bootstrap::start(const underpassconfig::UnderpassConfig &config) {
 
     processWays();
     processNodes();
-    processRelations();
+    // processRelations();
 
 }
 

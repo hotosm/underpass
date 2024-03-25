@@ -181,7 +181,7 @@ main(int argc, char *argv[])
         config.concurrency = std::thread::hardware_concurrency();
     }
 
-    if (vm.count("timestamp") || vm.count("url")) {
+    if (vm.count("timestamp") || vm.count("url") ||  vm.count("changeseturl")) {
 
         // Planet server
         if (vm.count("planet")) {
@@ -197,6 +197,38 @@ main(int argc, char *argv[])
         } else {
             config.planet_server = config.planet_servers[0].domain;
         }
+
+        // Default data directory on the server
+        if (vm.count("datadir")) {
+            datadir = vm["datadir"].as<std::string>();
+        }
+        const char *tmp = std::getenv("DATADIR");
+        if (tmp != 0) {
+            datadir = tmp;
+        }
+        config.datadir = datadir;
+
+        // Frequency: minutely, hourly, daily
+        if (vm.count("frequency")) {
+            const auto strfreq = vm["frequency"].as<std::string>();
+            if (strfreq[0] == 'm') {
+                config.frequency = replication::minutely;
+            } else if (strfreq[0] == 'h') {
+                config.frequency = replication::hourly;
+            } else if (strfreq[0] == 'd') {
+                config.frequency = replication::daily;
+            } else {
+                log_debug("Invalid frequency!");
+                exit(-1);
+            }
+        }
+        
+        planetreplicator::PlanetReplicator replicator;
+        replicator.connectServer("https://" + config.planet_server);
+
+
+        std::string fullurl = "https://" + config.planet_server + "/replication/" + StateFile::freq_to_string(config.frequency);
+            std::vector<std::string> parts;
 
         // Priority boundary
         multipolygon_t poly;
@@ -224,36 +256,9 @@ main(int argc, char *argv[])
         }
 
         // Replication
-        planetreplicator::PlanetReplicator replicator;
-        std::shared_ptr<std::vector<unsigned char>> data;
         if (vm.count("url") && vm.count("timestamp")) {
             log_debug("ERROR: 'url' takes precedence over 'timestamp' arguments are mutually exclusive!");
             exit(-1);
-        }
-
-        // Default data directory on the server
-        if (vm.count("datadir")) {
-            datadir = vm["datadir"].as<std::string>();
-        }
-        const char *tmp = std::getenv("DATADIR");
-        if (tmp != 0) {
-            datadir = tmp;
-        }
-        config.datadir = datadir;
-
-        // Frequency: minutely, hourly, daily
-        if (vm.count("frequency")) {
-            const auto strfreq = vm["frequency"].as<std::string>();
-            if (strfreq[0] == 'm') {
-                config.frequency = replication::minutely;
-            } else if (strfreq[0] == 'h') {
-                config.frequency = replication::hourly;
-            } else if (strfreq[0] == 'd') {
-                config.frequency = replication::daily;
-            } else {
-                log_debug("Invalid frequency!");
-                exit(-1);
-            }
         }
 
         auto osmchange = std::make_shared<RemoteURL>();
@@ -275,12 +280,10 @@ main(int argc, char *argv[])
                 exit(-1);
             }
         } else if (vm.count("url")) {
-            replicator.connectServer("https://" + config.planet_server);
             std::string fullurl = "https://" + config.planet_server + "/replication/" + StateFile::freq_to_string(config.frequency);
             std::vector<std::string> parts;
             boost::split(parts, vm["url"].as<std::string>(), boost::is_any_of("/"));
             fullurl += "/" + vm["url"].as<std::string>() + ".state.txt";
-
             osmchange->parse(fullurl);
             osmchange->destdir_base = config.destdir_base;
             auto data = replicator.downloadFile(*osmchange).data;
@@ -306,19 +309,24 @@ main(int argc, char *argv[])
 
         // Changesets
         std::thread changesetThread;
-        if (vm.count("changeseturl") || vm.count("timestamp")) {
+        if (vm.count("changeseturl")) {
+            auto changeset = std::make_shared<RemoteURL>();
+            auto changeseturl = vm["changeseturl"].as<std::string>();
             config.frequency = replication::changeset;
-            auto changeset = replicator.findRemotePath(config, config.start_time);
+            std::string fullurl = "https://" + config.planet_server + 
+                "/replication/" + StateFile::freq_to_string(config.frequency) +
+                "/" + changeseturl + ".osm.gz";
+            changeset->parse(fullurl);
             changeset->destdir_base = config.destdir_base;
             std::vector<std::string> parts;
-            boost::split(parts, vm["changeseturl"].as<std::string>(), boost::is_any_of("/"));
+            boost::split(parts, changeseturl, boost::is_any_of("/"));
             changeset->updatePath(stoi(parts[0]),stoi(parts[1]),stoi(parts[2]));
             if (!config.silent) {
                 changeset->dump();
             }
             if (!vm.count("osmchanges")) {
-                changesetThread = std::thread(replicatorthreads::startMonitorChangesets, std::ref(changeset),
-                                std::ref(*oscboundary), std::ref(config));
+                changesetThread = std::thread(replicatorthreads::startMonitorChangesets, 
+                    std::ref(changeset), std::ref(*oscboundary), std::ref(config));
             }
         }
 
