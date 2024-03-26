@@ -364,17 +364,9 @@ ChangeSetFile::on_start_element(const Glib::ustring &name,
         bool hashit = false;
         bool comhit = false;
         bool cbyhit = false;
-        double min_lat = 0.0;
-        double min_lon = 0.0;
-        double max_lat = 0.0;
-        double max_lon = 0.0;
 
         for (const auto &attr_pair: attributes) {
-            // std::wcout << "\tPAIR: " << attr_pair.name << " = " << std::endl;
-            // attr_pair.value << std::endl;
-            if (attr_pair.name == "k" && attr_pair.value == "max_lat") {
-                max_lat = std::stod(attr_pair.value);
-            } else if (attr_pair.name == "k" && attr_pair.value == "hashtags") {
+            if (attr_pair.name == "k" && attr_pair.value == "hashtags") {
                 hashit = true;
             } else if (attr_pair.name == "k" && attr_pair.value == "comment") {
                 comhit = true;

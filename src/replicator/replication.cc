@@ -503,7 +503,6 @@ Planet::connectServer(const std::string &planet)
     } else {
         tmp = planet;
     }
-
     ssl::context ctx{ssl::context::sslv23_client};
     boost::asio::io_context ioc;
 
@@ -801,3 +800,5 @@ Planet::Planet(const RemoteURL &url)
 // mode: C++
 // indent-tabs-mode: nil
 // End:
+
+

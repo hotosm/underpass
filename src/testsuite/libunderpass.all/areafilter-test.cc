@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021, 2022, 2023 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022, 2023, 2024 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -33,13 +33,31 @@ class TestOsmChange : public osmchange::OsmChangeFile {};
 
 int
 countFeatures(TestOsmChange &osmchange) {
-    int count = 0;
+    int nodeCount = 0;
+    int wayCount = 0;
+    int relCount = 0;
     for (auto cit = std::begin(osmchange.changes); cit != std::end(osmchange.changes); ++cit) {
         osmchange::OsmChange *testOsmChange = cit->get();
-        count += testOsmChange->nodes.size();
-        count += testOsmChange->ways.size();
+        for (auto nit = std::begin(testOsmChange->nodes); nit != std::end(testOsmChange->nodes); ++nit) {
+            osmobjects::OsmNode *node = nit->get();
+            if (node->priority) {
+                nodeCount++;
+            }
+        }
+        for (auto wit = std::begin(testOsmChange->ways); wit != std::end(testOsmChange->ways); ++wit) {
+            osmobjects::OsmWay *way = wit->get();
+            if (way->priority) {
+                wayCount++;
+            }
+        }
+        for (auto rit = std::begin(testOsmChange->relations); rit != std::end(testOsmChange->relations); ++rit) {
+            osmobjects::OsmRelation *relation = rit->get();
+            if (relation->priority) {
+                relCount++;
+            }
+        }
     }
-    return count;
+    return nodeCount + wayCount + relCount;
 }
 
 int
@@ -77,7 +95,11 @@ main(int argc, char *argv[])
     boost::geometry::read_wkt("MULTIPOLYGON (((20 35, 45 20, 30 5, 10 10, 10 30, 20 35)))", polySmallArea);
     multipolygon_t polyHalf;
     boost::geometry::read_wkt("MULTIPOLYGON(((91.08473230447439 25.195528629552243,91.08475247411987 25.192143075605387,91.08932089882008 25.192152201214213,91.08927047470638 25.195501253482632,91.08473230447439 25.195528629552243)))", polyHalf);
+    multipolygon_t polyHalfSmall;
+    boost::geometry::read_wkt("MULTIPOLYGON(((91.08695983886719 25.195485830324174,91.08697056770325 25.192155906163805,91.08929872512817 25.192126781061106,91.08922362327574 25.195505246524604,91.08695983886719 25.195485830324174)))", polyHalfSmall);
     multipolygon_t polyEmpty;
+
+    // -- ChangeSets
 
     // Small changeset in Bangladesh
     std::string changesetFile(DATADIR);
@@ -100,6 +122,7 @@ main(int argc, char *argv[])
     }
 
     // ChangeSet - Small area in North Africa
+    // outside, not in priority area
     changeset.readChanges(changesetFile);
     changeset.areaFilter(polySmallArea);
     testChangeset = changeset.changes.front().get();
@@ -110,6 +133,7 @@ main(int argc, char *argv[])
     }
 
     // ChangeSet - Empty polygon
+    // inside, in priority area
     changeset.readChanges(changesetFile);
     changeset.areaFilter(polyEmpty);
     testChangeset = changeset.changes.front().get();
@@ -123,6 +147,7 @@ main(int argc, char *argv[])
     // ChangeSet - Half area
     changeset.readChanges(changesetFile);
     changeset.areaFilter(polyHalf);
+    // inside, in priority area
     testChangeset = changeset.changes.front().get();
     if (testChangeset && testChangeset->priority) {
         runtest.pass("ChangeSet areaFilter - true (half area)");
@@ -131,52 +156,58 @@ main(int argc, char *argv[])
         return 1;
     }
 
-    // OsmChange - Small area in North Africa
-    // FIXME
-    // osmchange.readChanges(osmchangeFile);
-    // osmchange.areaFilter(polySmallArea);
-    // if (countFeatures(osmchange) == 0) {
-    //     runtest.pass("OsmChange areaFilter - false (small area)");
-    // } else {
-    //     runtest.fail("OsmChange areaFilter - false (small area)");
-    //     return 1;
-    // }
+    // -- OsmChanges
 
-    // OsmChange - Whole world
+    // // OsmChange - Empty poly
     osmchange.readChanges(osmchangeFile);
-    osmchange.areaFilter(polyWholeWorld);
-    if (getPriority(osmchange) && countFeatures(osmchange) == 48) {
-        runtest.pass("OsmChange areaFilter - true (whole world)");
+    osmchange.buildGeometriesFromNodeCache();
+
+    osmchange.areaFilter(polyEmpty);
+    if (getPriority(osmchange) && countFeatures(osmchange) == 54) {
+        runtest.pass("OsmChange areaFilter - 54 (empty poly)");
     } else {
-        runtest.fail("OsmChange areaFilter - true (whole world)");
+        runtest.fail("OsmChange areaFilter - 54 (empty poly)");
         return 1;
     }
-    // Delete all changes
+
+    // OsmChange - Whole world
+    osmchange.areaFilter(polyWholeWorld);
+    if (getPriority(osmchange) && countFeatures(osmchange) == 54) {
+        runtest.pass("OsmChange areaFilter - 54 (whole world)");
+    } else {
+        runtest.fail("OsmChange areaFilter - 54 (Whole world)");
+        return 1;
+    }
+
+    // OsmChange - Small area in North Africa
+    // Outside priority area, count should be 0
     osmchange.areaFilter(polySmallArea);
+    if (countFeatures(osmchange) == 0) {
+        runtest.pass("OsmChange areaFilter - 0 (Small area)");
+    } else {
+        runtest.fail("OsmChange areaFilter - 0 (small area)");
+        return 1;
+    }
 
-    // OsmChange - Empty polygon
-    // FIXME
-    // osmchange.readChanges(osmchangeFile);
-    // osmchange.areaFilter(polyEmpty);
-    // if (getPriority(osmchange) && countFeatures(osmchange) == 48) {
-    //     runtest.pass("OsmChange areaFilter - true (empty)");
-    // } else {
-    //     runtest.fail("OsmChange areaFilter - true (empty)");
-    //     return 1;
-    // }
-    // Delete all changes
-    // osmchange.areaFilter(polySmallArea);
+    // OsmChange - Small area in Bangladesh
+    // 28 nodes / 5 ways / 1 relation inside priority area, count should be 34
+    osmchange.areaFilter(polyHalf);
+    if (countFeatures(osmchange) == 34) {
+        runtest.pass("OsmChange areaFilter - 34 (small area)");
+    } else {
+        runtest.fail("OsmChange areaFilter - 34 (sSmall area)");
+        return 1;
+    }
 
-    // OsmChange - Half area
-    // FIXME!
-    // osmchange.readChanges(osmchangeFile);
-    // osmchange.areaFilter(polyHalf);
-    // if (getPriority(osmchange, true) && countFeatures(osmchange) == 28) {
-    //     runtest.pass("OsmChange areaFilter - true (half area)");
-    // } else {
-    //     runtest.fail("OsmChange areaFilter - true (half area)");
-    //     return 1;
-    // }
+    // OsmChange - Smaller area in Bangladesh
+    // 12 nodes / 3 ways / 1 relation inside priority area, count should be 16
+    osmchange.areaFilter(polyHalfSmall);
+    if (countFeatures(osmchange) == 16) {
+        runtest.pass("OsmChange areaFilter - 16 (smaller area)");
+    } else {
+        runtest.fail("OsmChange areaFilter - 16 (smaller area)");
+        return 1;
+    }
 
 }
 

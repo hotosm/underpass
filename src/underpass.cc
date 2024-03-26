@@ -181,7 +181,7 @@ main(int argc, char *argv[])
         config.concurrency = std::thread::hardware_concurrency();
     }
 
-    if (vm.count("timestamp") || vm.count("url")) {
+    if (vm.count("timestamp") || vm.count("url") ||  vm.count("changeseturl")) {
 
         // Planet server
         if (vm.count("planet")) {
@@ -196,39 +196,6 @@ main(int argc, char *argv[])
             }
         } else {
             config.planet_server = config.planet_servers[0].domain;
-        }
-
-        // Priority boundary
-        multipolygon_t poly;
-        if (vm.count("boundary")) {
-            boundary = vm["boundary"].as<std::string>();
-        }
-        geoutil::GeoUtil geou;
-        if (!geou.readFile(boundary)) {
-            log_debug("Could not find '%1%' area file!", boundary);
-        }
-        multipolygon_t * oscboundary = &poly;
-        if (!vm.count("oscnoboundary")) {
-            oscboundary = &geou.boundary;
-        }
-
-        // Features
-        if (vm.count("disable-validation")) {
-            config.disable_validation = true;
-        }
-        if (vm.count("disable-stats")) {
-            config.disable_stats = true;
-        }
-        if (vm.count("disable-raw")) {
-            config.disable_raw = true;
-        }
-
-        // Replication
-        planetreplicator::PlanetReplicator replicator;
-        std::shared_ptr<std::vector<unsigned char>> data;
-        if (vm.count("url") && vm.count("timestamp")) {
-            log_debug("ERROR: 'url' takes precedence over 'timestamp' arguments are mutually exclusive!");
-            exit(-1);
         }
 
         // Default data directory on the server
@@ -255,6 +222,39 @@ main(int argc, char *argv[])
                 exit(-1);
             }
         }
+        
+        // Priority boundary
+        multipolygon_t poly;
+        if (vm.count("boundary")) {
+            boundary = vm["boundary"].as<std::string>();
+        }
+        geoutil::GeoUtil geou;
+        if (!geou.readFile(boundary)) {
+            log_debug("Could not find '%1%' area file!", boundary);
+        }
+        multipolygon_t * oscboundary = &poly;
+        if (!vm.count("oscnoboundary")) {
+            oscboundary = &geou.boundary;
+        }
+
+        // Features
+        if (vm.count("disable-validation")) {
+            config.disable_validation = true;
+        }
+        if (vm.count("disable-stats")) {
+            config.disable_stats = true;
+        }
+        if (vm.count("disable-raw")) {
+            config.disable_raw = true;
+        }
+
+        // Replication
+        if (vm.count("url") && vm.count("timestamp")) {
+            log_debug("ERROR: 'url' takes precedence over 'timestamp' arguments are mutually exclusive!");
+            exit(-1);
+        }
+
+        planetreplicator::PlanetReplicator replicator;
 
         auto osmchange = std::make_shared<RemoteURL>();
         // Specify a timestamp used by other options
@@ -280,7 +280,6 @@ main(int argc, char *argv[])
             std::vector<std::string> parts;
             boost::split(parts, vm["url"].as<std::string>(), boost::is_any_of("/"));
             fullurl += "/" + vm["url"].as<std::string>() + ".state.txt";
-
             osmchange->parse(fullurl);
             osmchange->destdir_base = config.destdir_base;
             auto data = replicator.downloadFile(*osmchange).data;
@@ -297,27 +296,31 @@ main(int argc, char *argv[])
                 osmboundary = &geou.boundary;
             }
             osmchange->destdir_base = config.destdir_base;
-            osmchange->dump();
+            if (!config.silent) {
+                osmchange->dump();
+            }
             osmChangeThread = std::thread(replicatorthreads::startMonitorChanges, std::ref(osmchange),
                             std::ref(*osmboundary), config);
         }
 
         // Changesets
         std::thread changesetThread;
-        if (vm.count("changeseturl") || vm.count("timestamp")) {
+        auto changeset = std::make_shared<RemoteURL>();
+        if (vm.count("changeseturl") && !vm.count("osmchanges")) {
+            auto changeseturl = vm["changeseturl"].as<std::string>();
             config.frequency = replication::changeset;
-            auto changeset = replicator.findRemotePath(config, config.start_time);
+            std::string fullurl = "https://" + config.planet_server + 
+                "/replication/changesets/" + changeseturl + ".osm.gz";
+            changeset->parse(fullurl);
             changeset->destdir_base = config.destdir_base;
             std::vector<std::string> parts;
-            boost::split(parts, vm["changeseturl"].as<std::string>(), boost::is_any_of("/"));
+            boost::split(parts, changeseturl, boost::is_any_of("/"));
             changeset->updatePath(stoi(parts[0]),stoi(parts[1]),stoi(parts[2]));
             if (!config.silent) {
                 changeset->dump();
             }
-            if (!vm.count("osmchanges")) {
-                changesetThread = std::thread(replicatorthreads::startMonitorChangesets, std::ref(changeset),
-                                std::ref(*oscboundary), std::ref(config));
-            }
+            changesetThread = std::thread(replicatorthreads::startMonitorChangesets, 
+                std::ref(changeset), std::ref(*oscboundary), config);
         }
 
         // Start processing

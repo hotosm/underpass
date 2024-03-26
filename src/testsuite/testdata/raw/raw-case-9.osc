@@ -1,0 +1,380 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version="0.6" generator="Osmosis 0.47.4">
+<create>
+    <node id="11110263979" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5209204" lon="-70.3507792"/>
+    <node id="11110263980" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5209441" lon="-70.3505593"/>
+    <node id="11110263981" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5209693" lon="-70.3503447"/>
+    <node id="11110263982" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5210029" lon="-70.3501301"/>
+    <node id="11110263983" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5210491" lon="-70.3498834"/>
+    <node id="11110263984" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5211162" lon="-70.3496098"/>
+    <node id="11110263985" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5211918" lon="-70.3493684"/>
+    <node id="11110263986" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5212799" lon="-70.3491002"/>
+    <node id="11110263987" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5213890" lon="-70.3488534"/>
+    <node id="11110263988" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5215149" lon="-70.3486227"/>
+    <node id="11110263989" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5216450" lon="-70.3484135"/>
+    <node id="11110263990" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217206" lon="-70.3483042"/>
+    <node id="11110263991" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217919" lon="-70.3481915"/>
+    <node id="11110263992" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5218675" lon="-70.3480467"/>
+    <node id="11110263993" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5219262" lon="-70.3479018"/>
+    <node id="11110263994" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5219766" lon="-70.3477355"/>
+    <node id="11110263995" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5219287" lon="-70.3478075"/>
+    <node id="11110263996" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5218789" lon="-70.3478641"/>
+    <node id="11110263997" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5218318" lon="-70.3479066"/>
+    <node id="11110263998" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217626" lon="-70.3479455"/>
+    <node id="11110263999" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5218456" lon="-70.3477721"/>
+    <node id="11110264000" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5218955" lon="-70.3476447"/>
+    <node id="11110264001" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5219287" lon="-70.3475173"/>
+    <node id="11110264002" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5219536" lon="-70.3474005"/>
+    <node id="11110264003" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5219659" lon="-70.3472817"/>
+    <node id="11110264004" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5219675" lon="-70.3471740"/>
+    <node id="11110270512" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5219540" lon="-70.3472413"/>
+    <node id="11110270505" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5219342" lon="-70.3473085"/>
+    <node id="11110270506" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5219038" lon="-70.3473686"/>
+    <node id="11110270507" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5218674" lon="-70.3474253"/>
+    <node id="11110270508" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5218235" lon="-70.3474677"/>
+    <node id="11110270509" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217626" lon="-70.3475137"/>
+    <node id="11110270510" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5216933" lon="-70.3475456"/>
+    <node id="11110270511" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5216241" lon="-70.3475739"/>
+    <node id="11110270513" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5214974" lon="-70.3476101"/>
+    <node id="11110270514" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5215541" lon="-70.3475323"/>
+    <node id="11110270515" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5215835" lon="-70.3474921"/>
+    <node id="11110270516" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5216128" lon="-70.3474492"/>
+    <node id="11110270517" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5216422" lon="-70.3474116"/>
+    <node id="11110270518" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5216695" lon="-70.3473795"/>
+    <node id="11110270519" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217010" lon="-70.3473446"/>
+    <node id="11110270520" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217241" lon="-70.3473044"/>
+    <node id="11110270521" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217430" lon="-70.3472561"/>
+    <node id="11110270522" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217534" lon="-70.3472051"/>
+    <node id="11110270523" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217576" lon="-70.3471381"/>
+    <node id="11110270524" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217900" lon="-70.3460209"/>
+    <node id="11110270525" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217900" lon="-70.3458786"/>
+    <node id="11110270526" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217805" lon="-70.3457445"/>
+    <node id="11110270527" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217582" lon="-70.3456184"/>
+    <node id="11110270528" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217296" lon="-70.3455168"/>
+    <node id="11110270529" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217010" lon="-70.3454192"/>
+    <node id="11110270530" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5216674" lon="-70.3453088"/>
+    <node id="11110270531" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5216419" lon="-70.3452113"/>
+    <node id="11110270532" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5216229" lon="-70.3451015"/>
+    <node id="11110270533" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5216101" lon="-70.3449795"/>
+    <node id="11110270534" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5215847" lon="-70.3448535"/>
+    <node id="11110270535" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5215433" lon="-70.3447356"/>
+    <node id="11110270536" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5214956" lon="-70.3446177"/>
+    <node id="11110270537" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5214533" lon="-70.3445082"/>
+    <node id="11110270538" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5214145" lon="-70.3443808"/>
+    <node id="11110270539" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5213841" lon="-70.3442463"/>
+    <node id="11110270540" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5213591" lon="-70.3441048"/>
+    <node id="11110270541" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5213370" lon="-70.3439597"/>
+    <node id="11110270542" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5213148" lon="-70.3438252"/>
+    <node id="11110270543" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5212955" lon="-70.3436942"/>
+    <node id="11110270544" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5212788" lon="-70.3435951"/>
+    <node id="11110270545" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5212595" lon="-70.3435173"/>
+    <node id="11110270546" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5212373" lon="-70.3434724"/>
+    <node id="11110270547" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5212067" lon="-70.3434429"/>
+    <node id="11110270548" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5211716" lon="-70.3434276"/>
+    <node id="11110270550" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5211299" lon="-70.3434261"/>
+    <node id="11110270549" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5210955" lon="-70.3434387"/>
+    <node id="9800670280" visible="true" version="1" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5210725" lon="-70.3434661"/>
+    <node id="9800670282" visible="true" version="1" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5205469" lon="-70.3488064"/>
+    
+    <node id="7837897163" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5205059" lon="-70.3490075"/>
+    <node id="9800670283" visible="true" version="1" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5204933" lon="-70.3491282"/>
+    <node id="9800670284" visible="true" version="1" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5204975" lon="-70.3492637"/>
+    <node id="7837897164" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5205458" lon="-70.3495735"/>
+    <node id="7837897165" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5205962" lon="-70.3498659"/>
+    <node id="7837897166" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5206906" lon="-70.3502360"/>
+    <node id="7837897167" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5208228" lon="-70.3505605"/>
+    <node id="7837897155" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5210536" lon="-70.3437960"/>
+    <node id="7837897156" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5210306" lon="-70.3443834"/>
+    <node id="7837897157" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5209949" lon="-70.3449628"/>
+    <node id="7837897158" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5209340" lon="-70.3455448"/>
+    <node id="7837897159" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5208816" lon="-70.3461456"/>
+    <node id="9800670281" visible="true" version="1" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5208333" lon="-70.3468376"/>
+    <node id="7837897160" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5207808" lon="-70.3473875"/>
+    <node id="7837897161" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5207179" lon="-70.3478837"/>
+    <node id="7837897162" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5206098" lon="-70.3485167"/>
+    <node id="7837897152" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5211271" lon="-70.3419480"/>
+    <node id="11110270551" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5212353" lon="-70.3420589"/>
+    <node id="11110270552" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5213361" lon="-70.3421877"/>
+    <node id="11110270553" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5214368" lon="-70.3423486"/>
+    <node id="11110270554" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5215333" lon="-70.3425364"/>
+    <node id="11110270555" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5216215" lon="-70.3427402"/>
+    <node id="11110270556" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217180" lon="-70.3429923"/>
+    <node id="11110270557" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217935" lon="-70.3432337"/>
+    <node id="11110270558" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5218565" lon="-70.3434859"/>
+    <node id="11110270559" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5218859" lon="-70.3437005"/>
+    <node id="11110270560" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5219068" lon="-70.3439150"/>
+    <node id="11110270561" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5219413" lon="-70.3445624"/>
+    <node id="11110270562" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5219537" lon="-70.3447513"/>
+    <node id="11110270563" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5219873" lon="-70.3449444"/>
+    <node id="11110270564" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5220335" lon="-70.3451000"/>
+    <node id="11110270565" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5220797" lon="-70.3451966"/>
+    <node id="11110270566" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5221342" lon="-70.3452448"/>
+    <node id="11110270567" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5222014" lon="-70.3452717"/>
+    <node id="11110270568" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5222769" lon="-70.3452663"/>
+    <node id="11110270569" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5223483" lon="-70.3452341"/>
+    <node id="11110270570" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5224280" lon="-70.3451644"/>
+    <node id="11110270571" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5224952" lon="-70.3450571"/>
+    <node id="11110270572" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5225329" lon="-70.3449444"/>
+    <node id="11110270573" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5226609" lon="-70.3442524"/>
+    <node id="11110270574" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5226830" lon="-70.3440683"/>
+    <node id="11110270575" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5226885" lon="-70.3438772"/>
+    <node id="11110270576" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5226609" lon="-70.3436649"/>
+    <node id="11110270577" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5225889" lon="-70.3434950"/>
+    <node id="11110270578" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5225058" lon="-70.3433534"/>
+    <node id="11110270579" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5224338" lon="-70.3432119"/>
+    <node id="11110270580" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5223341" lon="-70.3430137"/>
+    <node id="11110270581" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5222621" lon="-70.3428155"/>
+    <node id="11110270582" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5222012" lon="-70.3426173"/>
+    <node id="11110270583" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5221458" lon="-70.3423908"/>
+    <node id="11110270584" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5220960" lon="-70.3421855"/>
+    <node id="11110270585" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5220406" lon="-70.3419731"/>
+    <node id="11110270586" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5219686" lon="-70.3417466"/>
+    <node id="11110270587" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5218855" lon="-70.3415626"/>
+    <node id="11110270588" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5217803" lon="-70.3414069"/>
+    <node id="11110270589" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5216474" lon="-70.3412370"/>
+    <node id="11110270590" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5215145" lon="-70.3410954"/>
+    <node id="11110270591" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5213898" lon="-70.3409704"/>
+    <node id="11110270592" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5212789" lon="-70.3408225"/>
+    <node id="11110270593" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5211969" lon="-70.3406807"/>
+    <node id="11110270594" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5211246" lon="-70.3405390"/>
+    <node id="11110270595" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5210619" lon="-70.3403726"/>
+    <node id="11110270596" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5210137" lon="-70.3401816"/>
+    <node id="11110270597" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5209944" lon="-70.3400091"/>
+    <node id="11110270598" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607" lat="-38.5209924" lon="-70.3397998"/>
+    <node id="11108991742" visible="true" version="1" changeset="139773050" timestamp="2023-08-12T04:40:39Z" user="FS Patagonia" uid="9008607" lat="-38.5210096" lon="-70.3393449"/>
+    <node id="7837897139" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5194567" lon="-70.3359184"/>
+    <node id="7837897140" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5194399" lon="-70.3361759"/>
+    <node id="9800670266" visible="true" version="1" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5194577" lon="-70.3365098"/>
+    <node id="7837897141" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5194703" lon="-70.3368531"/>
+    <node id="7837897142" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5195007" lon="-70.3372943"/>
+    <node id="9800670267" visible="true" version="1" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5195490" lon="-70.3377664"/>
+    <node id="7837897143" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5196015" lon="-70.3380534"/>
+    <node id="9800670268" visible="true" version="1" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5197012" lon="-70.3384933"/>
+    <node id="7837897144" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5197882" lon="-70.3388715"/>
+    <node id="7837897145" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5198680" lon="-70.3392309"/>
+    <node id="9800670269" visible="true" version="1" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5199183" lon="-70.3394187"/>
+    <node id="7837897146" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5200075" lon="-70.3396024"/>
+    <node id="9800670270" visible="true" version="1" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5200925" lon="-70.3397392"/>
+    <node id="7837897147" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5202310" lon="-70.3399175"/>
+    <node id="7837897148" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5204073" lon="-70.3401375"/>
+    <node id="9800670271" visible="true" version="1" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5205217" lon="-70.3402944"/>
+    <node id="9800670272" visible="true" version="1" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5206245" lon="-70.3404205"/>
+    <node id="7837897149" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5207452" lon="-70.3405653"/>
+    <node id="9800670273" visible="true" version="1" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5208417" lon="-70.3406967"/>
+    <node id="7837897150" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5209414" lon="-70.3408737"/>
+    <node id="9800670274" visible="true" version="1" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5209875" lon="-70.3409931"/>
+    <node id="9800670275" visible="true" version="1" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5210327" lon="-70.3412157"/>
+    <node id="7837897151" visible="true" version="2" changeset="122051687" timestamp="2022-06-07T05:39:38Z" user="Plekhanov" uid="10409550" lat="-38.5210893" lon="-70.3415966"/>
+    <node id="11108991743" visible="true" version="1" changeset="139773050" timestamp="2023-08-12T04:40:39Z" user="FS Patagonia" uid="9008607" lat="-38.5209325" lon="-70.3390231"/>
+    <node id="11108991744" visible="true" version="1" changeset="139773050" timestamp="2023-08-12T04:40:39Z" user="FS Patagonia" uid="9008607" lat="-38.5208740" lon="-70.3387149"/>
+    <node id="11108991745" visible="true" version="1" changeset="139773050" timestamp="2023-08-12T04:40:39Z" user="FS Patagonia" uid="9008607" lat="-38.5208009" lon="-70.3384721"/>
+    <node id="11108991746" visible="true" version="1" changeset="139773050" timestamp="2023-08-12T04:40:39Z" user="FS Patagonia" uid="9008607" lat="-38.5206329" lon="-70.3381078"/>
+    <node id="11108991747" visible="true" version="1" changeset="139773050" timestamp="2023-08-12T04:40:39Z" user="FS Patagonia" uid="9008607" lat="-38.5204356" lon="-70.3376501"/>
+    <node id="11108991748" visible="true" version="1" changeset="139773050" timestamp="2023-08-12T04:40:39Z" user="FS Patagonia" uid="9008607" lat="-38.5202456" lon="-70.3372112"/>
+    <node id="11108991749" visible="true" version="1" changeset="139773050" timestamp="2023-08-12T04:40:39Z" user="FS Patagonia" uid="9008607" lat="-38.5201140" lon="-70.3369777"/>
+    <node id="11108991750" visible="true" version="1" changeset="139773050" timestamp="2023-08-12T04:40:39Z" user="FS Patagonia" uid="9008607" lat="-38.5199386" lon="-70.3367348"/>
+    <node id="11108991751" visible="true" version="1" changeset="139773050" timestamp="2023-08-12T04:40:39Z" user="FS Patagonia" uid="9008607" lat="-38.5197779" lon="-70.3365107"/>
+    <node id="11108991752" visible="true" version="1" changeset="139773050" timestamp="2023-08-12T04:40:39Z" user="FS Patagonia" uid="9008607" lat="-38.5196390" lon="-70.3362585"/>
+    <way id="1197471039" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607">
+        <nd ref="11110263979"/>
+        <nd ref="11110263980"/>
+        <nd ref="11110263981"/>
+        <nd ref="11110263982"/>
+        <nd ref="11110263983"/>
+        <nd ref="11110263984"/>
+        <nd ref="11110263985"/>
+        <nd ref="11110263986"/>
+        <nd ref="11110263987"/>
+        <nd ref="11110263988"/>
+        <nd ref="11110263989"/>
+        <nd ref="11110263990"/>
+        <nd ref="11110263991"/>
+        <nd ref="11110263992"/>
+        <nd ref="11110263993"/>
+        <nd ref="11110263994"/>
+        <nd ref="11110263995"/>
+        <nd ref="11110263996"/>
+        <nd ref="11110263997"/>
+        <nd ref="11110263998"/>
+        <nd ref="11110263999"/>
+        <nd ref="11110264000"/>
+        <nd ref="11110264001"/>
+        <nd ref="11110264002"/>
+        <nd ref="11110264003"/>
+        <nd ref="11110264004"/>
+        <nd ref="11110270512"/>
+        <nd ref="11110270505"/>
+        <nd ref="11110270506"/>
+        <nd ref="11110270507"/>
+        <nd ref="11110270508"/>
+        <nd ref="11110270509"/>
+        <nd ref="11110270510"/>
+        <nd ref="11110270511"/>
+        <nd ref="11110270513"/>
+        <nd ref="11110270514"/>
+        <nd ref="11110270515"/>
+        <nd ref="11110270516"/>
+        <nd ref="11110270517"/>
+        <nd ref="11110270518"/>
+        <nd ref="11110270519"/>
+        <nd ref="11110270520"/>
+        <nd ref="11110270521"/>
+        <nd ref="11110270522"/>
+        <nd ref="11110270523"/>
+        <nd ref="11110270524"/>
+        <nd ref="11110270525"/>
+        <nd ref="11110270526"/>
+        <nd ref="11110270527"/>
+        <nd ref="11110270528"/>
+        <nd ref="11110270529"/>
+        <nd ref="11110270530"/>
+        <nd ref="11110270531"/>
+        <nd ref="11110270532"/>
+        <nd ref="11110270533"/>
+        <nd ref="11110270534"/>
+        <nd ref="11110270535"/>
+        <nd ref="11110270536"/>
+        <nd ref="11110270537"/>
+        <nd ref="11110270538"/>
+        <nd ref="11110270539"/>
+        <nd ref="11110270540"/>
+        <nd ref="11110270541"/>
+        <nd ref="11110270542"/>
+        <nd ref="11110270543"/>
+        <nd ref="11110270544"/>
+        <nd ref="11110270545"/>
+        <nd ref="11110270546"/>
+        <nd ref="11110270547"/>
+        <nd ref="11110270548"/>
+        <nd ref="11110270550"/>
+        <nd ref="11110270549"/>
+        <nd ref="9800670280"/>
+    </way>
+    <way id="1197471040" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607">
+        <nd ref="9800670282"/>
+        <nd ref="7837897163"/>
+        <nd ref="9800670283"/>
+        <nd ref="9800670284"/>
+        <nd ref="7837897164"/>
+        <nd ref="7837897165"/>
+        <nd ref="7837897166"/>
+        <nd ref="7837897167"/>
+        <nd ref="11110263979"/>
+    </way>
+    <way id="1197471041" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607">
+        <nd ref="9800670280"/>
+        <nd ref="7837897155"/>
+        <nd ref="7837897156"/>
+        <nd ref="7837897157"/>
+        <nd ref="7837897158"/>
+        <nd ref="7837897159"/>
+        <nd ref="9800670281"/>
+        <nd ref="7837897160"/>
+        <nd ref="7837897161"/>
+        <nd ref="7837897162"/>
+        <nd ref="9800670282"/>
+    </way>
+    <way id="1197471042" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607">
+        <nd ref="7837897152"/>
+        <nd ref="11110270551"/>
+        <nd ref="11110270552"/>
+        <nd ref="11110270553"/>
+        <nd ref="11110270554"/>
+        <nd ref="11110270555"/>
+        <nd ref="11110270556"/>
+        <nd ref="11110270557"/>
+        <nd ref="11110270558"/>
+        <nd ref="11110270559"/>
+        <nd ref="11110270560"/>
+        <nd ref="11110270561"/>
+        <nd ref="11110270562"/>
+        <nd ref="11110270563"/>
+        <nd ref="11110270564"/>
+        <nd ref="11110270565"/>
+        <nd ref="11110270566"/>
+        <nd ref="11110270567"/>
+        <nd ref="11110270568"/>
+        <nd ref="11110270569"/>
+        <nd ref="11110270570"/>
+        <nd ref="11110270571"/>
+        <nd ref="11110270572"/>
+        <nd ref="11110270573"/>
+        <nd ref="11110270574"/>
+        <nd ref="11110270575"/>
+        <nd ref="11110270576"/>
+        <nd ref="11110270577"/>
+        <nd ref="11110270578"/>
+        <nd ref="11110270579"/>
+        <nd ref="11110270580"/>
+        <nd ref="11110270581"/>
+        <nd ref="11110270582"/>
+        <nd ref="11110270583"/>
+        <nd ref="11110270584"/>
+        <nd ref="11110270585"/>
+        <nd ref="11110270586"/>
+        <nd ref="11110270587"/>
+        <nd ref="11110270588"/>
+        <nd ref="11110270589"/>
+        <nd ref="11110270590"/>
+        <nd ref="11110270591"/>
+        <nd ref="11110270592"/>
+        <nd ref="11110270593"/>
+        <nd ref="11110270594"/>
+        <nd ref="11110270595"/>
+        <nd ref="11110270596"/>
+        <nd ref="11110270597"/>
+        <nd ref="11110270598"/>
+        <nd ref="11108991742"/>
+    </way>
+    <way id="1197259737" visible="true" version="2" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607">
+        <nd ref="7837897139"/>
+        <nd ref="7837897140"/>
+        <nd ref="9800670266"/>
+        <nd ref="7837897141"/>
+        <nd ref="7837897142"/>
+        <nd ref="9800670267"/>
+        <nd ref="7837897143"/>
+        <nd ref="9800670268"/>
+        <nd ref="7837897144"/>
+        <nd ref="7837897145"/>
+        <nd ref="9800670269"/>
+        <nd ref="7837897146"/>
+        <nd ref="9800670270"/>
+        <nd ref="7837897147"/>
+        <nd ref="7837897148"/>
+        <nd ref="9800670271"/>
+        <nd ref="9800670272"/>
+        <nd ref="7837897149"/>
+        <nd ref="9800670273"/>
+        <nd ref="7837897150"/>
+        <nd ref="9800670274"/>
+        <nd ref="9800670275"/>
+        <nd ref="7837897151"/>
+        <nd ref="7837897152"/>
+    </way>
+    <way id="1197471044" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607">
+        <nd ref="11108991742"/>
+        <nd ref="11108991743"/>
+        <nd ref="11108991744"/>
+        <nd ref="11108991745"/>
+        <nd ref="11108991746"/>
+        <nd ref="11108991747"/>
+        <nd ref="11108991748"/>
+        <nd ref="11108991749"/>
+        <nd ref="11108991750"/>
+        <nd ref="11108991751"/>
+        <nd ref="11108991752"/>
+        <nd ref="7837897139"/>
+    </way>
+    <relation id="16193116" visible="true" version="1" changeset="139795130" timestamp="2023-08-12T16:45:48Z" user="FS Patagonia" uid="9008607">
+        <member type="way" ref="1197471039" role="outer"/>
+        <member type="way" ref="1197471040" role="outer"/>
+        <member type="way" ref="1197471041" role="outer"/>
+        <member type="way" ref="1197471042" role="outer"/>
+        <member type="way" ref="1197259737" role="outer"/>
+        <member type="way" ref="1197471044" role="outer"/>
+        <tag k="natural" v="shingle"/>
+        <tag k="type" v="multipolygon"/>
+    </relation>
+</create>
+</osmChange>

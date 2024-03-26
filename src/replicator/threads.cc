@@ -161,7 +161,6 @@ startMonitorChangesets(std::shared_ptr<replication::RemoteURL> &remote,
     while (i <= cores/4) {
         std::rotate(servers.begin(), servers.begin()+1, servers.end());
         auto replicationPlanet = std::make_shared<replication::Planet>(*remote);
-        replicationPlanet->connectServer(servers.front());
         planets.push_back(replicationPlanet);
         i++;
     }
@@ -292,7 +291,6 @@ startMonitorChanges(std::shared_ptr<replication::RemoteURL> &remote,
     while (i <= cores/4) {
         std::rotate(servers.begin(), servers.begin()+1, servers.end());
         auto replicationPlanet = std::make_shared<replication::Planet>(*remote);
-        replicationPlanet->connectServer(servers.front());
         planets.push_back(replicationPlanet);
         i++;
     }
@@ -495,7 +493,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
 
     auto removed_nodes = std::make_shared<std::vector<long>>();
     auto removed_ways = std::make_shared<std::vector<long>>();
-    auto removed_relations = std::make_shared<std::vector<long>>();
+    // auto removed_relations = std::make_shared<std::vector<long>>();
     auto validation_removals = std::make_shared<std::vector<long>>();
 
     // Raw data and validation
@@ -541,24 +539,23 @@ threadOsmChange(OsmChangeTask osmChangeTask)
                 }
             }
 
-            // Relations
-            for (auto rit = std::begin(change->relations); rit != std::end(change->relations); ++rit) {
-                osmobjects::OsmRelation *relation = rit->get();
+            // // Relations
+            // for (auto rit = std::begin(change->relations); rit != std::end(change->relations); ++rit) {
+            //     osmobjects::OsmRelation *relation = rit->get();
 
-                if (relation->action != osmobjects::remove && !relation->priority) {
-                    continue;
-                }
+            //     if (relation->action != osmobjects::remove && !relation->priority) {
+            //         continue;
+            //     }
+            //     // Remove deleted relations from validation table
+            //     if (!config->disable_validation && relation->action == osmobjects::remove) {
+            //         removed_relations->push_back(relation->id);
+            //     }
 
-                // Remove deleted relations from validation table
-                if (!config->disable_validation && relation->action == osmobjects::remove) {
-                    removed_relations->push_back(relation->id);
-                }
-
-                //  Update relations, ignore new ones outside priority area
-                if (!config->disable_raw) {
-                    // task.query += queryraw->applyChange(*relation);
-                }
-            }
+            //     //  Update relations, ignore new ones outside priority area
+            //     if (!config->disable_raw) {
+            //         task.query += queryraw->applyChange(*relation);
+            //     }
+            // }
 
         }
     }
@@ -581,7 +578,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
         task.query += queryvalidate->updateValidation(validation_removals);
         task.query += queryvalidate->updateValidation(removed_nodes);
         task.query += queryvalidate->updateValidation(removed_ways);
-        task.query += queryvalidate->updateValidation(removed_relations);
+        // task.query += queryvalidate->updateValidation(removed_relations);
 
     }
 

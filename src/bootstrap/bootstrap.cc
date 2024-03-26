@@ -93,7 +93,7 @@ Bootstrap::start(const underpassconfig::UnderpassConfig &config) {
 
     processWays();
     processNodes();
-    processRelations();
+    // processRelations();
 
 }
 
@@ -341,7 +341,7 @@ Bootstrap::threadBootstrapRelationTask(RelationTask relationTask)
     BootstrapTask task;
     int processed = 0;
 
-    auto relationval = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
+    // auto relationval = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
 
     // Proccesing relations
     for (int i = taskIndex * page_size; i < (taskIndex + 1) * page_size; ++i) {
@@ -355,7 +355,7 @@ Bootstrap::threadBootstrapRelationTask(RelationTask relationTask)
             ++processed;
         }
     }
-    // queryvalidate->relations(relval, task.query);
+    // queryvalidate->relations(relationval, task.query);
     task.processed = processed;
     const std::lock_guard<std::mutex> lock(tasks_change_mutex);
     (*tasks)[taskIndex] = task;

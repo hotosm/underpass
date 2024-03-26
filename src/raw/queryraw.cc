@@ -89,11 +89,12 @@ QueryRaw::buildTagsQuery(std::map<std::string, std::string> tags) const {
 std::string
 buildMembersQuery(std::list<OsmRelationMember> members) {
     if (members.size() > 0) {
-        std::string membersStr = "jsonb_build_array(";
+        std::string membersStr = "'[";
         int count = 0;
         for (auto mit = std::begin(members); mit != std::end(members); ++mit) {
-            membersStr += "jsonb_build_object(";
-            std::string member_format = "'%s', '%s',";
+            count++;
+            membersStr += "{";
+            std::string member_format = "\"%s\": \"%s\",";
             boost::format member_fmt(member_format);
             member_fmt % "role";
             member_fmt % mit->role;
@@ -101,14 +102,13 @@ buildMembersQuery(std::list<OsmRelationMember> members) {
             member_fmt % "type";
             member_fmt % mit->type;
             membersStr += member_fmt.str();
-            member_fmt % "ref";
-            member_fmt % mit->ref;
-            membersStr += member_fmt.str();
-            membersStr.erase(membersStr.size() - 1);
-            membersStr += "),";
+            membersStr += "\"ref\":";
+            membersStr += std::to_string(mit->ref);
+            membersStr += "},";
         }
         membersStr.erase(membersStr.size() - 1);
-        return membersStr += ")";
+
+        return membersStr += "]'";
     } else {
         return "null";
     }
@@ -301,72 +301,81 @@ std::string
 QueryRaw::applyChange(const OsmRelation &relation) const
 {
     std::string query = "";
-    std::stringstream ss;
-    if (relation.isMultiPolygon()) {
-        ss << std::setprecision(12) << boost::geometry::wkt(relation.multipolygon);
-    } else {
-        ss << std::setprecision(12) << boost::geometry::wkt(relation.multilinestring);
-    }
-    
-    std::string geostring = ss.str();
 
     if (relation.action == osmobjects::create || relation.action == osmobjects::modify) {
 
-        query = "INSERT INTO relations as r (osm_id, tags, refs, geom, timestamp, version, \"user\", uid, changeset) VALUES(";
-        std::string format = "%d, %s, %s, %s, \'%s\', %d, \'%s\', %d, %d) \
-        ON CONFLICT (osm_id) DO UPDATE SET tags = %s, refs = %s, geom = %s, timestamp = \'%s\', version = %d, \"user\" = \'%s\', uid = %d, changeset = %d WHERE r.version <= %d;";
-        boost::format fmt(format);
-
-        // osm_id
-        fmt % relation.id;
-
-        // tags
-        auto tags = buildTagsQuery(relation.tags);
-        fmt % tags;
-
-        // refs
-        auto refs = buildMembersQuery(relation.members);
-        fmt % refs;
-
-        // geometry
-        std::string geometry;
-        geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
-        fmt % geometry;
-
-        // timestamp
-        std::string timestamp = to_simple_string(boost::posix_time::microsec_clock::universal_time());
-        fmt % timestamp;
-        // version
-        fmt % relation.version;
-        // user
-        fmt % dbconn->escapedString(relation.user);
-        // uid
-        fmt % relation.uid;
-        // changeset
-        fmt % relation.changeset;
-
-        // ON CONFLICT
-        fmt % tags;
-        fmt % refs;
-        fmt % geometry;
-        fmt % timestamp;
-        fmt % relation.version;
-        fmt % dbconn->escapedString(relation.user);
-        fmt % relation.uid;
-        fmt % relation.changeset;
-        fmt % relation.version;
-
-        query += fmt.str();
-
-        for (auto it = std::begin(relation.members); it != std::end(relation.members); ++it) {
-            query += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(it->ref) + ");";
+        std::stringstream ss;
+        if (relation.isMultiPolygon()) {
+            ss << std::setprecision(12) << boost::geometry::wkt(relation.multipolygon);
+        } else {
+            ss << std::setprecision(12) << boost::geometry::wkt(relation.multilinestring);
         }
+        std::string geostring = ss.str();
 
+        // Ignore empty geometries
+        if (geostring != "MULTILINESTRING()" && geostring != "MULTIPOLYGON()") {
+
+            query = "INSERT INTO relations as r (osm_id, tags, refs, geom, timestamp, version, \"user\", uid, changeset) VALUES(";
+            std::string format = "%d, %s, %s, %s, \'%s\', %d, \'%s\', %d, %d) \
+            ON CONFLICT (osm_id) DO UPDATE SET tags = %s, refs = %s, geom = %s, timestamp = \'%s\', version = %d, \"user\" = \'%s\', uid = %d, changeset = %d WHERE r.version <= %d;";
+            boost::format fmt(format);
+
+            // osm_id
+            fmt % relation.id;
+
+            // tags
+            auto tags = buildTagsQuery(relation.tags);
+            fmt % tags;
+
+            // refs
+            auto refs = buildMembersQuery(relation.members);
+            fmt % refs;
+
+            // geometry
+            std::string geometry;
+            geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
+            
+            std::cout << "Relation " << relation.id << " " << geostring << std::endl;
+            
+            fmt % geometry;
+
+            // timestamp
+            std::string timestamp = to_simple_string(boost::posix_time::microsec_clock::universal_time());
+            fmt % timestamp;
+            // version
+            fmt % relation.version;
+            // user
+            fmt % dbconn->escapedString(relation.user);
+            // uid
+            fmt % relation.uid;
+            // changeset
+            fmt % relation.changeset;
+
+            // ON CONFLICT
+            fmt % tags;
+            fmt % refs;
+            fmt % geometry;
+            fmt % timestamp;
+            fmt % relation.version;
+            fmt % dbconn->escapedString(relation.user);
+            fmt % relation.uid;
+            fmt % relation.changeset;
+            fmt % relation.version;
+
+            query += fmt.str();
+
+            for (auto it = std::begin(relation.members); it != std::end(relation.members); ++it) {
+                query += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(it->ref) + ");";
+            }
+        } else {
+            std::cout << "Relation " << relation.id << " geometry is empty" << std::endl;
+        }
     } else if (relation.action == osmobjects::remove) {
         query += "DELETE FROM relations where osm_id = " + std::to_string(relation.id) + ";";
     }
 
-    return query;}
+    return query;
+}
 
 std::vector<long> arrayStrToVector(std::string &refs_str) {
     refs_str.erase(0, 1);
@@ -398,9 +407,17 @@ QueryRaw::getRelationsByWaysRefs(std::string &wayIds) const
         rel->id = (*rel_it)[0].as<long>();
         std::string refs_str = (*rel_it)[1].as<std::string>();
         auto members = parseJSONArrayStr(refs_str);
+
         for (auto mit = members.begin(); mit != members.end(); ++mit) {
-            rel->addMember(std::stol(mit->at("ref")), osmobjects::osmtype_t::way, mit->at("role"));
+            auto memberType = osmobjects::osmtype_t::way;
+            if (mit->at("type") == "n") {
+                memberType = osmobjects::osmtype_t::node;
+            } else if (mit->at("type") == "r") {
+                memberType = osmobjects::osmtype_t::relation;
+            }
+            rel->addMember(std::stol(mit->at("ref")), memberType, mit->at("role"));
         }
+        
         rel->version = (*rel_it)[2].as<long>();
         auto tags = (*rel_it)[3];
         if (!tags.is_null()) {
@@ -429,14 +446,20 @@ QueryRaw::getWaysByIds(std::string &waysIds, std::map<long, std::shared_ptr<osmo
     boost::timer::auto_cpu_timer timer("getWaysByIds(waysIds, waycache): took %w seconds\n");
 #endif
     // Get all ways that have references to nodes
-    std::string waysQuery = "SELECT distinct(osm_id), ST_AsText(geom, 4326) from ways_poly wp where osm_id = any(ARRAY[" + waysIds + "])";
+    std::string waysQuery = "SELECT distinct(osm_id), ST_AsText(geom, 4326), 'polygon' as type from ways_poly wp where osm_id = any(ARRAY[" + waysIds + "]) ";
+    waysQuery += "UNION SELECT distinct(osm_id), ST_AsText(geom, 4326), 'linestring' as type from ways_line wp where osm_id = any(ARRAY[" + waysIds + "])";
     auto ways_result = dbconn->query(waysQuery);
 
     // Fill vector of OsmWay objects
     for (auto way_it = ways_result.begin(); way_it != ways_result.end(); ++way_it) {
         auto way = std::make_shared<OsmWay>();
+        auto type = (*way_it)[2].as<std::string>();
         way->id = (*way_it)[0].as<long>();
-        boost::geometry::read_wkt((*way_it)[1].as<std::string>(), way->polygon);
+        if (type == "polygon") {
+            boost::geometry::read_wkt((*way_it)[1].as<std::string>(), way->polygon);
+        } else {
+            boost::geometry::read_wkt((*way_it)[1].as<std::string>(), way->linestring);
+        }
         waycache.insert(std::pair(way->id, std::make_shared<osmobjects::OsmWay>(*way)));
     }
 }
@@ -488,10 +511,10 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
             }
         }
 
-        for (auto rel_it = std::begin(change->relations); rel_it != std::end(change->relations); ++rel_it) {
-            OsmRelation *relation = rel_it->get();
-            removedRelations.push_back(relation->id);
-        }
+        // for (auto rel_it = std::begin(change->relations); rel_it != std::end(change->relations); ++rel_it) {
+        //     OsmRelation *relation = rel_it->get();
+        //     removedRelations.push_back(relation->id);
+        // }
     }
 
     // Add indirectly modified ways to osmchanges
@@ -518,21 +541,20 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
     }
 
     // Add indirectly modified relations to osmchanges
-    if (modifiedWaysIds.size() > 1) {
-        modifiedWaysIds.erase(modifiedWaysIds.size() - 1);
-        auto modifiedRelations = getRelationsByWaysRefs(modifiedWaysIds);
-        auto change = std::make_shared<OsmChange>(none);
-        for (auto rel_it = modifiedRelations.begin(); rel_it != modifiedRelations.end(); ++rel_it) {
-           auto relation = std::make_shared<OsmRelation>(*rel_it->get());
-           // If the relation is not marked as removed, mark it as modified
-           if (std::find(removedRelations.begin(), removedRelations.end(), relation->id) == removedRelations.end()) {
-                relation->action = osmobjects::modify;
-                change->relations.push_back(relation);
-
-           }
-        }
-        osmchanges->changes.push_back(change);
-    }
+    // if (modifiedWaysIds.size() > 1) {
+    //     modifiedWaysIds.erase(modifiedWaysIds.size() - 1);
+    //     auto modifiedRelations = getRelationsByWaysRefs(modifiedWaysIds);
+    //     auto change = std::make_shared<OsmChange>(none);
+    //     for (auto rel_it = modifiedRelations.begin(); rel_it != modifiedRelations.end(); ++rel_it) {
+    //        auto relation = std::make_shared<OsmRelation>(*rel_it->get());
+    //        // If the relation is not marked as removed, mark it as modified
+    //        if (std::find(removedRelations.begin(), removedRelations.end(), relation->id) == removedRelations.end()) {
+    //             relation->action = osmobjects::modify;
+    //             change->relations.push_back(relation);
+    //        }
+    //     }
+    //     osmchanges->changes.push_back(change);
+    // }
 
     // Fill nodecache with referenced nodes
     if (referencedNodeIds.size() > 1) {
@@ -561,6 +583,7 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
                     boost::geometry::append(way->linestring, osmchanges->nodecache.at(*rit));
                 }
             }
+
             if (way->isClosed()) {
                 way->polygon = { {std::begin(way->linestring), std::end(way->linestring)} };
             }
@@ -575,112 +598,45 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
         }
     }
 
-    // Filter out all relations that doesn't have at least 1 way in cache
-    std::string relsForWayCacheIds;
-    for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); it++) {
-        OsmChange *change = it->get();
-        for (auto rel_it = std::begin(change->relations); rel_it != std::end(change->relations); ++rel_it) {
-            OsmRelation *relation = rel_it->get();
-            if (relation->isMultiPolygon() || relation->isMultiLineString()) {
-                bool getWaysForRelation = false;
-                for (auto mit = relation->members.begin(); mit != relation->members.end(); ++mit) {
-                    if (osmchanges->waycache.count(mit->ref)) {
-                        getWaysForRelation = true;
-                        break;
-                    }
-                }
-                if (getWaysForRelation) {
-                    relation->priority = true;
-                    for (auto mit = relation->members.begin(); mit != relation->members.end(); ++mit) {
-                        if (!osmchanges->waycache.count(mit->ref)) {
-                           relsForWayCacheIds += std::to_string(mit->ref) + ",";
-                        }
-                    }
-                } else {
-                    relation->priority = false;
-                }
-            }
-        }
-    }
-    // Get all missing ways geometries for relations
-    if (relsForWayCacheIds != "") {
-        relsForWayCacheIds.erase(relsForWayCacheIds.size() - 1);
-        getWaysByIds(relsForWayCacheIds, osmchanges->waycache);
-    }
+    // Relations
+    // std::string relsForWayCacheIds;
+    // bool debug = false;
+    // for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); it++) {
+    //     OsmChange *change = it->get();
+    //     for (auto rel_it = std::begin(change->relations); rel_it != std::end(change->relations); ++rel_it) {
+    //         OsmRelation *relation = rel_it->get();
+    //         if (relation->isMultiPolygon()) {
+    //             bool getWaysForRelation = false;
+    //             for (auto mit = relation->members.begin(); mit != relation->members.end(); ++mit) {
+    //                 if (osmchanges->waycache.count(mit->ref)) {
+    //                     getWaysForRelation = true;
+    //                     break;
+    //                 }
+    //             }
+    //             if (getWaysForRelation) {
+    //                 for (auto mit = relation->members.begin(); mit != relation->members.end(); ++mit) {
+    //                     if (!osmchanges->waycache.count(mit->ref)) {
+    //                        relsForWayCacheIds += std::to_string(mit->ref) + ",";
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+    // // Get all missing ways geometries for relations
+    // if (relsForWayCacheIds != "") {
+    //     relsForWayCacheIds.erase(relsForWayCacheIds.size() - 1);
+    //     getWaysByIds(relsForWayCacheIds, osmchanges->waycache);
+    // }
 
     // Build relation geometries
-    for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); it++) {
-        OsmChange *change = it->get();
-        for (auto rel_it = std::begin(change->relations); rel_it != std::end(change->relations); ++rel_it) {
-            OsmRelation *relation = rel_it->get();
-            if (relation->priority) {
-                bool first = true;
-                bool isMultiPolygon = relation->isMultiPolygon();
-                bool isMultiLineString = relation->isMultiLineString();
-                if (isMultiPolygon || isMultiLineString) {
-                    std::string innerGeoStr;
-                    std::string geometry_str;
-                    if (isMultiPolygon) {
-                        geometry_str = "MULTIPOLYGON((";
-                    } else {
-                        geometry_str = "MULTILINESTRING((";
-                    }
-                    bool noWay = false;
-                    for (auto mit = relation->members.begin(); mit != relation->members.end(); ++mit) {
-                        if (!osmchanges->waycache.count(mit->ref)) {
-                            noWay = true;
-                            break;
-                        }
-                        auto way = osmchanges->waycache.at(mit->ref);
-
-                        if ((!isMultiPolygon && boost::geometry::num_points(way->linestring) == 0) ||
-                            (isMultiPolygon && boost::geometry::num_points(way->polygon) == 0)
-                        ) {
-                            noWay = true;
-                            break;
-                        }
-                        std::stringstream ss;
-                        std::string geometry;
-
-                        if (isMultiPolygon) {
-                            ss << std::setprecision(12) << boost::geometry::wkt(way->polygon);
-                            geometry = ss.str();
-                            geometry.erase(0,8);
-                        } else {
-                            ss << std::setprecision(12) << boost::geometry::wkt(way->linestring);
-                            geometry = ss.str();
-                            geometry.erase(0,11);
-                        }
-                        
-                        geometry.erase(geometry.size() - 1);
-                        if (first && (mit->role == "outer")) {
-                            geometry_str += geometry + ",";
-                        } else {
-                            if (mit->role == "inner") {
-                                innerGeoStr += geometry + ",";
-                            } else {
-                                geometry_str += geometry + ",";
-                                geometry_str += innerGeoStr;
-                                innerGeoStr = "";
-                            }
-                        }
-                    }
-                    if (innerGeoStr.size() > 0) {
-                        geometry_str += innerGeoStr;
-                    }
-                    geometry_str.erase(geometry_str.size() - 1);
-                    geometry_str += "))";
-                    if (!noWay) {
-                        if (isMultiPolygon) {
-                            boost::geometry::read_wkt(geometry_str, relation->multipolygon);
-                        } else {
-                            boost::geometry::read_wkt(geometry_str, relation->multilinestring);
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); it++) {
+    //     OsmChange *change = it->get();
+    //     for (auto rel_it = std::begin(change->relations); rel_it != std::end(change->relations); ++rel_it) {
+    //         OsmRelation *relation = rel_it->get();
+    //         osmchanges->buildRelationGeometry(*relation);
+    //     }
+    // }
 }
 
 void
@@ -908,13 +864,17 @@ QueryRaw::getRelationsFromDB(long lastid, int pageSize) {
         if (!refs.is_null()) {
             auto refs = parseJSONArrayStr((*rel_it)[1].as<std::string>());
             for (auto ref_it = refs.begin(); ref_it != refs.end(); ++ref_it) {
-                if (ref_it->at("type") == "w" && (ref_it->at("role") == "inner" || ref_it->at("role") == "outer")) {
-                    relation.addMember(
-                        std::stoi(ref_it->at("ref")),
-                        osmobjects::osmtype_t::way,
-                        ref_it->at("role")
-                    );
+                auto relType = osmobjects::osmtype_t::way;
+                if (ref_it->at("type") == "n") {
+                    relType = osmobjects::osmtype_t::node;
+                } else if (ref_it->at("type") == "r") {
+                    relType = osmobjects::osmtype_t::relation;
                 }
+                relation.addMember(
+                    std::stol(ref_it->at("ref")),
+                    relType,
+                    ref_it->at("role")
+                );
             }
             std::string geometry = (*rel_it)[2].as<std::string>();
             if (geometry.substr(0, 12) == "MULTIPOLYGON") {
