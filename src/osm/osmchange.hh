@@ -248,7 +248,6 @@ class OsmChangeFile
     void buildGeometriesFromNodeCache();
     void buildRelationGeometry(osmobjects::OsmRelation &relation);
 
-
 #ifdef LIBXML
     /// Called by libxml++ for each element of the XML file
     void on_start_element(const Glib::ustring &name,
