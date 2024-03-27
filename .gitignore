@@ -29,6 +29,7 @@ docs/html
 infra/.terraform
 infra/.terraform.lock
 infra/.terraform.lock.hcl
+infra/*.tfstate
 ChangeLog
 NEWS
 README
