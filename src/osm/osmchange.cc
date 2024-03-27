@@ -174,154 +174,167 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
     point_t firstLinestringPoint;
     bool first = true;
 
+    std::vector<osmobjects::OsmRelationMember> members;
     for (auto mit = relation.members.begin(); mit != relation.members.end(); ++mit) {
+        if (mit->type == osmobjects::way) {
+            members.push_back(*mit);
+        }
+    }
+
+    for (auto mit = members.begin(); mit != members.end(); ++mit) {
         // Process Way objects only, not Nodes or other Relations
-        if (mit->type == osmobjects::way) 
+        if (!waycache.count(mit->ref)) {
+            // Way is not available in cache,
+            // possibily because Relation is not in the priority area
+            return;
+        }
+
+        auto way = waycache.at(mit->ref);
+
+        if (first) {
+            if (way->linestring.size() > 0) {
+                firstLinestringPoint = way->linestring.front();
+            } else {
+                firstLinestringPoint = way->polygon.outer().front();
+            }
+        }
+
+        // 1. When
+        // A) Relation is a LineString or MultiLineString but
+        //    we want to save it as a MultiPolygon (this is the case for boundaries)
+        // B) the Relation is MultiPolygon but is composed of several LineStrings
+        if (bg::num_points(way->linestring) > 0 &&
+            bg::num_points(way->polygon) == 0)
         {
-            if (!waycache.count(mit->ref)) {
-                // Way is not available in cache,
-                // possibily because Relation is not in the priority area
-                return;
-            }
 
-            auto way = waycache.at(mit->ref);
+            if (!way->isClosed()) {
 
-            if (first) {
-                if (way->linestring.size() > 0) {
-                    firstLinestringPoint = way->linestring.front();
+                // Reverse the line direction if it's necessary
+                if (first && (mit != members.end())) {
+                    auto nextWay = waycache.at(std::next(mit)->ref);
+                    if (
+                        bg::equals(way->linestring.front(), nextWay->linestring.front()) ||
+                        bg::equals(way->linestring.front(), nextWay->linestring.back())
+                    ) {
+                        bg::reverse(way->linestring);
+                        firstLinestringPoint = way->linestring.front();
+                    }
                 } else {
-                    firstLinestringPoint = way->polygon.outer().front();
-                }
-            }
-
-            // 1. When
-            // A) Relation is a LineString or MultiLineString but
-            //    we want to save it as a MultiPolygon (this is the case for boundaries)
-            // B) the Relation is MultiPolygon but is composed of several LineStrings
-            if (relation.isMultiPolygon() &&
-                bg::num_points(way->linestring) > 0 &&
-                bg::num_points(way->polygon) == 0)
-            {
-
-                if (!way->isClosed()) {
-
-                    // Reverse the line direction if it's necessary
-                    if (first && (std::next(mit) != relation.members.end())) {
-                        auto nextWay = waycache.at(std::next(mit)->ref);
-                        if (
-                            bg::equals(way->linestring.front(), nextWay->linestring.front()) ||
-                            bg::equals(way->linestring.front(), nextWay->linestring.back())
-                        ) {
+                    if (lastLinestring.size() > 0 && way->linestring.size() > 0) {
+                        if (bg::equals(way->linestring.back(), lastLinestring.back())) {
                             bg::reverse(way->linestring);
-                            firstLinestringPoint = way->linestring.front();
                         }
-                    } else {
-                        if (lastLinestring.size() > 0 && way->linestring.size() > 0) {
-                            if (bg::equals(way->linestring.back(), lastLinestring.back())) {
-                                bg::reverse(way->linestring);
-                            }
-                        }
-                    }
-
-                    bg::append(part, way->linestring);
-
-                    // Check if object is closed
-                    if (bg::equals(part.back(), part.front())) {
-                        // Convert LineString to Polygon
-                        polygon_t polygon;
-                        bg::append(polygon.outer(), part);
-                        if (mit->role == "inner") {
-                            parts.push_back({
-                                member_role_t::inner,
-                                linestring_t(),
-                                { polygon }
-                            });
-                        } else {
-                            parts.push_back({
-                                member_role_t::outer,
-                                linestring_t(),
-                                { polygon }
-                            });
-                        }
-                        part.clear();
-                        first = true;
-                        lastLinestring.clear();
-                        firstLinestringPoint = point_t();
-                    } 
-
-                } else {
-                    // Convert LineString to Polygon
-                    if (mit->role == "inner") {
-                            parts.push_back({
-                                member_role_t::inner,
-                                linestring_t(),
-                                { way->polygon }
-                            });
-                    } else {
-                            parts.push_back({
-                                member_role_t::outer,
-                                linestring_t(),
-                                { way->polygon }
-                            });
                     }
                 }
 
-                lastLinestring = way->linestring;
+                std::cout << "Push way to part" << std::endl;
+                bg::append(part, way->linestring);
+
+                // Check if object is closed
+                if (relation.isMultiPolygon() && bg::equals(part.back(), part.front())) {
+                    // Convert LineString to Polygon
+                    polygon_t polygon;
+                    bg::append(polygon.outer(), part);
+                    if (mit->role == "inner") {
+                        parts.push_back({
+                            member_role_t::inner,
+                            linestring_t(),
+                            { polygon }
+                        });
+                    } else {
+                        parts.push_back({
+                            member_role_t::outer,
+                            linestring_t(),
+                            { polygon }
+                        });
+                    }
+                    part.clear();
+                    first = true;
+                    lastLinestring.clear();
+                    firstLinestringPoint = point_t();
+                } 
 
             } else {
-                // 2. Any other MultiPolygon or MultiLineString
-
-                // When Relation is MultiLineString but way's geometry is a Polygon
-                if (!relation.isMultiPolygon() && bg::num_points(way->linestring) == 0 &&
-                    bg::num_points(way->polygon) > 0
-                ) {
-                    // Convert way's Polygon to LineString
-                    bg::assign_points(way->linestring, way->polygon.outer());
-                    if (mit->role == "inner") {
-                            parts.push_back({
-                                member_role_t::inner,
-                                { way->linestring },
-                                polygon_t()
-                            });
-                    } else {
-                            parts.push_back({
-                                member_role_t::outer,
-                                { way->linestring },
-                                polygon_t()
-                            });
-                    }
-                } else {
-                    if (mit->role == "inner") {
+                // Convert LineString to Polygon
+                if (mit->role == "inner") {
                         parts.push_back({
                             member_role_t::inner,
                             linestring_t(),
                             { way->polygon }
                         });
+                } else {
+                        parts.push_back({
+                            member_role_t::outer,
+                            linestring_t(),
+                            { way->polygon }
+                        });
+                }
+            }
+
+            lastLinestring = way->linestring;
+
+        } else {
+            // 2. Any other MultiPolygon or MultiLineString
+
+            // When Relation is MultiLineString but way's geometry is a Polygon
+            if (!relation.isMultiPolygon() && bg::num_points(way->linestring) == 0 &&
+                bg::num_points(way->polygon) > 0
+            ) {
+                // Convert way's Polygon to LineString
+                bg::assign_points(way->linestring, way->polygon.outer());
+                if (mit->role == "inner") {
+                        parts.push_back({
+                            member_role_t::inner,
+                            { way->linestring },
+                            polygon_t()
+                        });
+                } else {
+                        parts.push_back({
+                            member_role_t::outer,
+                            { way->linestring },
+                            polygon_t()
+                        });
+                }
+            } else {
+                if (mit->role == "inner") {
+                    parts.push_back({
+                        member_role_t::inner,
+                        linestring_t(),
+                        { way->polygon }
+                    });
+                } else {
+                    if (way->polygon.outer().size() > 0) {
+                        parts.push_back({
+                            member_role_t::outer,
+                            linestring_t(),
+                            { way->polygon }
+                        });
                     } else {
-                        if (way->polygon.outer().size() > 0) {
-                            parts.push_back({
-                                member_role_t::outer,
-                                linestring_t(),
-                                { way->polygon }
-                            });
-                        } else {
-                            parts.push_back({
-                                member_role_t::outer,
-                                { way->linestring },
-                                polygon_t()
-                            });
-                        }
+                        parts.push_back({
+                            member_role_t::outer,
+                            { way->linestring },
+                            polygon_t()
+                        });
                     }
                 }
-
             }
 
-            if (first 
-                && boost::geometry::get<0>(firstLinestringPoint) != 0 
-                && boost::geometry::get<1>(firstLinestringPoint) != 0) {
-                first = false;
-            }
         }
+
+        if (first 
+            && boost::geometry::get<0>(firstLinestringPoint) != 0 
+            && boost::geometry::get<1>(firstLinestringPoint) != 0) {
+            first = false;
+        }
+    }
+
+    if (part.size() > 0) {
+        std::cout << "Push back part!" << std::endl;
+        parts.push_back({
+            member_role_t::outer,
+            { part },
+            polygon_t()
+        });
     }
 
     std::string geometry = "";
@@ -349,10 +362,10 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
         geometry.erase(geometry.size() - 1);
         if (relation.isMultiPolygon()) {
             bg::read_wkt("MULTIPOLYGON((" + geometry + "))", relation.multipolygon);
-            std::cout << "MULTIPOLYGON((" + geometry + "))" << std::endl;
+            // std::cout << "<Relation " << relation.id << "> MULTIPOLYGON((" + geometry + "))" << std::endl;
         } else {
             bg::read_wkt("MULTILINESTRING((" + geometry + "))", relation.multilinestring);
-            std::cout << "MULTILINESTRING((" + geometry + "))" << std::endl;
+            // std::cout << "<Relation " << relation.id << "> MULTILINESTRING((" + geometry + "))" << std::endl;
         }
     }
 }
