@@ -179,8 +179,9 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
         if (mit->type == osmobjects::way) 
         {
             if (!waycache.count(mit->ref)) {
-                log_debug("Way for relation is not available in cache: %1%", mit->ref);
-                break;
+                // Way is not available in cache,
+                // possibily because Relation is not in the priority area
+                return;
             }
 
             auto way = waycache.at(mit->ref);
