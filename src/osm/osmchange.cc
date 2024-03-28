@@ -175,6 +175,8 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
     bool first = true;
 
     std::vector<osmobjects::OsmRelationMember> members;
+    
+    // Skip members that are not Way
     for (auto mit = relation.members.begin(); mit != relation.members.end(); ++mit) {
         if (mit->type == osmobjects::way) {
             members.push_back(*mit);
@@ -189,7 +191,18 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
             return;
         }
 
-        auto way = waycache.at(mit->ref);
+        if (mit == members.begin()) {
+            std::cout << "<Relation " << relation.id << ">" << std::endl;
+        }
+        
+        auto way = std::make_shared<osmobjects::OsmWay>();
+
+        try {
+            way = waycache.at(mit->ref);
+        } catch (std::exception &e) {
+            std::cout << "Way not found at cache and trow an error: " << mit->ref << std::endl;
+            exit(0);
+        }
 
         if (first) {
             if (way->linestring.size() > 0) {
@@ -199,19 +212,24 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
             }
         }
 
-        // 1. When
-        // A) Relation is a LineString or MultiLineString but
-        //    we want to save it as a MultiPolygon (this is the case for boundaries)
-        // B) the Relation is MultiPolygon but is composed of several LineStrings
         if (bg::num_points(way->linestring) > 0 &&
             bg::num_points(way->polygon) == 0)
         {
+
+            // Linestrings
 
             if (!way->isClosed()) {
 
                 // Reverse the line direction if it's necessary
                 if (first && (mit != members.end())) {
-                    auto nextWay = waycache.at(std::next(mit)->ref);
+                    auto nextWay = std::make_shared<osmobjects::OsmWay>();;
+                    try {
+                        nextWay = waycache.at(std::next(mit)->ref);
+                    } catch (std::exception &e) {
+                        std::cout << "(next) Way not found at cache and trow an error: " << mit->ref << std::endl;
+                        exit(0);
+                    }
+
                     if (
                         bg::equals(way->linestring.front(), nextWay->linestring.front()) ||
                         bg::equals(way->linestring.front(), nextWay->linestring.back())
@@ -227,7 +245,6 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
                     }
                 }
 
-                std::cout << "Push way to part" << std::endl;
                 bg::append(part, way->linestring);
 
                 // Check if object is closed
@@ -274,7 +291,8 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
             lastLinestring = way->linestring;
 
         } else {
-            // 2. Any other MultiPolygon or MultiLineString
+
+            // Polygons
 
             // When Relation is MultiLineString but way's geometry is a Polygon
             if (!relation.isMultiPolygon() && bg::num_points(way->linestring) == 0 &&
@@ -329,7 +347,6 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
     }
 
     if (part.size() > 0) {
-        std::cout << "Push back part!" << std::endl;
         parts.push_back({
             member_role_t::outer,
             { part },
@@ -362,10 +379,10 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
         geometry.erase(geometry.size() - 1);
         if (relation.isMultiPolygon()) {
             bg::read_wkt("MULTIPOLYGON((" + geometry + "))", relation.multipolygon);
-            // std::cout << "<Relation " << relation.id << "> MULTIPOLYGON((" + geometry + "))" << std::endl;
+            // std::cout << "MULTIPOLYGON((" + geometry + "))" << std::endl;
         } else {
             bg::read_wkt("MULTILINESTRING((" + geometry + "))", relation.multilinestring);
-            // std::cout << "<Relation " << relation.id << "> MULTILINESTRING((" + geometry + "))" << std::endl;
+            // std::cout << "MULTILINESTRING((" + geometry + "))" << std::endl;
         }
     }
 }

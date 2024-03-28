@@ -59,7 +59,10 @@ namespace osmobjects {
 /// Relations contain multipe ways, and are often used for combining
 /// highway segments or administrative boundaries.
 
-typedef enum { none, create, modify, remove } action_t; // delete is a reserved word
+// delete is a reserved word
+// modify_geom is a special action for modifying the geometry only
+typedef enum { none, create, modify, remove, modify_geom } action_t; 
+
 typedef enum { empty, node, way, relation, member } osmtype_t;
 
 /// \class OsmObject

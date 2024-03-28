@@ -227,65 +227,86 @@ QueryRaw::applyChange(const OsmWay &way) const
     std::string geostring = ss.str();
 
     if (way.refs.size() > 2
-        && (way.action == osmobjects::create || way.action == osmobjects::modify)) {
+        && (way.action == osmobjects::create || way.action == osmobjects::modify || way.action == osmobjects::modify_geom)) {
         if ((way.refs.front() != way.refs.back() && way.refs.size() == bg::num_points(way.linestring)) ||
             (way.refs.front() == way.refs.back() && way.refs.size() == bg::num_points(way.polygon))
          ) {
 
-            query = "INSERT INTO " + *tableName + " as r (osm_id, tags, refs, geom, timestamp, version, \"user\", uid, changeset) VALUES(";
-            std::string format = "%d, %s, %s, %s, \'%s\', %d, \'%s\', %d, %d) \
-            ON CONFLICT (osm_id) DO UPDATE SET tags = %s, refs = %s, geom = %s, timestamp = \'%s\', version = %d, \"user\" = \'%s\', uid = %d, changeset = %d WHERE r.version <= %d;";
-            boost::format fmt(format);
+            if (way.action != osmobjects::modify_geom) {
 
-            // osm_id
-            fmt % way.id;
+                query = "INSERT INTO " + *tableName + " as r (osm_id, tags, refs, geom, timestamp, version, \"user\", uid, changeset) VALUES(";
+                std::string format = "%d, %s, %s, %s, \'%s\', %d, \'%s\', %d, %d) \
+                ON CONFLICT (osm_id) DO UPDATE SET tags = %s, refs = %s, geom = %s, timestamp = \'%s\', version = %d, \"user\" = \'%s\', uid = %d, changeset = %d WHERE r.version <= %d;";
+                boost::format fmt(format);
 
-            //tags
-            auto tags = buildTagsQuery(way.tags);
-            fmt % tags;
+                // osm_id
+                fmt % way.id;
 
-            // refs
-            std::string refs = "";
-            for (auto it = std::begin(way.refs); it != std::end(way.refs); ++it) {
-                refs += std::to_string(*it) + ",";
-            }
-            refs.erase(refs.size() - 1);
-            refs = "ARRAY[" + refs + "]";
-            fmt % refs;
+                // tags
+                auto tags = buildTagsQuery(way.tags);
+                fmt % tags;
 
-            // geometry
-            std::string geometry;
-            geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
-            fmt % geometry;
+                // refs
+                std::string refs = "";
+                for (auto it = std::begin(way.refs); it != std::end(way.refs); ++it) {
+                    refs += std::to_string(*it) + ",";
+                }
+                refs.erase(refs.size() - 1);
+                refs = "ARRAY[" + refs + "]";
+                fmt % refs;
 
-            // timestamp
-            std::string timestamp = to_simple_string(boost::posix_time::microsec_clock::universal_time());
-            fmt % timestamp;
-            // version
-            fmt % way.version;
-            // user
-            fmt % dbconn->escapedString(way.user);
-            // uid
-            fmt % way.uid;
-            // changeset
-            fmt % way.changeset;
+                // geometry
+                std::string geometry;
+                geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
+                fmt % geometry;
 
-            // ON CONFLICT
-            fmt % tags;
-            fmt % refs;
-            fmt % geometry;
-            fmt % timestamp;
-            fmt % way.version;
-            fmt % dbconn->escapedString(way.user);
-            fmt % way.uid;
-            fmt % way.changeset;
-            fmt % way.version;
+                // timestamp
+                std::string timestamp = to_simple_string(boost::posix_time::microsec_clock::universal_time());
+                fmt % timestamp;
+                // version
+                fmt % way.version;
+                // user
+                fmt % dbconn->escapedString(way.user);
+                // uid
+                fmt % way.uid;
+                // changeset
+                fmt % way.changeset;
 
-            query += fmt.str();
+                // ON CONFLICT
+                fmt % tags;
+                fmt % refs;
+                fmt % geometry;
+                fmt % timestamp;
+                fmt % way.version;
+                fmt % dbconn->escapedString(way.user);
+                fmt % way.uid;
+                fmt % way.changeset;
+                fmt % way.version;
 
-            query += "DELETE FROM way_refs WHERE way_id=" + std::to_string(way.id) + ";";
-            for (auto ref = way.refs.begin(); ref != way.refs.end(); ++ref) {
-                query += "INSERT INTO way_refs (way_id, node_id) VALUES (" + std::to_string(way.id) + "," + std::to_string(*ref) + ");";
+                query += fmt.str();
+
+                query += "DELETE FROM way_refs WHERE way_id=" + std::to_string(way.id) + ";";
+                for (auto ref = way.refs.begin(); ref != way.refs.end(); ++ref) {
+                    query += "INSERT INTO way_refs (way_id, node_id) VALUES (" + std::to_string(way.id) + "," + std::to_string(*ref) + ");";
+                }
+                
+            } else {
+
+                // Update geometry only
+
+                query = "UPDATE " + *tableName + " SET ";
+                std::string format = "geom=%s WHERE osm_id=%d;";
+                boost::format fmt(format);
+
+                // Geometry
+                std::string geometry;
+                geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
+                fmt % geometry;
+
+                // osm_id
+                fmt % way.id;
+
+                query += fmt.str();
             }
         }
     } else if (way.action == osmobjects::remove) {
@@ -302,7 +323,7 @@ QueryRaw::applyChange(const OsmRelation &relation) const
 {
     std::string query = "";
 
-    if (relation.action == osmobjects::create || relation.action == osmobjects::modify) {
+    if (relation.action == osmobjects::create || relation.action == osmobjects::modify || relation.action == osmobjects::modify_geom) {
 
         std::stringstream ss;
         if (relation.isMultiPolygon()) {
@@ -312,60 +333,82 @@ QueryRaw::applyChange(const OsmRelation &relation) const
         }
         std::string geostring = ss.str();
 
-        // Ignore empty geometries
-        if (geostring != "MULTILINESTRING()" && geostring != "MULTIPOLYGON()") {
+        if (relation.action != osmobjects::modify_geom) {
 
-            query = "INSERT INTO relations as r (osm_id, tags, refs, geom, timestamp, version, \"user\", uid, changeset) VALUES(";
-            std::string format = "%d, %s, %s, %s, \'%s\', %d, \'%s\', %d, %d) \
-            ON CONFLICT (osm_id) DO UPDATE SET tags = %s, refs = %s, geom = %s, timestamp = \'%s\', version = %d, \"user\" = \'%s\', uid = %d, changeset = %d WHERE r.version <= %d;";
+            // Ignore empty geometries
+            if (geostring != "MULTILINESTRING()" && geostring != "MULTIPOLYGON()") {
+
+                query = "INSERT INTO relations as r (osm_id, tags, refs, geom, timestamp, version, \"user\", uid, changeset) VALUES(";
+                std::string format = "%d, %s, %s, %s, \'%s\', %d, \'%s\', %d, %d) \
+                ON CONFLICT (osm_id) DO UPDATE SET tags = %s, refs = %s, geom = %s, timestamp = \'%s\', version = %d, \"user\" = \'%s\', uid = %d, changeset = %d WHERE r.version <= %d;";
+                boost::format fmt(format);
+
+                // osm_id
+                fmt % relation.id;
+
+                // tags
+                auto tags = buildTagsQuery(relation.tags);
+                fmt % tags;
+
+                // refs
+                auto refs = buildMembersQuery(relation.members);
+                fmt % refs;
+
+                // geometry
+                std::string geometry;
+                geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
+                            
+                fmt % geometry;
+
+                // timestamp
+                std::string timestamp = to_simple_string(boost::posix_time::microsec_clock::universal_time());
+                fmt % timestamp;
+                // version
+                fmt % relation.version;
+                // user
+                fmt % dbconn->escapedString(relation.user);
+                // uid
+                fmt % relation.uid;
+                // changeset
+                fmt % relation.changeset;
+
+                // ON CONFLICT
+                fmt % tags;
+                fmt % refs;
+                fmt % geometry;
+                fmt % timestamp;
+                fmt % relation.version;
+                fmt % dbconn->escapedString(relation.user);
+                fmt % relation.uid;
+                fmt % relation.changeset;
+                fmt % relation.version;
+
+                query += fmt.str();
+
+                for (auto it = std::begin(relation.members); it != std::end(relation.members); ++it) {
+                    query += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(it->ref) + ");";
+                }
+            }
+
+        } else {
+
+            // Update geometry only
+
+            query = "UPDATE relations SET ";
+            std::string format = "geom=%s WHERE osm_id=%d;";
             boost::format fmt(format);
+
+            // Geometry
+            std::string geometry;
+            geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
+            fmt % geometry;
 
             // osm_id
             fmt % relation.id;
 
-            // tags
-            auto tags = buildTagsQuery(relation.tags);
-            fmt % tags;
-
-            // refs
-            auto refs = buildMembersQuery(relation.members);
-            fmt % refs;
-
-            // geometry
-            std::string geometry;
-            geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
-                        
-            fmt % geometry;
-
-            // timestamp
-            std::string timestamp = to_simple_string(boost::posix_time::microsec_clock::universal_time());
-            fmt % timestamp;
-            // version
-            fmt % relation.version;
-            // user
-            fmt % dbconn->escapedString(relation.user);
-            // uid
-            fmt % relation.uid;
-            // changeset
-            fmt % relation.changeset;
-
-            // ON CONFLICT
-            fmt % tags;
-            fmt % refs;
-            fmt % geometry;
-            fmt % timestamp;
-            fmt % relation.version;
-            fmt % dbconn->escapedString(relation.user);
-            fmt % relation.uid;
-            fmt % relation.changeset;
-            fmt % relation.version;
-
             query += fmt.str();
-
-            for (auto it = std::begin(relation.members); it != std::end(relation.members); ++it) {
-                query += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(it->ref) + ");";
-            }
         }
+
     } else if (relation.action == osmobjects::remove) {
         query += "DELETE FROM relations where osm_id = " + std::to_string(relation.id) + ";";
     }
@@ -445,6 +488,8 @@ QueryRaw::getWaysByIds(std::string &waysIds, std::map<long, std::shared_ptr<osmo
     std::string waysQuery = "SELECT distinct(osm_id), ST_AsText(geom, 4326), 'polygon' as type from ways_poly wp where osm_id = any(ARRAY[" + waysIds + "]) ";
     waysQuery += "UNION SELECT distinct(osm_id), ST_AsText(geom, 4326), 'linestring' as type from ways_line wp where osm_id = any(ARRAY[" + waysIds + "])";
     auto ways_result = dbconn->query(waysQuery);
+
+    std::string resultIds = "";
 
     // Fill vector of OsmWay objects
     for (auto way_it = ways_result.begin(); way_it != ways_result.end(); ++way_it) {
@@ -528,7 +573,7 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
            }
            // If the way is not marked as removed, mark it as modified
            if (std::find(removedWays.begin(), removedWays.end(), way->id) == removedWays.end()) {
-                way->action = osmobjects::modify;
+                way->action = osmobjects::modify_geom;
                 change->ways.push_back(way);
                 modifiedWaysIds += std::to_string(way->id) + ",";
            }
@@ -545,10 +590,11 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
            auto relation = std::make_shared<OsmRelation>(*rel_it->get());
            // If the relation is not marked as removed, mark it as modified
            if (std::find(removedRelations.begin(), removedRelations.end(), relation->id) == removedRelations.end()) {
-                relation->action = osmobjects::modify;
+                relation->action = osmobjects::modify_geom;
                 change->relations.push_back(relation);
            }
         }
+        std::cout << std::endl;
         osmchanges->changes.push_back(change);
     }
 
@@ -597,23 +643,23 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
     // Relations
     std::string relsForWayCacheIds;
     bool debug = false;
+    std::unordered_set<double> relationsForProcessing;
     for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); it++) {
         OsmChange *change = it->get();
         for (auto rel_it = std::begin(change->relations); rel_it != std::end(change->relations); ++rel_it) {
             OsmRelation *relation = rel_it->get();
-            if (relation->isMultiPolygon()) {
-                bool getWaysForRelation = false;
-                for (auto mit = relation->members.begin(); mit != relation->members.end(); ++mit) {
-                    if (osmchanges->waycache.count(mit->ref)) {
-                        getWaysForRelation = true;
-                        break;
-                    }
+            bool getWaysForRelation = false;
+            for (auto mit = relation->members.begin(); mit != relation->members.end(); ++mit) {
+                if (osmchanges->waycache.count(mit->ref)) {
+                    getWaysForRelation = true;
+                    break;
                 }
-                if (getWaysForRelation) {
-                    for (auto mit = relation->members.begin(); mit != relation->members.end(); ++mit) {
-                        if (!osmchanges->waycache.count(mit->ref)) {
-                           relsForWayCacheIds += std::to_string(mit->ref) + ",";
-                        }
+            }
+            if (getWaysForRelation) {
+                relationsForProcessing.insert(relation->id);
+                for (auto mit = relation->members.begin(); mit != relation->members.end(); ++mit) {
+                    if (mit->type == osmobjects::way && !osmchanges->waycache.count(mit->ref)) {
+                        relsForWayCacheIds += std::to_string(mit->ref) + ",";
                     }
                 }
             }
@@ -622,6 +668,7 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
     // Get all missing ways geometries for relations
     if (relsForWayCacheIds != "") {
         relsForWayCacheIds.erase(relsForWayCacheIds.size() - 1);
+        std::cout << "relsForWayCacheIds: " << relsForWayCacheIds << std::endl;
         getWaysByIds(relsForWayCacheIds, osmchanges->waycache);
     }
 
@@ -630,7 +677,9 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
         OsmChange *change = it->get();
         for (auto rel_it = std::begin(change->relations); rel_it != std::end(change->relations); ++rel_it) {
             OsmRelation *relation = rel_it->get();
-            osmchanges->buildRelationGeometry(*relation);
+            if (relationsForProcessing.find(relation->id) != relationsForProcessing.end()) {
+                osmchanges->buildRelationGeometry(*relation);
+            }
         }
     }
 }
