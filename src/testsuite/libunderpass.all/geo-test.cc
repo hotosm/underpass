@@ -61,7 +61,7 @@ main(int argc, char* argv[])
         return 1;
     }
 
-    if (tgu.readFile("/etc/underpass/priority.geojson")) {
+    if (tgu.readFile("ETCDIR/priority.geojson")) {
         runtest.pass("Read file with absolute path");
     } else {
         runtest.fail("Read file with absolute path");
