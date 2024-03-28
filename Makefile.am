@@ -29,6 +29,7 @@ CLEANFILES = \
 
 DISTCLEANFILES = docs/html docs/latex .lastmod
 MAINTAINERCLEANFILES = revno.h .lastmod
+ETCDIR = $(subst lib,etc,$(pkglibdir))
 
 SUBDIRS = \
 	src/validate
@@ -91,7 +92,8 @@ AM_CXXFLAGS = \
 	-fno-builtin-malloc \
 	-fno-builtin-calloc \
 	-fno-builtin-realloc \
-	-fno-builtin-free
+	-fno-builtin-free \
+	-DETCDIR=$(ETCDIR)
 else
 AM_CXXFLAGS = \
 	-rdynamic \
@@ -119,7 +121,7 @@ EXTRA_DIST = \
 	dist/debian \
 	dist/redhat \
 	utils
-	
+
 
 DEJATOOL = libunderpass
 
@@ -151,17 +153,17 @@ apidoc:
 endif
 
 install-data-hook:
-	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
-	$(MKDIR_P) /etc/underpass
-	cp -rvp $(srcdir)/config/priority.geojson /etc/underpass/
-	cp -rvp $(srcdir)/config/replicator /etc/underpass/
-	cp -rvp $(srcdir)/config/validate /etc/underpass/
-	cp -rvp $(srcdir)/config/stats /etc/underpass/
-	cp -rvp $(srcdir)/config/default.yaml /etc/underpass/
+	$(MKDIR_P) $(DESTDIR)$(ETCDIR)
+	cp -rvp $(srcdir)/config/priority.geojson  $(DESTDIR)$(ETCDIR)/
+	cp -rvp $(srcdir)/config/replicator  $(DESTDIR)$(ETCDIR)/
+	cp -rvp $(srcdir)/config/validate  $(DESTDIR)$(ETCDIR)/
+	cp -rvp $(srcdir)/config/stats  $(DESTDIR)$(ETCDIR)/
+	cp -rvp $(srcdir)/config/default.yaml  $(DESTDIR)$(ETCDIR)/
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
 	cp -rvp $(srcdir)/docs/*.md $(DESTDIR)/$(docdir)
 	cp -rvp $(srcdir)/setup/service $(DESTDIR)/$(pkglibdir)
-	cp -rvp $(srcdir)/setup/service/underpass.service /etc/systemd/system/
+	$(MKDIR_P) $(DESTDIR)$(pkglibdir)/../system
+	cp -rvp $(srcdir)/setup/service/underpass.service  $(DESTDIR)$(pkglibdir)/../system/
 
 dist-hook: apidoc
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
