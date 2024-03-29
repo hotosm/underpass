@@ -19,6 +19,8 @@
 
 AUTOMAKE_OPTIONS = dejagnu
 
+ETCDIR = $(subst lib,etc,$(pkglibdir))
+
 check_PROGRAMS = \
 	pq-test \
 	change-test \
@@ -55,6 +57,7 @@ AM_CXXFLAGS = \
         -DPKGLIBDIR=\"$(pkglibdir)\" \
         -DTOPSRCDIR=\"$(TOPSRC)\" \
         -DSRCDIR=\"$(srcdir)\" \
+	 -DETCDIR=\"$(ETCDIR)\" \
 	-DBOOST_LOCALE_HIDE_AUTO_PTR \
 	-Wno-deprecated-declarations
 

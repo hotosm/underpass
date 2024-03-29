@@ -92,8 +92,7 @@ AM_CXXFLAGS = \
 	-fno-builtin-malloc \
 	-fno-builtin-calloc \
 	-fno-builtin-realloc \
-	-fno-builtin-free \
-	-DETCDIR=$(ETCDIR)
+	-fno-builtin-free
 else
 AM_CXXFLAGS = \
 	-rdynamic \
@@ -104,6 +103,7 @@ endif
 AM_CPPFLAGS = \
 	-DPKGLIBDIR=\"$(pkglibdir)\" \
 	-DSRCDIR=\"$(srcdir)\" \
+	-DETCDIR=\"$(ETCDIR)\" \
 	-DBOOST_LOCALE_HIDE_AUTO_PTR
 # Optionally timing can be turned on, which produces volumes of output which adds too much
 # clutter to the output. This should only be enabled when doing performance tuning.

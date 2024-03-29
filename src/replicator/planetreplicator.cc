@@ -102,7 +102,8 @@ PlanetReplicator::PlanetReplicator(void) {};
 std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const underpassconfig::UnderpassConfig &config, ptime time) {
     yaml::Yaml yaml;
 
-    std::string rep_file = "ETCDIR/replicator/planetreplicator.yaml";
+    std::string rep_file = ETCDIR;
+    rep_file += "replicator/planetreplicator.yaml";
     yaml.read(rep_file);
     std::map<int, ptime> hashes;
 

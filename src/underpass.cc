@@ -85,7 +85,8 @@ main(int argc, char *argv[])
 {
 
     std::string datadir = "replication/";
-    std::string boundary = "ETCDIR/priority.geojson";
+    std::string boundary = ETCDIR;
+    boundary += "/priority.geojson";
 
     UnderpassConfig config;
 
