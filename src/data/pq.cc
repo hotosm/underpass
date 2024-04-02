@@ -161,7 +161,7 @@ std::string
 Pq::escapedString(const std::string &s)
 {
     std::string newstr;
-    int i = 0;
+    size_t i = 0;
     while (i < s.size()) {
         // Single quote (')
         if (s[i] == '\'') {
