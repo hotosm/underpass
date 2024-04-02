@@ -668,7 +668,6 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
     // Get all missing ways geometries for relations
     if (relsForWayCacheIds != "") {
         relsForWayCacheIds.erase(relsForWayCacheIds.size() - 1);
-        std::cout << "relsForWayCacheIds: " << relsForWayCacheIds << std::endl;
         getWaysByIds(relsForWayCacheIds, osmchanges->waycache);
     }
 

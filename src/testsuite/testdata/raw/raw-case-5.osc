@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <osmChange version="0.6" generator="Osmosis 0.47.4">
   <modify>
-    <node id='111768' visible='true' lat='4.620370325010114' lon='21.72608077526092' version='2'/>
+    <node id='111768' visible='true' lat='4.6203703' lon='21.7260807' version='2'/>
   </modify>
   
  </osmChange>

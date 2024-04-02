@@ -450,6 +450,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
 
             try {
                 osmchanges->nodecache.clear();
+                osmchanges->waycache.clear();
                 osmchanges->readXML(changes_xml);
                 if (osmchanges->changes.size() > 0) {
                     task.timestamp = osmchanges->changes.back()->final_entry;

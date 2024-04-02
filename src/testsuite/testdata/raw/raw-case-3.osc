@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <osmChange version="0.6" generator="Osmosis 0.47.4">
   <modify>
-    <node id='111766' visible='true' lat='4.62042953' lon='21.72600148' version='2' />
+    <node id='111766' visible='true' lat='4.6204395' lon='21.7260114' version='2' />
   </modify>
  </osmChange>
