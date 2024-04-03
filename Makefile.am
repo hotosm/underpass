@@ -156,11 +156,8 @@ install-data-hook:
 	$(MKDIR_P) $(DESTDIR)$(ETCDIR)
 	cp -rvp $(srcdir)/config/priority.geojson  $(DESTDIR)$(ETCDIR)/
 	cp -rvp $(srcdir)/config/replicator  $(DESTDIR)$(ETCDIR)/
-	cp -rvp $(srcdir)/config/validate  $(DESTDIR)$(ETCDIR)/
 	cp -rvp $(srcdir)/config/stats  $(DESTDIR)$(ETCDIR)/
 	cp -rvp $(srcdir)/config/default.yaml  $(DESTDIR)$(ETCDIR)/
-	$(MKDIR_P) $(DESTDIR)/$(docdir)
-	cp -rvp $(srcdir)/docs/*.md $(DESTDIR)/$(docdir)
 	cp -rvp $(srcdir)/setup/service $(DESTDIR)/$(pkglibdir)
 	$(MKDIR_P) $(DESTDIR)$(pkglibdir)/../system
 	cp -rvp $(srcdir)/setup/service/underpass.service  $(DESTDIR)$(pkglibdir)/../system/
@@ -182,20 +179,20 @@ PCHFLAGS = \
         -I$(top_builddir) \
         -I$(top_srcdir)/src \
         -I$(top_srcdir)/src/stats \
-		-I$(top_srcdir)/src/validate \
+	-I$(top_srcdir)/src/validate \
         -I$(top_srcdir)/src/data
 
 PCHHEADERS = \
         $(top_srcdir)/src/replicator/planetreplicator.hh \
         $(top_srcdir)/src/stats/querystats.hh \
-		$(top_srcdir)/src/raw/queryraw.hh \
+	$(top_srcdir)/src/raw/queryraw.hh \
         $(top_srcdir)/src/replicator/replication.hh \
         $(top_srcdir)/src/osm/osmchange.hh \
         $(top_srcdir)/src/osm/changeset.hh \
         $(top_srcdir)/src/osm/osmobjects.hh \
         $(top_srcdir)/src/validate/validate.hh \
         $(top_srcdir)/src/utils/geoutil.hh \
-		$(top_srcdir)/src/utils/geo.hh \
+	$(top_srcdir)/src/utils/geo.hh \
         $(top_srcdir)/src/replicator/threads.hh
 
 PCHOTHER = \
