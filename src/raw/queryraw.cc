@@ -333,10 +333,10 @@ QueryRaw::applyChange(const OsmRelation &relation) const
         }
         std::string geostring = ss.str();
 
-        if (relation.action != osmobjects::modify_geom) {
+        // Ignore empty geometries
+        if (geostring != "MULTILINESTRING()" && geostring != "MULTIPOLYGON()") {
 
-            // Ignore empty geometries
-            if (geostring != "MULTILINESTRING()" && geostring != "MULTIPOLYGON()") {
+            if (relation.action != osmobjects::modify_geom) {
 
                 query = "INSERT INTO relations as r (osm_id, tags, refs, geom, timestamp, version, \"user\", uid, changeset) VALUES(";
                 std::string format = "%d, %s, %s, %s, \'%s\', %d, \'%s\', %d, %d) \
@@ -388,27 +388,26 @@ QueryRaw::applyChange(const OsmRelation &relation) const
                 for (auto it = std::begin(relation.members); it != std::end(relation.members); ++it) {
                     query += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(it->ref) + ");";
                 }
+
+            } else {
+
+                // Update geometry only
+
+                query = "UPDATE relations SET ";
+                std::string format = "geom=%s WHERE osm_id=%d;";
+                boost::format fmt(format);
+
+                // Geometry
+                std::string geometry;
+                geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
+                fmt % geometry;
+
+                // osm_id
+                fmt % relation.id;
+
+                query += fmt.str();
             }
-
-        } else {
-
-            // Update geometry only
-
-            query = "UPDATE relations SET ";
-            std::string format = "geom=%s WHERE osm_id=%d;";
-            boost::format fmt(format);
-
-            // Geometry
-            std::string geometry;
-            geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
-            fmt % geometry;
-
-            // osm_id
-            fmt % relation.id;
-
-            query += fmt.str();
         }
-
     } else if (relation.action == osmobjects::remove) {
         query += "DELETE FROM relations where osm_id = " + std::to_string(relation.id) + ";";
     }

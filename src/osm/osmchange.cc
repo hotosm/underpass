@@ -188,6 +188,8 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
         if (!waycache.count(mit->ref)) {
             // Way is not available in cache,
             // possibily because Relation is not in the priority area
+            // or way was deleted
+            std::cout << "No Way!" << std::endl;
             return;
         }
         
@@ -207,6 +209,13 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
                 if (first && (std::next(mit) != members.end())) {
                     auto nextWay = std::make_shared<osmobjects::OsmWay>();
                     auto nextWayId = std::next(mit)->ref;
+                    if (!waycache.count(nextWayId)) {
+                        // Way is not available in cache,
+                        // possibily because Relation is not in the priority area
+                        // or way was deleted
+                        std::cout << "No Way!" << std::endl;
+                        return;
+                    }
                     nextWay = waycache.at(nextWayId);
 
                     if ( bg::num_points(nextWay->linestring) > 0 && 
@@ -228,7 +237,6 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
                 bg::append(part, way->linestring);
 
                 // Check if object is closed
-                
                 if (relation.isMultiPolygon() && bg::equals(part.back(), part.front())) {
                     // Convert LineString to Polygon
                     polygon_t polygon;
@@ -250,7 +258,34 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
                     first = true;
                     justClosed = true;
                     lastLinestring.clear();
-                } 
+                } else if (std::next(mit) != members.end()) {
+                    // Check if object is disconnected
+                    auto nextWay = std::make_shared<osmobjects::OsmWay>();
+                    auto nextWayId = std::next(mit)->ref;
+                    if (!waycache.count(nextWayId)) {
+                        // Way is not available in cache,
+                        // possibily because Relation is not in the priority area
+                        // or way was deleted
+                        return;
+                    }
+                    nextWay = waycache.at(nextWayId);
+                    if ( (bg::num_points(way->linestring) > 0 && bg::num_points(nextWay->linestring) > 0 &&
+                        !bg::equals(way->linestring.back(), nextWay->linestring.front()) &&
+                        !bg::equals(way->linestring.back(), nextWay->linestring.back())) ||
+                        (bg::num_points(nextWay->linestring) == 0)
+                    ) {
+                        parts.push_back({
+                            member_role_t::outer,
+                            { part },
+                            polygon_t()
+                        });
+                        part.clear();
+                        first = true;
+                        justClosed = true;
+                        lastLinestring.clear();
+                    }
+                }
+
 
             } else {
                 // Convert LineString to Polygon
@@ -348,24 +383,31 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
             geometry_str = ss.str();
             // Erase "POLYGON("
             geometry_str.erase(0,8);
+            geometry_str.erase(geometry_str.size() - 1);
+            if (geometry_str.size() > 0) {
+                geometry += geometry_str + ",";
+            }
         } else {
             ss << std::setprecision(12) << bg::wkt(pit->linestring);
             geometry_str = ss.str();
             // Erase "LINESTRING("
             geometry_str.erase(0,11);
+            geometry_str.erase(geometry_str.size() - 1);
+            if (geometry_str.size() > 0) {
+                geometry += "(" + geometry_str + "),";
+            }
         }
-        geometry_str.erase(geometry_str.size() - 1);
-        geometry += geometry_str + ",";
     }
 
+    // std::cout << "<Relation " << relation.id << ">" << std::endl;
     if (geometry.size() > 0) {
         geometry.erase(geometry.size() - 1);
         if (relation.isMultiPolygon()) {
-            // std::cout << "Geometry: MULTIPOLYGON((" + geometry + "))" << std::endl;
+            // std::cout << "MULTIPOLYGON((" + geometry + "))" << std::endl;
             bg::read_wkt("MULTIPOLYGON((" + geometry + "))", relation.multipolygon);
         } else {
-            // std::cout << "Geometry: MULTILINESTRING((" + geometry + "))" << std::endl;
-            bg::read_wkt("MULTILINESTRING((" + geometry + "))", relation.multilinestring);
+            // std::cout << "MULTILINESTRING(" + geometry + ")" << std::endl;
+            bg::read_wkt("MULTILINESTRING(" + geometry + ")", relation.multilinestring);
         }
     }
 }

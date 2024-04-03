@@ -1,0 +1,420 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version="0.6" generator="Osmosis 0.47.4">
+  <create>
+<node id="10030850526" visible="true" version="1" changeset="126284507" timestamp="2022-09-17T04:55:56Z" user="AgusQui" uid="331218" lat="-31.7393360" lon="-60.3289264"/>
+ <node id="10030850524" visible="true" version="1" changeset="126284507" timestamp="2022-09-17T04:55:56Z" user="AgusQui" uid="331218" lat="-31.7393546" lon="-60.3292052">  <tag k="name" v="Enrique Berduc"/>  <tag k="network" v="Urquiza"/>  <tag k="operator" v="Trenes Argentinos"/>  <tag k="platforms" v="1"/>  <tag k="public_transport" v="station"/>  <tag k="railway" v="halt"/>  <tag k="railway:position" v="156.6"/>  <tag k="wikidata" v="Q5701047"/>  <tag k="wikipedia" v="es:Apeadero Enrique Berduc"/> </node>
+ <node id="10030850525" visible="true" version="1" changeset="126284507" timestamp="2022-09-17T04:55:56Z" user="AgusQui" uid="331218" lat="-31.7393725" lon="-60.3294736"/>
+ <node id="9181667444" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7562038" lon="-60.4094365"/>
+ <node id="9181667443" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7561717" lon="-60.4088564"/>
+<node id="9181667440" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7561858" lon="-60.4088554"/>
+<node id="9181667442" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7561944" lon="-60.4088547"/>
+ <node id="9181667441" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7562266" lon="-60.4094348"/>
+<node id="9181667459" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7525825" lon="-60.4490076"/>
+ <node id="9181667458" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7526463" lon="-60.4484390"/>
+ <node id="9181667468" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7519354" lon="-60.4546523"/>
+ <node id="9181667467" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7520026" lon="-60.4540749"/>
+ <node id="9181667466" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7520282" lon="-60.4540790"/>
+ <node id="9181667465" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7519610" lon="-60.4546564"/>
+ <node id="9181667461" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7519499" lon="-60.4546547"/>
+<node id="9181667506" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7697088" lon="-60.4832498"/>
+<node id="9181667505" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7696678" lon="-60.4826784"/>
+<node id="9181667502" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7696799" lon="-60.4826772"/>
+ <node id="9181667504" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7696889" lon="-60.4826763"/>
+ <node id="9181667503" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7697298" lon="-60.4832477"/>
+ <node id="9181699722" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7721043" lon="-60.4955244"/>
+ <node id="9181699721" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7718769" lon="-60.4950164"/>
+<node id="9181699718" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7718800" lon="-60.4950144"/>
+ <node id="9181699720" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7718916" lon="-60.4950072"/>
+ <node id="9181699719" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7721190" lon="-60.4955153"/>
+ <node id="9181699737" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7734111" lon="-60.5045121"/>
+<node id="9181699736" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7733833" lon="-60.5039414"/>
+ <node id="9181699731" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7733884" lon="-60.5039410"/>
+<node id="9181699735" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7734072" lon="-60.5039398"/>
+<node id="9181699734" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7734350" lon="-60.5045104"/>
+<node id="9181699754" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7683306" lon="-60.5127137"/>
+<node id="9181699749" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7683237" lon="-60.5127017"/>
+ <node id="9181699753" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7683203" lon="-60.5126960"/>
+ <node id="9181699752" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7687237" lon="-60.5123721"/>
+ <node id="9181699751" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7687340" lon="-60.5123899"/>
+ <node id="9181699763" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7643863" lon="-60.5159017"/>
+ <node id="9181699762" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7643781" lon="-60.5158879"/>
+ <node id="9181699761" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7639768" lon="-60.5162173"/>
+ <node id="9181699756" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7639789" lon="-60.5162208"/>
+ <node id="9181699760" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7639849" lon="-60.5162310"/>
+ <node id="9177482368" visible="true" version="1" changeset="112598136" timestamp="2021-10-17T05:07:59Z" user="AgusQui" uid="331218" lat="-31.7580253" lon="-60.5208546"/>
+ <node id="9177482322" visible="true" version="1" changeset="112598136" timestamp="2021-10-17T05:07:59Z" user="AgusQui" uid="331218" lat="-31.7580154" lon="-60.5208390"/>
+ <node id="9177482367" visible="true" version="1" changeset="112598136" timestamp="2021-10-17T05:07:59Z" user="AgusQui" uid="331218" lat="-31.7580117" lon="-60.5208331"/>
+ <node id="9177482366" visible="true" version="1" changeset="112598136" timestamp="2021-10-17T05:07:59Z" user="AgusQui" uid="331218" lat="-31.7584370" lon="-60.5205435"/>
+ <node id="9177482365" visible="true" version="1" changeset="112598136" timestamp="2021-10-17T05:07:59Z" user="AgusQui" uid="331218" lat="-31.7584507" lon="-60.5205649"/>
+ <node id="9177496249" visible="true" version="2" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7408199" lon="-60.5331566"/>
+ <node id="11175648417" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7408068" lon="-60.5332060"/>
+ <node id="11175648418" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7408247" lon="-60.5332684"/>
+ <node id="11175648419" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7412668" lon="-60.5333830"/>
+ <node id="11175648414" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7415692" lon="-60.5339281"/>
+<node id="11175648420" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7456282" lon="-60.5309841"/>
+ <node id="11175702663" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7456843" lon="-60.5309435"/>
+ <node id="11175648421" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7463804" lon="-60.5304400"/>
+ <node id="11175702662" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7461612" lon="-60.5300264"/>
+ <node id="11175702661" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7461542" lon="-60.5300312"/>
+ <node id="2629105584" visible="true" version="3" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7461094" lon="-60.5299422"/>
+ <node id="11175648435" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7460935" lon="-60.5299120">  <tag k="barrier" v="gate"/> </node>
+ <node id="11175648434" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7460714" lon="-60.5298697">  <tag k="barrier" v="gate"/> </node>
+<node id="11175648433" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7460242" lon="-60.5297794">  <tag k="barrier" v="gate"/> </node>
+ <node id="2629105583" visible="true" version="3" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7459975" lon="-60.5297284"/>
+ <node id="11175702653" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7459652" lon="-60.5296675"/>
+<node id="11175702648" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7459394" lon="-60.5296397"/>
+ <node id="11175702647" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7457893" lon="-60.5295918"/>
+ <node id="11175702646" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7457620" lon="-60.5295600"/>
+ <node id="6504534625" visible="true" version="3" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7456733" lon="-60.5293851"/>
+ <node id="6504534628" visible="true" version="3" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7453201" lon="-60.5296442"/>
+ <node id="6504534624" visible="true" version="2" changeset="112598136" timestamp="2021-10-17T05:07:59Z" user="AgusQui" uid="331218" lat="-31.7442233" lon="-60.5304800"/>
+<node id="11175648416" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7434927" lon="-60.5310200"/>
+ <node id="11175648415" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7434466" lon="-60.5309240"/>
+ <node id="9177496248" visible="true" version="2" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7432868" lon="-60.5310456"/>
+ <node id="9177496247" visible="true" version="2" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7426469" lon="-60.5318423"/>
+<node id="11175648413" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7425381" lon="-60.5317027"/>
+ <node id="11175648411" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7424260" lon="-60.5317238"/>
+ <node id="11175648410" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7423184" lon="-60.5317834"/>
+ <node id="11175648409" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7417072" lon="-60.5322159"/>
+ <node id="11175648408" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7416420" lon="-60.5322246"/>
+ <node id="11175648406" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7416370" lon="-60.5323013"/>
+<node id="11175648405" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7417341" lon="-60.5324844"/>
+ <node id="11175648403" visible="true" version="1" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7410775" lon="-60.5329342"/>
+<node id="9177496246" visible="true" version="2" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7408541" lon="-60.5331096"/>
+ <node id="1814387660" visible="true" version="1" changeset="12125604" timestamp="2012-07-05T23:21:33Z" user="Geogast" uid="51045" lat="-31.7269233" lon="-60.3008178"/>
+ <node id="1814387654" visible="true" version="3" changeset="148630078" timestamp="2024-03-14T08:59:48Z" user="gunnar1m" uid="160560" lat="-31.7264213" lon="-60.2997508"/>
+ <node id="10773173732" visible="true" version="2" changeset="148630078" timestamp="2024-03-14T08:59:48Z" user="gunnar1m" uid="160560" lat="-31.7262355" lon="-60.2992341"/>
+<node id="1814387653" visible="true" version="3" changeset="148630078" timestamp="2024-03-14T08:59:48Z" user="gunnar1m" uid="160560" lat="-31.7260996" lon="-60.2987165"/>
+<node id="10773173733" visible="true" version="2" changeset="148630078" timestamp="2024-03-14T08:59:48Z" user="gunnar1m" uid="160560" lat="-31.7260312" lon="-60.2983246"/>
+ <node id="10773173734" visible="true" version="3" changeset="148630209" timestamp="2024-03-14T09:02:00Z" user="gunnar1m" uid="160560" lat="-31.7259871" lon="-60.2979304">  <tag k="crossing" v="unmarked"/>  <tag k="crossing:markings" v="no"/>  <tag k="highway" v="crossing"/> </node>
+ <node id="10773173731" visible="true" version="4" changeset="148630078" timestamp="2024-03-14T08:59:48Z" user="gunnar1m" uid="160560" lat="-31.7257779" lon="-60.2951509">  <tag k="fixme" v="verificar ubicacion, mapear anden"/>  <tag k="name" v="Jorge M\xc3\xa9ndez"/>  <tag k="operator" v="Trenes Argentinos"/>  <tag k="public_transport" v="stop_position"/>  <tag k="railway" v="halt"/>  <tag k="start_date" v="2023-03-30"/>  <tag k="train" v="yes"/> </node>
+ <node id="11730147040" visible="true" version="1" changeset="148630078" timestamp="2024-03-14T08:59:48Z" user="gunnar1m" uid="160560" lat="-31.7257511" lon="-60.2948654">  <tag k="railway" v="buffer_stop"/> </node>
+<node id="1814387663" visible="true" version="1" changeset="12125604" timestamp="2012-07-05T23:21:33Z" user="Geogast" uid="51045" lat="-31.7272238" lon="-60.3014362"/>
+ <node id="1858235486" visible="true" version="1" changeset="12665351" timestamp="2012-08-09T07:41:37Z" user="Geogast" uid="51045" lat="-31.7277236" lon="-60.3024637"/>
+ <node id="1109016942" visible="true" version="3" changeset="12665351" timestamp="2012-08-09T07:41:38Z" user="Geogast" uid="51045" lat="-31.7279284" lon="-60.3028670"/>
+ <node id="1814387671" visible="true" version="2" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7301641" lon="-60.3074125"/>
+ <node id="1814387676" visible="true" version="2" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7307464" lon="-60.3086075"/>
+ <node id="3267919744" visible="true" version="3" changeset="126284507" timestamp="2022-09-17T04:55:56Z" user="AgusQui" uid="331218" lat="-31.7375611" lon="-60.3467372"/>
+ <node id="1550787337" visible="true" version="2" changeset="27896926" timestamp="2015-01-03T21:04:39Z" user="Geogast" uid="51045" lat="-31.7374809" lon="-60.3462993"/>
+<node id="1109016953" visible="true" version="2" changeset="10140947" timestamp="2011-12-17T19:06:37Z" user="estela" uid="89271" lat="-31.7373020" lon="-60.3451538"/>
+ <node id="3267919742" visible="true" version="1" changeset="27896926" timestamp="2015-01-03T21:04:35Z" user="Geogast" uid="51045" lat="-31.7372449" lon="-60.3445425"/>
+ <node id="1550787333" visible="true" version="3" changeset="147584344" timestamp="2024-02-17T19:05:01Z" user="CorazonDelator" uid="8127216" lat="-31.7372228" lon="-60.3440431"/>
+<node id="3267919743" visible="true" version="2" changeset="147584344" timestamp="2024-02-17T19:05:01Z" user="CorazonDelator" uid="8127216" lat="-31.7372748" lon="-60.3432909"/>
+ <node id="1109016936" visible="true" version="2" changeset="27896926" timestamp="2015-01-03T21:04:39Z" user="Geogast" uid="51045" lat="-31.7374445" lon="-60.3422108"/>
+ <node id="3267919745" visible="true" version="2" changeset="134710058" timestamp="2023-04-10T03:59:37Z" user="AgusQui" uid="331218" lat="-31.7382145" lon="-60.3375255">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="1109016938" visible="true" version="3" changeset="27896926" timestamp="2015-01-03T21:04:39Z" user="Geogast" uid="51045" lat="-31.7389584" lon="-60.3332268"/>
+ <node id="3267919747" visible="true" version="1" changeset="27896926" timestamp="2015-01-03T21:04:35Z" user="Geogast" uid="51045" lat="-31.7391853" lon="-60.3317051"/>
+<node id="3267919748" visible="true" version="1" changeset="27896926" timestamp="2015-01-03T21:04:35Z" user="Geogast" uid="51045" lat="-31.7392541" lon="-60.3308572"/>
+ <node id="1814387692" visible="true" version="2" changeset="27896926" timestamp="2015-01-03T21:04:39Z" user="Geogast" uid="51045" lat="-31.7392862" lon="-60.3300090"/>
+ <node id="3267919749" visible="true" version="2" changeset="126284507" timestamp="2022-09-17T04:55:56Z" user="AgusQui" uid="331218" lat="-31.7392556" lon="-60.3292215">  <tag k="name" v="Enrique Berduc"/>  <tag k="public_transport" v="stop_position"/>  <tag k="train" v="yes"/> </node>
+<node id="3267940751" visible="true" version="2" changeset="126284507" timestamp="2022-09-17T04:55:56Z" user="AgusQui" uid="331218" lat="-31.7392160" lon="-60.3287067">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="1814387691" visible="true" version="4" changeset="134710058" timestamp="2023-04-10T03:59:37Z" user="AgusQui" uid="331218" lat="-31.7389943" lon="-60.3274191"/>
+ <node id="3267940750" visible="true" version="1" changeset="27896819" timestamp="2015-01-03T21:00:37Z" user="Geogast" uid="51045" lat="-31.7387431" lon="-60.3264264"/>
+ <node id="1109016931" visible="true" version="3" changeset="27896819" timestamp="2015-01-03T21:00:38Z" user="Geogast" uid="51045" lat="-31.7383794" lon="-60.3253759"/>
+<node id="10798566198" visible="true" version="1" changeset="134710058" timestamp="2023-04-10T03:59:37Z" user="AgusQui" uid="331218" lat="-31.7346731" lon="-60.3172228">  <tag k="name" v="La Picada"/>  <tag k="public_transport" v="stop_position"/>  <tag k="train" v="yes"/> </node>
+ <node id="3052603805" visible="true" version="2" changeset="134710058" timestamp="2023-04-10T03:59:37Z" user="AgusQui" uid="331218" lat="-31.7326402" lon="-60.3127634">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="1814387679" visible="true" version="4" changeset="147432889" timestamp="2024-02-14T02:53:26Z" user="CorazonDelator" uid="8127216" lat="-31.7317669" lon="-60.3108042">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="1550787340" visible="true" version="3" changeset="86259443" timestamp="2020-06-05T19:29:07Z" user="Hernan" uid="72347" lat="-31.7376938" lon="-60.3473804"/>
+ <node id="3267919758" visible="true" version="2" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7503823" lon="-60.3750034"/>
+ <node id="3267919756" visible="true" version="1" changeset="27896926" timestamp="2015-01-03T21:04:35Z" user="Geogast" uid="51045" lat="-31.7493868" lon="-60.3731728">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="3267919754" visible="true" version="1" changeset="27896926" timestamp="2015-01-03T21:04:35Z" user="Geogast" uid="51045" lat="-31.7491239" lon="-60.3726941"/>
+ <node id="1550787381" visible="true" version="2" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7436953" lon="-60.3628968"/>
+ <node id="2270029246" visible="true" version="3" changeset="30253356" timestamp="2015-04-16T01:56:29Z" user="muralito" uid="755114" lat="-31.7431025" lon="-60.3618068">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="3267919750" visible="true" version="1" changeset="27896926" timestamp="2015-01-03T21:04:35Z" user="Geogast" uid="51045" lat="-31.7418275" lon="-60.3595767">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="7192253443" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7403271" lon="-60.3569581"/>
+ <node id="7192253442" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7399688" lon="-60.3562877"/>
+ <node id="1109016932" visible="true" version="3" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7396912" lon="-60.3556076"/>
+ <node id="7192253441" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7393964" lon="-60.3547467"/>
+ <node id="1550787352" visible="true" version="1" changeset="10140947" timestamp="2011-12-17T19:06:06Z" user="estela" uid="89271" lat="-31.7390844" lon="-60.3535773"/>
+<node id="3267919759" visible="true" version="2" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7504767" lon="-60.3751797"/>
+ <node id="7192253444" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7509289" lon="-60.3760144"/>
+ <node id="7192253445" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7513077" lon="-60.3767292"/>
+ <node id="2270029263" visible="true" version="3" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7516132" lon="-60.3773037">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="1109016521" visible="true" version="3" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7526027" lon="-60.3791301"/>
+ <node id="7192253446" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7531259" lon="-60.3800814"/>
+ <node id="1109016500" visible="true" version="3" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7535362" lon="-60.3809362"/>
+<node id="1109016563" visible="true" version="2" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7538232" lon="-60.3817033"/>
+<node id="7192253447" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7540462" lon="-60.3823594"/>
+ <node id="1109016537" visible="true" version="3" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7542452" lon="-60.3831037"/>
+ <node id="3267955562" visible="true" version="2" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7544097" lon="-60.3837680"/>
+ <node id="1109016509" visible="true" version="3" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7544919" lon="-60.3844073"/>
+ <node id="2267838516" visible="true" version="4" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7545847" lon="-60.3852769">  <tag k="crossing:supervision" v="no"/>  <tag k="railway" v="level_crossing"/> </node>
+ <node id="1109016492" visible="true" version="2" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7550254" lon="-60.3917590"/>
+ <node id="1109016551" visible="true" version="1" changeset="7010573" timestamp="2011-01-18T13:45:47Z" user="Geogast" uid="51045" lat="-31.7552621" lon="-60.3947969"/>
+ <node id="1109016557" visible="true" version="1" changeset="7010573" timestamp="2011-01-18T13:45:48Z" user="Geogast" uid="51045" lat="-31.7555028" lon="-60.3983017"/>
+ <node id="1827944736" visible="true" version="4" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7557909" lon="-60.4034161">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="9181667446" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7561462" lon="-60.4089999">  <tag k="name" v="Colonia Avellaneda"/>  <tag k="public_transport" v="stop_position"/>  <tag k="train" v="yes"/> </node>
+ <node id="1109016541" visible="true" version="4" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7566254" lon="-60.4162907"/>
+ <node id="1109016576" visible="true" version="3" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7569596" lon="-60.4211499"/>
+ <node id="3267955563" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7569647" lon="-60.4212419"/>
+ <node id="9181667447" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7569876" lon="-60.4217818"/>
+ <node id="3267955564" visible="true" version="3" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7570016" lon="-60.4222010"/>
+ <node id="7192253448" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7569933" lon="-60.4225995"/>
+ <node id="9181667448" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7569808" lon="-60.4229164"/>
+<node id="1109016546" visible="true" version="4" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7569695" lon="-60.4231487"/>
+ <node id="9181667449" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7569398" lon="-60.4234931"/>
+ <node id="7192253449" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7569098" lon="-60.4237977"/>
+ <node id="9181667450" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7568805" lon="-60.4240403"/>
+ <node id="1109016519" visible="true" version="4" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7568285" lon="-60.4244326"/>
+ <node id="1109016499" visible="true" version="3" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7561341" lon="-60.4290890"/>
+ <node id="3267959859" visible="true" version="3" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7557090" lon="-60.4320429"/>
+ <node id="3267959858" visible="true" version="3" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7556719" lon="-60.4322796"/>
+ <node id="9181667451" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7555326" lon="-60.4331410"/>
+ <node id="7192253450" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7554554" lon="-60.4335918"/>
+ <node id="1109016562" visible="true" version="4" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7554001" lon="-60.4338563"/>
+ <node id="7192253451" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7553105" lon="-60.4342514"/>
+ <node id="1109016570" visible="true" version="3" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7538303" lon="-60.4398157"/>
+ <node id="7192253452" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7536485" lon="-60.4405065"/>
+ <node id="9181667452" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7535552" lon="-60.4408899"/>
+ <node id="1109016527" visible="true" version="3" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7534647" lon="-60.4413162"/>
+ <node id="7192253453" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7533804" lon="-60.4418103"/>
+ <node id="7192253454" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7532894" lon="-60.4425572"/>
+ <node id="1827944714" visible="true" version="3" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7531650" lon="-60.4435896">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="9181667453" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7525757" lon="-60.4487216">  <tag k="name" v="Ram\xc3\xb3n Adolfino Parera"/>  <tag k="public_transport" v="stop_position"/>  <tag k="train" v="yes"/> </node>
+ <node id="9181667460" visible="true" version="2" changeset="130726244" timestamp="2022-12-31T15:49:34Z" user="AlejandroAlba" uid="6499071" lat="-31.7519507" lon="-60.4543628">  <tag k="name" v="Gobernador H\xc3\xa9ctor D. Maya"/>  <tag k="public_transport" v="stop_position"/>  <tag k="train" v="yes"/> </node>
+ <node id="1827944699" visible="true" version="5" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7518676" lon="-60.4550763">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="7192253456" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7517995" lon="-60.4556330"/>
+ <node id="1109016552" visible="true" version="2" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7517481" lon="-60.4563331"/>
+ <node id="9181667469" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7517260" lon="-60.4565781"/>
+ <node id="7192253457" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7517154" lon="-60.4568612"/>
+ <node id="9181667470" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7517238" lon="-60.4570931"/>
+ <node id="1109016522" visible="true" version="2" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7517406" lon="-60.4573522"/>
+<node id="9181667471" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7517808" lon="-60.4576725"/>
+ <node id="7192253465" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7518464" lon="-60.4580200"/>
+ <node id="9181667472" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7519290" lon="-60.4583806"/>
+ <node id="1109016504" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7520081" lon="-60.4586472"/>
+ <node id="7192253458" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7521396" lon="-60.4590053"/>
+<node id="7192253459" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7522893" lon="-60.4593369"/>
+<node id="1109016573" visible="true" version="4" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7524335" lon="-60.4596348"/>
+ <node id="7192253460" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7525919" lon="-60.4599121"/>
+<node id="7192253461" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7527553" lon="-60.4601533"/>
+ <node id="7192253462" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7529481" lon="-60.4603896"/>
+ <node id="1109016542" visible="true" version="4" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7531376" lon="-60.4606191"/>
+ <node id="7192253463" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7533219" lon="-60.4608146"/>
+ <node id="7192253464" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7535311" lon="-60.4610099"/>
+ <node id="7192253466" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7539019" lon="-60.4613042"/>
+<node id="1109016514" visible="true" version="4" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7542016" lon="-60.4614993"/>
+ <node id="7192253467" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7544454" lon="-60.4616335"/>
+ <node id="7192253468" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7546647" lon="-60.4617322"/>
+<node id="1109016496" visible="true" version="5" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7549542" lon="-60.4618385"/>
+<node id="287479034" visible="true" version="5" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7563725" lon="-60.4623042">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="7192253469" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7569435" lon="-60.4625074"/>
+ <node id="1109016556" visible="true" version="4" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7572098" lon="-60.4626164"/>
+ <node id="7192253470" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7574969" lon="-60.4627576"/>
+ <node id="7192253471" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7577689" lon="-60.4629091"/>
+ <node id="1109016531" visible="true" version="2" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7580066" lon="-60.4630744"/>
+<node id="7192253472" visible="true" version="1" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269" lat="-31.7582587" lon="-60.4632542"/>
+ <node id="7192253473" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7584410" lon="-60.4633955"/>
+ <node id="7192253474" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7586751" lon="-60.4636021"/>
+ <node id="7192253475" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7588719" lon="-60.4637868"/>
+ <node id="1109016505" visible="true" version="4" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7593688" lon="-60.4642818"/>
+<node id="1827944757" visible="true" version="3" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7607494" lon="-60.4657159"/>
+ <node id="1827944767" visible="true" version="3" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7609647" lon="-60.4659275"/>
+<node id="9181667477" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7626358" lon="-60.4676762"/>
+ <node id="9181667476" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7653230" lon="-60.4704237"/>
+<node id="9181667475" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7662934" lon="-60.4714476"/>
+ <node id="9181667474" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7675396" lon="-60.4727492"/>
+ <node id="9181667473" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7677357" lon="-60.4729745"/>
+ <node id="1109016516" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7679059" lon="-60.4731879"/>
+ <node id="9181667480" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7680892" lon="-60.4734519"/>
+ <node id="9181667481" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7682420" lon="-60.4737067"/>
+ <node id="1109016488" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7685163" lon="-60.4741758"/>
+ <node id="9181667482" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7686570" lon="-60.4744872"/>
+<node id="9181667483" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7687893" lon="-60.4748118"/>
+ <node id="1109016526" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7689283" lon="-60.4752280"/>
+ <node id="9181667485" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7690173" lon="-60.4755843"/>
+ <node id="9181667486" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7690903" lon="-60.4758954"/>
+<node id="1827944795" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7691631" lon="-60.4762930">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="9181667484" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7692137" lon="-60.4766998"/>
+ <node id="1109016506" visible="true" version="3" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7696248" lon="-60.4822966">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="9181667507" visible="true" version="2" changeset="125445394" timestamp="2022-08-27T14:45:30Z" user="Kadubei" uid="16642036" lat="-31.7696704" lon="-60.4829569">  <tag k="name" v="Salvador Caputto"/>  <tag k="public_transport" v="stop_position"/>  <tag k="railway" v="stop"/>  <tag k="train" v="yes"/> </node>
+<node id="926352915" visible="true" version="3" changeset="84161082" timestamp="2020-04-26T22:55:43Z" user="muralito" uid="755114" lat="-31.7700365" lon="-60.4882929">  <tag k="railway" v="level_crossing"/> </node>
+<node id="9181667508" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7701689" lon="-60.4900467"/>
+<node id="1109012931" visible="true" version="3" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7702105" lon="-60.4904031"/>
+<node id="9181667509" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7702578" lon="-60.4907066"/>
+<node id="9181667510" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7703080" lon="-60.4909641"/>
+ <node id="1109012882" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7703894" lon="-60.4912993"/>
+ <node id="9181667511" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7704493" lon="-60.4915193"/>
+ <node id="10297006504" visible="true" version="1" changeset="130726244" timestamp="2022-12-31T15:49:34Z" user="AlejandroAlba" uid="6499071" lat="-31.7704649" lon="-60.4915778"/>
+<node id="10297006505" visible="true" version="1" changeset="130726244" timestamp="2022-12-31T15:49:34Z" user="AlejandroAlba" uid="6499071" lat="-31.7704822" lon="-60.4916427"/>
+ <node id="9181667512" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7704950" lon="-60.4916909"/>
+ <node id="9181667513" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7706067" lon="-60.4919940"/>
+ <node id="1109012848" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7708823" lon="-60.4926391"/>
+ <node id="7616820624" visible="true" version="3" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7716185" lon="-60.4943447">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="7450490717" visible="true" version="4" changeset="138966633" timestamp="2023-07-25T04:00:15Z" user="103161228" uid="19766178" lat="-31.7716747" lon="-60.4945109">  <tag k="railway" v="level_crossing"/> </node>
+<node id="9181667516" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7717180" lon="-60.4945838">  <tag k="railway" v="crossing"/> </node>
+ <node id="9181667514" visible="true" version="2" changeset="125445394" timestamp="2022-08-27T14:45:30Z" user="Kadubei" uid="16642036" lat="-31.7720010" lon="-60.4952189">  <tag k="name" v="Gobernador Parera"/>  <tag k="public_transport" v="stop_position"/>  <tag k="railway" v="stop"/>  <tag k="train" v="yes"/> </node>
+ <node id="1109012907" visible="true" version="3" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7723578" lon="-60.4960156"/>
+<node id="9181699724" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7726567" lon="-60.4967335"/>
+ <node id="9181699723" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7727752" lon="-60.4970500"/>
+ <node id="1109012874" visible="true" version="1" changeset="7010534" timestamp="2011-01-18T13:42:23Z" user="Geogast" uid="51045" lat="-31.7728665" lon="-60.4973223"/>
+ <node id="9181699725" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7729713" lon="-60.4977500"/>
+ <node id="1109012947" visible="true" version="1" changeset="7010534" timestamp="2011-01-18T13:42:25Z" user="Geogast" uid="51045" lat="-31.7730473" lon="-60.4981407"/>
+<node id="9181699726" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7731218" lon="-60.4986835"/>
+ <node id="1109012938" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7731626" lon="-60.4992668"/>
+<node id="11369675425" visible="true" version="1" changeset="144345333" timestamp="2023-11-22T22:32:47Z" user="Diego Krein" uid="1777006" lat="-31.7732472" lon="-60.5007513"/>
+ <node id="9181699729" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7734225" lon="-60.5037251">  <tag k="railway" v="crossing"/> </node>
+<node id="9181699738" visible="true" version="2" changeset="125445394" timestamp="2022-08-27T14:45:30Z" user="Kadubei" uid="16642036" lat="-31.7734492" lon="-60.5042092">  <tag k="name" v="Las Garzas"/>  <tag k="public_transport" v="stop_position"/>  <tag k="railway" v="stop"/>  <tag k="train" v="yes"/> </node>
+<node id="9181699733" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7734662" lon="-60.5048177"/>
+ <node id="9181699732" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7734753" lon="-60.5051449"/>
+ <node id="9181699739" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7734753" lon="-60.5054104"/>
+ <node id="1109012862" visible="true" version="3" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7734505" lon="-60.5058064"/>
+ <node id="9181699740" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7733886" lon="-60.5063707"/>
+<node id="3106966628" visible="true" version="5" changeset="138166941" timestamp="2023-07-06T00:19:20Z" user="103161228" uid="19766178" lat="-31.7733006" lon="-60.5068671">  <tag k="railway" v="level_crossing"/> </node>
+<node id="1109012940" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7731792" lon="-60.5073150"/>
+<node id="9181699741" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7730512" lon="-60.5077413"/>
+ <node id="1109012918" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7729346" lon="-60.5080395"/>
+ <node id="9181699742" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7727228" lon="-60.5084842"/>
+ <node id="9181699743" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7725290" lon="-60.5088276"/>
+<node id="1109012879" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7722801" lon="-60.5092397"/>
+ <node id="9181699744" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7720319" lon="-60.5095732"/>
+ <node id="9181699745" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7717468" lon="-60.5099031"/>
+ <node id="1109012924" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7713813" lon="-60.5102817"/>
+ <node id="1109012915" visible="true" version="1" changeset="7010534" timestamp="2011-01-18T13:42:24Z" user="Geogast" uid="51045" lat="-31.7692915" lon="-60.5119563"/>
+ <node id="9181699750" visible="true" version="2" changeset="125445394" timestamp="2022-08-27T14:45:30Z" user="Kadubei" uid="16642036" lat="-31.7685370" lon="-60.5125696">  <tag k="name" v="Miguel David"/>  <tag k="public_transport" v="stop_position"/>  <tag k="railway" v="stop"/>  <tag k="train" v="yes"/> </node>
+ <node id="1827944787" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7680465" lon="-60.5129670">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="9181699755" visible="true" version="2" changeset="125445394" timestamp="2022-08-27T14:45:30Z" user="Kadubei" uid="16642036" lat="-31.7641966" lon="-60.5160883">  <tag k="name" v="Division de Los Andes"/>  <tag k="public_transport" v="stop_position"/>  <tag k="railway" v="stop"/>  <tag k="train" v="yes"/> </node>
+<node id="926201433" visible="true" version="5" changeset="141311983" timestamp="2023-09-15T16:56:31Z" user="103161228" uid="19766178" lat="-31.7635889" lon="-60.5165764">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="1827944775" visible="true" version="3" changeset="141311983" timestamp="2023-09-15T16:56:31Z" user="103161228" uid="19766178" lat="-31.7622364" lon="-60.5176685">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="3511513118" visible="true" version="1" changeset="31023307" timestamp="2015-05-12T02:38:15Z" user="carlos migliavacca" uid="2547268" lat="-31.7605006" lon="-60.5190501"/>
+ <node id="3511513120" visible="true" version="1" changeset="31023307" timestamp="2015-05-12T02:38:15Z" user="carlos migliavacca" uid="2547268" lat="-31.7596572" lon="-60.5196965"/>
+ <node id="3511513121" visible="true" version="2" changeset="112598136" timestamp="2021-10-17T05:07:59Z" user="AgusQui" uid="331218" lat="-31.7585817" lon="-60.5204974"/>
+<node id="9177482360" visible="true" version="2" changeset="125445394" timestamp="2022-08-27T14:45:30Z" user="Kadubei" uid="16642036" lat="-31.7582460" lon="-60.5207303">  <tag k="name" v="Francisco Ram\xc3\xadrez"/>  <tag k="public_transport" v="stop_position"/>  <tag k="railway" v="stop"/>  <tag k="train" v="yes"/> </node>
+ <node id="925959410" visible="true" version="4" changeset="112598136" timestamp="2021-10-17T05:07:59Z" user="AgusQui" uid="331218" lat="-31.7576076" lon="-60.5211648">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="2028904896" visible="true" version="4" changeset="138880291" timestamp="2023-07-23T06:41:17Z" user="103161228" uid="19766178" lat="-31.7575002" lon="-60.5212465">  <tag k="railway" v="level_crossing"/> </node>
+<node id="926201217" visible="true" version="4" changeset="141006640" timestamp="2023-09-09T00:40:38Z" user="lferreyra" uid="4020269" lat="-31.7564919" lon="-60.5219138">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="925959404" visible="true" version="1" changeset="5875113" timestamp="2010-09-25T22:48:59Z" user="estela" uid="89271" lat="-31.7559724" lon="-60.5222600"/>
+<node id="9177482356" visible="true" version="1" changeset="112598136" timestamp="2021-10-17T05:07:59Z" user="AgusQui" uid="331218" lat="-31.7543968" lon="-60.5233517"/>
+ <node id="925959427" visible="true" version="2" changeset="112598136" timestamp="2021-10-17T05:07:59Z" user="AgusQui" uid="331218" lat="-31.7535624" lon="-60.5239439"/>
+ <node id="9177482353" visible="true" version="1" changeset="112598136" timestamp="2021-10-17T05:07:59Z" user="AgusQui" uid="331218" lat="-31.7515949" lon="-60.5253634"/>
+<node id="9177482351" visible="true" version="1" changeset="112598136" timestamp="2021-10-17T05:07:59Z" user="AgusQui" uid="331218" lat="-31.7500995" lon="-60.5264399"/>
+ <node id="9177482350" visible="true" version="1" changeset="112598136" timestamp="2021-10-17T05:07:59Z" user="AgusQui" uid="331218" lat="-31.7465343" lon="-60.5290275"/>
+<node id="11291532148" visible="true" version="1" changeset="143172474" timestamp="2023-10-26T17:25:23Z" user="patodiez" uid="1856060" lat="-31.7458866" lon="-60.5294917">  <tag k="railway" v="crossing"/> </node>
+ <node id="2103347345" visible="true" version="4" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269" lat="-31.7458132" lon="-60.5295443">  <tag k="railway" v="level_crossing"/> </node>
+ <node id="9177496239" visible="true" version="1" changeset="112598136" timestamp="2021-10-17T05:07:59Z" user="AgusQui" uid="331218" lat="-31.7428120" lon="-60.5317250">  <tag k="railway" v="switch"/> </node>
+<node id="9177482347" visible="true" version="1" changeset="112598136" timestamp="2021-10-17T05:07:59Z" user="AgusQui" uid="331218" lat="-31.7426207" lon="-60.5319080">  <tag k="railway" v="switch"/> </node>
+ <node id="9177496260" visible="true" version="2" changeset="125445394" timestamp="2022-08-27T14:45:30Z" user="Kadubei" uid="16642036" lat="-31.7421254" lon="-60.5322666">  <tag k="name" v="Paran\xc3\xa1"/>  <tag k="public_transport" v="stop_position"/>  <tag k="railway" v="stop"/>  <tag k="train" v="yes"/> </node>
+ <node id="11730147040" visible="true" version="1" changeset="148630078" timestamp="2024-03-14T08:59:48Z" user="gunnar1m" uid="160560" lat="-31.7257511" lon="-60.2948654">  <tag k="railway" v="buffer_stop"/> </node>
+ <node id="10798566198" visible="true" version="1" changeset="134710058" timestamp="2023-04-10T03:59:37Z" user="AgusQui" uid="331218" lat="-31.7346731" lon="-60.3172228">  <tag k="name" v="La Picada"/>  <tag k="public_transport" v="stop_position"/>  <tag k="train" v="yes"/> </node>
+<node id="3267919749" visible="true" version="2" changeset="126284507" timestamp="2022-09-17T04:55:56Z" user="AgusQui" uid="331218" lat="-31.7392556" lon="-60.3292215">  <tag k="name" v="Enrique Berduc"/>  <tag k="public_transport" v="stop_position"/>  <tag k="train" v="yes"/> </node>
+ <way id="1095300945" visible="true" version="1" changeset="126284507" timestamp="2022-09-17T04:55:56Z" user="AgusQui" uid="331218">  <nd ref="10030850526"/>  <nd ref="10030850524"/>  <nd ref="10030850525"/>  <tag k="public_transport" v="platform"/>  <tag k="railway" v="platform"/> </way>
+<node id="9181667446" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7561462" lon="-60.4089999">  <tag k="name" v="Colonia Avellaneda"/>  <tag k="public_transport" v="stop_position"/>  <tag k="train" v="yes"/> </node>
+ <way id="993804462" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218">  <nd ref="9181667444"/>  <nd ref="9181667443"/>  <nd ref="9181667440"/>  <nd ref="9181667442"/>  <nd ref="9181667441"/>  <nd ref="9181667444"/>  <tag k="area" v="yes"/>  <tag k="public_transport" v="platform"/>  <tag k="railway" v="platform"/> </way>
+ <node id="9181667453" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218" lat="-31.7525757" lon="-60.4487216">  <tag k="name" v="Ram\xc3\xb3n Adolfino Parera"/>  <tag k="public_transport" v="stop_position"/>  <tag k="train" v="yes"/> </node>
+<way id="993804465" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218">  <nd ref="9181667459"/>  <nd ref="9181667458"/>  <tag k="public_transport" v="platform"/>  <tag k="railway" v="platform"/> </way>
+<node id="9181667460" visible="true" version="2" changeset="130726244" timestamp="2022-12-31T15:49:34Z" user="AlejandroAlba" uid="6499071" lat="-31.7519507" lon="-60.4543628">  <tag k="name" v="Gobernador H\xc3\xa9ctor D. Maya"/>  <tag k="public_transport" v="stop_position"/>  <tag k="train" v="yes"/> </node>
+<way id="993804467" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218">  <nd ref="9181667468"/>  <nd ref="9181667467"/>  <nd ref="9181667466"/>  <nd ref="9181667465"/>  <nd ref="9181667461"/>  <nd ref="9181667468"/>  <tag k="area" v="yes"/>  <tag k="public_transport" v="platform"/>  <tag k="railway" v="platform"/> </way>
+<node id="9181667507" visible="true" version="2" changeset="125445394" timestamp="2022-08-27T14:45:30Z" user="Kadubei" uid="16642036" lat="-31.7696704" lon="-60.4829569">  <tag k="name" v="Salvador Caputto"/>  <tag k="public_transport" v="stop_position"/>  <tag k="railway" v="stop"/>  <tag k="train" v="yes"/> </node>
+ <way id="993804475" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218">  <nd ref="9181667506"/>  <nd ref="9181667505"/>  <nd ref="9181667502"/>  <nd ref="9181667504"/>  <nd ref="9181667503"/>  <nd ref="9181667506"/>  <tag k="area" v="yes"/>  <tag k="public_transport" v="platform"/>  <tag k="railway" v="platform"/> </way>
+<node id="9181667514" visible="true" version="2" changeset="125445394" timestamp="2022-08-27T14:45:30Z" user="Kadubei" uid="16642036" lat="-31.7720010" lon="-60.4952189">  <tag k="name" v="Gobernador Parera"/>  <tag k="public_transport" v="stop_position"/>  <tag k="railway" v="stop"/>  <tag k="train" v="yes"/> </node>
+<way id="993804477" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218">  <nd ref="9181699722"/>  <nd ref="9181699721"/>  <nd ref="9181699718"/>  <nd ref="9181699720"/>  <nd ref="9181699719"/>  <nd ref="9181699722"/>  <tag k="area" v="yes"/>  <tag k="public_transport" v="platform"/>  <tag k="railway" v="platform"/> </way>
+ <node id="9181699738" visible="true" version="2" changeset="125445394" timestamp="2022-08-27T14:45:30Z" user="Kadubei" uid="16642036" lat="-31.7734492" lon="-60.5042092">  <tag k="name" v="Las Garzas"/>  <tag k="public_transport" v="stop_position"/>  <tag k="railway" v="stop"/>  <tag k="train" v="yes"/> </node>
+ <way id="993804480" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218">  <nd ref="9181699737"/>  <nd ref="9181699736"/>  <nd ref="9181699731"/>  <nd ref="9181699735"/>  <nd ref="9181699734"/>  <nd ref="9181699737"/>  <tag k="area" v="yes"/>  <tag k="public_transport" v="platform"/>  <tag k="railway" v="platform"/> </way>
+ <node id="9181699750" visible="true" version="2" changeset="125445394" timestamp="2022-08-27T14:45:30Z" user="Kadubei" uid="16642036" lat="-31.7685370" lon="-60.5125696">  <tag k="name" v="Miguel David"/>  <tag k="public_transport" v="stop_position"/>  <tag k="railway" v="stop"/>  <tag k="train" v="yes"/> </node>
+ <way id="993804482" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218">  <nd ref="9181699754"/>  <nd ref="9181699749"/>  <nd ref="9181699753"/>  <nd ref="9181699752"/>  <nd ref="9181699751"/>  <nd ref="9181699754"/>  <tag k="area" v="yes"/>  <tag k="public_transport" v="platform"/>  <tag k="railway" v="platform"/> </way>
+<node id="9181699755" visible="true" version="2" changeset="125445394" timestamp="2022-08-27T14:45:30Z" user="Kadubei" uid="16642036" lat="-31.7641966" lon="-60.5160883">  <tag k="name" v="Division de Los Andes"/>  <tag k="public_transport" v="stop_position"/>  <tag k="railway" v="stop"/>  <tag k="train" v="yes"/> </node>
+ <way id="993804484" visible="true" version="1" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218">  <nd ref="9181699763"/>  <nd ref="9181699762"/>  <nd ref="9181699761"/>  <nd ref="9181699756"/>  <nd ref="9181699760"/>  <nd ref="9181699763"/>  <tag k="area" v="yes"/>  <tag k="public_transport" v="platform"/>  <tag k="railway" v="platform"/> </way>
+<node id="9177482360" visible="true" version="2" changeset="125445394" timestamp="2022-08-27T14:45:30Z" user="Kadubei" uid="16642036" lat="-31.7582460" lon="-60.5207303">  <tag k="name" v="Francisco Ram\xc3\xadrez"/>  <tag k="public_transport" v="stop_position"/>  <tag k="railway" v="stop"/>  <tag k="train" v="yes"/> </node>
+<way id="993375083" visible="true" version="2" changeset="112677171" timestamp="2021-10-19T04:21:14Z" user="AgusQui" uid="331218">  <nd ref="9177482368"/>  <nd ref="9177482322"/>  <nd ref="9177482367"/>  <nd ref="9177482366"/>  <nd ref="9177482365"/>  <nd ref="9177482368"/>  <tag k="area" v="yes"/>  <tag k="public_transport" v="platform"/>  <tag k="railway" v="platform"/> </way>
+<node id="9177496260" visible="true" version="2" changeset="125445394" timestamp="2022-08-27T14:45:30Z" user="Kadubei" uid="16642036" lat="-31.7421254" lon="-60.5322666">  <tag k="name" v="Paran\xc3\xa1"/>  <tag k="public_transport" v="stop_position"/>  <tag k="railway" v="stop"/>  <tag k="train" v="yes"/> </node>
+ <way id="993375104" visible="true" version="3" changeset="140962393" timestamp="2023-09-08T00:11:03Z" user="lferreyra" uid="4020269">  <nd ref="9177496249"/>  <nd ref="11175648417"/>  <nd ref="11175648418"/>  <nd ref="11175648419"/>  <nd ref="11175648414"/>  <nd ref="11175648420"/>  <nd ref="11175702663"/>  <nd ref="11175648421"/>  <nd ref="11175702662"/>  <nd ref="11175702661"/>  <nd ref="2629105584"/>  <nd ref="11175648435"/>  <nd ref="11175648434"/>  <nd ref="11175648433"/>  <nd ref="2629105583"/>  <nd ref="11175702653"/>  <nd ref="11175702648"/>  <nd ref="11175702647"/>  <nd ref="11175702646"/>  <nd ref="6504534625"/>  <nd ref="6504534628"/>  <nd ref="6504534624"/>  <nd ref="11175648416"/>  <nd ref="11175648415"/>  <nd ref="9177496248"/>  <nd ref="9177496247"/>  <nd ref="11175648413"/>  <nd ref="11175648411"/>  <nd ref="11175648410"/>  <nd ref="11175648409"/>  <nd ref="11175648408"/>  <nd ref="11175648406"/>  <nd ref="11175648405"/>  <nd ref="11175648403"/>  <nd ref="9177496246"/>  <nd ref="9177496249"/>  <tag k="landuse" v="railway"/>  <tag k="public_transport" v="platform"/> </way>
+ <way id="170285517" visible="true" version="17" changeset="148630078" timestamp="2024-03-14T08:59:48Z" user="gunnar1m" uid="160560">  <nd ref="1814387660"/>  <nd ref="1814387654"/>  <nd ref="10773173732"/>  <nd ref="1814387653"/>  <nd ref="10773173733"/>  <nd ref="10773173734"/>  <nd ref="10773173731"/>  <nd ref="11730147040"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/> </way>
+ <way id="170285514" visible="true" version="14" changeset="134710058" timestamp="2023-04-10T03:59:37Z" user="AgusQui" uid="331218">  <nd ref="1814387663"/>  <nd ref="1814387660"/>  <tag k="bridge" v="yes"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="layer" v="1"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/> </way>
+ <way id="175192139" visible="true" version="13" changeset="134710058" timestamp="2023-04-10T03:59:37Z" user="AgusQui" uid="331218">  <nd ref="1858235486"/>  <nd ref="1814387663"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/> </way>
+<way id="175192138" visible="true" version="12" changeset="134710058" timestamp="2023-04-10T03:59:37Z" user="AgusQui" uid="331218">  <nd ref="1109016942"/>  <nd ref="1858235486"/>  <tag k="bridge" v="yes"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="layer" v="1"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/> </way>
+ <way id="170285515" visible="true" version="14" changeset="134710058" timestamp="2023-04-10T03:59:37Z" user="AgusQui" uid="331218">  <nd ref="1814387671"/>  <nd ref="1109016942"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/> </way>
+ <way id="170285512" visible="true" version="14" changeset="134710058" timestamp="2023-04-10T03:59:37Z" user="AgusQui" uid="331218">  <nd ref="1814387676"/>  <nd ref="1814387671"/>  <tag k="bridge" v="yes"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="layer" v="1"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/> </way>
+ <way id="320290256" visible="true" version="12" changeset="134710058" timestamp="2023-04-10T03:59:37Z" user="AgusQui" uid="331218">  <nd ref="3267919744"/>  <nd ref="1550787337"/>  <nd ref="1109016953"/>  <nd ref="3267919742"/>  <nd ref="1550787333"/>  <nd ref="3267919743"/>  <nd ref="1109016936"/>  <nd ref="3267919745"/>  <nd ref="1109016938"/>  <nd ref="3267919747"/>  <nd ref="3267919748"/>  <nd ref="1814387692"/>  <nd ref="3267919749"/>  <nd ref="3267940751"/>  <nd ref="1814387691"/>  <nd ref="3267940750"/>  <nd ref="1109016931"/>  <nd ref="10798566198"/>  <nd ref="3052603805"/>  <nd ref="1814387679"/>  <nd ref="1814387676"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/>  <tag k="usage" v="main"/> </way>
+<way id="320290254" visible="true" version="11" changeset="134710058" timestamp="2023-04-10T03:59:37Z" user="AgusQui" uid="331218">  <nd ref="1550787340"/>  <nd ref="3267919744"/>  <tag k="bridge" v="yes"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="layer" v="1"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/> </way>
+<way id="95642524" visible="true" version="21" changeset="126610141" timestamp="2022-09-25T10:27:47Z" user="WJtW" uid="2097920">  <nd ref="3267919758"/>  <nd ref="3267919756"/>  <nd ref="3267919754"/>  <nd ref="1550787381"/>  <nd ref="2270029246"/>  <nd ref="3267919750"/>  <nd ref="7192253443"/>  <nd ref="7192253442"/>  <nd ref="1109016932"/>  <nd ref="7192253441"/>  <nd ref="1550787352"/>  <nd ref="1550787340"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/>  <tag k="usage" v="main"/> </way>
+ <way id="320290255" visible="true" version="10" changeset="126610141" timestamp="2022-09-25T10:27:47Z" user="WJtW" uid="2097920">  <nd ref="3267919758"/>  <nd ref="3267919759"/>  <tag k="bridge" v="yes"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="layer" v="1"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/>  <tag k="usage" v="main"/> </way>
+ <way id="993804463" visible="true" version="3" changeset="126610141" timestamp="2022-09-25T10:27:47Z" user="WJtW" uid="2097920">  <nd ref="3267919759"/>  <nd ref="7192253444"/>  <nd ref="7192253445"/>  <nd ref="2270029263"/>  <nd ref="1109016521"/>  <nd ref="7192253446"/>  <nd ref="1109016500"/>  <nd ref="1109016563"/>  <nd ref="7192253447"/>  <nd ref="1109016537"/>  <nd ref="3267955562"/>  <nd ref="1109016509"/>  <nd ref="2267838516"/>  <nd ref="1109016492"/>  <nd ref="1109016551"/>  <nd ref="1109016557"/>  <nd ref="1827944736"/>  <nd ref="9181667446"/>  <nd ref="1109016541"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/>  <tag k="usage" v="main"/> </way>
+ <way id="217690561" visible="true" version="8" changeset="62920473" timestamp="2018-09-25T17:05:14Z" user="Hernan" uid="72347">  <nd ref="1109016541"/>  <nd ref="1109016576"/>  <tag k="description" v="Urquiza"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/> </way>
+ <way id="320290253" visible="true" version="7" changeset="62920473" timestamp="2018-09-25T17:07:03Z" user="Hernan" uid="72347">  <nd ref="1109016576"/>  <nd ref="3267955563"/>  <tag k="bridge" v="yes"/>  <tag k="description" v="Urquiza"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/> </way>
+ <way id="320290257" visible="true" version="12" changeset="126610141" timestamp="2022-09-25T10:27:47Z" user="WJtW" uid="2097920">  <nd ref="3267955563"/>  <nd ref="9181667447"/>  <nd ref="3267955564"/>  <nd ref="7192253448"/>  <nd ref="9181667448"/>  <nd ref="1109016546"/>  <nd ref="9181667449"/>  <nd ref="7192253449"/>  <nd ref="9181667450"/>  <nd ref="1109016519"/>  <nd ref="1109016499"/>  <nd ref="3267959859"/>  <tag k="description" v="Urquiza"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/>  <tag k="usage" v="main"/> </way>
+ <way id="320292159" visible="true" version="8" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269">  <nd ref="3267959859"/>  <nd ref="3267959858"/>  <tag k="bridge" v="yes"/>  <tag k="description" v="Urquiza"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="layer" v="1"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="disused"/>  <tag k="ref" v="U-15"/> </way>
+<way id="217504811" visible="true" version="15" changeset="126610141" timestamp="2022-09-25T10:27:47Z" user="WJtW" uid="2097920">  <nd ref="3267959858"/>  <nd ref="9181667451"/>  <nd ref="7192253450"/>  <nd ref="1109016562"/>  <nd ref="7192253451"/>  <nd ref="1109016570"/>  <nd ref="7192253452"/>  <nd ref="9181667452"/>  <nd ref="1109016527"/>  <nd ref="7192253453"/>  <nd ref="7192253454"/>  <nd ref="1827944714"/>  <nd ref="9181667453"/>  <nd ref="9181667460"/>  <nd ref="1827944699"/>  <nd ref="7192253456"/>  <nd ref="1109016552"/>  <nd ref="9181667469"/>  <nd ref="7192253457"/>  <nd ref="9181667470"/>  <nd ref="1109016522"/>  <nd ref="9181667471"/>  <nd ref="7192253465"/>  <nd ref="9181667472"/>  <nd ref="1109016504"/>  <nd ref="7192253458"/>  <nd ref="7192253459"/>  <nd ref="1109016573"/>  <nd ref="7192253460"/>  <nd ref="7192253461"/>  <nd ref="7192253462"/>  <nd ref="1109016542"/>  <nd ref="7192253463"/>  <nd ref="7192253464"/>  <nd ref="7192253466"/>  <nd ref="1109016514"/>  <nd ref="7192253467"/>  <nd ref="7192253468"/>  <nd ref="1109016496"/>  <nd ref="287479034"/>  <nd ref="7192253469"/>  <nd ref="1109016556"/>  <nd ref="7192253470"/>  <nd ref="7192253471"/>  <nd ref="1109016531"/>  <nd ref="7192253472"/>  <nd ref="7192253473"/>  <nd ref="7192253474"/>  <nd ref="7192253475"/>  <nd ref="1109016505"/>  <tag k="description" v="Urquiza"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/>  <tag k="usage" v="main"/> </way>
+ <way id="320292172" visible="true" version="10" changeset="126610141" timestamp="2022-09-25T10:27:47Z" user="WJtW" uid="2097920">  <nd ref="1109016505"/>  <nd ref="1827944757"/>  <tag k="description" v="Urquiza"/>  <tag k="electrified" v="no"/>  <tag k="embankment" v="yes"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/>  <tag k="usage" v="main"/> </way>
+ <way id="171820572" visible="true" version="8" changeset="80665838" timestamp="2020-02-07T01:42:04Z" user="lferreyra" uid="4020269">  <nd ref="1827944757"/>  <nd ref="1827944767"/>  <tag k="bridge" v="yes"/>  <tag k="description" v="Urquiza"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="layer" v="1"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="disused"/>  <tag k="ref" v="U-15"/> </way>
+ <way id="993804468" visible="true" version="2" changeset="126610141" timestamp="2022-09-25T10:27:47Z" user="WJtW" uid="2097920">  <nd ref="1827944767"/>  <nd ref="9181667477"/>  <tag k="electrified" v="no"/>  <tag k="embankment" v="yes"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/>  <tag k="usage" v="main"/> </way>
+ <way id="1126059293" visible="true" version="4" changeset="145031689" timestamp="2023-12-12T10:27:30Z" user="DoubleA" uid="1198074">  <nd ref="9181667477"/>  <nd ref="9181667476"/>  <nd ref="9181667475"/>  <nd ref="9181667474"/>  <nd ref="9181667473"/>  <nd ref="1109016516"/>  <nd ref="9181667480"/>  <nd ref="9181667481"/>  <nd ref="1109016488"/>  <nd ref="9181667482"/>  <nd ref="9181667483"/>  <nd ref="1109016526"/>  <nd ref="9181667485"/>  <nd ref="9181667486"/>  <nd ref="1827944795"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/>  <tag k="usage" v="main"/> </way>
+ <way id="1225715015" visible="true" version="2" changeset="145031689" timestamp="2023-12-12T10:27:30Z" user="DoubleA" uid="1198074">  <nd ref="1827944795"/>  <nd ref="9181667484"/>  <nd ref="1109016506"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/>  <tag k="usage" v="main"/> </way>
+ <way id="1225715013" visible="true" version="2" changeset="145031689" timestamp="2023-12-12T10:27:30Z" user="DoubleA" uid="1198074">  <nd ref="1109016506"/>  <nd ref="9181667507"/>  <nd ref="926352915"/>  <nd ref="9181667508"/>  <nd ref="1109012931"/>  <nd ref="9181667509"/>  <nd ref="9181667510"/>  <nd ref="1109012882"/>  <nd ref="9181667511"/>  <nd ref="10297006504"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/>  <tag k="usage" v="main"/> </way>
+ <way id="1126059292" visible="true" version="1" changeset="130726244" timestamp="2022-12-31T15:49:34Z" user="AlejandroAlba" uid="6499071">  <nd ref="10297006504"/>  <nd ref="10297006505"/>  <tag k="bridge" v="yes"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="layer" v="1"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/>  <tag k="usage" v="main"/> </way>
+ <way id="1226033407" visible="true" version="1" changeset="144345333" timestamp="2023-11-22T22:32:47Z" user="Diego Krein" uid="1777006">  <nd ref="10297006505"/>  <nd ref="9181667512"/>  <nd ref="9181667513"/>  <nd ref="1109012848"/>  <nd ref="7616820624"/>  <nd ref="7450490717"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/>  <tag k="usage" v="main"/> </way>
+ <way id="1226033404" visible="true" version="1" changeset="144345333" timestamp="2023-11-22T22:32:47Z" user="Diego Krein" uid="1777006">  <nd ref="7450490717"/>  <nd ref="9181667516"/>  <nd ref="9181667514"/>  <nd ref="1109012907"/>  <nd ref="9181699724"/>  <nd ref="9181699723"/>  <nd ref="1109012874"/>  <nd ref="9181699725"/>  <nd ref="1109012947"/>  <nd ref="9181699726"/>  <nd ref="1109012938"/>  <nd ref="11369675425"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/>  <tag k="usage" v="main"/> </way>
+<way id="171820573" visible="true" version="21" changeset="144345333" timestamp="2023-11-22T22:32:47Z" user="Diego Krein" uid="1777006">  <nd ref="11369675425"/>  <nd ref="9181699729"/>  <nd ref="9181699738"/>  <nd ref="9181699733"/>  <nd ref="9181699732"/>  <nd ref="9181699739"/>  <nd ref="1109012862"/>  <nd ref="9181699740"/>  <nd ref="3106966628"/>  <nd ref="1109012940"/>  <nd ref="9181699741"/>  <nd ref="1109012918"/>  <nd ref="9181699742"/>  <nd ref="9181699743"/>  <nd ref="1109012879"/>  <nd ref="9181699744"/>  <nd ref="9181699745"/>  <nd ref="1109012924"/>  <nd ref="1109012915"/>  <nd ref="9181699750"/>  <nd ref="1827944787"/>  <nd ref="9181699755"/>  <nd ref="926201433"/>  <nd ref="1827944775"/>  <nd ref="3511513118"/>  <nd ref="3511513120"/>  <nd ref="3511513121"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-15"/>  <tag k="usage" v="main"/> </way>
+ <way id="442355523" visible="true" version="10" changeset="143172474" timestamp="2023-10-26T17:25:23Z" user="patodiez" uid="1856060">  <nd ref="3511513121"/>  <nd ref="9177482360"/>  <nd ref="925959410"/>  <nd ref="2028904896"/>  <nd ref="926201217"/>  <nd ref="925959404"/>  <nd ref="9177482356"/>  <nd ref="925959427"/>  <nd ref="9177482353"/>  <nd ref="9177482351"/>  <nd ref="9177482350"/>  <nd ref="11291532148"/>  <nd ref="2103347345"/>  <nd ref="9177496239"/>  <nd ref="9177482347"/>  <nd ref="9177496260"/>  <tag k="electrified" v="no"/>  <tag k="gauge" v="1435"/>  <tag k="name" v="FC Urquiza"/>  <tag k="network" v="Urquiza"/>  <tag k="passenger_lines" v="1"/>  <tag k="railway" v="rail"/>  <tag k="ref" v="U-5"/>  <tag k="usage" v="main"/> </way>
+     <relation id="13341377" visible="true" version="9" changeset="148630078" timestamp="2024-03-14T08:59:48Z" user="gunnar1m" uid="160560">
+    <member type="node" ref="11730147040" role="stop_entry_only"/>
+    <member type="node" ref="10798566198" role="stop"/>
+    <member type="node" ref="3267919749" role="stop"/>
+    <member type="way" ref="1095300945" role="platform"/>
+    <member type="node" ref="9181667446" role="stop"/>
+    <member type="way" ref="993804462" role="platform"/>
+    <member type="node" ref="9181667453" role="stop"/>
+    <member type="way" ref="993804465" role="platform"/>
+    <member type="node" ref="9181667460" role="stop"/>
+    <member type="way" ref="993804467" role="platform"/>
+    <member type="node" ref="9181667507" role="stop"/>
+    <member type="way" ref="993804475" role="platform"/>
+    <member type="node" ref="9181667514" role="stop"/>
+    <member type="way" ref="993804477" role="platform"/>
+    <member type="node" ref="9181699738" role="stop"/>
+    <member type="way" ref="993804480" role="platform"/>
+    <member type="node" ref="9181699750" role="stop"/>
+    <member type="way" ref="993804482" role="platform"/>
+    <member type="node" ref="9181699755" role="stop"/>
+    <member type="way" ref="993804484" role="platform"/>
+    <member type="node" ref="9177482360" role="stop"/>
+    <member type="way" ref="993375083" role="platform"/>
+    <member type="node" ref="9177496260" role="stop"/>
+    <member type="way" ref="993375104" role="platform"/>
+    <member type="way" ref="170285517" role=""/>
+    <member type="way" ref="170285514" role=""/>
+    <member type="way" ref="175192139" role=""/>
+    <member type="way" ref="175192138" role=""/>
+    <member type="way" ref="170285515" role=""/>
+    <member type="way" ref="170285512" role=""/>
+    <member type="way" ref="320290256" role=""/>
+    <member type="way" ref="320290254" role=""/>
+    <member type="way" ref="95642524" role=""/>
+    <member type="way" ref="320290255" role=""/>
+    <member type="way" ref="993804463" role=""/>
+    <member type="way" ref="217690561" role=""/>
+    <member type="way" ref="320290253" role=""/>
+    <member type="way" ref="320290257" role=""/>
+    <member type="way" ref="320292159" role=""/>
+    <member type="way" ref="217504811" role=""/>
+    <member type="way" ref="320292172" role=""/>
+    <member type="way" ref="171820572" role=""/>
+    <member type="way" ref="993804468" role=""/>
+    <member type="way" ref="1126059293" role=""/>
+    <member type="way" ref="1225715015" role=""/>
+    <member type="way" ref="1225715013" role=""/>
+    <member type="way" ref="1126059292" role=""/>
+    <member type="way" ref="1226033407" role=""/>
+    <member type="way" ref="1226033404" role=""/>
+    <member type="way" ref="171820573" role=""/>
+    <member type="way" ref="442355523" role=""/>
+    <tag k="colour" v="#37bbed"/>
+    <tag k="duration" v="01:20"/>
+    <tag k="fee" v="yes"/>
+    <tag k="from" v="Jorge Méndez"/>
+    <tag k="interval" v="07:00"/>
+    <tag k="name" v="Tren Regional La Picada → Paraná"/>
+    <tag k="network" v="Urquiza"/>
+    <tag k="operator" v="Trenes Argentinos"/>
+    <tag k="passenger" v="local"/>
+    <tag k="public_transport:version" v="2"/>
+    <tag k="ref" v="TPC"/>
+    <tag k="reservation" v="no"/>
+    <tag k="route" v="train"/>
+    <tag k="service" v="commuter"/>
+    <tag k="sleeping_car" v="no"/>
+    <tag k="to" v="Paraná"/>
+    <tag k="toilets" v="no"/>
+    <tag k="type" v="route"/>
+    </relation>
+</create>
+</osmChange>
