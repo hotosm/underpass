@@ -160,21 +160,7 @@ Pq::query(const std::string &query)
 std::string
 Pq::escapedString(const std::string &s)
 {
-    std::string newstr;
-    int i = 0;
-    while (i < s.size()) {
-        // // Single quote (')
-        // if (s[i] == '\'') {
-        //     newstr += "''";
-        // // Slash (\)
-        // } else if (s[i] == '\\') {
-        //     newstr += "\\\\";
-        // } else {
-        newstr += s[i];
-        // }
-        i++;
-    }
-    return sdb->esc(newstr);
+    return sdb->esc(s);
 }
 
 std::string
