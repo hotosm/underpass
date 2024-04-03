@@ -103,7 +103,7 @@ std::shared_ptr<RemoteURL> PlanetReplicator::findRemotePath(const underpassconfi
     yaml::Yaml yaml;
 
     std::string rep_file = ETCDIR;
-    rep_file += "replicator/planetreplicator.yaml";
+    rep_file += "/replicator/planetreplicator.yaml";
     yaml.read(rep_file);
     std::map<int, ptime> hashes;
 
