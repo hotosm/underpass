@@ -51,7 +51,8 @@ namespace statsconfig {
 
     StatsConfig::StatsConfig() {
         if (path.empty()) {
-            path = "/etc/underpass/stats/statistics.yaml";
+            path = ETCDIR;
+            path += "/stats/statistics.yaml";
             if (!boost::filesystem::exists(path)) {
                 throw std::runtime_error("Statistics file not found: " + path);
             }
