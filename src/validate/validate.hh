@@ -179,7 +179,8 @@ class ValidateStatus {
 class BOOST_SYMBOL_VISIBLE Validate {
   public:
     Validate(void) {
-        std::string path = "/etc/underpass/validate";
+        std::string path = ETCDIR;
+        path += "/validate";
         loadConfig(path);
     }
 

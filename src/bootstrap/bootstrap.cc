@@ -271,7 +271,7 @@ Bootstrap::threadBootstrapWayTask(WayTask wayTask)
     auto wayval = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
 
     // Proccesing ways
-    for (int i = taskIndex * page_size; i < (taskIndex + 1) * page_size; ++i) {
+    for (size_t i = taskIndex * page_size; i < (taskIndex + 1) * page_size; ++i) {
         if (i < ways->size()) {
             auto way = ways->at(i);
             wayval->push_back(validator->checkWay(way, "building"));
@@ -309,7 +309,7 @@ Bootstrap::threadBootstrapNodeTask(NodeTask nodeTask)
 
     // Proccesing nodes
     std::vector<std::string> node_tests = {"building", "natural", "place", "waterway"};
-    for (int i = taskIndex * page_size; i < (taskIndex + 1) * page_size; ++i) {
+    for (size_t i = taskIndex * page_size; i < (taskIndex + 1) * page_size; ++i) {
         if (i < nodes->size()) {
             auto node = nodes->at(i);
             for (auto test_it = std::begin(node_tests); test_it != std::end(node_tests); ++test_it) {
@@ -344,7 +344,7 @@ Bootstrap::threadBootstrapRelationTask(RelationTask relationTask)
     auto relationval = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
 
     // Proccesing relations
-    for (int i = taskIndex * page_size; i < (taskIndex + 1) * page_size; ++i) {
+    for (size_t i = taskIndex * page_size; i < (taskIndex + 1) * page_size; ++i) {
         if (i < relations->size()) {
             auto relation = relations->at(i);
             // relationval->push_back(validator->checkRelation(way, "building"));
