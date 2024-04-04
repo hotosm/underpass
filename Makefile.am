@@ -31,8 +31,7 @@ DISTCLEANFILES = docs/html docs/latex .lastmod
 MAINTAINERCLEANFILES = revno.h .lastmod
 ETCDIR = $(subst lib,etc,$(pkglibdir))
 
-SUBDIRS = \
-	src/validate
+SUBDIRS = src/validate
 
 lib_LTLIBRARIES = libunderpass.la
 instdir = /tmp
@@ -50,8 +49,7 @@ BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
 	$(BOOST_TIMER_LIB) \
 	$(BOOST_PYTHON_LIB)
 
-SQL_FILES = \
-	setup/db/underpass.sql
+SQL_FILES = setup/db/underpass.sql
 
 libunderpass_la_SOURCES = \
 	src/utils/log.cc src/utils/log.hh \
@@ -71,8 +69,7 @@ libunderpass_la_SOURCES = \
 	src/utils/geoutil.cc src/utils/geoutil.hh \
 	src/utils/geo.cc src/utils/geo.hh \
 	src/utils/yaml.hh src/utils/yaml.cc \
-	src/data/pq.hh src/data/pq.cc \
-	setup/db/setupdb.sh
+	src/data/pq.hh src/data/pq.cc
 
 if JEMALLOC
 libunderpass_la_LDFLAGS = -avoid-version -ljemalloc
@@ -109,15 +106,15 @@ AM_CPPFLAGS = \
 # clutter to the output. This should only be enabled when doing performance tuning.
 	-DTIMING_DEBUG
 
-pkgdata_DATA = $(SQL_FILES) setup/db/setupdb.sh $(PYTHON_UTILS)
+pkgdata_DATA = $(SQL_FILES) $(PYTHON_UTILS)
 
 EXTRA_DIST = \
 	$(SQL_FILES) \
 	$(PYTHON_UTILS) \
+	setup/service/underpass.service \
+	setup/db/setupdb.sh \
 	src/testsuite \
-	config/priority.geojson \
-	config/replicator/planetreplicator.yaml \
-	doc \
+	docs \
 	dist/debian \
 	dist/redhat \
 	utils
@@ -154,13 +151,10 @@ endif
 
 install-data-hook:
 	$(MKDIR_P) $(DESTDIR)$(ETCDIR)
-	cp -rvp $(srcdir)/config/priority.geojson  $(DESTDIR)$(ETCDIR)/
-	cp -rvp $(srcdir)/config/replicator  $(DESTDIR)$(ETCDIR)/
-	cp -rvp $(srcdir)/config/stats  $(DESTDIR)$(ETCDIR)/
-	cp -rvp $(srcdir)/config/default.yaml  $(DESTDIR)$(ETCDIR)/
-	cp -rvp $(srcdir)/setup/service $(DESTDIR)/$(pkglibdir)
-	$(MKDIR_P) $(DESTDIR)$(pkglibdir)/../system
-	cp -rvp $(srcdir)/setup/service/underpass.service  $(DESTDIR)$(pkglibdir)/../system/
+	@rsync -avr $(srcdir)/config $(DESTDIR)$(ETCDIR)/
+	@rsync -avr $(srcdir)/setup $(DESTDIR)/$(pkglibdir)
+	@$(MKDIR_P) $(DESTDIR)$(pkglibdir)/../system
+	cp -rvu $(srcdir)/setup/service/underpass.service $(DESTDIR)$(pkglibdir)/../system/
 
 dist-hook: apidoc
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
