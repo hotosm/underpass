@@ -163,9 +163,8 @@ fi
 dnl range-v3
 CPPFLAGS+=" $(pkg-config --cflags libpqxx)"
 CPPFLAGS+=" $(pkg-config --cflags gumbo)"
-CPPFLAGS+=" $(pkg-config --cflags gdal)"
 CPPFLAGS+=" $(pkg-config --cflags ompi)"
-CPPFLAGS+=" $(pkg-config --cflags python3)"
+CPPFLAGS+=" $(python3-config --cflags)"
 
 dnl This is a C++ project only
 AC_LANG_PUSH(C++)
@@ -183,9 +182,8 @@ LIBS+=" $(pkg-config --libs libpqxx)"
 LIBS+=" $(pkg-config --libs openssl)"
 LIBS+=" $(pkg-config --libs gumbo)"
 LIBS+=" $(pkg-config --libs zlib)"
-LIBS+=" $(pkg-config --libs gdal)"
 LIBS+=" $(pkg-config --libs ompi)"
-LIBS+=" $(pkg-config --libs python3)"
+LIBS+=" $(python3-config --libs)"
 if test x"${build_libxml}" = x"yes"; then
 dnl Debian Buster and Ubuntu Focal ship 2.6, Fedora ships 3,.0
 dnl The version in Focal is broken, so either build libxml++-3.0
@@ -209,16 +207,16 @@ LIBS+=" -lpthread -ldl"
 
 dnl 1.69 or newer
 AX_BOOST_BASE(1.69)
+AX_BOOST_IOSTREAMS
 AX_BOOST_SYSTEM
 AX_BOOST_SERIALIZATION
-AX_BOOST_LOG
-AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_DATE_TIME
 AX_BOOST_FILESYSTEM
-AX_BOOST_IOSTREAMS
 AX_BOOST_THREAD
 AX_BOOST_LOCALE
 AX_BOOST_TIMER
+AX_BOOST_LOG
+AX_BOOST_PROGRAM_OPTIONS
 dnl For some reason this test works on Fedora, and fails on Debian. For now
 dnl hardcode it.
 dnl AX_BOOST_REGEX
@@ -227,6 +225,9 @@ LIBS+=" -lboost_regex"
 dnl LIBS += "${BOOST_DATE_TIME} ${BOOST_SYSTEM} ${BOOST_FILESYSTEM} ${BOOST_LOG_LIB}"
 AC_LANG_POP(C++)
 
+CPPFLAGS+=" $(pkg-config --cflags gdal)"
+LIBS+=" $(pkg-config --libs gdal)"
+
 AM_PATH_PYTHON([3])
 
 AC_ARG_ENABLE([python],
@@ -234,7 +235,7 @@ AC_ARG_ENABLE([python],
 
 if test x"${enable_python}" = x"yes"; then
   LIBS+=" $(python3-config --libs)"
-  LIBS+=" $(pkg-config --libs python3-embed)"
+  LIBS+=" $(python3-config --embed)"
   CPPFLAGS+=" $(python3-config --cflags)"
   AX_BOOST_PYTHON
   AC_DEFINE(USE_PYTHON, [1], [Enable Python binding])
@@ -292,7 +293,7 @@ AC_OUTPUT
 if test x"${build_libxml}" = x"yes"; then
    echo "Using libxml for XML parsing"
 else
-   echo "Using RaqpidXML for XML parsing, which is used by boost::parse_tree"
+   echo "Using RapidXML for XML parsing, which is used by boost::parse_tree"
 fi
 # Local Variables:
 # c-basic-offset: 2

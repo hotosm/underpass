@@ -19,6 +19,7 @@
 # AUTOMAKE_OPTIONS =  -Wno-portability dejagnu subdir-objects
 
 lib_LTLIBRARIES = libunderpass.la
+ETCDIR = $(subst lib,etc,$(pkglibdir))
 
 BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
 	$(BOOST_SYSTEM_LIB) \
@@ -47,10 +48,11 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
 	-DPKGLIBDIR=\"$(pkglibdir)\" \
 	-DSRCDIR=\"$(srcdir)\" \
+	-DETCDIR=\"$(ETCDIR)\" \
 	-DBOOST_LOCALE_HIDE_AUTO_PTR
 
 install-data-hook:
 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
 	cp -vp .libs/libunderpass.so $(DESTDIR)/$(pkglibdir)
-	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)/config/validate
-	cp -rvp $(top_srcdir)/config/validate/*.yaml $(DESTDIR)/$(pkglibdir)/config/validate
+	$(MKDIR_P) $(DESTDIR)$(ETCDIR)/validate
+	cp -rvp $(top_srcdir)/config/validate/*.yaml $(DESTDIR)$(ETCDIR)/validate

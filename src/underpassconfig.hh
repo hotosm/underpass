@@ -103,9 +103,11 @@ struct UnderpassConfig {
     UnderpassConfig()
     {
 
-        if (std::filesystem::exists("/etc/underpass/default.yaml")) {
+        std::string filespec = ETCDIR;
+        filespec += "default.yaml";
+        if (std::filesystem::exists(filespec)) {
             yaml::Yaml yaml;
-            yaml.read("/etc/underpass/default.yaml");
+            yaml.read(filespec);
             auto yamlConfig = yaml.get("config");
             if (yaml.contains_key("underpass_db_url")) {
                 underpass_db_url = yamlConfig.get_value("underpass_db_url");

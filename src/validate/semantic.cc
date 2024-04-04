@@ -137,7 +137,7 @@ Semantic::checkNode(const osmobjects::OsmNode &node, const std::string &type, ya
     auto required_tags = tests.get("required_tags");
 
     std::string key;
-    int tagexists = 0;
+    size_t tagexists = 0;
     status->center = node.point;
 
     if (node.tags.count(type)) {
@@ -196,7 +196,7 @@ Semantic::checkWay(const osmobjects::OsmWay &way, const std::string &type, yaml:
         return status;
     }
 
-    int tagexists = 0;
+    size_t tagexists = 0;
     if (way.tags.count(type)) {
         for (auto vit = std::begin(way.tags); vit != std::end(way.tags); ++vit) {
             if (check_badvalue) {
@@ -250,7 +250,7 @@ Semantic::checkRelation(const osmobjects::OsmRelation &relation, const std::stri
         return status;
     }
 
-    int tagexists = 0;
+    size_t tagexists = 0;
     if (relation.tags.count(type)) {
         for (auto vit = std::begin(relation.tags); vit != std::end(relation.tags); ++vit) {
             if (check_badvalue) {
