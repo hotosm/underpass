@@ -424,7 +424,7 @@ QueryRaw::applyChange(const OsmRelation &relation) const
     return query;
 }
 
-std::vector<long> arrayStrToVector(std::string &refs_str) {
+std::vector<long> arrayStrToVector(std::string refs_str) {
     refs_str.erase(0, 1);
     refs_str.erase(refs_str.size() - 1);
     std::vector<long> refs;
