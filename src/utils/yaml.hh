@@ -48,7 +48,7 @@ class Node {
         ///
         /// \brief children the Node can contain several children
         ///
-        std::vector<struct Node> children;
+        std::vector<Node> children;
         ///
         /// \brief get returns a Node identified by a key
         /// \param key is the value that must to match with the Node

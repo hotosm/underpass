@@ -291,7 +291,8 @@ main(int argc, char *argv[])
 
         // OsmChanges
         std::thread osmChangeThread;
-        if (!vm.count("changesets")) {
+        if ((!vm.count("changesets") && !vm.count("changeseturl")) ||
+            (vm.count("changeseturl") && (vm.count("timestamp") || vm.count("url")))) {
             multipolygon_t * osmboundary = &poly;
             if (!vm.count("osmnoboundary")) {
                 osmboundary = &geou.boundary;
