@@ -403,13 +403,17 @@ QueryRaw::applyChange(const OsmRelation &relation) const
                 // Update geometry only
 
                 query = "UPDATE relations SET ";
-                std::string format = "geom=%s WHERE osm_id=%d;";
+                std::string format = "geom=%s, timestamp=%s WHERE osm_id=%d;";
                 boost::format fmt(format);
 
                 // Geometry
                 std::string geometry;
                 geometry = "ST_GeomFromText(\'" + geostring + "\', 4326)";
                 fmt % geometry;
+
+                // Timestamp
+                std::string timestamp = to_simple_string(boost::posix_time::microsec_clock::universal_time());
+                fmt % timestamp;
 
                 // osm_id
                 fmt % relation.id;
