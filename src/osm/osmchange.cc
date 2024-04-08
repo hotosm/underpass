@@ -189,7 +189,6 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
             // Way is not available in cache,
             // possibily because Relation is not in the priority area
             // or way was deleted
-            std::cout << "No Way!" << std::endl;
             return;
         }
         
@@ -213,7 +212,6 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
                         // Way is not available in cache,
                         // possibily because Relation is not in the priority area
                         // or way was deleted
-                        std::cout << "No Way!" << std::endl;
                         return;
                     }
                     nextWay = waycache.at(nextWayId);
@@ -379,22 +377,26 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
         std::string geometry_str;
         ++i;
         if (relation.isMultiPolygon()) {
-            ss << std::setprecision(12) << bg::wkt(pit->polygon);
-            geometry_str = ss.str();
-            // Erase "POLYGON("
-            geometry_str.erase(0,8);
-            geometry_str.erase(geometry_str.size() - 1);
-            if (geometry_str.size() > 0) {
-                geometry += geometry_str + ",";
+            if (bg::num_points(pit->polygon.outer()) > 0) {
+                ss << std::setprecision(12) << bg::wkt(pit->polygon);
+                geometry_str = ss.str();
+                // Erase "POLYGON("
+                geometry_str.erase(0,8);
+                geometry_str.erase(geometry_str.size() - 1);
+                if (geometry_str.size() > 0) {
+                    geometry += geometry_str + ",";
+                }
             }
         } else {
-            ss << std::setprecision(12) << bg::wkt(pit->linestring);
-            geometry_str = ss.str();
-            // Erase "LINESTRING("
-            geometry_str.erase(0,11);
-            geometry_str.erase(geometry_str.size() - 1);
-            if (geometry_str.size() > 0) {
-                geometry += "(" + geometry_str + "),";
+            if (bg::num_points(pit->linestring) > 0) {
+                ss << std::setprecision(12) << bg::wkt(pit->linestring);
+                geometry_str = ss.str();
+                // Erase "LINESTRING("
+                geometry_str.erase(0,11);
+                geometry_str.erase(geometry_str.size() - 1);
+                if (geometry_str.size() > 0) {
+                    geometry += "(" + geometry_str + "),";
+                }
             }
         }
     }

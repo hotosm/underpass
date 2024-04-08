@@ -308,6 +308,15 @@ QueryRaw::applyChange(const OsmWay &way) const
 
                 query += fmt.str();
             }
+            std::string delquery = "DELETE FROM %s WHERE osm_id=%d;";
+            boost::format delquery_fmt(delquery);
+            if (tableName == &QueryRaw::polyTable) {
+                delquery_fmt % QueryRaw::lineTable;
+            } else {
+                delquery_fmt % QueryRaw::polyTable;
+            }
+            delquery_fmt % way.id;
+            query += delquery_fmt.str();
         }
     } else if (way.action == osmobjects::remove) {
         query += "DELETE FROM way_refs WHERE way_id=" + std::to_string(way.id) + ";";

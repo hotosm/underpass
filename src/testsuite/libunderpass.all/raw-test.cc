@@ -297,6 +297,8 @@ main(int argc, char *argv[])
         }
 
 
+    } else {
+        std::cout << "ERROR: can't connect to the test DB (" << dbconn << " dbname=underpass_test" << ")" << std::endl;
     }
 
 
