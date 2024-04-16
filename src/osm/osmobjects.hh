@@ -222,7 +222,7 @@ class OsmRelation : public OsmObject {
     OsmRelation(void) { type = relation; };
 
     multilinestring_t multilinestring; ///< Store the members as a multilinestring
-    multipolygon_t multipolygon; ///< Store the members as a multipolygon
+    polygon_t multipolygon; ///< Store the members as a multipolygon
     point_t center;          ///< Store the centroid of the relation
 
     /// Add a member to this relation
