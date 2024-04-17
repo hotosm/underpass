@@ -49,11 +49,7 @@ using namespace boost::gregorian;
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/timer/timer.hpp>
-// #include <boost/multi_index_container.hpp>
-// #include <boost/multi_index/member.hpp>
-// #include <boost/multi_index/ordered_index.hpp>
-// using boost::multi_index_container;
-// using namespace boost::multi_index;
+#include <boost/geometry/geometries/adapted/boost_range/sliced.hpp>
 
 #include "validate/validate.hh"
 #include "osm/osmobjects.hh"
@@ -226,11 +222,16 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
                 }
 
                 // Remove repeated point on line continuation
-                if (bg::equals(part.back(), way->linestring.front())) {
-                    // FIXME: TODO
-                }
+                // if (bg::equals(part.back(), way->linestring.front())) {
+                //     std::cout << "HERE" << std::endl;
+                //     std::stringstream ss;
+                //     ss << std::setprecision(12) << bg::wkt(way->linestring | boost::adaptors::sliced(1, bg::num_points(way->linestring)));
+                //     std::cout << ss.str() << std::endl;
 
+                //     bg::append(part, way->linestring | boost::adaptors::sliced(1, bg::num_points(way->linestring)));
+                // } else {
                 bg::append(part, way->linestring);
+                // }
 
                 // Check if object is closed
                 if (relation.isMultiPolygon() && bg::equals(part.back(), part.front())) {
@@ -703,13 +704,13 @@ OsmChange::dump(void)
             way->dump();
         }
     }
-    if (relations.size() > 0) {
-        for (auto it = std::begin(relations); it != std::end(relations); ++it) {
-            // std::cerr << "\tDumping relations: " << it->dump() << std::endl;
-            // std::shared_ptr<OsmWay> rel = *it;
-            // rel->dump( << std::endl;
-        }
-    }
+    // if (relations.size() > 0) {
+    //     for (auto it = std::begin(relations); it != std::end(relations); ++it) {
+    //         std::cerr << "\tDumping relations: " << it->dump() << std::endl;
+    //         std::shared_ptr<OsmRelation> rel = *it;
+    //         rel->dump();
+    //     }
+    // }
     std::cerr << "Final timestamp: " << to_simple_string(final_entry) << std::endl;
 
 }

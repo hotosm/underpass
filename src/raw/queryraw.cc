@@ -97,9 +97,7 @@ std::string
 buildMembersQuery(std::list<OsmRelationMember> members) {
     if (members.size() > 0) {
         std::string membersStr = "'[";
-        int count = 0;
         for (auto mit = std::begin(members); mit != std::end(members); ++mit) {
-            count++;
             membersStr += "{";
             std::string member_format = "\"%s\": \"%s\",";
             boost::format member_fmt(member_format);
@@ -385,6 +383,8 @@ QueryRaw::applyChange(const OsmRelation &relation) const
         }
         std::string geostring = ss.str();
 
+        std::cout << "Relation " << relation.id << std::endl;
+
         // Ignore empty geometries.
         if (geostring != "MULTILINESTRING()" && geostring != "POLYGON()") {
 
@@ -440,8 +440,8 @@ QueryRaw::applyChange(const OsmRelation &relation) const
 
                 // Refresh all refs stored into the rel_refs table
                 query += "DELETE FROM rel_refs WHERE rel_id=" + std::to_string(relation.id) + ";";
-                for (auto ref = way.refs.begin(); ref != way.refs.end(); ++ref) {
-                    query += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(it->ref) + ");";
+                for (auto mit = relation.members.begin(); mit != relation.members.end(); ++mit) {
+                    query += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(mit->ref) + ");";
                 }
 
             } else {
@@ -468,6 +468,8 @@ QueryRaw::applyChange(const OsmRelation &relation) const
 
                 query += fmt.str();
             }
+        } else {
+            std::cout << "Relation " << relation.id << " has empty geometry" << std::endl;
         }
     } else if (relation.action == osmobjects::remove) {
         // Delete a Relation geometry and its references.
@@ -735,7 +737,7 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
             OsmWay *way = wit->get();
 
             // Only build geometries for Ways with incomplete geometries
-            if (bg::num_points(way->linestring != way->refs.size())) {
+            if (bg::num_points(way->linestring) != way->refs.size()) {
                 way->linestring.clear();
                 for (auto rit = way->refs.begin(); rit != way->refs.end(); ++rit) {
                     if (osmchanges->nodecache.count(*rit)) {
@@ -751,10 +753,12 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
             if (poly.empty() || bg::within(way->linestring, poly)) {
                 if (osmchanges->waycache.count(way->id)) {
                     osmchanges->waycache.at(way->id)->polygon = way->polygon;
+                    osmchanges->waycache.at(way->id)->linestring = way->linestring;
                 } else {
                     osmchanges->waycache.insert(std::make_pair(way->id, std::make_shared<osmobjects::OsmWay>(*way)));
                 }
             }
+
         }
     }
 
@@ -769,6 +773,8 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
                 for (auto mit = relation->members.begin(); mit != relation->members.end(); ++mit) {
                     if (mit->type == osmobjects::way && !osmchanges->waycache.count(mit->ref)) {
                         relsForWayCacheIds += std::to_string(mit->ref) + ",";
+                    } else if (osmchanges->waycache.count(mit->ref)) {
+                        std::cout << mit->ref << " is in waycache" << std::endl;
                     }
                 }
             }
