@@ -78,6 +78,7 @@ class Bootstrap {
     std::shared_ptr<QueryValidate> queryvalidate;
     std::shared_ptr<QueryRaw> queryraw;
     std::shared_ptr<Pq> db;
+    std::shared_ptr<Pq> osmdb;
     bool norefs;
     unsigned int concurrency;
     unsigned int page_size;

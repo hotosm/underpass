@@ -134,7 +134,7 @@ QueryValidate::applyChange(const ValidateStatus &validation, const valerror_t &s
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("applyChange(validation): took %w seconds\n");
 #endif
-    log_debug("Applying Validation data");
+    // log_debug("Applying Validation data");
 
     std::string format;
     std::string query;

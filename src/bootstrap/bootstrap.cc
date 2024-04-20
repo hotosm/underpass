@@ -60,10 +60,17 @@ Bootstrap::allTasksQueries(std::shared_ptr<std::vector<BootstrapTask>> tasks) {
 
 void
 Bootstrap::start(const underpassconfig::UnderpassConfig &config) {
-    std::cout << "Connecting to the database ... " << std::endl;
+    std::cout << "Connecting to OSM database ... " << std::endl;
+    osmdb = std::make_shared<Pq>();
+    if (!osmdb->connect(config.underpass_osm_db_url)) {
+        log_error("Could not connect to OSM DB, aborting bootstrapping thread!");
+        return;
+    }
+
+    std::cout << "Connecting to underpass database ... " << std::endl;
     db = std::make_shared<Pq>();
     if (!db->connect(config.underpass_db_url)) {
-        std::cout << "Could not connect to Underpass DB, aborting bootstrapping thread!" << std::endl;
+        log_error("Could not connect to Underpass DB, aborting bootstrapping thread!");
         return;
     }
 
@@ -86,7 +93,7 @@ Bootstrap::start(const underpassconfig::UnderpassConfig &config) {
 
     validator = creator();
     queryvalidate = std::make_shared<QueryValidate>(db);
-    queryraw = std::make_shared<QueryRaw>(db);
+    queryraw = std::make_shared<QueryRaw>(osmdb);
     page_size = config.bootstrap_page_size;
     concurrency = config.concurrency;
     norefs = config.norefs;

@@ -124,6 +124,7 @@ main(int argc, char *argv[])
             ("norefs", "Disable refs (useful for non OSM data)")
             ("bootstrap", "Bootstrap data tables")
             ("silent", "Silent");
+        ("rawdb", opts::value<std::string>(), "Database URI for raw OSM data");
         // clang-format on
 
         opts::store(opts::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
@@ -156,6 +157,10 @@ main(int argc, char *argv[])
     }
 
     // Database
+    if (vm.count("rawdb")) {
+        config.underpass_osm_db_url = vm["rawdb"].as<std::string>();
+    }
+
     if (vm.count("server")) {
         config.underpass_db_url = vm["server"].as<std::string>();
     }
