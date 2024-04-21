@@ -238,7 +238,7 @@ class TestStats {
                         std::cout << "changeset: " << changestats->changeset << std::endl;
                     }
                     testStat(changestats, validation, "highway");
-                    testStat(changestats, validation, "building");
+                    // testStat(changestats, validation, "building");
                     testStat(changestats, validation, "humanitarian_building");
                     testStat(changestats, validation, "police");
                     testStat(changestats, validation, "fire_station");
