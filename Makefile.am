@@ -324,7 +324,7 @@ revno.h:
 	  echo "#define BRANCH_NICK \"$${nick}\"" >> revno.h; \
 	  echo "#define COMMIT_ID \"$${comm_id}\"" >> revno.h; \
 	  echo "#define VERSION \"$(VERSION)\"" >> revno.h; \
-	  touch .lastmod;; \
+	  touch .lastmod; \
 	fi
 
 .configline: revno.h
