@@ -177,7 +177,7 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
         if (!waycache.count(mit->ref)) {
             // Way is not available in cache,
             // possibily because Relation is not in the priority area
-            // or way was deleted
+            // or the way was deleted
             return;
         }
         
@@ -200,7 +200,7 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
                     if (!waycache.count(nextWayId)) {
                         // Way is not available in cache,
                         // possibily because Relation is not in the priority area
-                        // or way was deleted
+                        // or the way was deleted
                         return;
                     }
                     nextWay = waycache.at(nextWayId);
@@ -221,17 +221,7 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
                     }
                 }
 
-                // Remove repeated point on line continuation
-                // if (bg::equals(part.back(), way->linestring.front())) {
-                //     std::cout << "HERE" << std::endl;
-                //     std::stringstream ss;
-                //     ss << std::setprecision(12) << bg::wkt(way->linestring | boost::adaptors::sliced(1, bg::num_points(way->linestring)));
-                //     std::cout << ss.str() << std::endl;
-
-                //     bg::append(part, way->linestring | boost::adaptors::sliced(1, bg::num_points(way->linestring)));
-                // } else {
                 bg::append(part, way->linestring);
-                // }
 
                 // Check if object is closed
                 if (relation.isMultiPolygon() && bg::equals(part.back(), part.front())) {
@@ -260,7 +250,7 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
                     if (!waycache.count(nextWayId)) {
                         // Way is not available in cache,
                         // possibily because Relation is not in the priority area
-                        // or way was deleted
+                        // or the way was deleted
                         return;
                     }
                     nextWay = waycache.at(nextWayId);
@@ -421,10 +411,8 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
     if (geometry.size() > 0) {
         geometry.erase(geometry.size() - 1);
         if (relation.isMultiPolygon()) {
-            // std::cout << "POLYGON(" + geometry + ")" << std::endl;
             bg::read_wkt("POLYGON(" + geometry + ")", relation.multipolygon);
         } else {
-            // std::cout << "MULTILINESTRING(" + geometry + ")" << std::endl;
             bg::read_wkt("MULTILINESTRING(" + geometry + ")", relation.multilinestring);
         }
     }

@@ -105,7 +105,16 @@ buildMembersQuery(std::list<OsmRelationMember> members) {
             member_fmt % mit->role;
             membersStr += member_fmt.str();
             member_fmt % "type";
-            member_fmt % mit->type;
+            switch(mit->type) {
+                case osmobjects::osmtype_t::way:
+                    member_fmt % "way"; break;
+                case osmobjects::osmtype_t::node:
+                    member_fmt % "node"; break;
+                case osmobjects::osmtype_t::relation:
+                    member_fmt % "relation"; break;
+                default:
+                    member_fmt % "";
+            }
             membersStr += member_fmt.str();
             membersStr += "\"ref\":";
             membersStr += std::to_string(mit->ref);
@@ -466,8 +475,6 @@ QueryRaw::applyChange(const OsmRelation &relation) const
 
                 query += fmt.str();
             }
-        } else {
-            std::cout << "Relation " << relation.id << " has empty geometry" << std::endl;
         }
     } else if (relation.action == osmobjects::remove) {
         // Delete a Relation geometry and its references.
