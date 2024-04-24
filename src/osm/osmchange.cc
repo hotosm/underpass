@@ -418,7 +418,6 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
         }
     }
 
-    // std::cout << "<Relation " << relation.id << ">" << std::endl;
     if (geometry.size() > 0) {
         geometry.erase(geometry.size() - 1);
         if (relation.isMultiPolygon()) {

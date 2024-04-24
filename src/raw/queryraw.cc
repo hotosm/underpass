@@ -383,8 +383,6 @@ QueryRaw::applyChange(const OsmRelation &relation) const
         }
         std::string geostring = ss.str();
 
-        std::cout << "Relation " << relation.id << std::endl;
-
         // Ignore empty geometries.
         if (geostring != "MULTILINESTRING()" && geostring != "POLYGON()") {
 
@@ -746,14 +744,18 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
                 }
                 if (way->isClosed()) {
                     way->polygon = { {std::begin(way->linestring), std::end(way->linestring)} };
+                    way->linestring.clear();
                 }
             }
 
             // Save Way pointer for later use. This will be used when building Relations geometries.
             if (poly.empty() || bg::within(way->linestring, poly)) {
                 if (osmchanges->waycache.count(way->id)) {
-                    osmchanges->waycache.at(way->id)->polygon = way->polygon;
-                    osmchanges->waycache.at(way->id)->linestring = way->linestring;
+                    if (way->isClosed()) {
+                        osmchanges->waycache.at(way->id)->polygon = way->polygon;
+                    } else {
+                        osmchanges->waycache.at(way->id)->linestring = way->linestring;
+                    }
                 } else {
                     osmchanges->waycache.insert(std::make_pair(way->id, std::make_shared<osmobjects::OsmWay>(*way)));
                 }
@@ -773,8 +775,6 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
                 for (auto mit = relation->members.begin(); mit != relation->members.end(); ++mit) {
                     if (mit->type == osmobjects::way && !osmchanges->waycache.count(mit->ref)) {
                         relsForWayCacheIds += std::to_string(mit->ref) + ",";
-                    } else if (osmchanges->waycache.count(mit->ref)) {
-                        std::cout << mit->ref << " is in waycache" << std::endl;
                     }
                 }
             }
