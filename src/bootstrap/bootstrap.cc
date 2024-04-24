@@ -49,11 +49,12 @@ namespace bootstrap {
 
 Bootstrap::Bootstrap(void) {}
 
-std::string
+BootstrapQueries
 Bootstrap::allTasksQueries(std::shared_ptr<std::vector<BootstrapTask>> tasks) {
-    std::string queries = "";
+    BootstrapQueries queries;
     for (auto it = tasks->begin(); it != tasks->end(); ++it) {
-        queries += it->query ;
+        queries.underpass += it->query ;
+        queries.osm += it->osmquery ;
     }
     return queries;
 }
@@ -151,7 +152,11 @@ Bootstrap::processWays() {
 
             pool.join();
 
-            db->query(allTasksQueries(tasks));
+            auto queries = allTasksQueries(tasks);
+
+            db->query(queries.underpass);
+            osmdb->query(queries.osm);
+
             lastid = ways->back().id;
             for (auto it = tasks->begin(); it != tasks->end(); ++it) {
                 count += it->processed;
@@ -200,7 +205,9 @@ Bootstrap::processNodes() {
 
         pool.join();
 
-        db->query(allTasksQueries(tasks));
+        auto queries = allTasksQueries(tasks);
+        db->query(queries.underpass);
+        osmdb->query(queries.osm);
         lastid = nodes->back().id;
         for (auto it = tasks->begin(); it != tasks->end(); ++it) {
             count += it->processed;
@@ -248,7 +255,10 @@ Bootstrap::processRelations() {
 
         pool.join();
 
-        db->query(allTasksQueries(tasks));
+        auto queries = allTasksQueries(tasks);
+        db->query(queries.underpass);
+        osmdb->query(queries.osm);
+
         lastid = relations->back().id;
         for (auto it = tasks->begin(); it != tasks->end(); ++it) {
             count += it->processed;
@@ -285,7 +295,7 @@ Bootstrap::threadBootstrapWayTask(WayTask wayTask)
             // Fill the way_refs table
             if (!norefs) {
                 for (auto ref = way.refs.begin(); ref != way.refs.end(); ++ref) {
-                    task.query += "INSERT INTO way_refs (way_id, node_id) VALUES (" + std::to_string(way.id) + "," + std::to_string(*ref) + "); ";
+                    task.osmquery += "INSERT INTO way_refs (way_id, node_id) VALUES (" + std::to_string(way.id) + "," + std::to_string(*ref) + "); ";
                 }
             }
             ++processed;
@@ -357,7 +367,7 @@ Bootstrap::threadBootstrapRelationTask(RelationTask relationTask)
             // relationval->push_back(validator->checkRelation(way, "building"));
             // Fill the rel_refs table
             for (auto mit = relation.members.begin(); mit != relation.members.end(); ++mit) {
-                task.query += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(mit->ref) + "); ";
+                task.osmquery += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(mit->ref) + "); ";
             }
             ++processed;
         }

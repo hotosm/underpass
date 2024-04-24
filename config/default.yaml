@@ -1,9 +1,9 @@
 # Underpass config file
 config:
-    - underpass_osm_db_url:
-        - underpass:underpass@localhost:5432/osm
     - underpass_db_url:
         - underpass:underpass@localhost:5432/underpass
+    - underpass_osm_db_url:
+        - underpass:underpass@localhost:5432/osm
     - planet_servers:
         - planet.maps.mail.ru
     - destdir_base:

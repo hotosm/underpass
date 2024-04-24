@@ -57,7 +57,7 @@ namespace queryraw {
 QueryRaw::QueryRaw(void) {}
 
 QueryRaw::QueryRaw(std::shared_ptr<Pq> db) {
-    osmconn = db;
+    dbconn = db;
 }
 
 std::string
@@ -716,7 +716,7 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
 
 int QueryRaw::getCount(const std::string &tableName) {
     std::string query = "select count(osm_id) from " + tableName;
-    auto result = osmconn->query(query);
+    auto result = dbconn->query(query);
     return result[0][0].as<int>();
 }
 
@@ -729,7 +729,6 @@ QueryRaw::getNodesFromDB(long lastid, int pageSize) {
     } else {
         nodesQuery += ", version, tags FROM nodes order by osm_id desc limit " + std::to_string(pageSize) + ";";
     }
-
     auto nodes_result = dbconn->query(nodesQuery);
     // Fill vector of OsmNode objects
     auto nodes = std::make_shared<std::vector<OsmNode>>();
@@ -771,7 +770,7 @@ QueryRaw::getWaysFromDB(long lastid, int pageSize, const std::string &tableName)
         waysQuery += ", version, tags FROM " + tableName + " order by osm_id desc limit " + std::to_string(pageSize) + ";";
     }
 
-    auto ways_result = osmconn->query(waysQuery);
+    auto ways_result = dbconn->query(waysQuery);
     // Fill vector of OsmWay objects
     auto ways = std::make_shared<std::vector<OsmWay>>();
     for (auto way_it = ways_result.begin(); way_it != ways_result.end(); ++way_it) {

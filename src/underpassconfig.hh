@@ -104,7 +104,7 @@ struct UnderpassConfig {
     {
 
         std::string filespec = ETCDIR;
-        filespec += "default.yaml";
+        filespec += "/default.yaml";
         if (std::filesystem::exists(filespec)) {
             yaml::Yaml yaml;
             yaml.read(filespec);

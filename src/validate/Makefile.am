@@ -54,5 +54,5 @@ AM_CPPFLAGS = \
 install-data-hook:
 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
 	cp -vp .libs/libunderpass.so $(DESTDIR)/$(pkglibdir)
-	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)/config/validate
-	cp -rvp $(top_srcdir)/config/validate/*.yaml $(DESTDIR)/$(pkglibdir)/config/validate
+	$(MKDIR_P) $(DESTDIR)$(ETCDIR)/validate
+	cp -rvp $(top_srcdir)/config/validate/*.yaml $(DESTDIR)$(ETCDIR)/validate
