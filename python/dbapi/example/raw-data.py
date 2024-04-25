@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023 Humanitarian OpenStreetMap Team
+# Copyright (c) 2023, 2024 Humanitarian OpenStreetMap Team
 #
 # This file is part of Underpass.
 #
@@ -17,22 +17,106 @@
 #     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 
 import sys,os
+import asyncio
 sys.path.append(os.path.realpath('..'))
 
 from api import raw
-from api.db import UnderpassDB
+from api.db import DB
 
-db = UnderpassDB("postgresql://localhost/underpass")
-db.connect()
-rawer = raw.Raw(db)
+async def main():
 
-results = rawer.getNodes(
-    area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-    tags = "building=yes",
-    hashtag = "",
-    dateFrom = "",
-    dateTo = "",
-    page = 0
-)
+    db = DB()
+    await db.connect()
+    rawer = raw.Raw(db)
 
-print(results)
+    # Get List of OSM features for Nodes
+    # print(
+    #     await rawer.getNodesList(raw.ListFeaturesParamsDTO(
+    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+    #         tags = "building=yes",
+    #     ))
+    # )
+
+    # # Get List of OSM features for Nodes (as JSON)
+    # print(
+    #     await rawer.getNodesList(raw.ListFeaturesParamsDTO(
+    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+    #         tags = "building=yes",
+    #     ), asJson = True)
+    # )
+
+    # Get List of OSM features for Lines
+    # print(
+    #     await rawer.getLinesList(raw.ListFeaturesParamsDTO(
+    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+    #         tags = "highway",
+    #     ))
+    # )
+
+    # Get List of OSM features for Polygons
+    # print(
+    #     await rawer.getPolygonsList(raw.ListFeaturesParamsDTO(
+    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+    #         tags = "building=yes",
+    #     ))
+    # )
+
+    # Get List of OSM features for all geometries
+    # print(
+    #     await rawer.getList(raw.ListFeaturesParamsDTO(
+    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+    #         tags = "building=yes",
+    #     ))
+    # )
+
+    # Get Raw OSM features for Nodes
+    # print(
+    #     await rawer.getNodes(raw.RawFeaturesParamsDTO(
+    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+    #         tags = "man_made=yes"
+    #     ))
+    # )
+
+    # Get Raw OSM features for Lines
+    # print(
+    #     await rawer.getLines(raw.RawFeaturesParamsDTO(
+    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+    #         tags = "highway"
+    #     ))
+    # )
+
+    # Get Raw OSM features for Nodes
+    # print(
+    #     await rawer.getNodes(raw.RawFeaturesParamsDTO(
+    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+    #         tags = "man_made=yes"
+    #     ))
+    # )
+
+    # Get Raw OSM features for Polygons
+    # print(
+    #     await rawer.getPolygons(raw.RawFeaturesParamsDTO(
+    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+    #         tags = "man_made=yes"
+    #     ), asJson=True)
+    # )
+
+    # Get Raw OSM features for Nodes (as JSON)
+    print(
+        await rawer.getNodes(raw.RawFeaturesParamsDTO(
+            area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+            tags = "man_made=yes"
+        ), asJson=True)
+    )
+
+    # Get Raw OSM features for all geometries (as JSON)
+    # print(
+    #     await rawer.getFeatures(raw.RawFeaturesParamsDTO(
+    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+    #         tags = "man_made=yes"
+    #     ), asJson=True)
+    # )
+
+asyncio.run(main())
+
+

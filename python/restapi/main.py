@@ -43,7 +43,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from models import * 
 from api import raw, stats
-from api.db import UnderpassDB
+from api.db import DB
 import config
 
 app = FastAPI()
@@ -56,7 +56,7 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-db = UnderpassDB(config.UNDERPASS_DB)
+db = DB(config.UNDERPASS_DB, config.UNDERPASS_OSM_DB)
 rawer = raw.Raw(db)
 statser = stats.Stats(db)
 

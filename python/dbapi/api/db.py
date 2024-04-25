@@ -19,21 +19,23 @@
 
 import asyncpg
 import json
+from .config import DEBUG
 
-class UnderpassDB():
-    # Default Underpass local DB configuration
-    # This might be replaced by an .ini config file
+class DB():
+    # Default DB configuration
     
     def __init__(self, connectionString = None):
-        self.connectionString = connectionString or "postgresql://underpass:underpass@postgis/underpass"
+        self.connectionString = connectionString or "postgresql://underpass:underpass@localhost:5432/underpass"
         self.pool = None
+        # Extract the name of the database
+        self.name = self.connectionString[self.connectionString.rfind('/') + 1:]
 
     async def __enter__(self):
         await self.connect()
 
     async def connect(self):
         """ Connect to the database """
-        print("Connecting to DB ...")
+        print("Connecting to DB ... " + self.connectionString if DEBUG else "")
         if not self.pool:
             try:
                 self.pool = await asyncpg.create_pool(
@@ -50,16 +52,21 @@ class UnderpassDB():
         if self.pool is not None:
             self.pool.close()
 
-    async def run(self, query, singleObject = False):
+    async def run(self, query, singleObject = False, asJson=False):
+        if DEBUG:
+            print("Running query ...")
         if not self.pool:
             await self.connect()
         if self.pool:
             try:
                 conn = await self.pool.acquire()
                 result = await conn.fetch(query)
-                if singleObject:
-                    return result[0]
-                return json.loads((result[0]['result']))
+                if asJson:
+                    if singleObject:
+                        return result[0]
+                    return json.loads((result[0]['result']))
+                else:
+                    return result
             except Exception as e: 
                 print("\n******* \n" + query + "\n******* \n")
                 print(e)

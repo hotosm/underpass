@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Copyright (c) 2023 Humanitarian OpenStreetMap Team
+# Copyright (c) 2023, 2024 Humanitarian OpenStreetMap Team
 #
 # This file is part of Underpass.
 #
@@ -20,11 +20,13 @@
 RESULTS_PER_PAGE = 25
 
 def hashtags(hashtagsList):
-    return "EXISTS ( SELECT * from unnest(hashtags) as h where {0} )".format(
-        ' OR '.join(
-            map(lambda x: "h ~* '^{0}'".format(x), hashtagsList)
+    return "EXISTS ( SELECT * from unnest(hashtags) as h where {condition} )".format(
+        condition=' OR '.join(
+            map(lambda x: "h ~* '^{hashtag}'".format(hashtag=x), hashtagsList)
         )
     )
 
 def bbox(wktMultipolygon):
-    return "ST_Intersects(bbox, ST_GeomFromText('{0}', 4326))".format(wktMultipolygon)
+    return "ST_Intersects(bbox, ST_GeomFromText('{area}', 4326))".format(
+        area=wktMultipolygon
+    )
