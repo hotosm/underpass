@@ -63,8 +63,9 @@ class DB():
                 result = await conn.fetch(query)
                 if asJson:
                     if singleObject:
-                        return result[0]
-                    return json.loads((result[0]['result']))
+                        return json.dumps(result[0])
+                    return result[0]['result']
+
                 else:
                     return result
             except Exception as e: 

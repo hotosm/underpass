@@ -102,20 +102,20 @@ async def main():
     # )
 
     # Get Raw OSM features for Nodes (as JSON)
-    print(
-        await rawer.getNodes(raw.RawFeaturesParamsDTO(
-            area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-            tags = "man_made=yes"
-        ), asJson=True)
-    )
-
-    # Get Raw OSM features for all geometries (as JSON)
     # print(
-    #     await rawer.getFeatures(raw.RawFeaturesParamsDTO(
+    #     await rawer.getNodes(raw.RawFeaturesParamsDTO(
     #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
     #         tags = "man_made=yes"
     #     ), asJson=True)
     # )
+
+    # Get Raw OSM features for all geometries (as JSON)
+    print(
+        await rawer.getFeatures(raw.RawFeaturesParamsDTO(
+            area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+            tags = "man_made=yes"
+        ), asJson=True)
+    )
 
 asyncio.run(main())
 
