@@ -57,16 +57,13 @@ Build-Depends: dpkg-dev (>= 1.13.19),
 Package: underpass
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
-	 libboost-filesystem-dev (>= 1.69),	 
-	 libboost-program-options-dev (>= 1.69),
-	 libboost-locale-dev (>= 1.69),
-	 libboost-iostreams-dev (>= 1.69),
-	 libgdal28 | libgdal26,
-	 libxml++2.6-dev | libxml++3.0-dev,
-	 libpqxx-7.6,
-	 bzip2,
-	 openssl,
-	 postgis
+	libboost-all-dev (>= 1.69),
+	libxml++2.6 | libxml++2.6-2v5 | libxml++3.0,
+	libgdal26 | libgdal28 | libgdal31 | libgdal32 | libgdal33,
+	libpqxx-7.6,
+	bzip2,
+	openssl,
+	postgis
 Description: A daemon for processing OSM replication files.
 
 # Package: underpass-dbg
