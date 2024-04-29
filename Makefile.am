@@ -156,8 +156,9 @@ install-data-hook:
 	@$(MKDIR_P) $(DESTDIR)$(pkglibdir)/../system
 	cp -rvu $(srcdir)/setup/service/underpass.service $(DESTDIR)$(pkglibdir)/../system/
 
-dist-hook: apidoc
+dist-hook:
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
+	(cd docs && $(DOXYGEN))
 	cp -rvp docs/html $(DESTDIR)/$(docdir)
 
 if ENABLE_PCH
