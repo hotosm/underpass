@@ -22,6 +22,9 @@ from .filters import tagsQueryFilter, hashtagQueryFilter
 from enum import Enum
 from .config import RESULTS_PER_PAGE, RESULTS_PER_PAGE_LIST, DEBUG
 
+# This file build and run queries for getting geometry features
+# (Points, LinesStrings, Polygons) from the Raw OSM Data DB
+
 # Order by
 class OrderBy(Enum):
     createdAt = "created_at"
@@ -50,7 +53,7 @@ class OsmType(Enum):
 # Raw Features Query DTO
 @dataclass
 class RawFeaturesParamsDTO:
-    area: str
+    area: str = None
     tags: list[str] = None
     hashtag: str = ""
     dateFrom: str = ""
@@ -145,7 +148,7 @@ def listFeaturesQuery(
 
 # Build queries for returning a list of features as a JSON response
 def listQueryToJSON(query: str, params: ListFeaturesParamsDTO):
-    query = "with predata AS \n ({query}) , \n \
+    jsonQuery = "with predata AS \n ({query}) , \n \
         data as ( \n \
                 select predata.type, \n \
                 geotype, predata.id, \n \
@@ -174,12 +177,12 @@ def listQueryToJSON(query: str, params: ListFeaturesParamsDTO):
             ) if params.orderBy else "ORDER BY id DESC",
         ).replace("WHERE AND", "WHERE")
     if DEBUG:
-        print(query)
-    return query
+        print(jsonQuery)
+    return jsonQuery
 
 # Build queries for returning a raw features as a JSON (GeoJSON) response
 def rawQueryToJSON(query: str, params: RawFeaturesParamsDTO):
-    query = "with predata AS \n ({query}) , \n \
+    jsonQuery = "with predata AS \n ({query}) , \n \
         t_features AS ( \
             SELECT jsonb_build_object( 'type', 'Feature', 'id', id, 'properties', to_jsonb(predata) \
             - 'geometry' , 'geometry', ST_AsGeoJSON(geometry)::jsonb ) AS feature FROM predata  \
@@ -189,8 +192,8 @@ def rawQueryToJSON(query: str, params: RawFeaturesParamsDTO):
             query=query.replace(";","")
         )
     if DEBUG:
-        print(query)
-    return query
+        print(jsonQuery)
+    return jsonQuery
 
 # This class build and run queries for OSM Raw Data
 class Raw:
