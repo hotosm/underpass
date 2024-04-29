@@ -52,18 +52,18 @@ Build-Depends: dpkg-dev (>= 1.13.19),
 	       openssl,
 	       libpqxx-7.6,
      	       libxml++2.6-dev | libxml++-3.0,
-	       libpython3-dev
+	       libpython3-dev,
+	       doxygen
 
 Package: underpass
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
-	 libboost-filesystem-dev (>= 1.69),	 
-	 libboost-program-options-dev (>= 1.69),
-	 libboost-locale-dev (>= 1.69),
-	 libboost-iostreams-dev (>= 1.69),
-	 libgdal28 | libgdal26,
+	 libboost-filesystem (>= 1.69),	 
+	 libboost-program-options (>= 1.69),
+	 libboost-locale (>= 1.69),
+	 libboost-iostreams (>= 1.69),
+	 libgdal (>= 4.0),
 	 libxml++2.6-dev | libxml++3.0-dev,
-	 libpqxx-7.6,
 	 bzip2,
 	 openssl,
 	 postgis
