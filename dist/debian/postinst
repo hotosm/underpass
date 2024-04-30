@@ -36,7 +36,7 @@ prompt()
     if test -w /etc/default/underpass; then
 	echo "# Database configuration for ${config['title']}" >> /etc/default/underpass
     else
-	echo "ERROR: You don't have write permission to /etc/default/underpass"
+	echo "ERROR: You don't have write permission to /etc/default/underpass! use sudo"
 	exit
     fi
 
