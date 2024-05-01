@@ -20,33 +20,12 @@
 version: "3"
 
 services:
-  # Database for OSM Raw Data
-  osm_db:
-    image: postgis/postgis:${OSM_DB_TAG:-15-3.3-alpine}
-    container_name: "osm_db"
-    ports:
-      - "${DB_PORT:-5439}:5432"
-    environment:
-      - POSTGRES_DB=osm
-      - POSTGRES_USER=underpass
-      - POSTGRES_PASSWORD=underpass
-    volumes:
-      - ./data_osm:/var/lib/postgresql/data
-    restart: on-failure
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "200k"
-        max-file: "10"
-    networks:
-      internal:
-
   # Database for Underpass
   underpass_db:
     image: postgis/postgis:${UNDERPASS_DB_TAG:-15-3.3-alpine}
     container_name: "underpass_db"
     ports:
-      - "${DB_PORT:-5440}:5432"
+      - "${DB_PORT:-5439}:5432"
     environment:
       - POSTGRES_DB=underpass
       - POSTGRES_USER=underpass
@@ -62,6 +41,27 @@ services:
     networks:
       internal:
 
+# Database for OSM Raw Data
+  # osm_db:
+  #   image: postgis/postgis:${OSM_DB_TAG:-15-3.3-alpine}
+  #   container_name: "osm_db"
+  #   ports:
+  #     - "${DB_PORT:-5440}:5432"
+  #   environment:
+  #     - POSTGRES_DB=osm
+  #     - POSTGRES_USER=underpass
+  #     - POSTGRES_PASSWORD=underpass
+  #   volumes:
+  #     - ./data_osm:/var/lib/postgresql/data
+  #   restart: on-failure
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "200k"
+  #       max-file: "10"
+  #   networks:
+  #     internal:
+
   # Underpass
   underpass:
     image: "ghcr.io/hotosm/underpass:${TAG_OVERRIDE:-debug}"
@@ -75,7 +75,7 @@ services:
     depends_on: [underpass_db, osm_db]
     environment:
       - REPLICATOR_UNDERPASS_DB_URL=underpass:underpass@underpass_db/underpass
-      - REPLICATOR_OSM_DB_URL=underpass:underpass@osm_db/osm
+      - REPLICATOR_OSM_DB_URL=underpass:underpass@underpass_db/underpass
 
     command: tail -f /dev/null
     volumes:
@@ -103,7 +103,7 @@ services:
       internal:
     environment:
       - UNDERPASS_API_DB=postgresql://underpass:underpass@underpass/underpass
-      - UNDERPASS_API_OSM_DB=postgresql://underpass:underpass@osm_db/osm
+      - UNDERPASS_API_DB=postgresql://underpass:underpass@underpass/underpass
 
 networks:
   internal:

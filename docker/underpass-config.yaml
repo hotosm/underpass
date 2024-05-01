@@ -1,7 +1,7 @@
 # Underpass config file
 config:
     - underpass_osm_db_url:
-        - underpass:underpass@osm_db:5432/osm
+        - underpass:underpass@underpass_db:5432/underpass
     - underpass_db_url:
         - underpass:underpass@underpass_db:5432/underpass
     - planet_servers:

@@ -160,7 +160,7 @@ struct UnderpassConfig {
         }
     };
 
-    std::string underpass_osm_db_url = "localhost/osm";
+    std::string underpass_osm_db_url = "localhost/underpass";
     std::string underpass_db_url = "localhost/underpass";
     std::string destdir_base;
     std::string planet_server;
