@@ -21,8 +21,10 @@ from dataclasses import dataclass
 from .filters import tagsQueryFilter, hashtagQueryFilter
 from enum import Enum
 from .config import RESULTS_PER_PAGE, RESULTS_PER_PAGE_LIST, DEBUG
+from .sharedTypes import Table, GeoType
+import json
 
-# This file build and run queries for getting geometry features
+# Build and run queries for getting geometry features
 # (Points, LinesStrings, Polygons) from the Raw OSM Data DB
 
 # Order by
@@ -38,19 +40,13 @@ class Table(Enum):
     polygons = "ways_poly"
     relations = "relations"
 
-# Geometry types
-class GeoType(Enum):
-    polygons = "Polygon"
-    lines = "LineString"
-    nodes = "Node"
-
 # OSM types
 class OsmType(Enum):
     nodes = "node"
     lines = "way"
     polygons = "way"
 
-# Raw Features Query DTO
+# Raw Features parameters  DTO
 @dataclass
 class RawFeaturesParamsDTO:
     area: str = None
@@ -60,7 +56,7 @@ class RawFeaturesParamsDTO:
     dateTo: str = ""
     table: Table = Table.nodes
 
-# List Features Query DTO
+# List Features parameters DTO
 @dataclass
 class ListFeaturesParamsDTO(RawFeaturesParamsDTO):
     orderBy: OrderBy = OrderBy.id
@@ -195,6 +191,15 @@ def rawQueryToJSON(query: str, params: RawFeaturesParamsDTO):
         print(jsonQuery)
     return jsonQuery
 
+def deserializeTags(data):
+    result = []
+    for row in data:
+        row_dict = dict(row)
+        row_dict['tags'] = json.loads(row['tags'])
+        result.append(row_dict)
+    return result
+
+
 # This class build and run queries for OSM Raw Data
 class Raw:
     def __init__(self,db):
@@ -239,7 +244,10 @@ class Raw:
         asJson: bool = False
     ):
         params.table = Table.polygons
-        return await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
+        result = await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
+        if asJson:
+            return result
+        return deserializeTags(result)
 
     # Get line features
     async def getLines(
@@ -248,7 +256,11 @@ class Raw:
        asJson: bool = False
     ):
         params.table = Table.lines
-        return await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
+        result =  await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
+        if asJson:
+            return result
+        return deserializeTags(result)
+
 
     # Get node features
     async def getNodes(
@@ -257,7 +269,10 @@ class Raw:
         asJson: bool = False
     ):
         params.table = Table.nodes
-        return await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
+        result = await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
+        if asJson:
+            return result
+        return deserializeTags(result)
 
     # Get all (polygon, line, node) features
     async def getAll(
@@ -265,33 +280,35 @@ class Raw:
         params: RawFeaturesParamsDTO,
         asJson: bool = False
     ):
-
-        polygons = await self.getPolygons(params, asJson)
-
-        print(polygons)
-        
-        lines = await self.getLines(params, asJson)
-        nodes = await self.getNodes(params, asJson)
-
         if asJson:
-            result = {'type': 'FeatureCollection', 'features': []}
+
+            polygons = json.loads(await self.getPolygons(params, asJson))
+            lines = json.loads(await self.getLines(params, asJson))
+            nodes = json.loads(await self.getNodes(params, asJson))
+
+            jsonResult = {'type': 'FeatureCollection', 'features': []}
 
             if polygons and "features" in polygons and polygons['features']:
-                result['features'] = result['features'] + polygons['features']
+                jsonResult['features'] = jsonResult['features'] + polygons['features']
 
             if lines and "features" in lines and lines['features']:
-                result['features'] = result['features'] + lines['features']
+                jsonResult['features'] = jsonResult['features'] + lines['features']
 
             elif nodes and "features" in nodes and nodes['features']:
-                result['features'] = result['features'] + nodes['features']
+                jsonResult['features'] = jsonResult['features'] + nodes['features']
         
             # elif relations and "features" in relations and relations['features']:
             #     result['features'] = result['features'] + relations['features']
 
+            result = json.dumps(jsonResult)
+            return result
+
         else:
+            polygons = await self.getPolygons(params)
+            lines = await self.getLines(params)
+            nodes = await self.getNodes(params)
             result = [polygons, lines, nodes]
-            
-        return result
+            return result
 
     # Get a list of line features
     async def getLinesList(

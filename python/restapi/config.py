@@ -20,7 +20,8 @@
 import os
 
 UNDERPASS_DB=os.getenv("UNDERPASS_API_DB") or "postgresql://localhost/underpass"
-UNDERPASS_OSM_DB=os.getenv("UNDERPASS_API_OSM_DB") or "postgresql://localhost/osm"
+UNDERPASS_OSM_DB=os.getenv("UNDERPASS_API_DB") or "postgresql://localhost/underpass"
+# UNDERPASS_OSM_DB=os.getenv("UNDERPASS_API_OSM_DB") or "postgresql://localhost/osm"
 ORIGINS = os.getenv("UNDERPASS_API_ORIGINS").split(",") if os.getenv("UNDERPASS_API_ORIGINS") else [
     "http://localhost",
     "http://localhost:5000",

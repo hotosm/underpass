@@ -111,9 +111,9 @@ async def main():
 
     # Get Raw OSM features for all geometries (as JSON)
     print(
-        await rawer.getFeatures(raw.RawFeaturesParamsDTO(
-            area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-            tags = "man_made=yes"
+        await rawer.getPolygons(raw.RawFeaturesParamsDTO(
+            area = "-64.28176188601022 -31.34986467833471,-64.10910770217268 -31.3479682248434,-64.10577675328835 -31.47636641835701,-64.28120672786282 -31.47873373712735,-64.28176188601022 -31.34986467833471",
+            tags = "amenity=hospital"
         ), asJson=True)
     )
 

@@ -18,13 +18,21 @@
 #     You should have received a copy of the GNU General Public License
 #     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 
-# This file build and run queries for getting validation results
+# Build and run queries for getting validation results
 # from the Underpass validation table in combination with raw OSM data
+#
+# This file requires to have both OSM Raw Data and Underpass tables
+# into the same database.
 
-from .raw import listFeaturesQuery
 from dataclasses import dataclass
 from enum import Enum
+from .sharedTypes import Table, GeoType
 from .filters import tagsQueryFilter, hashtagQueryFilter
+from .serialization import queryToJSON
+from .config import RESULTS_PER_PAGE, RESULTS_PER_PAGE_LIST, DEBUG
+from .raw import RawFeaturesParamsDTO, ListFeaturesParamsDTO, rawQueryToJSON, listQueryToJSON
+import json
+
 
 # Validation errorrs
 class ValidationError(Enum):
@@ -45,14 +53,7 @@ class OsmType(Enum):
     lines = "way"
     polygons = "way"
 
-# DB table names
-class Table(Enum):
-    nodes = "nodes"
-    lines = "ways_line"
-    polygons = "ways_poly"
-    relations = "relations"
-
-# Validation Count Query DTO
+# Validation Count parameters DTO
 @dataclass
 class ValidationCountParamsDTO:
     status: ValidationError
@@ -63,11 +64,13 @@ class ValidationCountParamsDTO:
     area: str = None
     table: Table = Table.nodes
 
-def countQueryToJSON(query: str):
-     jsonQuery = "with data AS \n ({query}) \n \
-        SELECT to_jsonb(data) as result from data;" \
-        .format(query=query)
-     return jsonQuery
+@dataclass
+class RawValidationFeaturesParamsDTO(RawFeaturesParamsDTO):
+    status: ValidationError = None
+
+@dataclass
+class ListValidationFeaturesParamsDTO(ListFeaturesParamsDTO):
+    status: ValidationError = None
 
 # Build queries for counting validation data
 def countQuery(
@@ -97,7 +100,93 @@ def countQuery(
         ).replace("WHERE AND", "WHERE")
 
     if asJson:
-        return countQueryToJSON(query)
+        return queryToJSON(query)
+    return query
+
+# Build queries for getting geometry features
+def geoFeaturesQuery(params: RawValidationFeaturesParamsDTO, asJson: bool = False):
+    geoType:GeoType = GeoType[params.table.name]
+    query = "SELECT '{type}' as type, \
+            {table}.osm_id as id, \n \
+            {table}.timestamp, \n \
+            ST_AsText(geom) as geometry, \n \
+            tags, \n \
+            status, \n \
+            hashtags, \n \
+            editor, \n \
+            created_at \n \
+            FROM {table} \n \
+            LEFT JOIN changesets c ON c.id = {table}.changeset \n \
+            LEFT JOIN validation ON validation.osm_id = {table}.osm_id \
+            WHERE{area}{tags}{hashtag}{date}{status} {limit}; \n \
+        ".format(
+            type=geoType.value,
+            table=params.table.value,
+            area=" AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({area})))', 4326) ) \n"
+                .format(area=params.area) if params.area else "",
+            tags=" AND (" + tagsQueryFilter(params.tags, params.table.value) + ") \n" if params.tags else "",
+            hashtag=" AND " + hashtagQueryFilter(params.hashtag, params.table.value) if params.hashtag else "",
+            date=" AND created_at >= {dateFrom} AND created_at <= {dateTo}\n"
+                .format(dateFrom=params.dateFrom, dateTo=params.dateTo) 
+                if params.dateFrom and params.dateTo else "\n",
+            status=" AND status = '{status.value}'".format(status=params.status) if (params.status) else "",
+            limit=" LIMIT {limit}".format(limit=RESULTS_PER_PAGE),
+        ).replace("WHERE AND", "WHERE")
+
+    if asJson:
+        return rawQueryToJSON(query, params)
+
+    return query
+
+
+# Build queries for getting list of features
+def listFeaturesQuery(
+        params: ListValidationFeaturesParamsDTO,
+        asJson: bool = False
+    ):
+
+    geoType:GeoType = GeoType[params.table]
+    osmType:OsmType = OsmType[params.table]
+    table:Table = Table[params.table]
+
+    query = "( \
+        SELECT '{type}' as type, \n \
+            '{geotype}' as geotype, \n \
+            {table}.osm_id as id, \n \
+            ST_X(ST_Centroid(geom)) as lat, \n \
+            ST_Y(ST_Centroid(geom)) as lon, \n \
+            {table}.timestamp, \n \
+            tags, \n \
+            {table}.changeset, \n \
+            c.created_at \n \
+            status \n \
+            FROM {table} \n \
+            LEFT JOIN changesets c ON c.id = {table}.changeset \n \
+            LEFT JOIN validation v ON v.osm_id = {table}.osm_id \n \
+            WHERE{fromDate}{toDate}{hashtag}{area}{tags}{status}{order} \
+        )\
+    ".format(
+        type=osmType.value,
+        geotype=geoType.value,
+        table=table.value,
+        fromDate=" AND created_at >= '{dateFrom}'".format(dateFrom=params.dateFrom) if (params.dateFrom) else "",
+        toDate=" AND created_at <= '{dateTo}'".format(dateTo=params.dateTo) if (params.dateTo) else "",
+        hashtag=" AND " + hashtagQueryFilter(params.hashtag, table.value) if params.hashtag else "",
+        area=" AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({area})))', 4326) )"
+            .format(
+                area=params.area
+            ) if params.area else "",
+        tags=" AND (" + tagsQueryFilter(params.tags, table.value) + ")" if params.tags else "",
+        status=" AND status = '{status.value}'".format(status=params.status) if (params.status) else "",
+        order=" AND {order} IS NOT NULL ORDER BY {order} DESC LIMIT {limit} OFFSET {offset}"
+            .format(
+                order=params.orderBy.value,
+                limit=RESULTS_PER_PAGE_LIST,
+                offset=params.page * RESULTS_PER_PAGE_LIST
+            ) if params.page else ""
+        ).replace("WHERE AND", "WHERE")
+    if asJson:
+        return listQueryToJSON(query, params)
     return query
 
 # This class build and run queries for Validation Data
@@ -112,3 +201,134 @@ class RawValidation:
         asJson: bool = False,
     ):
         return await self.db.run(countQuery(params, asJson), asJson=asJson)
+
+    # Get geometry features (lines, nodes, polygons or all)
+    async def getFeatures(
+        self,
+        params: RawFeaturesParamsDTO,
+        featureType: GeoType = None,
+        asJson: bool = False
+    ):
+        if featureType == "line":
+            return self.getLines(params, asJson)
+        elif featureType == "node":
+            return self.getNodes(params, asJson)
+        elif featureType == "polygon":
+            return self.getPolygons(params, asJson)
+        else:
+            return await self.getAll(params, asJson)
+
+    # Get polygon features
+    async def getPolygons(
+        self,
+        params: RawValidationFeaturesParamsDTO,
+        asJson: bool = False
+    ):
+        params.table = Table.polygons
+        return await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
+
+    # Get line features
+    async def getLines(
+        self,
+        params: RawValidationFeaturesParamsDTO,
+       asJson: bool = False
+    ):
+        params.table = Table.lines
+        return await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
+
+    # Get node features
+    async def getNodes(
+        self,
+        params: RawValidationFeaturesParamsDTO,
+        asJson: bool = False
+    ):
+        params.table = Table.nodes
+        return await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
+
+    # Get all (polygon, line, node) features
+    async def getAll(
+        self,
+        params: RawValidationFeaturesParamsDTO,
+        asJson: bool = False
+    ):
+        if asJson:
+
+            polygons = json.loads(await self.getPolygons(params, asJson))
+            lines = json.loads(await self.getLines(params, asJson))
+            nodes = json.loads(await self.getNodes(params, asJson))
+
+            jsonResult = {'type': 'FeatureCollection', 'features': []}
+
+            if polygons and "features" in polygons and polygons['features']:
+                jsonResult['features'] = jsonResult['features'] + polygons['features']
+
+            if lines and "features" in lines and lines['features']:
+                jsonResult['features'] = jsonResult['features'] + lines['features']
+
+            elif nodes and "features" in nodes and nodes['features']:
+                jsonResult['features'] = jsonResult['features'] + nodes['features']
+        
+            # elif relations and "features" in relations and relations['features']:
+            #     result['features'] = result['features'] + relations['features']
+
+            result = json.dumps(jsonResult)
+
+        else:
+            polygons = await self.getPolygons(params, asJson)
+            lines = await self.getLines(params, asJson)
+            nodes = await self.getNodes(params, asJson)
+            result = [polygons, lines, nodes]
+            
+        return result
+    
+    # Get a list of line features
+    async def getLinesList(
+        self,
+        params: ListValidationFeaturesParamsDTO,
+        asJson: bool = False
+    ):
+        params.table = "lines"
+        return await self.db.run(listFeaturesQuery(params, asJson), asJson=asJson)
+
+    # Get a list of node features
+    async def getNodesList(
+        self,
+        params: ListValidationFeaturesParamsDTO,
+        asJson: bool = False
+    ):
+        params.table = "nodes"
+        return await self.db.run(listFeaturesQuery(params, asJson), asJson=asJson)
+
+    # Get a list of polygon features
+    async def getPolygonsList(
+        self,
+        params: ListValidationFeaturesParamsDTO,
+        asJson: bool = False
+    ):
+        params.table = "polygons"
+        return await self.db.run(listFeaturesQuery(params, asJson), asJson=asJson)
+        
+    # Get a list of all features
+    async def getAllList(
+        self,
+        params: ListValidationFeaturesParamsDTO,
+        asJson: bool = False
+    ):
+
+        params.table = "polygons"
+        queryPolygons = listFeaturesQuery(params, asJson=False)
+        params.table = "lines"
+        queryLines = listFeaturesQuery(params, asJson=False)
+        params.table = "nodes"
+        queryNodes = listFeaturesQuery(params, asJson=False)
+
+        # Combine queries for each geometry in a single query
+        if asJson:
+            query = listQueryToJSON(
+                " UNION ".join([queryPolygons, queryLines, queryNodes]),
+                params
+            )
+        else:
+            query = " UNION ".join([queryPolygons, queryLines, queryNodes])
+
+        return await self.db.run(query, asJson=asJson)

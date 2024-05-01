@@ -1,6 +1,5 @@
-#!/usr/bin/python3
 #
-# Copyright (c) 2023, 2024 Humanitarian OpenStreetMap Team
+# Copyright (c) 2024 Humanitarian OpenStreetMap Team
 #
 # This file is part of Underpass.
 #
@@ -17,14 +16,27 @@
 #     You should have received a copy of the GNU General Public License
 #     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 
-def hashtags(hashtagsList):
-    return "EXISTS ( SELECT * from unnest(hashtags) as h where {condition} )".format(
-        condition=' OR '.join(
-            map(lambda x: "h ~* '^{hashtag}'".format(hashtag=x), hashtagsList)
-        )
+import sys,os
+import asyncio
+sys.path.append(os.path.realpath('..'))
+
+from api import stats, sharedTypes
+from api.db import DB
+
+async def main():
+
+    db = DB()
+    await db.connect()
+    statser = stats.Stats(db)
+
+    # Get List of OSM features for Nodes
+    print(
+        await statser.getCount(stats.StatsParamsDTO(
+            area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+            tags = "name=Polideportivo de Agua de Oro"
+        ), asJson=True)
     )
 
-def bbox(wktMultipolygon):
-    return "ST_Intersects(bbox, ST_GeomFromText('{area}', 4326))".format(
-        area=wktMultipolygon
-    )
+asyncio.run(main())
+
+

@@ -19,24 +19,37 @@
 
 from pydantic import BaseModel
 from typing import Union
-    
-class RawRequest(BaseModel):
-    area: Union[str, None] = None
+
+class Item(BaseModel):
+    name: str
+
+class BaseRequest(BaseModel):
+    area: str = None
     tags: str = None
     hashtag: str = None
     dateFrom: str = None
     dateTo: str = None
-    status: str = None
-    orderBy: str = None
-    page: int = None
     featureType: str = None
 
-class StatsRequest(BaseModel):
-    area: Union[str, None] = None
-    tags: str = None
-    hashtag: str = None
-    dateFrom: str = None
-    dateTo: str = None
+class BaseListRequest:
+    orderBy: str = None
+    page: int = None
+
+class BaseRawValidationRequest:
     status: str = None
-    featureType: str = None
+
+class RawRequest(BaseRequest):
+    pass
+
+class RawListRequest(BaseRequest, BaseListRequest):
+    pass
+
+class RawValidationRequest(BaseRequest, BaseRawValidationRequest):
+    pass
+
+class RawValidationListRequest(BaseRequest, BaseRawValidationRequest, BaseListRequest):
+    pass
+
+class StatsRequest(BaseRequest):
+    pass
 

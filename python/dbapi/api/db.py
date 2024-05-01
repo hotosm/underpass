@@ -63,10 +63,11 @@ class DB():
                 result = await conn.fetch(query)
                 if asJson:
                     if singleObject:
-                        return json.dumps(result[0])
+                        return result[0]['result']
                     return result[0]['result']
-
                 else:
+                    if singleObject:
+                        return result[0]
                     return result
             except Exception as e: 
                 print("\n******* \n" + query + "\n******* \n")

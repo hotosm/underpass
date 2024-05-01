@@ -29,14 +29,32 @@ async def main():
     await db.connect()
     rawval = rawValidation.RawValidation(db)
 
-    # Get validation count
+    # # Get validation count
+    # print(
+    #     await rawval.getCount(rawValidation.ValidationCountParamsDTO(
+    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+    #         tags = "building=yes",
+    #         status = rawValidation.ValidationError.badgeom,
+    #         table = rawValidation.Table.polygons,
+    #     ), asJson = True)
+    # )
+
+    # Get Raw Validation OSM features for all geometries (as JSON)
+    # print(
+    #     await rawval.getFeatures(rawValidation.RawValidationFeaturesParamsDTO(
+    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+    #         tags = "building=yes",
+    #         status = rawValidation.ValidationError.badgeom
+    #     ), asJson=True)
+    # )
+
+    # Get List of Raw Validation OSM features for Nodes
     print(
-        await rawval.getCount(rawValidation.ValidationCountParamsDTO(
+        await rawval.getPolygonsList(rawValidation.ListValidationFeaturesParamsDTO(
             area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
             tags = "building=yes",
-            status = rawValidation.ValidationError.badgeom,
-            table = rawValidation.Table.polygons,
-        ), asJson = True)
+            status = rawValidation.ValidationError.badgeom
+        ))
     )
 
 asyncio.run(main())
