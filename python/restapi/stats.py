@@ -38,7 +38,7 @@ def nodes(request: StatsRequest):
             dateTo = request.dateTo
         )
     )
-    
+
 async def lines(request: StatsRequest):
     return await stats.getLinesCount(
         StatsApi.StatsParamsDTO(
@@ -49,7 +49,7 @@ async def lines(request: StatsRequest):
             dateTo = request.dateTo
         )
     )
-    
+
 async def lines(request: StatsRequest):
     return await stats.getLinesCount(
         StatsApi.StatsParamsDTO(
@@ -60,7 +60,7 @@ async def lines(request: StatsRequest):
             dateTo = request.dateTo
         )
     )
-    
+
 async def polygons(request: StatsRequest):
     return await stats.getPolygonsCount(
         StatsApi.StatsParamsDTO(
@@ -71,7 +71,6 @@ async def polygons(request: StatsRequest):
             dateTo = request.dateTo
         )
     )
-    
 
 async def features(request: StatsRequest):
     return await stats.getCount(
@@ -83,4 +82,3 @@ async def features(request: StatsRequest):
             dateTo = request.dateTo
         )
     )
-    

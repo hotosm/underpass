@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from .filters import tagsQueryFilter, hashtagQueryFilter
 from .sharedTypes import Table, GeoType
 from .serialization import queryToJSON
+import json
 
 # Stats parameters DTO
 @dataclass
@@ -35,11 +36,9 @@ class StatsParamsDTO:
     table: Table = Table.nodes
 
 def featureCountQuery(params: StatsParamsDTO, asJson: bool = False):
-    geoType:GeoType = GeoType[params.table.name]
     query = "select count(distinct {table}.osm_id) AS count FROM {table} \
         LEFT JOIN changesets c ON changeset = c.id \
         WHERE{area}{tags}{hashtag}{date}".format(
-            type=geoType.value,
             table=params.table.value,
             area=" AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({area})))', 4326) ) \n"
                 .format(area=params.area) if params.area else "",
@@ -55,7 +54,7 @@ def featureCountQuery(params: StatsParamsDTO, asJson: bool = False):
 
 class Stats:
     def __init__(self, db):
-        self.underpassDB = db
+        self.db = db
 
     async def getNodesCount(
         self, 
@@ -63,8 +62,9 @@ class Stats:
         asJson: bool = False
     ):
         params.table = Table.nodes
-        query = featureCountQuery(params,asJson=asJson)
-        return(await self.underpassDB.run(query, asJson=asJson, singleObject=True))
+        result = await self.db.run(featureCountQuery(params), singleObject=True)
+        if asJson:
+            return json.dumps(dict(result))
 
     async def getLinesCount(
         self, 
@@ -72,8 +72,9 @@ class Stats:
         asJson: bool = False
     ):
         params.table = Table.lines
-        query = featureCountQuery(params,asJson=asJson)
-        return(await self.underpassDB.run(query, asJson=asJson, singleObject=True))
+        result = await self.db.run(featureCountQuery(params), singleObject=True)
+        if asJson:
+            return json.dumps(dict(result))
 
     async def getPolygonsCount(
         self, 
@@ -81,8 +82,11 @@ class Stats:
         asJson: bool = False
     ):
         params.table = Table.polygons
-        query = featureCountQuery(params,asJson=asJson)
-        return(await self.underpassDB.run(query, asJson=asJson, singleObject=True))
+        result = await self.db.run(featureCountQuery(params), singleObject=True)
+        if asJson:
+            return json.dumps(dict(result))
+        return result
+
 
     async def getCount(
         self, 
@@ -105,6 +109,7 @@ class Stats:
             "({queryNodes})".format(queryNodes=queryNodes)
         ]))
 
-        result = await self.underpassDB.run(query, asJson=asJson, singleObject=True)
-
-        return(result)
+        result = await self.db.run(query, singleObject=True)
+        if asJson:
+            return json.dumps(dict(result))
+        return result

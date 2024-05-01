@@ -41,7 +41,7 @@ import sys,os
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from models import StatsRequest, RawRequest, RawListRequest, RawValidationRequest, RawValidationListRequest
+from models import StatsRequest, RawRequest, RawListRequest, RawValidationRequest, RawValidationListRequest, RawValidationStatsRequest
 import raw, stats, rawval
 import config
 
@@ -110,7 +110,7 @@ class Raw:
 class RawValidation:
     @app.post("/raw-validation/polygons")
     async def polygons(request: RawValidationRequest):
-        return await raw.polygons(request)
+        return await rawval.polygons(request)
 
     @app.post("/raw-validation/nodes")
     async def nodes(request: RawValidationRequest):
@@ -139,6 +139,22 @@ class RawValidation:
     @app.post("/raw-validation/lines/list")
     async def lines(request: RawValidationListRequest):
         return await rawval.linesList(request)
+
+    @app.post("/raw-validation/stats")
+    async def lines(request: RawValidationStatsRequest):
+        return await rawval.count(request)
+
+    @app.post("/raw-validation/stats/nodes")
+    async def lines(request: RawValidationStatsRequest):
+        return await rawval.nodesCount(request)
+
+    @app.post("/raw-validation/stats/polygons")
+    async def lines(request: RawValidationStatsRequest):
+        return await rawval.polygonsCount(request)
+
+    @app.post("/raw-validation/stats/lines")
+    async def lines(request: RawValidationStatsRequest):
+        return await rawval.linesCount(request)
 
 # Statistics
 

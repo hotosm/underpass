@@ -30,88 +30,8 @@ async def main():
     rawer = raw.Raw(db)
 
     # Get List of OSM features for Nodes
-    # print(
-    #     await rawer.getNodesList(raw.ListFeaturesParamsDTO(
-    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-    #         tags = "building=yes",
-    #     ))
-    # )
-
-    # # Get List of OSM features for Nodes (as JSON)
-    # print(
-    #     await rawer.getNodesList(raw.ListFeaturesParamsDTO(
-    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-    #         tags = "building=yes",
-    #     ), asJson = True)
-    # )
-
-    # Get List of OSM features for Lines
-    # print(
-    #     await rawer.getLinesList(raw.ListFeaturesParamsDTO(
-    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-    #         tags = "highway",
-    #     ))
-    # )
-
-    # Get List of OSM features for Polygons
-    # print(
-    #     await rawer.getPolygonsList(raw.ListFeaturesParamsDTO(
-    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-    #         tags = "building=yes",
-    #     ))
-    # )
-
-    # Get List of OSM features for all geometries
-    # print(
-    #     await rawer.getList(raw.ListFeaturesParamsDTO(
-    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-    #         tags = "building=yes",
-    #     ))
-    # )
-
-    # Get Raw OSM features for Nodes
-    # print(
-    #     await rawer.getNodes(raw.RawFeaturesParamsDTO(
-    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-    #         tags = "man_made=yes"
-    #     ))
-    # )
-
-    # Get Raw OSM features for Lines
-    # print(
-    #     await rawer.getLines(raw.RawFeaturesParamsDTO(
-    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-    #         tags = "highway"
-    #     ))
-    # )
-
-    # Get Raw OSM features for Nodes
-    # print(
-    #     await rawer.getNodes(raw.RawFeaturesParamsDTO(
-    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-    #         tags = "man_made=yes"
-    #     ))
-    # )
-
-    # Get Raw OSM features for Polygons
-    # print(
-    #     await rawer.getPolygons(raw.RawFeaturesParamsDTO(
-    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-    #         tags = "man_made=yes"
-    #     ), asJson=True)
-    # )
-
-    # Get Raw OSM features for Nodes (as JSON)
-    # print(
-    #     await rawer.getNodes(raw.RawFeaturesParamsDTO(
-    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-    #         tags = "man_made=yes"
-    #     ), asJson=True)
-    # )
-
-    # Get Raw OSM features for all geometries (as JSON)
     print(
-        await rawer.getPolygons(raw.RawFeaturesParamsDTO(
+        await rawer.getNodes(raw.ListFeaturesParamsDTO(
             area = "-64.28176188601022 -31.34986467833471,-64.10910770217268 -31.3479682248434,-64.10577675328835 -31.47636641835701,-64.28120672786282 -31.47873373712735,-64.28176188601022 -31.34986467833471",
             tags = "amenity=hospital"
         ), asJson=True)

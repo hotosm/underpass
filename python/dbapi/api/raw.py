@@ -22,6 +22,7 @@ from .filters import tagsQueryFilter, hashtagQueryFilter
 from enum import Enum
 from .config import RESULTS_PER_PAGE, RESULTS_PER_PAGE_LIST, DEBUG
 from .sharedTypes import Table, GeoType
+from .serialization import deserializeTags
 import json
 
 # Build and run queries for getting geometry features
@@ -191,15 +192,6 @@ def rawQueryToJSON(query: str, params: RawFeaturesParamsDTO):
         print(jsonQuery)
     return jsonQuery
 
-def deserializeTags(data):
-    result = []
-    for row in data:
-        row_dict = dict(row)
-        row_dict['tags'] = json.loads(row['tags'])
-        result.append(row_dict)
-    return result
-
-
 # This class build and run queries for OSM Raw Data
 class Raw:
     def __init__(self,db):
@@ -317,7 +309,10 @@ class Raw:
         asJson: bool = False
     ):
         params.table = "lines"
-        return await self.db.run(listFeaturesQuery(params, asJson), asJson=asJson)
+        result = await self.db.run(listFeaturesQuery(params, asJson), asJson=asJson)
+        if asJson:
+            return result
+        return deserializeTags(result)
 
     # Get a list of node features
     async def getNodesList(
@@ -326,7 +321,10 @@ class Raw:
         asJson: bool = False
     ):
         params.table = "nodes"
-        return await self.db.run(listFeaturesQuery(params, asJson), asJson=asJson)
+        result = await self.db.run(listFeaturesQuery(params, asJson), asJson=asJson)
+        if asJson:
+            return result
+        return deserializeTags(result)
 
     # Get a list of polygon features
     async def getPolygonsList(
@@ -335,7 +333,11 @@ class Raw:
         asJson: bool = False
     ):
         params.table = "polygons"
-        return await self.db.run(listFeaturesQuery(params, asJson), asJson=asJson)
+        result = await self.db.run(listFeaturesQuery(params, asJson), asJson=asJson)
+        if asJson:
+            return result
+        return deserializeTags(result)
+
         
     # Get a list of all features
     async def getAllList(
@@ -360,4 +362,7 @@ class Raw:
         else:
             query = " UNION ".join([queryPolygons, queryLines, queryNodes])
 
-        return await self.db.run(query, asJson=asJson)
+        result = await self.db.run(query, asJson=asJson)
+        if asJson:
+            return result
+        return deserializeTags(result)

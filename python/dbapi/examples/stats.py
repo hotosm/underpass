@@ -20,20 +20,20 @@ import sys,os
 import asyncio
 sys.path.append(os.path.realpath('..'))
 
-from api import stats, sharedTypes
+from api import stats as StatsApi
 from api.db import DB
 
 async def main():
 
     db = DB()
     await db.connect()
-    statser = stats.Stats(db)
+    stats = StatsApi.Stats(db)
 
     # Get List of OSM features for Nodes
     print(
-        await statser.getCount(stats.StatsParamsDTO(
-            area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-            tags = "name=Polideportivo de Agua de Oro"
+        await stats.getCount(StatsApi.StatsParamsDTO(
+            area = "-64.28176188601022 -31.34986467833471,-64.10910770217268 -31.3479682248434,-64.10577675328835 -31.47636641835701,-64.28120672786282 -31.47873373712735,-64.28176188601022 -31.34986467833471",
+            tags = "amenity=hospital"
         ), asJson=True)
     )
 

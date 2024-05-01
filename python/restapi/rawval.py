@@ -20,64 +20,65 @@
 import sys,os
 sys.path.append(os.path.realpath('../dbapi'))
 
-from models import RawValidationRequest, RawValidationListRequest
+from models import RawValidationRequest, RawValidationListRequest, RawValidationStatsRequest
 from api import rawValidation as RawValidationApi
 from api.db import DB
 import config
+import json
 
 db = DB(config.UNDERPASS_DB)
 rawval = RawValidationApi.RawValidation(db)
 
 async def polygons(request: RawValidationRequest):
-    return await rawval.getPolygons(
+    return json.loads(await  rawval.getPolygons(
         RawValidationApi.RawValidationFeaturesParamsDTO(
             area = request.area,
             tags = request.tags,
             hashtag = request.hashtag,
             dateFrom = request.dateFrom,
             dateTo = request.dateTo,
-            status = request.status,
-        )
+            status = RawValidationApi.ValidationError(request.status) if request.status else None
+        ), asJson=True)
     )
 
 async def nodes(request: RawValidationRequest):
-    return await rawval.getNodes(
+    return json.loads(await rawval.getNodes(
         RawValidationApi.RawValidationFeaturesParamsDTO(
             area = request.area,
             tags = request.tags,
             hashtag = request.hashtag,
             dateFrom = request.dateFrom,
             dateTo = request.dateTo,
-            status = request.status,
-        )
+            status = RawValidationApi.ValidationError(request.status) if request.status else None
+        ), asJson=True)
     )
 
 async def lines(request: RawValidationRequest):
-    return await rawval.getLines(
+    return json.loads(await rawval.getLines(
         RawValidationApi.RawValidationFeaturesParamsDTO(
             area = request.area,
             tags = request.tags,
             hashtag = request.hashtag,
             dateFrom = request.dateFrom,
             dateTo = request.dateTo,
-            status = request.status,
-        )
+            status = RawValidationApi.ValidationError(request.status) if request.status else None
+       ), asJson=True)
     )
 
 async def features(request: RawValidationRequest):
-    return await rawval.getFeatures(
+    return json.loads(await rawval.getFeatures(
         RawValidationApi.RawValidationFeaturesParamsDTO(
             area = request.area,
             tags = request.tags,
             hashtag = request.hashtag,
             dateFrom = request.dateFrom,
             dateTo = request.dateTo,
-            status = request.status,
-        )
+            status = RawValidationApi.ValidationError(request.status) if request.status else None
+         ), asJson=True)
     )
 
-async def polygonList(request: RawValidationListRequest):
-    return await rawval.getList(
+async def polygonsList(request: RawValidationListRequest):
+    return await rawval.getPolygonsList(
         RawValidationApi.ListValidationFeaturesParamsDTO(
             area = request.area,
             tags = request.tags,
@@ -86,12 +87,12 @@ async def polygonList(request: RawValidationListRequest):
             dateTo = request.dateTo,
             orderBy = request.orderBy,
             page = request.page,
-            status = request.status,
+            status = RawValidationApi.ValidationError(request.status) if request.status else None
         )
     )
 
 async def nodesList(request: RawValidationListRequest):
-    return await rawval.getList(
+    return await rawval.getNodesList(
         RawValidationApi.ListValidationFeaturesParamsDTO(
             area = request.area,
             tags = request.tags,
@@ -100,12 +101,12 @@ async def nodesList(request: RawValidationListRequest):
             dateTo = request.dateTo,
             orderBy = request.orderBy,
             page = request.page,
-            status = request.status,
+            status = RawValidationApi.ValidationError(request.status) if request.status else None
         )
     )
 
 async def linesList(request: RawValidationListRequest):
-    return await rawval.getList(
+    return await rawval.getLinesList(
         RawValidationApi.ListValidationFeaturesParamsDTO(
             area = request.area,
             tags = request.tags,
@@ -114,7 +115,7 @@ async def linesList(request: RawValidationListRequest):
             dateTo = request.dateTo,
             orderBy = request.orderBy,
             page = request.page,
-            status = request.status,
+            status = RawValidationApi.ValidationError(request.status) if request.status else None
         )
     )
 
@@ -128,7 +129,54 @@ async def list(request: RawValidationListRequest):
             dateTo = request.dateTo,
             orderBy = request.orderBy,
             page = request.page,
-            status = request.status,
+            status = RawValidationApi.ValidationError(request.status) if request.status else None
         )
     )
 
+async def count(request: RawValidationStatsRequest):
+    return await rawval.getCount(
+        RawValidationApi.ValidationCountParamsDTO(
+            area = request.area,
+            tags = request.tags,
+            hashtag = request.hashtag,
+            dateFrom = request.dateFrom,
+            dateTo = request.dateTo,
+            status = RawValidationApi.ValidationError(request.status) if request.status else None
+        )
+    )
+
+async def nodesCount(request: RawValidationStatsRequest):
+    return await rawval.getNodesCount(
+        RawValidationApi.ValidationCountParamsDTO(
+            area = request.area,
+            tags = request.tags,
+            hashtag = request.hashtag,
+            dateFrom = request.dateFrom,
+            dateTo = request.dateTo,
+            status = RawValidationApi.ValidationError(request.status) if request.status else None
+        )
+    )
+
+async def linesCount(request: RawValidationStatsRequest):
+    return await rawval.getLinesCount(
+        RawValidationApi.ValidationCountParamsDTO(
+            area = request.area,
+            tags = request.tags,
+            hashtag = request.hashtag,
+            dateFrom = request.dateFrom,
+            dateTo = request.dateTo,
+            status = RawValidationApi.ValidationError(request.status) if request.status else None
+        )
+    )
+
+async def polygonsCount(request: RawValidationStatsRequest):
+    return await rawval.getPolygonsCount(
+        RawValidationApi.ValidationCountParamsDTO(
+            area = request.area,
+            tags = request.tags,
+            hashtag = request.hashtag,
+            dateFrom = request.dateFrom,
+            dateTo = request.dateTo,
+            status = RawValidationApi.ValidationError(request.status) if request.status else None
+        )
+    )

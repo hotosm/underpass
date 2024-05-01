@@ -31,6 +31,7 @@ from .filters import tagsQueryFilter, hashtagQueryFilter
 from .serialization import queryToJSON
 from .config import RESULTS_PER_PAGE, RESULTS_PER_PAGE_LIST, DEBUG
 from .raw import RawFeaturesParamsDTO, ListFeaturesParamsDTO, rawQueryToJSON, listQueryToJSON
+from .serialization import deserializeTags
 import json
 
 
@@ -129,10 +130,9 @@ def geoFeaturesQuery(params: RawValidationFeaturesParamsDTO, asJson: bool = Fals
             date=" AND created_at >= {dateFrom} AND created_at <= {dateTo}\n"
                 .format(dateFrom=params.dateFrom, dateTo=params.dateTo) 
                 if params.dateFrom and params.dateTo else "\n",
-            status=" AND status = '{status.value}'".format(status=params.status) if (params.status) else "",
+            status=" AND status = '{status}'".format(status=params.status.value) if (params.status) else "",
             limit=" LIMIT {limit}".format(limit=RESULTS_PER_PAGE),
         ).replace("WHERE AND", "WHERE")
-
     if asJson:
         return rawQueryToJSON(query, params)
 
@@ -158,7 +158,7 @@ def listFeaturesQuery(
             {table}.timestamp, \n \
             tags, \n \
             {table}.changeset, \n \
-            c.created_at \n \
+            c.created_at, \n \
             status \n \
             FROM {table} \n \
             LEFT JOIN changesets c ON c.id = {table}.changeset \n \
@@ -177,7 +177,7 @@ def listFeaturesQuery(
                 area=params.area
             ) if params.area else "",
         tags=" AND (" + tagsQueryFilter(params.tags, table.value) + ")" if params.tags else "",
-        status=" AND status = '{status.value}'".format(status=params.status) if (params.status) else "",
+        status=" AND status = '{status}'".format(status=params.status.value) if (params.status) else "",
         order=" AND {order} IS NOT NULL ORDER BY {order} DESC LIMIT {limit} OFFSET {offset}"
             .format(
                 order=params.orderBy.value,
@@ -195,12 +195,57 @@ class RawValidation:
         self.db = db
 
     # Get count of validation errors
-    async def getCount(
-        self,
+    async def getNodesCount(
+        self, 
         params: ValidationCountParamsDTO,
-        asJson: bool = False,
+        asJson: bool = False
     ):
-        return await self.db.run(countQuery(params, asJson), asJson=asJson)
+        params.table = Table.nodes
+        query = countQuery(params,asJson=asJson)
+        return(await self.db.run(query, asJson=asJson, singleObject=True))
+
+    async def getLinesCount(
+        self, 
+        params: ValidationCountParamsDTO,
+        asJson: bool = False
+    ):
+        params.table = Table.lines
+        query = countQuery(params,asJson=asJson)
+        return(await self.db.run(query, asJson=asJson, singleObject=True))
+
+    async def getPolygonsCount(
+        self, 
+        params: ValidationCountParamsDTO,
+        asJson: bool = False
+    ):
+        params.table = Table.polygons
+        query = countQuery(params,asJson=asJson)
+        return(await self.db.run(query, asJson=asJson, singleObject=True))
+
+    async def getCount(
+        self, 
+        params: ValidationCountParamsDTO,
+        asJson: bool = False
+    ):
+
+        params.table = Table.nodes
+        queryNodes = countQuery(params)
+        nodesCount = await self.db.run(queryNodes, singleObject=True)
+
+        params.table = Table.lines
+        queryLines = countQuery(params)
+        linesCount = await self.db.run(queryLines, singleObject=True)
+
+        params.table = Table.polygons
+        queryPolygons = countQuery(params)
+        polygonsCount = await self.db.run(queryPolygons, singleObject=True)
+
+        result = {
+            "total": nodesCount['total'] + linesCount['total'] + + polygonsCount['total'],
+            "count":  nodesCount['count'] + linesCount['count'] + + polygonsCount['count']
+        }
+
+        return(result)
 
     # Get geometry features (lines, nodes, polygons or all)
     async def getFeatures(
@@ -225,7 +270,11 @@ class RawValidation:
         asJson: bool = False
     ):
         params.table = Table.polygons
-        return await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
+        result = await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
+        if asJson:
+            return result
+        return deserializeTags(result)
+
 
     # Get line features
     async def getLines(
@@ -234,7 +283,10 @@ class RawValidation:
        asJson: bool = False
     ):
         params.table = Table.lines
-        return await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
+        result = await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
+        if asJson:
+            return result
+        return deserializeTags(result)
 
     # Get node features
     async def getNodes(
@@ -243,7 +295,10 @@ class RawValidation:
         asJson: bool = False
     ):
         params.table = Table.nodes
-        return await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
+        result = await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
+        if asJson:
+            return result
+        return deserializeTags(result)
 
     # Get all (polygon, line, node) features
     async def getAll(
@@ -277,7 +332,7 @@ class RawValidation:
             polygons = await self.getPolygons(params, asJson)
             lines = await self.getLines(params, asJson)
             nodes = await self.getNodes(params, asJson)
-            result = [polygons, lines, nodes]
+            result = polygons + lines + nodes
             
         return result
     
@@ -288,7 +343,10 @@ class RawValidation:
         asJson: bool = False
     ):
         params.table = "lines"
-        return await self.db.run(listFeaturesQuery(params, asJson), asJson=asJson)
+        result = await self.db.run(listFeaturesQuery(params, asJson), asJson=asJson)
+        if asJson:
+            return result
+        return deserializeTags(result)
 
     # Get a list of node features
     async def getNodesList(
@@ -297,7 +355,10 @@ class RawValidation:
         asJson: bool = False
     ):
         params.table = "nodes"
-        return await self.db.run(listFeaturesQuery(params, asJson), asJson=asJson)
+        result = await self.db.run(listFeaturesQuery(params, asJson), asJson=asJson)
+        if asJson:
+            return result
+        return deserializeTags(result)
 
     # Get a list of polygon features
     async def getPolygonsList(
@@ -306,15 +367,17 @@ class RawValidation:
         asJson: bool = False
     ):
         params.table = "polygons"
-        return await self.db.run(listFeaturesQuery(params, asJson), asJson=asJson)
-        
+        result = await self.db.run(listFeaturesQuery(params, asJson), asJson=asJson)
+        if asJson:
+            return result
+        return deserializeTags(result)
+
     # Get a list of all features
-    async def getAllList(
+    async def getList(
         self,
         params: ListValidationFeaturesParamsDTO,
         asJson: bool = False
     ):
-
         params.table = "polygons"
         queryPolygons = listFeaturesQuery(params, asJson=False)
         params.table = "lines"
@@ -331,4 +394,7 @@ class RawValidation:
         else:
             query = " UNION ".join([queryPolygons, queryLines, queryNodes])
 
-        return await self.db.run(query, asJson=asJson)
+        result = await self.db.run(query, asJson=asJson)
+        if asJson:
+            return result
+        return deserializeTags(result)

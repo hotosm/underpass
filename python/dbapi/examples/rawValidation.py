@@ -29,32 +29,13 @@ async def main():
     await db.connect()
     rawval = rawValidation.RawValidation(db)
 
-    # # Get validation count
-    # print(
-    #     await rawval.getCount(rawValidation.ValidationCountParamsDTO(
-    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-    #         tags = "building=yes",
-    #         status = rawValidation.ValidationError.badgeom,
-    #         table = rawValidation.Table.polygons,
-    #     ), asJson = True)
-    # )
-
-    # Get Raw Validation OSM features for all geometries (as JSON)
-    # print(
-    #     await rawval.getFeatures(rawValidation.RawValidationFeaturesParamsDTO(
-    #         area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-    #         tags = "building=yes",
-    #         status = rawValidation.ValidationError.badgeom
-    #     ), asJson=True)
-    # )
-
-    # Get List of Raw Validation OSM features for Nodes
+    # Get List of Raw Validation OSM features for Polygons
     print(
-        await rawval.getPolygonsList(rawValidation.ListValidationFeaturesParamsDTO(
-            area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
+        await rawval.getPolygons(rawValidation.ListValidationFeaturesParamsDTO(
+            area = "-64.28176188601022 -31.34986467833471,-64.10910770217268 -31.3479682248434,-64.10577675328835 -31.47636641835701,-64.28120672786282 -31.47873373712735,-64.28176188601022 -31.34986467833471",
             tags = "building=yes",
             status = rawValidation.ValidationError.badgeom
-        ))
+        ), asJson=True)
     )
 
 asyncio.run(main())

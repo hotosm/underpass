@@ -24,57 +24,57 @@ from models import RawRequest, RawListRequest
 from api import raw as RawApi
 from api.db import DB
 import config
+import json
 
 db = DB(config.UNDERPASS_OSM_DB)
 raw = RawApi.Raw(db)
 
 async def polygons(request: RawRequest):
-    return await raw.getPolygons(
+    return json.loads(await raw.getPolygons(
         RawApi.RawFeaturesParamsDTO(
             area = request.area,
             tags = request.tags,
             hashtag = request.hashtag,
             dateFrom = request.dateFrom,
             dateTo = request.dateTo,
-        )
+        ), asJson=True)
     )
 
 async def nodes(request: RawRequest):
-    return await raw.getNodes(
+    return json.loads(await raw.getNodes(
         RawApi.RawFeaturesParamsDTO(
             area = request.area,
             tags = request.tags,
             hashtag = request.hashtag,
             dateFrom = request.dateFrom,
             dateTo = request.dateTo,
-        )
+        ), asJson=True)
     )
 
 async def lines(request: RawRequest):
-    return await raw.getLines(
+    return json.loads(await raw.getLines(
         RawApi.RawFeaturesParamsDTO(
             area = request.area,
             tags = request.tags,
             hashtag = request.hashtag,
             dateFrom = request.dateFrom,
             dateTo = request.dateTo,
-        )
+        ), asJson=True)
     )
 
 async def features(request: RawRequest):
-    return await raw.getFeatures(
+    return json.loads(await raw.getFeatures(
         RawApi.RawFeaturesParamsDTO(
             area = request.area,
             tags = request.tags,
             hashtag = request.hashtag,
             dateFrom = request.dateFrom,
             dateTo = request.dateTo,
-        )
-
+       ), asJson=True)
     )
 
-async def polygonList(request: RawListRequest):
-    return await raw.getList(
+async def polygonsList(request: RawListRequest):
+    return await raw.getPolygonsList(
         RawApi.ListFeaturesParamsDTO(
             area = request.area,
             tags = request.tags,
@@ -87,7 +87,7 @@ async def polygonList(request: RawListRequest):
     )
 
 async def nodesList(request: RawListRequest):
-    return await raw.getList(
+    return await raw.getNodesList(
         RawApi.ListFeaturesParamsDTO(
             area = request.area,
             tags = request.tags,
@@ -100,7 +100,7 @@ async def nodesList(request: RawListRequest):
     )
 
 async def linesList(request: RawListRequest):
-    return await raw.getList(
+    return await raw.getLinesList(
         RawApi.ListFeaturesParamsDTO(
             area = request.area,
             tags = request.tags,

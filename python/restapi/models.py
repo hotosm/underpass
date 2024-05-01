@@ -31,25 +31,28 @@ class BaseRequest(BaseModel):
     dateTo: str = None
     featureType: str = None
 
-class BaseListRequest:
+class BaseListRequest(BaseRequest):
     orderBy: str = None
     page: int = None
 
-class BaseRawValidationRequest:
+class BaseRawValidationRequest(BaseRequest):
     status: str = None
+
+class RawValidationListRequest(BaseRawValidationRequest):
+    orderBy: str = None
+    page: int = None
 
 class RawRequest(BaseRequest):
     pass
 
-class RawListRequest(BaseRequest, BaseListRequest):
+class RawListRequest(BaseListRequest):
     pass
 
-class RawValidationRequest(BaseRequest, BaseRawValidationRequest):
-    pass
-
-class RawValidationListRequest(BaseRequest, BaseRawValidationRequest, BaseListRequest):
+class RawValidationRequest(BaseRawValidationRequest):
     pass
 
 class StatsRequest(BaseRequest):
     pass
 
+class RawValidationStatsRequest(BaseRawValidationRequest):
+    pass
