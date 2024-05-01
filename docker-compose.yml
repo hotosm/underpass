@@ -103,7 +103,7 @@ services:
       internal:
     environment:
       - UNDERPASS_API_DB=postgresql://underpass:underpass@underpass/underpass
-      - UNDERPASS_API_DB=postgresql://underpass:underpass@underpass/underpass
+      - UNDERPASS_API_OSM_DB=postgresql://underpass:underpass@underpass/underpass
 
 networks:
   internal:
