@@ -72,7 +72,7 @@ services:
      target: ${TAG_OVERRIDE:-debug}
      args:
         APP_VERSION: ${APP_VERSION:-debug}
-    depends_on: [underpass_db, osm_db]
+    depends_on: [underpass_db]
     environment:
       - REPLICATOR_UNDERPASS_DB_URL=underpass:underpass@underpass_db/underpass
       - REPLICATOR_OSM_DB_URL=underpass:underpass@underpass_db/underpass
