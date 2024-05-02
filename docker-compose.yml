@@ -41,6 +41,7 @@ services:
     networks:
       internal:
 
+# Un-comment for starting a second database
 # Database for OSM Raw Data
   # osm_db:
   #   image: postgis/postgis:${OSM_DB_TAG:-15-3.3-alpine}
@@ -78,9 +79,10 @@ services:
       - REPLICATOR_OSM_DB_URL=underpass:underpass@underpass_db/underpass
 
     command: tail -f /dev/null
-    volumes:
-      - ${PWD}:/code
-      - ./replication:/usr/local/lib/underpass/data/replication
+    # Un-comment for debugging
+    # volumes:
+    #   - ${PWD}:/code
+    #   - ./replication:/usr/local/lib/underpass/data/replication
     networks:
       internal:
 
