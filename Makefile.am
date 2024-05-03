@@ -114,11 +114,9 @@ EXTRA_DIST = \
 	setup/service/underpass.service \
 	setup/db/setupdb.sh \
 	src/testsuite \
-	docs \
 	dist/debian \
 	dist/redhat \
 	utils
-
 
 DEJATOOL = libunderpass
 
@@ -127,8 +125,8 @@ EXT := $(shell python3-config --extension-suffix)
 DIR := $(shell python3-config --configdir)
 noinst_LTLIBRARIES = underpass.la
 underpass_la_SOURCES = src/wrappers/python.cc $(libunderpass_la_SOURCES)
-underpass_la_LDFADD = $(BOOST_LIBS) libunderpass.la src/validate/libunderpass.la
-underpass_la_LDFLAGS = -module -avoid-version -no-undefined -rpath /usr/lib64/ src/validate/libunderpass.la $(BOOST_LIBS)
+underpass_la_LIBADD = $(BOOST_LIBS) libunderpass.la src/validate/libunderpass.la
+underpass_la_LDFLAGS = -module -avoid-version -no-undefined -rpath /usr/lib64/ src/validate/libunderpass.la -static $(BOOST_LIBS)
 PY_OBJECTS = $(libunderpass_la_OBJECTS:.lo=.o)
 # /usr/lib/python3.9/lib-dynload/underpass.cpython-39-x86_64-linux-gnu.so
 install-python: underpass.la
@@ -156,8 +154,9 @@ install-data-hook:
 	@$(MKDIR_P) $(DESTDIR)$(pkglibdir)/../system
 	cp -rvu $(srcdir)/setup/service/underpass.service $(DESTDIR)$(pkglibdir)/../system/
 
-dist-hook: apidoc
+dist-hook:
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
+	(cd docs && $(DOXYGEN))
 	cp -rvp docs/html $(DESTDIR)/$(docdir)
 
 if ENABLE_PCH
