@@ -36,7 +36,7 @@ build: build-stamp
 build-stamp: configure
 	dh_testdir
 	@printf "\n == BUILD ==\n\n"
-	dh_auto_build -- CXXFLAGS="-std=c++17 -g -O0"
+	dh_auto_build -- CXXFLAGS="-std=c++17 -g"
 	touch $@
 
 clean:
@@ -49,7 +49,9 @@ clean:
 install: build
 	dh_testdir
 	dh_testroot
-	dh_installdirs 
+	dh_installdirs
+	dh_installchangelogs -XChangeLog
+	dh_installdocs
 	@printf "\n == INSTALL ==\n\n"
 	dh_auto_install --destdir=debian/underpass
 	dh_systemd_enable
@@ -63,6 +65,9 @@ binary binary-arch: install
 	dh_testdir
 	dh_testroot
 	dh_installdirs
+	dh_compress
+	dh_makeshlibs
+	dh_shlibdeps
 	dh_installdeb
 	dh_installdebconf
 	dh_installchangelogs -XChangeLog
