@@ -37,6 +37,6 @@ snapshot-deb:
 	cd $(PACKAGE)-$(NOW) ; \
 	$(LN_S) dist/debian .; \
 	$(LN_S) $(srcdir)/config .; \
-	dpkg-buildpackage -rfakeroot -d -b -krob@senecass.com
+    dpkg-buildpackage -rfakeroot -d -b -uc -us
 
 .PHONY : deb snapshot-deb
