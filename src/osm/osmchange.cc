@@ -348,67 +348,66 @@ OsmChangeFile::buildRelationGeometry(osmobjects::OsmRelation &relation) {
         });
     }
 
+    // Converts all geometries to WKT strings
+
     std::string geometry = "";
     int i = 0;
+
+    // Inner parts
     for (auto pit = parts_outer.begin(); pit != parts_outer.end(); ++pit) {
         std::stringstream ss;
         std::string geometry_str;
         ++i;
         if (relation.isMultiPolygon()) {
-            if (bg::num_points(pit->polygon.outer()) > 0) {
+            if (bg::num_points(pit->polygon.outer()) > 1) {
                 ss << std::setprecision(12) << bg::wkt(pit->polygon);
                 geometry_str = ss.str();
                 // Erase "POLYGON("
                 geometry_str.erase(0,8);
                 geometry_str.erase(geometry_str.size() - 1);
-                if (geometry_str.size() > 0) {
-                    geometry += geometry_str + ",";
-                }
+                geometry += geometry_str + ",";
             }
         } else {
-            if (bg::num_points(pit->linestring) > 0) {
+            if (bg::num_points(pit->linestring) > 1) {
                 ss << std::setprecision(12) << bg::wkt(pit->linestring);
                 geometry_str = ss.str();
                 // Erase "LINESTRING("
                 geometry_str.erase(0,11);
                 geometry_str.erase(geometry_str.size() - 1);
-                if (geometry_str.size() > 0) {
-                    geometry += "(" + geometry_str + "),";
-                }
+                geometry += "(" + geometry_str + "),";
             }
         }
     }
 
+    // Outer parts
     for (auto pit = parts_inner.begin(); pit != parts_inner.end(); ++pit) {
         std::stringstream ss;
         std::string geometry_str;
         ++i;
         if (relation.isMultiPolygon()) {
-            if (bg::num_points(pit->polygon.outer()) > 0) {
+            if (bg::num_points(pit->polygon.outer()) > 1) {
                 ss << std::setprecision(12) << bg::wkt(pit->polygon);
                 geometry_str = ss.str();
                 // Erase "POLYGON("
                 geometry_str.erase(0,8);
                 geometry_str.erase(geometry_str.size() - 1);
-                if (geometry_str.size() > 0) {
-                    geometry += geometry_str + ",";
-                }
+                geometry += geometry_str + ",";
             }
         } else {
-            if (bg::num_points(pit->linestring) > 0) {
+            if (bg::num_points(pit->linestring) > 1) {
                 ss << std::setprecision(12) << bg::wkt(pit->linestring);
                 geometry_str = ss.str();
                 // Erase "LINESTRING("
                 geometry_str.erase(0,11);
                 geometry_str.erase(geometry_str.size() - 1);
-                if (geometry_str.size() > 0) {
-                    geometry += "(" + geometry_str + "),";
-                }
+                geometry += "(" + geometry_str + "),";
             }
         }
     }
 
-    if (geometry.size() > 0) {
+    // Build the final multipolygon or multilinestring to store it as the
+    // relation's geometry 
+    if (geometry.size() > 1) {
         geometry.erase(geometry.size() - 1);
         if (relation.isMultiPolygon()) {
             bg::read_wkt("POLYGON(" + geometry + ")", relation.multipolygon);

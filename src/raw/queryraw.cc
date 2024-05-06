@@ -392,8 +392,9 @@ QueryRaw::applyChange(const OsmRelation &relation) const
         }
         std::string geostring = ss.str();
 
-        // Ignore empty geometries.
-        if (geostring != "MULTILINESTRING()" && geostring != "POLYGON()") {
+        // Ignore empty geometries
+        if (geostring != "MULTILINESTRING()" && geostring != "POLYGON()"
+            && geostring != "MULTILINESTRING(())" && geostring != "POLYGON(())") {
 
             // Insert or update the full Relation, including id, tags, refs, geometry, timestamp,
             // version, user, uid and changeset
