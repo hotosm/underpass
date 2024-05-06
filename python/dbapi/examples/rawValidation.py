@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 #
 # Copyright (c) 2023, 2024 Humanitarian OpenStreetMap Team
 #
@@ -17,14 +16,28 @@
 #     You should have received a copy of the GNU General Public License
 #     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 
-def hashtags(hashtagsList):
-    return "EXISTS ( SELECT * from unnest(hashtags) as h where {condition} )".format(
-        condition=' OR '.join(
-            map(lambda x: "h ~* '^{hashtag}'".format(hashtag=x), hashtagsList)
-        )
+import sys,os
+import asyncio
+sys.path.append(os.path.realpath('..'))
+
+from api import rawValidation
+from api.db import DB
+
+async def main():
+
+    db = DB()
+    await db.connect()
+    rawval = rawValidation.RawValidation(db)
+
+    # Get List of Raw Validation OSM features for Polygons
+    print(
+        await rawval.getPolygons(rawValidation.ListValidationFeaturesParamsDTO(
+            area = "-64.28176188601022 -31.34986467833471,-64.10910770217268 -31.3479682248434,-64.10577675328835 -31.47636641835701,-64.28120672786282 -31.47873373712735,-64.28176188601022 -31.34986467833471",
+            tags = "building=yes",
+            status = rawValidation.ValidationError.badgeom
+        ), asJson=True)
     )
 
-def bbox(wktMultipolygon):
-    return "ST_Intersects(bbox, ST_GeomFromText('{area}', 4326))".format(
-        area=wktMultipolygon
-    )
+asyncio.run(main())
+
+

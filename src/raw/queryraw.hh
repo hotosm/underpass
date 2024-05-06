@@ -78,7 +78,7 @@ class QueryRaw {
     void getWaysByIds(std::string &relsForWayCacheIds, std::map<long, std::shared_ptr<osmobjects::OsmWay>> &waycache);
     // Get relations by referenced ways (used for relations geometries)
     std::list<std::shared_ptr<OsmRelation>> getRelationsByWaysRefs(std::string &wayIds) const;
-    // DB connection
+    // OSM DB connection
     std::shared_ptr<Pq> dbconn;
     // Get object (nodes, ways or relations) count from the database
     int getCount(const std::string &tableName);

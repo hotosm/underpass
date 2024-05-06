@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2021, 2022, 2023 Humanitarian OpenStreetMap Team
+# Copyright (c) 2020, 2021, 2022, 2023, 2024 Humanitarian OpenStreetMap Team
 #
 # This file is part of Underpass.
 #
@@ -20,10 +20,10 @@
 version: "3"
 
 services:
-  # Database
-  postgis:
-    image: postgis/postgis:${POSTGIS_TAG:-15-3.3-alpine}
-    container_name: "underpass_postgis"
+  # Database for Underpass
+  underpass_db:
+    image: postgis/postgis:${UNDERPASS_DB_TAG:-15-3.3-alpine}
+    container_name: "underpass_db"
     ports:
       - "${DB_PORT:-5439}:5432"
     environment:
@@ -41,6 +41,28 @@ services:
     networks:
       internal:
 
+# Un-comment for starting a second database
+# Database for OSM Raw Data
+  # osm_db:
+  #   image: postgis/postgis:${OSM_DB_TAG:-15-3.3-alpine}
+  #   container_name: "osm_db"
+  #   ports:
+  #     - "${DB_PORT:-5440}:5432"
+  #   environment:
+  #     - POSTGRES_DB=osm
+  #     - POSTGRES_USER=underpass
+  #     - POSTGRES_PASSWORD=underpass
+  #   volumes:
+  #     - ./data_osm:/var/lib/postgresql/data
+  #   restart: on-failure
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "200k"
+  #       max-file: "10"
+  #   networks:
+  #     internal:
+
   # Underpass
   underpass:
     image: "ghcr.io/hotosm/underpass:${TAG_OVERRIDE:-debug}"
@@ -51,13 +73,16 @@ services:
      target: ${TAG_OVERRIDE:-debug}
      args:
         APP_VERSION: ${APP_VERSION:-debug}
-    depends_on: [postgis]
+    depends_on: [underpass_db]
     environment:
-      - REPLICATOR_UNDERPASS_DB_URL=underpass:underpass@postgis/underpass
+      - REPLICATOR_UNDERPASS_DB_URL=underpass:underpass@underpass_db/underpass
+      - REPLICATOR_OSM_DB_URL=underpass:underpass@underpass_db/underpass
+
     command: tail -f /dev/null
+    # Un-comment for debugging
     # volumes:
-      # - ${PWD}:/code
-      # - ./replication:/code/build/replication
+    #   - ${PWD}:/code
+    #   - ./replication:/usr/local/lib/underpass/data/replication
     networks:
       internal:
 
@@ -79,26 +104,8 @@ services:
     networks:
       internal:
     environment:
-      - UNDERPASS_API_DB=postgresql://underpass:underpass@postgis/underpass
-
-  # Underpass UI
-  ui:
-    image: "ghcr.io/hotosm/underpass/ui:${APP_VERSION:-debug}"
-    container_name: "underpass_ui"
-    build:
-     context: .
-     dockerfile: docker/underpass-ui.dockerfile
-     target: debug
-     args:
-        APP_VERSION: ${APP_VERSION:-debug}
-    # # Mount underpass-ui repo
-    # volumes:
-    #   - ../underpass-ui/src:/code/src
-    #   - ../underpass-ui/playground:/code/playground
-    ports:
-      - "${UI_PORT:-8080}:5000"
-    networks:
-      internal:
+      - UNDERPASS_API_DB=postgresql://underpass:underpass@underpass/underpass
+      - UNDERPASS_API_OSM_DB=postgresql://underpass:underpass@underpass/underpass
 
 networks:
   internal:

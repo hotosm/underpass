@@ -37,13 +37,12 @@
 #       --data '{"fromDate": "2023-03-01T00:00:00"}'
 
 import sys,os
-sys.path.append(os.path.realpath('../dbapi'))
 
 from fastapi import FastAPI
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from models import * 
-from api import raw, stats
-from api.db import UnderpassDB
+from models import StatsRequest, RawRequest, RawListRequest, RawValidationRequest, RawValidationListRequest, RawValidationStatsRequest
+import raw, stats, rawval
 import config
 
 app = FastAPI()
@@ -56,97 +55,122 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-db = UnderpassDB(config.UNDERPASS_DB)
-rawer = raw.Raw(db)
-statser = stats.Stats(db)
+class Index:
+    @app.get("/")
+    async def index():
+        return {"message": "This is the Underpass REST API."}
 
-@app.get("/")
-async def index():
-    return {"message": "This is the Underpass REST API."}
+class Config:
+# Availability (which countries this API provides data)
+    # Ex: ["nepal", "argentina"]
+    @app.get("/availability")
+    async def getAvailability():
+        return {
+            "countries": config.AVAILABILITY
+        }
 
-@app.post("/raw/polygons")
-async def getPolygons(request: RawRequest):
-    results = await rawer.getPolygons(
-        area = request.area or None,
-        tags = request.tags or "",
-        hashtag = request.hashtag or "",
-        dateFrom = request.dateFrom or "",
-        dateTo = request.dateTo or "",
-        status = request.status or "",
-        page = request.page
-    )
-    return results
+# Raw OSM Data
 
-@app.post("/raw/nodes")
-async def getNodes(request: RawRequest):
-    results = await rawer.getNodes(
-        area = request.area,
-        tags = request.tags or "",
-        hashtag = request.hashtag or "",
-        dateFrom = request.dateFrom or "",
-        dateTo = request.dateTo or "",
-        status = request.status or "",
-        page = request.page
-    )
-    return results
+class Raw:
+    @app.post("/raw/polygons")
+    async def polygons(request: RawRequest):
+        return await raw.polygons(request)
 
-@app.post("/raw/lines")
-async def getLines(request: RawRequest):
-    results = await rawer.getLines(
-        area = request.area,
-        tags = request.tags or "",
-        hashtag = request.hashtag or "",
-        dateFrom = request.dateFrom or "",
-        dateTo = request.dateTo or "",
-        status = request.status or "",
-        page = request.page
-    )
-    return results
+    @app.post("/raw/nodes")
+    async def nodes(request: RawRequest):
+        return await raw.nodes(request)
 
-@app.post("/raw/features")
-async def getRawFeatures(request: RawRequest):
-    results = await rawer.getFeatures(
-        area = request.area or None,
-        tags = request.tags or "",
-        hashtag = request.hashtag or "",
-        dateFrom = request.dateFrom or "",
-        dateTo = request.dateTo or "",
-        status = request.status or "",
-        page = request.page,
-        featureType = request.featureType or None
-    )
-    return results
+    @app.post("/raw/lines")
+    async def lines(request: RawRequest):
+        return await raw.lines(request)
 
-@app.post("/raw/list")
-async def getRawList(request: RawRequest):
-    results = await rawer.getList(
-        area = request.area or None,
-        tags = request.tags or "",
-        hashtag = request.hashtag or "",
-        dateFrom = request.dateFrom or "",
-        dateTo = request.dateTo or "",
-        status = request.status or "",
-        orderBy = request.orderBy or None,
-        page = request.page,
-        featureType = request.featureType or None
-    )
-    return results
+    @app.post("/raw/features")
+    async def features(request: RawRequest):
+        return await raw.features(request)
 
-@app.post("/stats/count")
-async def getStatsCount(request: StatsRequest):
-    results = await statser.getCount(
-        area = request.area or None,
-        tags = request.tags or "",
-        hashtag = request.hashtag or "",
-        dateFrom = request.dateFrom or "",
-        dateTo = request.dateTo or "",
-        status = request.status or "",
-        featureType = request.featureType or None
-    )
-    return results
+    @app.post("/raw/list")
+    async def list(request: RawListRequest):
+        return await raw.list(request)
 
-@app.get("/availability")
-async def getAvailability():
-    return {
-        "countries": config.AVAILABILITY
-    }
+    @app.post("/raw/polygons/list")
+    async def polygons(request: RawListRequest):
+        return await raw.polygonsList(request)
+
+    @app.post("/raw/nodes/list")
+    async def nodes(request: RawListRequest):
+        return await raw.nodesList(request)
+
+    @app.post("/raw/lines/list")
+    async def lines(request: RawListRequest):
+        return await raw.linesList(request)
+
+
+# Raw OSM Data and Validation
+
+class RawValidation:
+    @app.post("/raw-validation/polygons")
+    async def polygons(request: RawValidationRequest):
+        return await rawval.polygons(request)
+
+    @app.post("/raw-validation/nodes")
+    async def nodes(request: RawValidationRequest):
+        return await rawval.nodes(request)
+
+    @app.post("/raw-validation/lines")
+    async def lines(request: RawValidationRequest):
+        return await rawval.lines(request)
+
+    @app.post("/raw-validation/features")
+    async def features(request: RawValidationRequest):
+        return await rawval.features(request)
+
+    @app.post("/raw-validation/list")
+    async def list(request: RawValidationListRequest):
+        return await rawval.list(request)
+
+    @app.post("/raw-validation/polygons/list")
+    async def polygons(request: RawValidationListRequest):
+        return await rawval.polygonsList(request)
+
+    @app.post("/raw-validation/nodes/list")
+    async def nodes(request: RawValidationListRequest):
+        return await rawval.nodesList(request)
+
+    @app.post("/raw-validation/lines/list")
+    async def lines(request: RawValidationListRequest):
+        return await rawval.linesList(request)
+
+    @app.post("/raw-validation/stats")
+    async def lines(request: RawValidationStatsRequest):
+        return await rawval.count(request)
+
+    @app.post("/raw-validation/stats/nodes")
+    async def lines(request: RawValidationStatsRequest):
+        return await rawval.nodesCount(request)
+
+    @app.post("/raw-validation/stats/polygons")
+    async def lines(request: RawValidationStatsRequest):
+        return await rawval.polygonsCount(request)
+
+    @app.post("/raw-validation/stats/lines")
+    async def lines(request: RawValidationStatsRequest):
+        return await rawval.linesCount(request)
+
+# Statistics
+
+class Stats:
+    @app.post("/stats/nodes")
+    async def nodes(request: StatsRequest):
+        return await stats.nodes(request)
+
+    @app.post("/stats/lines")
+    async def lines(request: StatsRequest):
+        return await stats.lines(request)
+
+    @app.post("/stats/polygons")
+    async def polygons(request: StatsRequest):
+        return await stats.polygons(request)
+
+    @app.post("/stats/features")
+    async def features(request: StatsRequest):
+        return await stats.features(request)

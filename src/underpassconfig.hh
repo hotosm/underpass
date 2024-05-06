@@ -98,7 +98,7 @@ struct UnderpassConfig {
 
     ///
     /// \brief underpassconfig constructor: will try to initialize from uppercased same-name
-    ///        environment variables prefixed by REPLICATOR_ (e.g. REPLICATOR_underpass_db_URL)
+    ///        environment variables prefixed by REPLICATOR_ (e.g. REPLICATOR_underpass_db_RL)
     ///
     UnderpassConfig()
     {
@@ -108,6 +108,9 @@ struct UnderpassConfig {
             yaml::Yaml yaml;
             yaml.read(filespec);
             auto yamlConfig = yaml.get("config");
+            if (yaml.contains_key("underpass_osm_db_url")) {
+                underpass_osm_db_url = yamlConfig.get_value("underpass_osm_db_url");
+            }
             if (yaml.contains_key("underpass_db_url")) {
                 underpass_db_url = yamlConfig.get_value("underpass_db_url");
             }
@@ -127,6 +130,9 @@ struct UnderpassConfig {
             }
         }
 
+        if (getenv("REPLICATOR_OSM_DB_URL")) {
+            underpass_osm_db_url = getenv("REPLICATOR_OSM_DB_URL");
+        }
         if (getenv("REPLICATOR_UNDERPASS_DB_URL")) {
             underpass_db_url = getenv("REPLICATOR_UNDERPASS_DB_URL");
         }
@@ -153,6 +159,7 @@ struct UnderpassConfig {
         }
     };
 
+    std::string underpass_osm_db_url = "localhost/underpass";
     std::string underpass_db_url = "localhost/underpass";
     std::string destdir_base;
     std::string planet_server;

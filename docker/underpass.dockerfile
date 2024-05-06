@@ -48,6 +48,7 @@ RUN set -ex \
         "librange-v3-dev" \
         "libtool" \
         "osm2pgsql" \
+        "rsync" \
     && rm -rf /var/lib/apt/lists/*
 
 

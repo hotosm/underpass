@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023 Humanitarian OpenStreetMap Team
+# Copyright (c) 2023, 2024 Humanitarian OpenStreetMap Team
 #
 # This file is part of Underpass.
 #
@@ -17,22 +17,26 @@
 #     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 
 import sys,os
+import asyncio
 sys.path.append(os.path.realpath('..'))
 
 from api import raw
-from api.db import UnderpassDB
+from api.db import DB
 
-db = UnderpassDB("postgresql://localhost/underpass")
-db.connect()
-rawer = raw.Raw(db)
+async def main():
 
-results = rawer.getNodes(
-    area = "-180 90,180 90, 180 -90, -180 -90,-180 90",
-    tags = "building=yes",
-    hashtag = "",
-    dateFrom = "",
-    dateTo = "",
-    page = 0
-)
+    db = DB()
+    await db.connect()
+    rawer = raw.Raw(db)
 
-print(results)
+    # Get List of OSM features for Nodes
+    print(
+        await rawer.getNodes(raw.ListFeaturesParamsDTO(
+            area = "-64.28176188601022 -31.34986467833471,-64.10910770217268 -31.3479682248434,-64.10577675328835 -31.47636641835701,-64.28120672786282 -31.47873373712735,-64.28176188601022 -31.34986467833471",
+            tags = "amenity=hospital"
+        ), asJson=True)
+    )
+
+asyncio.run(main())
+
+
