@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021, 2022, 2023 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022, 2023, 2024 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -161,8 +161,8 @@ class TestStats {
             }
             return config;
         }
-        void
-        testStat(std::shared_ptr<osmchange::ChangeStats> changestats, std::map<std::string, long> validation, std::string tag) {
+        void 
+        testStat(std::shared_ptr<osmchange::ChangeStats> changestats, std::map<std::string, long> &validation, const std::string &tag, const std::string &filename) {
 
             logger::LogFile &dbglogfile = logger::LogFile::getDefaultInstance();
             dbglogfile.setWriteDisk(true);
@@ -188,7 +188,7 @@ class TestStats {
                         runtest.pass("Calculating added " + tag);
                     } else{
                         TestState runtest;
-                        runtest.fail("Calculating added " + tag);
+                        runtest.fail("Calculating added " + tag + " file " + filename);
                     }
                 } else if (this->verbose) {
                     std::cout << "[Underpass] added_" + tag + ": 0" << std::endl;
@@ -211,7 +211,7 @@ class TestStats {
                         runtest.pass("Calculating modified " + tag);
                     } else {
                         TestState runtest;
-                        runtest.fail("Calculating modified " + tag);
+                        runtest.fail("Calculating modified " + tag + " file " + filename);
                     }
                 } else if (this->verbose) {
                     std::cout << "[Underpass] modified_" + tag + ": 0" << std::endl;
@@ -237,13 +237,13 @@ class TestStats {
                     if (this->verbose) {
                         std::cout << "changeset: " << changestats->changeset << std::endl;
                     }
-                    testStat(changestats, validation, "highway");
-                    // testStat(changestats, validation, "building");
-                    testStat(changestats, validation, "humanitarian_building");
-                    testStat(changestats, validation, "police");
-                    testStat(changestats, validation, "fire_station");
-                    testStat(changestats, validation, "hospital");
-                    testStat(changestats, validation, "waterway");
+                    testStat(changestats, validation, "highway", statsFile);
+                    testStat(changestats, validation, "building", statsFile);
+                    testStat(changestats, validation, "humanitarian_building" ,statsFile);
+                    testStat(changestats, validation, "police" ,statsFile);
+                    testStat(changestats, validation, "fire_station" ,statsFile);
+                    testStat(changestats, validation, "hospital" ,statsFile);
+                    testStat(changestats, validation, "waterway" ,statsFile);
                 }
             }
         }

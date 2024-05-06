@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021, 2022, 2023 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022, 2023, 2024 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -450,6 +450,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
 
             try {
                 osmchanges->nodecache.clear();
+                osmchanges->waycache.clear();
                 osmchanges->readXML(changes_xml);
                 if (osmchanges->changes.size() > 0) {
                     task.timestamp = osmchanges->changes.back()->final_entry;
@@ -469,10 +470,10 @@ threadOsmChange(OsmChangeTask osmChangeTask)
     }
 
     // - Fill node cache with nodes referenced in modified
-    //   or created ways and also ways affected by modified nodes
+    //   or created ways and also ways indirectly modified by modified nodes
     // - Add indirectly modified ways to osmchanges
-    // - Build ways geometries using nodecache
-    // - Build relation multipolyon geometries
+    // - Build ways polygon/linestring geometries using nodecache
+    // - Build relation multipolyon/multilinestring geometries using waycache
     if (!config->disable_raw) {
         queryraw->buildGeometries(osmchanges, poly);
     }
@@ -493,7 +494,7 @@ threadOsmChange(OsmChangeTask osmChangeTask)
 
     auto removed_nodes = std::make_shared<std::vector<long>>();
     auto removed_ways = std::make_shared<std::vector<long>>();
-    // auto removed_relations = std::make_shared<std::vector<long>>();
+    auto removed_relations = std::make_shared<std::vector<long>>();
     auto validation_removals = std::make_shared<std::vector<long>>();
 
     // Raw data and validation
@@ -539,23 +540,26 @@ threadOsmChange(OsmChangeTask osmChangeTask)
                 }
             }
 
-            // // Relations
-            // for (auto rit = std::begin(change->relations); rit != std::end(change->relations); ++rit) {
-            //     osmobjects::OsmRelation *relation = rit->get();
+            // Relations
+            for (auto rit = std::begin(change->relations); rit != std::end(change->relations); ++rit) {
+                osmobjects::OsmRelation *relation = rit->get();
 
-            //     if (relation->action != osmobjects::remove && !relation->priority) {
-            //         continue;
-            //     }
-            //     // Remove deleted relations from validation table
-            //     if (!config->disable_validation && relation->action == osmobjects::remove) {
-            //         removed_relations->push_back(relation->id);
-            //     }
+                if (relation->action != osmobjects::remove && !relation->priority) {
+                    // if (!relation->priority) {
+                    //     std::cout << "<Relation " << relation->id << "> NOT PRIORITY" << std::endl;
+                    // }
+                    continue;
+                }
+                // Remove deleted relations from validation table
+                // if (!config->disable_validation && relation->action == osmobjects::remove) {
+                //     removed_relations->push_back(relation->id);
+                // }
 
-            //     //  Update relations, ignore new ones outside priority area
-            //     if (!config->disable_raw) {
-            //         task.query += queryraw->applyChange(*relation);
-            //     }
-            // }
+                //  Update relations, ignore new ones outside priority area
+                if (!config->disable_raw) {
+                    task.query += queryraw->applyChange(*relation);
+                }
+            }
 
         }
     }
@@ -572,7 +576,8 @@ threadOsmChange(OsmChangeTask osmChangeTask)
         queryvalidate->nodes(nodeval, task.query, validation_removals);
 
         // Validate relations
-        // task.query += queryvalidate->rels(wayval, task.query, validation_removals);
+        // relval = osmchanges->validateRelations(poly, plugin);
+        // queryvalidate->relations(relval, task.query, validation_removals);
 
         // Remove validation entries for removed objects
         task.query += queryvalidate->updateValidation(validation_removals);

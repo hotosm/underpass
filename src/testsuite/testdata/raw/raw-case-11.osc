@@ -1,0 +1,123 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version="0.6" generator="Osmosis 0.47.4">
+  <create>
+    <node id="11383984717" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5018781" lon="-68.5469942"/>
+    <node id="11383984902" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5019199" lon="-68.5469833"/>
+    <node id="11383984914" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5019276" lon="-68.5469813"/>
+    <node id="11383984894" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5019979" lon="-68.5469628"/>
+    <node id="11383984915" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5022284" lon="-68.5469021"/>
+    <node id="11383984903" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5022372" lon="-68.5468999"/>
+    <node id="11383984875" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5028187" lon="-68.5467500"/>
+    <node id="11383978565" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5035825" lon="-68.5465473"/>
+    <node id="11383984818" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5035879" lon="-68.5465458"/>
+    <node id="11383984817" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5038192" lon="-68.5464757"/>
+    <node id="11383978548" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5038288" lon="-68.5465891"/>
+    <node id="11383978551" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5038365" lon="-68.5466804"/>
+    <node id="11383978552" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5038454" lon="-68.5467856"/>
+    <node id="11383978555" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5038535" lon="-68.5468804"/>
+    <node id="11383978556" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5038617" lon="-68.5469779"/>
+    <node id="11383978558" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5038694" lon="-68.5470683"/>
+    <node id="11383984816" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5038707" lon="-68.5470843"/>
+    <node id="11383978561" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5038757" lon="-68.5471701"/>
+    <node id="11383978562" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5038814" lon="-68.5472674"/>
+    <node id="11383984815" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5038875" lon="-68.5473722"/>
+    <node id="11383978564" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5038875" lon="-68.5473788"/>
+    <node id="11383978542" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5038880" lon="-68.5475069"/>
+    <node id="11383984814" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5038880" lon="-68.5475132"/>
+    <node id="11383978520" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5039305" lon="-68.5480409"/>
+    <node id="11383984813" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5039585" lon="-68.5483882"/>
+    <node id="5759448827" visible="true" version="3" changeset="144595614" timestamp="2023-11-29T16:27:31Z" user="Leo1590" uid="8808998" lat="-31.5018696" lon="-68.5470365">\n  <tag k="noexit" v="yes"/>\n </node>
+    <node id="11383984929" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5016055" lon="-68.5490234"/>
+    <node id="11383984928" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5016466" lon="-68.5485587"/>
+    <node id="2598743677" visible="true" version="3" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5016557" lon="-68.5480249"/>
+    <node id="11383984872" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5017020" lon="-68.5477639"/>
+    <node id="11383984927" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5017578" lon="-68.5474830"/>
+    <node id="10086091115" visible="true" version="1" changeset="127228927" timestamp="2022-10-09T03:11:24Z" user="guillemmal" uid="3036252" lat="-31.5018285" lon="-68.5489833">\n  <tag k="bus" v="yes"/>\n  <tag k="name" v="Maradona"/>\n  <tag k="network" v="Red Tulum"/>\n  <tag k="public_transport" v="stop_position"/>\n </node>
+    <node id="2598743683" visible="true" version="2" changeset="25081471" timestamp="2014-08-28T19:26:52Z" user="Diego Lara" uid="2296185" lat="-31.5019571" lon="-68.5489533"/>
+    <node id="10086091114" visible="true" version="1" changeset="127228927" timestamp="2022-10-09T03:11:24Z" user="guillemmal" uid="3036252" lat="-31.5020433" lon="-68.5489335">\n  <tag k="bus" v="yes"/>\n  <tag k="name" v="Maradona"/>\n  <tag k="network" v="Red Tulum"/>\n  <tag k="public_transport" v="stop_position"/>\n </node>
+    <node id="2598743687" visible="true" version="3" changeset="60700876" timestamp="2018-07-13T21:36:11Z" user="patodiez" uid="1856060" lat="-31.5025468" lon="-68.5488177"/>
+    <node id="2598743674" visible="true" version="1" changeset="19684835" timestamp="2013-12-28T19:24:34Z" user="Victor Zanni" uid="1858440" lat="-31.5030088" lon="-68.5487158"/>
+    <node id="2598743700" visible="true" version="3" changeset="134951136" timestamp="2023-04-15T18:17:11Z" user="patodiez" uid="1856060" lat="-31.5034996" lon="-68.5486036"/>
+    <node id="2074504951" visible="true" version="2" changeset="134951136" timestamp="2023-04-15T18:17:11Z" user="patodiez" uid="1856060" lat="-31.5035724" lon="-68.5485833"/>
+    <node id="11383984718" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5039664" lon="-68.5484826"/>
+    <node id="11383978543" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998" lat="-31.5039590" lon="-68.5483946"/>
+    <way id="1227613704" visible="true" version="2" changeset="144595614" timestamp="2023-11-29T16:27:31Z" user="Leo1590" uid="8808998">
+    <nd ref="11383984717"/>
+    <nd ref="11383984902"/>
+    <nd ref="11383984914"/>
+    <nd ref="11383984894"/>
+    <nd ref="11383984915"/>
+    <nd ref="11383984903"/>
+    <nd ref="11383984875"/>
+    <nd ref="11383978565"/>
+    <nd ref="11383984818"/>
+    <nd ref="11383984817"/>
+    <nd ref="11383978548"/>
+    <nd ref="11383978551"/>
+    <nd ref="11383978552"/>
+    <nd ref="11383978555"/>
+    <nd ref="11383978556"/>
+    <nd ref="11383978558"/>
+    <nd ref="11383984816"/>
+    <nd ref="11383978561"/>
+    <nd ref="11383978562"/>
+    <nd ref="11383984815"/>
+    <nd ref="11383978564"/>
+    <nd ref="11383978542"/>
+    <nd ref="11383984814"/>
+    <nd ref="11383978520"/>
+    <nd ref="11383984813"/>
+    <tag k="barrier" v="wall"/>
+    </way>
+    <way id="1227613663" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998">
+    <nd ref="5759448827"/>
+    <nd ref="11383984717"/>
+    </way>
+    <way id="1227613735" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998">
+    <nd ref="11383984929"/>
+    <nd ref="11383984928"/>
+    <nd ref="2598743677"/>
+    <nd ref="11383984872"/>
+    <nd ref="11383984927"/>
+    <nd ref="5759448827"/>
+    <tag k="highway" v="residential"/>
+    <tag k="noname" v="yes"/>
+    </way>
+    <way id="1227613664" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998">
+    <nd ref="11383984929"/>
+    <nd ref="10086091115"/>
+    <nd ref="2598743683"/>
+    <nd ref="10086091114"/>
+    <nd ref="2598743687"/>
+    <nd ref="2598743674"/>
+    <nd ref="2598743700"/>
+    <nd ref="2074504951"/>
+    <nd ref="11383984718"/>
+    <tag k="highway" v="residential"/>
+    <tag k="lanes" v="2"/>
+    <tag k="maxspeed" v="60"/>
+    <tag k="name" v="Timoteo Maradona"/>
+    <tag k="oneway" v="no"/>
+    <tag k="ref" v="RP106"/>
+    <tag k="surface" v="asphalt"/>
+    </way>
+    <way id="1227613666" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998">
+    <nd ref="11383984813"/>
+    <nd ref="11383978543"/>
+    <nd ref="11383984718"/>
+    </way>
+    <relation id="16768791" visible="true" version="1" changeset="144594711" timestamp="2023-11-29T16:08:04Z" user="Leo1590" uid="8808998">
+      <member type="node" ref="11383984716" role="label"/>
+      <member type="way" ref="1227613704" role="outer"/>
+      <member type="way" ref="1227613663" role="outer"/>
+      <member type="way" ref="1227613735" role="outer"/>
+      <member type="way" ref="1227613664" role="outer"/>
+      <member type="way" ref="1227613666" role="outer"/>
+      <tag k="admin_level" v="10"/>
+      <tag k="boundary" v="administrative"/>
+      <tag k="name" v="Barrio Nazaret"/>
+      <tag k="place" v="neighbourhood"/>
+      <tag k="type" v="boundary"/>
+    </relation>
+</create>
+</osmChange>

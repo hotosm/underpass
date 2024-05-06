@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <osmChange version="0.6" generator="Osmosis 0.47.4">
   <create>
-    <node id='111786' visible='true' lat='4.62042952837' lon='21.72600147299' version='1' />
-    <node id='111787' visible='true' lat='4.62042742837' lon='21.72608657299' version='1'/>
-    <node id='111788' visible='true' lat='4.62036492836' lon='21.72608497299' version='1'/>
-    <node id='111789' visible='true' lat='4.62036702836' lon='21.72599987299' version='1'/>
+    <node id='111786' visible='true' lat='4.6204295' lon='21.7260014' version='1' />
+    <node id='111787' visible='true' lat='4.6204274' lon='21.7260865' version='1'/>
+    <node id='111788' visible='true' lat='4.6203649' lon='21.7260849' version='1'/>
+    <node id='111789' visible='true' lat='4.6203670' lon='21.7259998' version='1'/>
     <way id='101894' visible='true' version='1'>
       <nd ref='111786' />
       <nd ref='111787' />

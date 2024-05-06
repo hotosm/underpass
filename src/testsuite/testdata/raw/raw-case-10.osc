@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version="0.6" generator="Osmosis 0.47.4">
+  <create>
+    <node id="11384622360" visible="true" version="1" changeset="144605408" timestamp="2023-11-29T22:04:28Z" user="mweper" uid="1311281" lat="-31.6733343" lon="-61.7621922"/>
+    <node id="1841305699" visible="true" version="2" changeset="16422700" timestamp="2013-06-04T17:58:51Z" user="dbusse" uid="149876" lat="-31.6731352" lon="-61.7621451"/>
+    <node id="1841305707" visible="true" version="2" changeset="144605408" timestamp="2023-11-29T22:04:28Z" user="mweper" uid="1311281" lat="-31.6734047" lon="-61.7605975"/>
+    <node id="1841305715" visible="true" version="1" changeset="12523131" timestamp="2012-07-28T13:13:16Z" user="estela" uid="89271" lat="-31.6734503" lon="-61.7603435"/>
+    <node id="1841305717" visible="true" version="1" changeset="12523131" timestamp="2012-07-28T13:13:16Z" user="estela" uid="89271" lat="-31.6735111" lon="-61.7599953"/>
+    <node id="1841305723" visible="true" version="1" changeset="12523131" timestamp="2012-07-28T13:13:16Z" user="estela" uid="89271" lat="-31.6736955" lon="-61.7589410"/>
+    <node id="1841305739" visible="true" version="1" changeset="12523131" timestamp="2012-07-28T13:13:17Z" user="estela" uid="89271" lat="-31.6738709" lon="-61.7579382"/>
+    <node id="7182751489" visible="true" version="1" changeset="80501254" timestamp="2020-02-03T23:07:11Z" user="CorazonDelator" uid="8127216" lat="-31.6739754" lon="-61.7573608">\n  <tag k="railway" v="level_crossing"/>\n </node>
+    <node id="3536915093" visible="true" version="3" changeset="65321146" timestamp="2018-12-09T17:46:16Z" user="lferreyra" uid="4020269" lat="-31.6740483" lon="-61.7569584">\n  <tag k="railway" v="level_crossing"/>\n </node>
+    <node id="3998367196" visible="true" version="1" changeset="37114356" timestamp="2016-02-10T00:59:05Z" user="patodiez" uid="1856060" lat="-31.6740654" lon="-61.7568258"/>
+    <way id="1227682276" visible="true" version="1" changeset="144605408" timestamp="2023-11-29T22:04:28Z" user="mweper" uid="1311281">
+      <nd ref="11384622360"/>
+      <nd ref="1841305699"/>
+      <tag k="highway" v="primary"/>
+      <tag k="lanes" v="2"/>
+      <tag k="name" v="Ruta Provincial 13"/>
+      <tag k="oneway" v="no"/>
+      <tag k="ref" v="RP13"/>
+      <tag k="source" v="http://www.idesf.santafe.gov.ar"/>
+      <tag k="surface" v="asphalt"/>
+    </way>
+    <way id="173289770" visible="true" version="11" changeset="144605408" timestamp="2023-11-29T22:04:28Z" user="mweper" uid="1311281">
+      <nd ref="1841305699"/>
+      <nd ref="1841305707"/>
+      <nd ref="1841305715"/>
+      <nd ref="1841305717"/>
+      <nd ref="1841305723"/>
+      <nd ref="1841305739"/>
+      <nd ref="7182751489"/>
+      <nd ref="3536915093"/>
+      <nd ref="3998367196"/>
+      <tag k="highway" v="tertiary"/>
+      <tag k="lanes" v="2"/>
+      <tag k="name" v="Avenida Buriasgo"/>
+      <tag k="oneway" v="no"/>
+      <tag k="surface" v="asphalt"/>
+    </way>
+    <relation id="16770204" visible="true" version="1" changeset="144605408" timestamp="2023-11-29T22:04:28Z" user="mweper" uid="1311281">
+      <member type="way" ref="173289770" role="to"/>
+      <member type="node" ref="1841305699" role="via"/>
+      <member type="way" ref="1227682276" role="from"/>
+      <tag k="restriction" v="no_right_turn"/>
+      <tag k="type" v="restriction"/>
+    </relation>
+</create>
+</osmChange>
