@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Humanitarian OpenStreetMap Team
+// Copyright (c) 2023, 2024 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -34,8 +34,17 @@ namespace bootstrap {
 /// \brief Represents a bootstrap task
 struct BootstrapTask {
     std::string query = "";
+    std::string osmquery = "";
     int processed = 0;
 };
+
+/// \struct BootstrapQueries
+/// \brief Represents a bootstrap queries list
+struct BootstrapQueries {
+    std::string underpass = "";
+    std::string osm = "";
+};
+
 
 struct WayTask {
     int taskIndex;
@@ -72,12 +81,13 @@ class Bootstrap {
     void threadBootstrapWayTask(WayTask wayTask);
     void threadBootstrapNodeTask(NodeTask nodeTask);
     void threadBootstrapRelationTask(RelationTask relationTask);
-    std::string allTasksQueries(std::shared_ptr<std::vector<BootstrapTask>> tasks);
+    BootstrapQueries allTasksQueries(std::shared_ptr<std::vector<BootstrapTask>> tasks);
     
     std::shared_ptr<Validate> validator;
     std::shared_ptr<QueryValidate> queryvalidate;
     std::shared_ptr<QueryRaw> queryraw;
     std::shared_ptr<Pq> db;
+    std::shared_ptr<Pq> osmdb;
     bool norefs;
     unsigned int concurrency;
     unsigned int page_size;

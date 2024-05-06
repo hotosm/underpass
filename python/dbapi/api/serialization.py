@@ -1,6 +1,7 @@
+
 #!/usr/bin/python3
 #
-# Copyright (c) 2023, 2024 Humanitarian OpenStreetMap Team
+# Copyright (c) 2024 Humanitarian OpenStreetMap Team
 #
 # This file is part of Underpass.
 #
@@ -17,14 +18,20 @@
 #     You should have received a copy of the GNU General Public License
 #     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 
-def hashtags(hashtagsList):
-    return "EXISTS ( SELECT * from unnest(hashtags) as h where {condition} )".format(
-        condition=' OR '.join(
-            map(lambda x: "h ~* '^{hashtag}'".format(hashtag=x), hashtagsList)
-        )
-    )
+import json
 
-def bbox(wktMultipolygon):
-    return "ST_Intersects(bbox, ST_GeomFromText('{area}', 4326))".format(
-        area=wktMultipolygon
-    )
+def queryToJSON(query: str):
+   jsonQuery = "with data AS \n ({query}) \n \
+      SELECT to_jsonb(data) as result from data;" \
+      .format(query=query)
+   return jsonQuery
+
+def deserializeTags(data):
+    result = []
+    if data:
+      for row in data:
+         row_dict = dict(row)
+         if 'tags' in row:
+            row_dict['tags'] = json.loads(row['tags'])
+         result.append(row_dict)
+    return result

@@ -17,62 +17,99 @@
 #     You should have received a copy of the GNU General Public License
 #     along with Underpass.  If not, see <https://www.gnu.org/licenses/>.
 
+# Build and run queries for getting statistics
+
+from dataclasses import dataclass
 from .filters import tagsQueryFilter, hashtagQueryFilter
+from .sharedTypes import Table, GeoType
+from .serialization import queryToJSON
+import json
+
+# Stats parameters DTO
+@dataclass
+class StatsParamsDTO:
+    tags: list[str] = None
+    hashtag: str = ""
+    dateFrom: str = ""
+    dateTo: str = ""
+    area: str = None
+    table: Table = Table.nodes
+
+def featureCountQuery(params: StatsParamsDTO, asJson: bool = False):
+    query = "select count(distinct {table}.osm_id) AS count FROM {table} \
+        LEFT JOIN changesets c ON changeset = c.id \
+        WHERE{area}{tags}{hashtag}{date}".format(
+            table=params.table.value,
+            area=" AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({area})))', 4326) ) \n"
+                .format(area=params.area) if params.area else "",
+            tags=" AND (" + tagsQueryFilter(params.tags, params.table.value) + ") \n" if params.tags else "",
+            hashtag=" AND " + hashtagQueryFilter(params.hashtag, params.table.value) if params.hashtag else "",
+            date=" AND created_at >= {dateFrom} AND created_at <= {dateTo}\n"
+                .format(dateFrom=params.dateFrom, dateTo=params.dateTo) 
+                if params.dateFrom and params.dateTo else "\n"
+        ).replace("WHERE AND", "WHERE")
+    if asJson:
+        return queryToJSON(query)
+    return query
 
 class Stats:
     def __init__(self, db):
-        self.underpassDB = db
+        self.db = db
+
+    async def getNodesCount(
+        self, 
+        params: StatsParamsDTO,
+        asJson: bool = False
+    ):
+        params.table = Table.nodes
+        result = await self.db.run(featureCountQuery(params), singleObject=True)
+        if asJson:
+            return json.dumps(dict(result))
+
+    async def getLinesCount(
+        self, 
+        params: StatsParamsDTO,
+        asJson: bool = False
+    ):
+        params.table = Table.lines
+        result = await self.db.run(featureCountQuery(params), singleObject=True)
+        if asJson:
+            return json.dumps(dict(result))
+
+    async def getPolygonsCount(
+        self, 
+        params: StatsParamsDTO,
+        asJson: bool = False
+    ):
+        params.table = Table.polygons
+        result = await self.db.run(featureCountQuery(params), singleObject=True)
+        if asJson:
+            return json.dumps(dict(result))
+        return result
+
 
     async def getCount(
         self, 
-        area = None,
-        tags = None,
-        hashtag = None,
-        dateFrom = None,
-        dateTo = None,
-        status = None,
-        featureType = None,
+        params: StatsParamsDTO,
+        asJson: bool = False
     ):
-        if featureType == "line":
-            table = "ways_line"
-        elif featureType == "node":
-            table = "nodes"
-        else:
-            table = "ways_poly"
 
-        if status:
-            query = "with all_features as ( \
-                select {0}.osm_id from {0} \
-                left join changesets c on changeset = c.id \
-                where {1} {2} {3} {4} {5} \
-            ), \
-            count_validated_features as ( \
-                select count(distinct(all_features.osm_id)) as count from all_features \
-                left join validation v on all_features.osm_id = v.osm_id \
-                where v.status = '{6}' \
-            ), count_features as (\
-                select count(distinct(all_features.osm_id)) as total from all_features \
-            ) \
-            select count, total from  count_validated_features, count_features".format(
-                table,
-                "created_at >= '{0}'".format(dateFrom) if (dateFrom) else "1=1",
-                "AND created_at <= '{0}'".format(dateTo) if (dateTo) else "",
-                "AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "",
-                "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
-                "AND " + hashtagQueryFilter(hashtag, table) if hashtag else "",
-                status
-            )
-        else:
-           query = "select count(distinct {0}.osm_id) as count from {0} \
-            left join changesets c on changeset = c.id \
-            where {1} {2} {3} {4} {5}".format(
-                table,
-                "created_at >= '{0}'".format(dateFrom) if (dateFrom) else "1=1",
-                "AND created_at <= '{0}'".format(dateTo) if (dateTo) else "",
-                "AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({0})))', 4326) )".format(area) if area else "",
-                "AND (" + tagsQueryFilter(tags, table) + ")" if tags else "",
-                "AND " + hashtagQueryFilter(hashtag, table) if hashtag else ""
-            )
-        return(await self.underpassDB.run(query, True))
+        params.table = Table.nodes
+        queryNodes = featureCountQuery(params)
 
-    
+        params.table = Table.lines
+        queryLines = featureCountQuery(params)
+
+        params.table = Table.polygons
+        queryPolygons = featureCountQuery(params)
+
+        query = "SELECT ({queries}) AS count;".format(queries=" + ".join([
+            "({queryPolygons})".format(queryPolygons=queryPolygons),
+            "({queryLines})".format(queryLines=queryLines),
+            "({queryNodes})".format(queryNodes=queryNodes)
+        ]))
+
+        result = await self.db.run(query, singleObject=True)
+        if asJson:
+            return json.dumps(dict(result))
+        return result

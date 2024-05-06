@@ -23,6 +23,6 @@ jobs:
       compose_service: underpass
       compose_command: '"make check -j $(nproc)"'
       tag_override: ci
-      # TODO update postgis image to use github repo var ${{ vars.POSTGIS_TAG }}
+      # TODO update postgis image to use github repo var ${{ vars.UNDERPASSDB_TAG }}
       cache_extra_imgs: |
         "docker.io/postgis/postgis:15-3.3-alpine"

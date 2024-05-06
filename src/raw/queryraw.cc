@@ -729,7 +729,6 @@ QueryRaw::getNodesFromDB(long lastid, int pageSize) {
     } else {
         nodesQuery += ", version, tags FROM nodes order by osm_id desc limit " + std::to_string(pageSize) + ";";
     }
-
     auto nodes_result = dbconn->query(nodesQuery);
     // Fill vector of OsmNode objects
     auto nodes = std::make_shared<std::vector<OsmNode>>();
