@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash 
 #
 # Copyright (c) 2020, 2021, 2023, 2024 Humanitarian OpenStreetMap Team
 #
@@ -33,7 +33,7 @@ prompt()
 {
     eval $1
     echo "Database configuration for ${config['title']} "
-    if test -w /etc/default/underpass; then
+    if test -w /etc/default/; then
 	echo "# Database configuration for ${config['title']}" >> /etc/default/underpass
     else
 	echo "ERROR: You don't have write permission to /etc/default/underpass! use sudo"
