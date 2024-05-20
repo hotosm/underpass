@@ -33,18 +33,17 @@ namespace bootstrap {
 /// \struct BootstrapTask
 /// \brief Represents a bootstrap task
 struct BootstrapTask {
-    std::string query = "";
-    std::string osmquery = "";
+    std::vector<std::string> query;
+    std::vector<std::string> osmquery;
     int processed = 0;
 };
 
 /// \struct BootstrapQueries
 /// \brief Represents a bootstrap queries list
 struct BootstrapQueries {
-    std::string underpass = "";
-    std::string osm = "";
+    std::vector<std::string> underpass;
+    std::vector<std::string> osm;
 };
-
 
 struct WayTask {
     int taskIndex;

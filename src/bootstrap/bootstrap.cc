@@ -53,8 +53,12 @@ BootstrapQueries
 Bootstrap::allTasksQueries(std::shared_ptr<std::vector<BootstrapTask>> tasks) {
     BootstrapQueries queries;
     for (auto it = tasks->begin(); it != tasks->end(); ++it) {
-        queries.underpass += it->query ;
-        queries.osm += it->osmquery ;
+        for (auto itt = it->query.begin(); itt != it->query.end(); ++itt) {
+            queries.underpass.push_back(*itt);
+        }
+        for (auto itt = it->osmquery.begin(); itt != it->osmquery.end(); ++itt) {
+            queries.osm.push_back(*itt);
+        }
     }
     return queries;
 }
@@ -154,8 +158,12 @@ Bootstrap::processWays() {
 
             auto queries = allTasksQueries(tasks);
 
-            db->query(queries.underpass);
-            osmdb->query(queries.osm);
+            for (auto it = queries.underpass.begin(); it != queries.underpass.end(); ++it) {
+                db->query(*it);
+            }
+            for (auto it = queries.osm.begin(); it != queries.osm.end(); ++it) {
+                osmdb->query(*it);
+            }
 
             lastid = ways->back().id;
             for (auto it = tasks->begin(); it != tasks->end(); ++it) {
@@ -206,8 +214,12 @@ Bootstrap::processNodes() {
         pool.join();
 
         auto queries = allTasksQueries(tasks);
-        db->query(queries.underpass);
-        osmdb->query(queries.osm);
+        for (auto it = queries.underpass.begin(); it != queries.underpass.end(); ++it) {
+            db->query(*it);
+        }
+        for (auto it = queries.osm.begin(); it != queries.osm.end(); ++it) {
+            osmdb->query(*it);
+        }
         lastid = nodes->back().id;
         for (auto it = tasks->begin(); it != tasks->end(); ++it) {
             count += it->processed;
@@ -256,9 +268,12 @@ Bootstrap::processRelations() {
         pool.join();
 
         auto queries = allTasksQueries(tasks);
-        db->query(queries.underpass);
-        osmdb->query(queries.osm);
-
+        for (auto it = queries.underpass.begin(); it != queries.underpass.end(); ++it) {
+            db->query(*it);
+        }
+        for (auto it = queries.osm.begin(); it != queries.osm.end(); ++it) {
+            osmdb->query(*it);
+        }
         lastid = relations->back().id;
         for (auto it = tasks->begin(); it != tasks->end(); ++it) {
             count += it->processed;
@@ -295,13 +310,19 @@ Bootstrap::threadBootstrapWayTask(WayTask wayTask)
             // Fill the way_refs table
             if (!norefs) {
                 for (auto ref = way.refs.begin(); ref != way.refs.end(); ++ref) {
-                    task.osmquery += "INSERT INTO way_refs (way_id, node_id) VALUES (" + std::to_string(way.id) + "," + std::to_string(*ref) + "); ";
+                    task.osmquery.push_back("INSERT INTO way_refs (way_id, node_id) VALUES (" + std::to_string(way.id) + "," + std::to_string(*ref) + "); ");
                 }
             }
             ++processed;
         }
     }
-    queryvalidate->ways(wayval, task.query);
+
+    auto result = queryvalidate->ways(wayval);
+    for (auto it = result->begin(); it != result->end(); ++it) {
+        task.query.push_back(*it);
+        log_debug("FOO: %1%", *it);
+    }
+
     task.processed = processed;
     const std::lock_guard<std::mutex> lock(tasks_change_mutex);
     (*tasks)[taskIndex] = task;
@@ -337,7 +358,12 @@ Bootstrap::threadBootstrapNodeTask(NodeTask nodeTask)
             ++processed;
         }
     }
-    queryvalidate->nodes(nodeval, task.query);
+
+    auto result = queryvalidate->nodes(nodeval);
+    for (auto it = result->begin(); it != result->end(); ++it) {
+        task.query.push_back(*it);
+    }
+
     task.processed = processed;
     const std::lock_guard<std::mutex> lock(tasks_change_mutex);
     (*tasks)[taskIndex] = task;
@@ -367,7 +393,7 @@ Bootstrap::threadBootstrapRelationTask(RelationTask relationTask)
             // relationval->push_back(validator->checkRelation(way, "building"));
             // Fill the rel_refs table
             for (auto mit = relation.members.begin(); mit != relation.members.end(); ++mit) {
-                task.osmquery += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(mit->ref) + "); ";
+                task.osmquery.push_back("INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(mit->ref) + "); ");
             }
             ++processed;
         }
