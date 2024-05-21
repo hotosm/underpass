@@ -863,7 +863,7 @@ QueryRaw::getNodeCacheFromWays(std::shared_ptr<std::vector<OsmWay>> ways, std::m
     }
 }
 
-// Recive a string of comma separated values of Nodes ids
+// Recieve a string of comma separated values of Nodes ids
 // and return a vector of Ways
 std::list<std::shared_ptr<OsmWay>>
 QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
@@ -872,42 +872,49 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
     boost::timer::auto_cpu_timer timer("getWaysByNodesRefs(nodeIds): took %w seconds\n");
 #endif
     std::list<std::shared_ptr<osmobjects::OsmWay>> ways;
+    std::vector<std::string> queries;
 
     // Get all Ways that have references to Nodes from the DB, including Polygons and LineString geometries
-    std::string waysQuery = "SELECT distinct(osm_id), refs, version, tags, uid, changeset from way_refs join ways_poly wp on wp.osm_id = way_id where node_id = any(ARRAY[" + nodeIds + "])";
-    waysQuery += " UNION SELECT distinct(osm_id), refs, version, tags, uid, changeset from way_refs join ways_line wl on wl.osm_id = way_id where node_id = any(ARRAY[" + nodeIds + "]);";
-    auto ways_result = dbconn->query(waysQuery);
-    if (ways_result.size() == 0) {
-        log_error("No results returned!");
-        return ways;
-    }
+    // std::string waysQuery = "SELECT distinct(osm_id), refs, version, tags, uid, changeset from way_refs join ways_poly wp on wp.osm_id = way_id where node_id = any(ARRAY[" + nodeIds + "])";
+    queries.push_back("SELECT distinct(osm_id), refs, version, tags, uid, changeset from ways_poly where refs @> '{" + nodeIds + "}'");
 
-    // Create Ways objects and fill the vector
-    for (auto way_it = ways_result.begin(); way_it != ways_result.end(); ++way_it) {
-        auto way = std::make_shared<OsmWay>();
-        way->id = (*way_it)[0].as<long>();
-        std::string refs_str = (*way_it)[1].as<std::string>();
-        if (refs_str.size() > 1) {
-            way->refs = arrayStrToVector(refs_str);
+    queries.push_back("SELECT distinct(osm_id), refs, version, tags, uid, changeset from ways_lines where refs @> '{" + nodeIds + "}'");
+    // waysQuery += " UNION SELECT distinct(osm_id), refs, version, tags, uid, changeset from way_refs join ways_line wl on wl.osm_id = way_id where node_id = any(ARRAY[" + nodeIds + "]);";
+
+    for (auto it = queries.begin(); it != queries.end(); ++it) {
+
+        auto ways_result = dbconn->query(*it);
+        if (ways_result.size() == 0) {
+            log_error("No results returned!");
+            return ways;
         }
-        way->version = (*way_it)[2].as<long>();
-        auto tags = (*way_it)[3];
-        if (!tags.is_null()) {
-            auto tags = parseJSONObjectStr((*way_it)[3].as<std::string>());
-            for (auto const& [key, val] : tags)
-            {
-                way->addTag(key, val);
+
+        // Create Ways objects and fill the vector
+        for (auto way_it = ways_result.begin(); way_it != ways_result.end(); ++way_it) {
+            auto way = std::make_shared<OsmWay>();
+            way->id = (*way_it)[0].as<long>();
+            std::string refs_str = (*way_it)[1].as<std::string>();
+            if (refs_str.size() > 1) {
+                way->refs = arrayStrToVector(refs_str);
             }
+            way->version = (*way_it)[2].as<long>();
+            auto tags = (*way_it)[3];
+            if (!tags.is_null()) {
+                auto tags = parseJSONObjectStr((*way_it)[3].as<std::string>());
+                for (auto const& [key, val] : tags) {
+                    way->addTag(key, val);
+                }
+            }
+            auto uid = (*way_it)[4];
+            if (!uid.is_null()) {
+                way->uid = (*way_it)[4].as<long>();
+            }
+            auto changeset = (*way_it)[5];
+            if (!changeset.is_null()) {
+                way->changeset = (*way_it)[5].as<long>();
+            }
+            ways.push_back(way);
         }
-        auto uid = (*way_it)[4];
-        if (!uid.is_null()) {
-            way->uid = (*way_it)[4].as<long>();
-        }
-        auto changeset = (*way_it)[5];
-        if (!changeset.is_null()) {
-            way->changeset = (*way_it)[5].as<long>();
-        }
-        ways.push_back(way);
     }
     return ways;
 }
