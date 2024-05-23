@@ -320,12 +320,6 @@ QueryRaw::applyChange(const OsmWay &way) const
                 query += fmt.str();
                 queries->push_back(query);
 
-                // Refresh all refs stored into the way_refs table
-                queries->push_back("DELETE FROM way_refs WHERE way_id = " + std::to_string(way.id) + ";");
-                for (auto ref = way.refs.begin(); ref != way.refs.end(); ++ref) {
-                    queries->push_back("INSERT INTO way_refs (way_id, node_id) VALUES (" + std::to_string(way.id) + "," + std::to_string(*ref) + ");");
-                }
-
             } else {
 
                 // Update only the Way's geometry. This is the case when a Way was indirectly 
@@ -368,7 +362,6 @@ QueryRaw::applyChange(const OsmWay &way) const
         }
     } else if (way.action == osmobjects::remove) {
         // Delete a Way geometry and its references.
-        queries->push_back("DELETE FROM way_refs WHERE way_id = " + std::to_string(way.id) + ";");
         if (tableName == &QueryRaw::polyTable) {
             queries->push_back("DELETE FROM " + QueryRaw::polyTable + " where osm_id = " + std::to_string(way.id) + ";");
         } else {
@@ -741,7 +734,7 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
         std::string nodesQuery = "SELECT osm_id, st_x(geom) as lat, st_y(geom) as lon FROM nodes where osm_id in (" + referencedNodeIds + ");";
         auto result = dbconn->query(nodesQuery);
         if (result.size() == 0) {
-            log_error("No results returned!");
+            log_debug("No results returned!");
             return;
         }
         // Fill nodecache
@@ -848,7 +841,7 @@ QueryRaw::getNodeCacheFromWays(std::shared_ptr<std::vector<OsmWay>> ways, std::m
         std::string nodesQuery = "SELECT osm_id, st_x(geom) as lat, st_y(geom) as lon FROM nodes where osm_id in (" + nodeIds + ") and st_x(geom) is not null and st_y(geom) is not null;";
         auto result = dbconn->query(nodesQuery);
         if (result.size() == 0) {
-            log_error("No results returned!");
+            log_debug("No results returned!");
             return;
         }
 
@@ -885,7 +878,7 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
 
         auto ways_result = dbconn->query(*it);
         if (ways_result.size() == 0) {
-            log_error("No results returned!");
+            log_debug("No results returned!");
             return ways;
         }
 
@@ -941,7 +934,7 @@ QueryRaw::getNodesFromDB(long lastid, int pageSize) {
     auto nodes = std::make_shared<std::vector<OsmNode>>();
     auto nodes_result = dbconn->query(nodesQuery);
     if (nodes_result.size() == 0) {
-        log_error("No results returned!");
+        log_debug("No results returned!");
         return nodes;
     }
 
@@ -990,7 +983,7 @@ QueryRaw::getWaysFromDB(long lastid, int pageSize, const std::string &tableName)
     auto ways = std::make_shared<std::vector<OsmWay>>();
     auto ways_result = dbconn->query(waysQuery);
     if (ways_result.size() == 0) {
-        log_error("No results returned!");
+        log_debug("No results returned!");
         return ways;
     }
 
@@ -1045,7 +1038,7 @@ QueryRaw::getWaysFromDBWithoutRefs(long lastid, int pageSize, const std::string 
     auto ways = std::make_shared<std::vector<OsmWay>>();
     auto ways_result = dbconn->query(waysQuery);
     if (ways_result.size() == 0) {
-        log_error("No results returned!");
+        log_debug("No results returned!");
         return ways;
     }
 
@@ -1091,7 +1084,7 @@ QueryRaw::getRelationsFromDB(long lastid, int pageSize) {
     auto relations = std::make_shared<std::vector<OsmRelation>>();
     auto relations_result = dbconn->query(relationsQuery);
     if (relations_result.size() == 0) {
-        log_error("No results returned!");
+        log_debug("No results returned!");
         return relations;
     }
     // Fill vector of OsmRelation objects

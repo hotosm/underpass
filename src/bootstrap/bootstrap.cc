@@ -307,12 +307,6 @@ Bootstrap::threadBootstrapWayTask(WayTask wayTask)
         if (i < ways->size()) {
             auto way = ways->at(i);
             wayval->push_back(validator->checkWay(way, "building"));
-            // Fill the way_refs table
-            if (!norefs) {
-                for (auto ref = way.refs.begin(); ref != way.refs.end(); ++ref) {
-                    task.osmquery.push_back("INSERT INTO way_refs (way_id, node_id) VALUES (" + std::to_string(way.id) + "," + std::to_string(*ref) + "); ");
-                }
-            }
             ++processed;
         }
     }
@@ -320,7 +314,6 @@ Bootstrap::threadBootstrapWayTask(WayTask wayTask)
     auto result = queryvalidate->ways(wayval);
     for (auto it = result->begin(); it != result->end(); ++it) {
         task.query.push_back(*it);
-        log_debug("FOO: %1%", *it);
     }
 
     task.processed = processed;
