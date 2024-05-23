@@ -83,27 +83,39 @@ bool processFile(const std::string &filename, std::shared_ptr<Pq> &db) {
     osmchanges->readChanges(destdir_base + "/testsuite/testdata/raw/" + filename);
     queryraw->buildGeometries(osmchanges, poly);
     osmchanges->areaFilter(poly);
-    std::string rawquery;
+    auto rawquery = std::make_shared<std::vector<std::string>>();
 
     for (auto it = std::begin(osmchanges->changes); it != std::end(osmchanges->changes); ++it) {
         osmchange::OsmChange *change = it->get();
         // Nodes
         for (auto nit = std::begin(change->nodes); nit != std::end(change->nodes); ++nit) {
             osmobjects::OsmNode *node = nit->get();
-            rawquery += queryraw->applyChange(*node);
+            auto changes = *queryraw->applyChange(*node);
+            for (auto it = changes.begin(); it != changes.end(); ++it) {
+                rawquery->push_back(*it);
+            }
         }
         // Ways
         for (auto wit = std::begin(change->ways); wit != std::end(change->ways); ++wit) {
             osmobjects::OsmWay *way = wit->get();
-            rawquery += queryraw->applyChange(*way);
+            auto changes = *queryraw->applyChange(*way);
+            for (auto it = changes.begin(); it != changes.end(); ++it) {
+                rawquery->push_back(*it);
+            }
         }
         // Relations
         for (auto rit = std::begin(change->relations); rit != std::end(change->relations); ++rit) {
             osmobjects::OsmRelation *relation = rit->get();
-            rawquery += queryraw->applyChange(*relation);
+            auto changes = *queryraw->applyChange(*relation);
+            for (auto it = changes.begin(); it != changes.end(); ++it) {
+                rawquery->push_back(*it);
+            }
         }
     }
-    db->query(rawquery);
+
+    for (auto rit = std::begin(*rawquery); rit != std::end(*rawquery); ++rit) {
+        db->query(*rit);
+    }
 }
 
 const std::vector<std::string> expectedGeometries = {

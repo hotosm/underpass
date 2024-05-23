@@ -447,13 +447,6 @@ QueryRaw::applyChange(const OsmRelation &relation) const
                 query.append(fmt.str());
                 queries->push_back(query);
 
-                // Refresh all refs stored into the rel_refs table
-                queries->push_back("DELETE FROM rel_refs WHERE rel_id=" + std::to_string(relation.id) + ";");
-
-                for (auto mit = relation.members.begin(); mit != relation.members.end(); ++mit) {
-                    queries->push_back("INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(mit->ref) + ");");
-                }
-
             } else {
 
                 // Update only the Relation's geometry. This is the case when a Relation was indirectly 
@@ -518,7 +511,7 @@ QueryRaw::getRelationsByWaysRefs(std::string &wayIds) const
     std::list<std::shared_ptr<osmobjects::OsmRelation>> rels;
 
     // Query for getting Relations
-    std::string relsQuery = "SELECT distinct(osm_id), refs, version, tags, uid, changeset from rel_refs join relations r on r.osm_id = rel_id where way_id = any(ARRAY[" + wayIds + "])";
+    std::string relsQuery = "SELECT distinct(osm_id), refs, version, tags, uid, changeset FROM relations WHERE EXISTS (SELECT 1 FROM jsonb_array_elements(refs) AS ref WHERE (ref->>'ref')::bigint IN (" + wayIds + "));";
     auto rels_result = dbconn->query(relsQuery);
 
     // Fill vector with OsmRelation objects
@@ -871,7 +864,7 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
     // std::string waysQuery = "SELECT distinct(osm_id), refs, version, tags, uid, changeset from way_refs join ways_poly wp on wp.osm_id = way_id where node_id = any(ARRAY[" + nodeIds + "])";
     queries.push_back("SELECT distinct(osm_id), refs, version, tags, uid, changeset from ways_poly where refs @> '{" + nodeIds + "}'");
 
-    queries.push_back("SELECT distinct(osm_id), refs, version, tags, uid, changeset from ways_lines where refs @> '{" + nodeIds + "}'");
+    queries.push_back("SELECT distinct(osm_id), refs, version, tags, uid, changeset from ways_line where refs @> '{" + nodeIds + "}'");
     // waysQuery += " UNION SELECT distinct(osm_id), refs, version, tags, uid, changeset from way_refs join ways_line wl on wl.osm_id = way_id where node_id = any(ARRAY[" + nodeIds + "]);";
 
     for (auto it = queries.begin(); it != queries.end(); ++it) {
