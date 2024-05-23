@@ -96,7 +96,7 @@ struct ReplicationTask {
     std::string url;
     ptime timestamp = not_a_date_time;
     replication::reqfile_t status = replication::reqfile_t::none;
-    std::string query = "";
+    std::vector<std::string> query;
 };
 
 /// This monitors the planet server for new changesets files.

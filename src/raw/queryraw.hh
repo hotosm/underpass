@@ -63,11 +63,11 @@ class QueryRaw {
     static const std::string lineTable;
 
     /// Build query for processed Node
-    std::string applyChange(const OsmNode &node) const;
+    std::shared_ptr<std::vector<std::string>> applyChange(const OsmNode &node) const;
     /// Build query for processed Way
-    std::string applyChange(const OsmWay &way) const;
+    std::shared_ptr<std::vector<std::string>> applyChange(const OsmWay &way) const;
     /// Build query for processed Relation
-    std::string applyChange(const OsmRelation &relation) const;
+    std::shared_ptr<std::vector<std::string>> applyChange(const OsmRelation &relation) const;
     /// Build all geometries for a OsmChange file
     void buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const multipolygon_t &poly);
     /// Get nodes for filling Node cache from refs on ways 

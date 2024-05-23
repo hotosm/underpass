@@ -123,8 +123,8 @@ main(int argc, char *argv[])
             ("disable-raw", "Disable raw OSM data")
             ("norefs", "Disable refs (useful for non OSM data)")
             ("bootstrap", "Bootstrap data tables")
-            ("silent", "Silent");
-        ("rawdb", opts::value<std::string>(), "Database URI for raw OSM data");
+            ("silent", "Silent")
+            ("rawdb", opts::value<std::string>(), "Database URI for raw OSM data");
         // clang-format on
 
         opts::store(opts::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
@@ -306,8 +306,13 @@ main(int argc, char *argv[])
             if (!config.silent) {
                 osmchange->dump();
             }
+#ifdef SINGLE_THREAD            // debugging hack
+            replicatorthreads::startMonitorChanges(std::ref(osmchange),
+                            std::ref(*osmboundary), config);
+#else
             osmChangeThread = std::thread(replicatorthreads::startMonitorChanges, std::ref(osmchange),
                             std::ref(*osmboundary), config);
+#endif
         }
 
         // Changesets
@@ -326,18 +331,23 @@ main(int argc, char *argv[])
             if (!config.silent) {
                 changeset->dump();
             }
+#ifdef SINGLE_THREAD            // debugging hack
+            replicatorthreads::startMonitorChangesets(std::ref(changeset), std::ref(*oscboundary), config);
+#else
             changesetThread = std::thread(replicatorthreads::startMonitorChangesets, 
                 std::ref(changeset), std::ref(*oscboundary), config);
+#endif
         }
 
         // Start processing
-
+#ifndef SINGLE_THREAD
         if (changesetThread.joinable()) {
             changesetThread.join();
         }
         if (osmChangeThread.joinable()) {
             osmChangeThread.join();
         }
+#endif
 
         exit(0);
 

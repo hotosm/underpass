@@ -152,8 +152,15 @@ Pq::query(const std::string &query)
 {
     std::scoped_lock write_lock{pqxx_mutex};
     pqxx::work worker(*sdb);
-    auto result = worker.exec(query);
-    worker.commit();
+    pqxx::result result;
+    try {
+        result = worker.exec(query);
+        worker.commit();
+    } catch (std::exception &e) {
+        log_error("ERROR executing query %1%", e.what());
+        // Return an empty result so higher level code can handle the error
+        return result;
+    }
     return result;
 }
 
