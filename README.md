@@ -26,17 +26,9 @@ Check the tasks board and roadmap [here](https://github.com/orgs/hotosm/projects
 
 ### Get involved!
 
-We invite software designers and developers to contribute to the project, there are several issues
-where we need help, some of them are:
+This is an exciting project, its core is made with C++ but it also includes a Python API and there are UI components for interacting and visualizing data.
 
-* Designs for data visualizations
-* React UI components
-* Data quality checks for the C++ core engine
-* PostgreSQL queries for the Python `dbapi` module
-* Endpoints for the Python `restapi` module
-* Packages for Python, React and system binaries
-* Data models for semantic validation
-* Tests for everything
+You can learn a lot contributing to Underpass, while helping the FOSS and mapping communities, get involved!
 
 ### License
 
