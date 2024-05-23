@@ -697,7 +697,7 @@ OsmChange::dump(void)
     //         rel->dump();
     //     }
     // }
-    std::cerr << "Final timestamp: " << to_simple_string(final_entry) << std::endl;
+    // std::cerr << "Final timestamp: " << to_simple_string(final_entry) << std::endl;
 
 }
 
