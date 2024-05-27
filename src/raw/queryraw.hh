@@ -82,7 +82,7 @@ class QueryRaw {
     std::shared_ptr<Pq> dbconn;
     // Get object (nodes, ways or relations) count from the database
     int getCount(const std::string &tableName);
-    // Build tags query for insert tags into the databse
+    // Build tags query for insert tags into the database
     std::string buildTagsQuery(std::map<std::string, std::string> tags) const;
     // Get ways by page
     std::shared_ptr<std::vector<OsmWay>> getWaysFromDB(long lastid, int pageSize, const std::string &tableName);
@@ -92,7 +92,30 @@ class QueryRaw {
     std::shared_ptr<std::vector<OsmNode>> getNodesFromDB(long lastid, int pageSize);
     // Get relations by page
     std::shared_ptr<std::vector<OsmRelation>> getRelationsFromDB(long lastid, int pageSize);
+};
 
+class SQLPrep : public QueryRaw {
+  public:
+    SQLPrep(void) : QueryRaw() {
+        init();
+    };
+
+    /// Initialize the SQL prepared statements or bulk.
+    SQLPrep(std::shared_ptr<Pq> &pq) : QueryRaw(pq) {
+        init();
+    };
+    void init(void);
+
+    /// Drop a database entry from a database table.
+    bool drop_entries(const std::string &op, const std::vector<long> ids);
+
+    /// Insert entries into a database table.
+    bool insert_entries(const std::vector<osmobjects::OsmWay> &ways);
+    bool insert_entries(const std::vector<osmobjects::OsmNode> &nodes);
+    bool insert_entries(const std::vector<osmobjects::OsmRelation> &relations);
+
+    /// Get data from a database table.
+    void select_entries(const std::string &op, const std::vector<long> ids);
 };
 
 } // namespace queryraw

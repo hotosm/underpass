@@ -511,7 +511,7 @@ QueryRaw::getRelationsByWaysRefs(std::string &wayIds) const
     std::list<std::shared_ptr<osmobjects::OsmRelation>> rels;
 
     // Query for getting Relations
-    std::string relsQuery = "SELECT distinct(osm_id), refs, version, tags, uid, changeset FROM relations WHERE EXISTS (SELECT 1 FROM jsonb_array_elements(refs) AS ref WHERE (ref->>'ref')::bigint IN (" + wayIds + "));";
+    std::string relsQuery = "SELECT DISTINCT(osm_id), refs, version, tags, uid, changeset FROM relations WHERE EXISTS (SELECT 1 FROM jsonb_array_elements(refs) AS ref WHERE (ref->>'ref')::bigint IN (" + wayIds + "));";
     auto rels_result = dbconn->query(relsQuery);
 
     // Fill vector with OsmRelation objects
@@ -561,8 +561,8 @@ QueryRaw::getWaysByIds(std::string &waysIds, std::map<long, std::shared_ptr<osmo
     boost::timer::auto_cpu_timer timer("getWaysByIds(waysIds, waycache): took %w seconds\n");
 #endif
     // Get Ways and it's geometries (Polygon and LineString)
-    std::string waysQuery = "SELECT distinct(osm_id), ST_AsText(geom, 4326), 'polygon' as type from ways_poly wp where osm_id = any(ARRAY[" + waysIds + "]) ";
-    waysQuery += "UNION SELECT distinct(osm_id), ST_AsText(geom, 4326), 'linestring' as type from ways_line wp where osm_id = any(ARRAY[" + waysIds + "])";
+    std::string waysQuery = "SELECT DISTINCT(osm_id), ST_AsText(geom, 4326), 'polygon' as type from ways_poly wp where osm_id = any(ARRAY[" + waysIds + "]) ";
+    waysQuery += "UNION SELECT DISTINCT(osm_id), ST_AsText(geom, 4326), 'linestring' as type from ways_line wp where osm_id = any(ARRAY[" + waysIds + "])";
     auto ways_result = dbconn->query(waysQuery);
     if (ways_result.size() == 0) {
         log_debug("No results returned!");
@@ -724,7 +724,7 @@ void QueryRaw::buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const 
     if (referencedNodeIds.size() > 1) {
         referencedNodeIds.erase(referencedNodeIds.size() - 1);
         // Get Nodes geoemtries from DB
-        std::string nodesQuery = "SELECT osm_id, st_x(geom) as lat, st_y(geom) as lon FROM nodes where osm_id in (" + referencedNodeIds + ");";
+        std::string nodesQuery = "SELECT osm_id, st_x(geom) as lat, st_y(geom) as lon FROM nodes WHERE osm_id IN (" + referencedNodeIds + ");";
         auto result = dbconn->query(nodesQuery);
         if (result.size() == 0) {
             log_debug("No results returned!");
@@ -831,7 +831,7 @@ QueryRaw::getNodeCacheFromWays(std::shared_ptr<std::vector<OsmWay>> ways, std::m
         nodeIds.erase(nodeIds.size() - 1);
 
         // Get Nodes geometries from the DB
-        std::string nodesQuery = "SELECT osm_id, st_x(geom) as lat, st_y(geom) as lon FROM nodes where osm_id in (" + nodeIds + ") and st_x(geom) is not null and st_y(geom) is not null;";
+        std::string nodesQuery = "SELECT osm_id, st_x(geom) as lat, st_y(geom) as lon FROM nodes WHERE osm_id IN (" + nodeIds + ") and st_x(geom) IS NOT NULL and st_y(geom) IS NOT NULL;";
         auto result = dbconn->query(nodesQuery);
         if (result.size() == 0) {
             log_debug("No results returned!");
@@ -861,11 +861,9 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
     std::vector<std::string> queries;
 
     // Get all Ways that have references to Nodes from the DB, including Polygons and LineString geometries
-    // std::string waysQuery = "SELECT distinct(osm_id), refs, version, tags, uid, changeset from way_refs join ways_poly wp on wp.osm_id = way_id where node_id = any(ARRAY[" + nodeIds + "])";
-    queries.push_back("SELECT distinct(osm_id), refs, version, tags, uid, changeset from ways_poly where refs @> '{" + nodeIds + "}'");
+    queries.push_back("SELECT DISTINCT(osm_id), refs, version, tags, uid, changeset from ways_poly WHERE refs @> '{" + nodeIds + "}'");
 
-    queries.push_back("SELECT distinct(osm_id), refs, version, tags, uid, changeset from ways_line where refs @> '{" + nodeIds + "}'");
-    // waysQuery += " UNION SELECT distinct(osm_id), refs, version, tags, uid, changeset from way_refs join ways_line wl on wl.osm_id = way_id where node_id = any(ARRAY[" + nodeIds + "]);";
+    queries.push_back("SELECT DISTINCT(osm_id), refs, version, tags, uid, changeset from ways_line WHERE refs @> '{" + nodeIds + "}'");
 
     for (auto it = queries.begin(); it != queries.end(); ++it) {
 
@@ -1121,6 +1119,130 @@ QueryRaw::getRelationsFromDB(long lastid, int pageSize) {
 
     return relations;
 }
+
+// This clase is a utility for using SQL prepared statements in pqxx
+void
+SQLPrep::init(void) {
+    dbconn->sdb->prepare("delete_node", "DELETE FROM nodes WHERE osm_id = $1");
+    dbconn->sdb->prepare("delete_poly", "DELETE FROM ways_poly WHERE osm_id = $1");
+    dbconn->sdb->prepare("delete_line", "DELETE FROM ways_line WHERE osm_id = $1");
+    dbconn->sdb->prepare("delete_relation", "DELETE FROM relations WHERE osm_id = $1");
+    // dbconn->sdb->prepare("delete_val_in", "DELETE FROM validation WHERE osm_id IN($1)");
+    // dbconn->sdb->prepare("delete_val_status", "DELETE FROM validation WHERE osm_id = $1 and source = '%2%' and status = '$2'");
+    // This gets called heavily.
+    dbconn->sdb->prepare("select_nodes", "SELECT osm_id, st_x(geom) as lat, st_y(geom) as lon FROM nodes WHERE osm_id IN ($1)");
+    dbconn->sdb->prepare("select_node_array", "SELECT osm_id, st_x(geom) as lat, st_y(geom) as lon FROM nodes WHERE osm_id IN ($1)");
+
+    // Basic queries.
+    dbconn->sdb->prepare("select_ways", "SELECT osm_id, ST_AsText(geom, 4326) FROM ways_poly");
+    dbconn->sdb->prepare("select_ways_refs", "SELECT osm_id, refs, ST_AsText(geom, 4326) FROM ways_poly");
+    dbconn->sdb->prepare("select_lines", "SELECT osm_id, ST_AsText(geom, 4326) FROM ways_line");
+    dbconn->sdb->prepare("select_lines_refs", "SELECT osm_id, refs, ST_AsText(geom, 4326) FROM ways_line");
+    dbconn->sdb->prepare("select_relations", "SELECT osm_id, refs, ST_AsText(geom, 4326) FROM relations");
+    // dbconn->sdb->prepare("select_poly", "SELECT DISTINCT(osm_id), ST_AsText(geom, 4326), 'polygon' AS type from ways_poly wp WHERE osm_id = any(ARRAY[$1]");
+    // dbconn->sdb->prepare("select_poly_array", "SELECT DISTINCT(osm_id), refs, version, tags, uid, changeset FROM ways_poly WHERE refs @> '{$1}'");
+    // dbconn->sdb->prepare("select_", "SELECT DISTINCT(osm_id), refs, version, tags, uid, changeset FROM relations WHERE EXISTS (SELECT 1 FROM jsonb_array_elements(refs) AS");
+    // Insertions
+    // dbconn->sdb->prepare("insert_node", "INSERT INTO nodes as r (osm_id, geom, tags, timestamp, version, \"user\", uid, changeset) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (osm_id) DO UPDATE SET geom = ST_GeomFromText('%1%', 4326), tags = %2%, timestamp = '%3%', version = %4%, \"user\" = '%5%', uid = %6%, changeset = %7% WHERE r.version < %8%");
+    dbconn->sdb->prepare("insert_node", "INSERT INTO nodes as r (osm_id, geom, tags, timestamp, version, \"user\", uid, changeset) VALUES($1, $2, $3, $4, $5, $6, $7, $8);");
+    dbconn->sdb->prepare("insert_way", "INSERT INTO ways_poly as r (osm_id, tags, refs, geom, timestamp, version, \"user\", uid, changeset) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)");
+    dbconn->sdb->prepare("insert_relation", "INSERT INTO relations as r (osm_id, tags, refs, geom, timestamp, version, \"user\", uid, changeset) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)");
+    // dbconn->sdb->prepare("insert_changeset", "INSERT INTO changesets (id, uid, closed_at, updated_at, ");
+    // dbconn->sdb->prepare("insert_editor", "INSERT INTO changesets (id, editor, uid, created_at, closed_at, updated_at");
+    // dbconn->sdb->prepare("insert_validation", "INSERT INTO validation as v (osm_id, changeset, uid, type, status, values, timestamp, location, source, version) VALUES($1)");
+};
+
+// Since the performance of bulk insterts or prepared statements, this lets us compare their performance.
+bool
+SQLPrep::insert_entries(const std::vector<osmobjects::OsmNode> &nodes) {
+#ifdef TIMING_DEBUG
+    boost::timer::auto_cpu_timer timer("SQLPrep::insert_entries(nodes): took %w seconds\n");
+#endif
+
+#ifdef PREPARED
+    //  create the SQL query string for bulk inserts using SQL prepared statements.
+    for (auto it = nodes->begin(); it != nodes->end(); ++it) {
+         boost::format fmt("");
+    }
+#else
+    // Or do a bulk upsert. Since this deletes and then updates a node. ON CONFLICT doesn't
+    // work as well with bulk inserts, so we do the same thing but differently. Delete
+    // all the nodes and then just insert them.
+    std::string delquery = "DELETE FROM nodes WHERE osm_id IN(";
+    for (auto it = nodes.begin(); it != nodes.end(); ++it) {
+        boost::format fmt("%1%,");
+        fmt % it->id;
+        delquery.append(fmt.str());
+    }
+    delquery.pop_back();
+    delquery.append(");");
+    dbconn->query(delquery);
+
+    std::string inquery = "INSERT INTO nodes as r (osm_id, geom, tags, timestamp, version, \"user\", uid, changeset) VALUES";
+    for (auto it = nodes.begin(); it != nodes.end(); ++it) {
+        boost::format values("(%1%, '%2%', %3%, '%4%', %5%, '%6%', %7%, %8%),");
+
+        // Setup the values for the insert
+        values % it->id;
+        std::stringstream ss;
+        ss << std::setprecision(12) << boost::geometry::wkt(it->point);
+        std::string geometry = ss.str();
+        values % geometry;
+        auto tags = buildTagsQuery(it->tags);
+        values % tags;
+        std::string timestamp = to_iso_extended_string(boost::posix_time::microsec_clock::universal_time());
+        values % timestamp;
+        values % it->version;
+        // Assume the user has already had the quotes escaped
+        values % it->user;
+        values % it->uid;
+        values % it->changeset;
+#if 0
+        // Setup the ON CONFLICT incase the entry already exists
+        boost::format conflict(" ON CONFLICT (osm_id) DO UPDATE SET geom = ST_GeomFromText('%1%', 4326), tags = %2%, timestamp = '%3%', version = %4%, \"user\" = '%5%', uid = %6%, changeset = %7% WHERE r.version < %8%;");
+
+        conflict % geometry;
+        conflict % tags;
+        conflict % timestamp;
+        conflict % it->version;
+        // Assume the user has already had the quotes escaped
+        conflict % it->user;
+        conflict % it->uid;
+        conflict % it->changeset;
+        conflict % it->version;
+        inquery.append(values.str() + conflict.str());
+#endif
+        inquery.append(values.str());
+    }
+    inquery.pop_back();
+    inquery.append(";");
+    // std::cerr << "SQL: " << inquery << std::endl;
+    dbconn->query(inquery);
+#endif
+    return true;
+};
+
+bool
+SQLPrep::insert_entries(const std::vector<osmobjects::OsmWay> &ways) {
+#ifdef TIMING_DEBUG_x
+    boost::timer::auto_cpu_timer timer("SQLPrep::insert_entries(ways): took %w seconds\n");
+#endif
+    // for (auto it = ways->begin(); it != ways->end(); ++it) {
+    //     boost::format fmt("");
+    // }
+    return false;
+};
+
+bool
+SQLPrep::insert_entries(const std::vector<osmobjects::OsmRelation> &relations) {
+#ifdef TIMING_DEBUG_x
+    boost::timer::auto_cpu_timer timer("SQLPrep::insert_entries(relations): took %w seconds\n");
+#endif
+    // for (auto it = relations->begin(); it != relations->end(); ++it) {
+    //     boost::format fmt("");
+    // }
+    return false;
+};
 
 } // namespace queryraw
 
