@@ -1127,7 +1127,6 @@ SQLPrep::init(void) {
     dbconn->sdb->prepare("delete_poly", "DELETE FROM ways_poly WHERE osm_id = $1");
     dbconn->sdb->prepare("delete_line", "DELETE FROM ways_line WHERE osm_id = $1");
     dbconn->sdb->prepare("delete_relation", "DELETE FROM relations WHERE osm_id = $1");
-    // dbconn->sdb->prepare("delete_val_in", "DELETE FROM validation WHERE osm_id IN($1)");
     // dbconn->sdb->prepare("delete_val_status", "DELETE FROM validation WHERE osm_id = $1 and source = '%2%' and status = '$2'");
     // This gets called heavily.
     dbconn->sdb->prepare("select_nodes", "SELECT osm_id, st_x(geom) as lat, st_y(geom) as lon FROM nodes WHERE osm_id IN ($1)");
@@ -1152,19 +1151,12 @@ SQLPrep::init(void) {
     // dbconn->sdb->prepare("insert_validation", "INSERT INTO validation as v (osm_id, changeset, uid, type, status, values, timestamp, location, source, version) VALUES($1)");
 };
 
-// Since the performance of bulk insterts or prepared statements, this lets us compare their performance.
+// Since the performance of bulk inserts or prepared statements, this lets us compare their performance.
 bool
 SQLPrep::insert_entries(const std::vector<osmobjects::OsmNode> &nodes) {
 #ifdef TIMING_DEBUG
     boost::timer::auto_cpu_timer timer("SQLPrep::insert_entries(nodes): took %w seconds\n");
 #endif
-
-#ifdef PREPARED
-    //  create the SQL query string for bulk inserts using SQL prepared statements.
-    for (auto it = nodes->begin(); it != nodes->end(); ++it) {
-         boost::format fmt("");
-    }
-#else
     // Or do a bulk upsert. Since this deletes and then updates a node. ON CONFLICT doesn't
     // work as well with bulk inserts, so we do the same thing but differently. Delete
     // all the nodes and then just insert them.
@@ -1174,6 +1166,7 @@ SQLPrep::insert_entries(const std::vector<osmobjects::OsmNode> &nodes) {
         fmt % it->id;
         delquery.append(fmt.str());
     }
+    // Remove the trailing comma and replace it with a semi-colon
     delquery.pop_back();
     delquery.append(");");
     dbconn->query(delquery);
@@ -1198,6 +1191,7 @@ SQLPrep::insert_entries(const std::vector<osmobjects::OsmNode> &nodes) {
         values % it->uid;
         values % it->changeset;
 #if 0
+        // FIXME: not used if doing a bulk insert
         // Setup the ON CONFLICT incase the entry already exists
         boost::format conflict(" ON CONFLICT (osm_id) DO UPDATE SET geom = ST_GeomFromText('%1%', 4326), tags = %2%, timestamp = '%3%', version = %4%, \"user\" = '%5%', uid = %6%, changeset = %7% WHERE r.version < %8%;");
 
@@ -1214,11 +1208,12 @@ SQLPrep::insert_entries(const std::vector<osmobjects::OsmNode> &nodes) {
 #endif
         inquery.append(values.str());
     }
+    // Remove the trailing comma and replace it with a semi-colon
     inquery.pop_back();
     inquery.append(";");
     // std::cerr << "SQL: " << inquery << std::endl;
     dbconn->query(inquery);
-#endif
+
     return true;
 };
 
