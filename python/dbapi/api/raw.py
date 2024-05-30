@@ -238,7 +238,7 @@ class Raw:
         params.table = Table.polygons
         result = await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
         if asJson:
-            return result
+            return result or {}
         return deserializeTags(result)
 
     # Get line features
@@ -250,7 +250,7 @@ class Raw:
         params.table = Table.lines
         result =  await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
         if asJson:
-            return result
+            return result or {}
         return deserializeTags(result)
 
 
@@ -263,7 +263,7 @@ class Raw:
         params.table = Table.nodes
         result = await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
         if asJson:
-            return result
+            return result or {}
         return deserializeTags(result)
 
     # Get all (polygon, line, node) features

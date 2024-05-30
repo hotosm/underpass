@@ -65,6 +65,7 @@ class Stats:
         result = await self.db.run(featureCountQuery(params), singleObject=True)
         if asJson:
             return json.dumps(dict(result))
+        return result
 
     async def getLinesCount(
         self, 
@@ -75,6 +76,7 @@ class Stats:
         result = await self.db.run(featureCountQuery(params), singleObject=True)
         if asJson:
             return json.dumps(dict(result))
+        return result
 
     async def getPolygonsCount(
         self, 

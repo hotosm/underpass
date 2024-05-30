@@ -30,7 +30,7 @@ from .sharedTypes import Table, GeoType
 from .filters import tagsQueryFilter, hashtagQueryFilter
 from .serialization import queryToJSON
 from .config import RESULTS_PER_PAGE, RESULTS_PER_PAGE_LIST, DEBUG
-from .raw import RawFeaturesParamsDTO, ListFeaturesParamsDTO, rawQueryToJSON, listQueryToJSON
+from .raw import RawFeaturesParamsDTO, ListFeaturesParamsDTO, rawQueryToJSON, listQueryToJSON, OrderBy
 from .serialization import deserializeTags
 import json
 
@@ -148,6 +148,7 @@ def listFeaturesQuery(
     geoType:GeoType = GeoType[params.table]
     osmType:OsmType = OsmType[params.table]
     table:Table = Table[params.table]
+    orderBy:OrderBy = OrderBy[params.orderBy]
 
     query = "( \
         SELECT '{type}' as type, \n \
@@ -178,12 +179,12 @@ def listFeaturesQuery(
             ) if params.area else "",
         tags=" AND (" + tagsQueryFilter(params.tags, table.value) + ")" if params.tags else "",
         status=" AND status = '{status}'".format(status=params.status.value) if (params.status) else "",
-        order=" AND {order} IS NOT NULL ORDER BY {order} DESC LIMIT {limit} OFFSET {offset}"
+        order=" ORDER BY {order} DESC LIMIT {limit} OFFSET {offset}"
             .format(
-                order=params.orderBy.value,
+                order=orderBy.value,
                 limit=RESULTS_PER_PAGE_LIST,
                 offset=params.page * RESULTS_PER_PAGE_LIST
-            ) if params.page else ""
+            )
         ).replace("WHERE AND", "WHERE")
     if asJson:
         return listQueryToJSON(query, params)
