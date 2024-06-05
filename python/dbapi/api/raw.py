@@ -137,7 +137,7 @@ def listFeaturesQuery(
                     order=params.orderBy.value,
                     limit=RESULTS_PER_PAGE_LIST,
                     offset=params.page * RESULTS_PER_PAGE_LIST
-                ) if params.page else ""
+                ) if params.page is not None else " LIMIT {limit} OFFSET {offset}"
             ).replace("WHERE AND", "WHERE")
         if asJson:
             return listQueryToJSON(query, params)

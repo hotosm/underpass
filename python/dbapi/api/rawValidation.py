@@ -179,12 +179,12 @@ def listFeaturesQuery(
             ) if params.area else "",
         tags=" AND (" + tagsQueryFilter(params.tags, table.value) + ")" if params.tags else "",
         status=" AND status = '{status}'".format(status=params.status.value) if (params.status) else "",
-        order=" ORDER BY {order} DESC LIMIT {limit} OFFSET {offset}"
+        order=" AND {order} IS NOT NULL ORDER BY {order} DESC LIMIT {limit} OFFSET {offset}"
             .format(
                 order=orderBy.value,
                 limit=RESULTS_PER_PAGE_LIST,
                 offset=params.page * RESULTS_PER_PAGE_LIST
-            )
+            ) if params.page is not None else " LIMIT {limit} OFFSET {offset}"
         ).replace("WHERE AND", "WHERE")
     if asJson:
         return listQueryToJSON(query, params)
