@@ -30,7 +30,7 @@ import json
 
 # Order by
 class OrderBy(Enum):
-    createdAt = "created_at"
+    closedAt = "closed_at"
     id = "id"
     timestamp = "timestamp"
 
@@ -73,7 +73,7 @@ def geoFeaturesQuery(params: RawFeaturesParamsDTO, asJson: bool = False):
             tags, \n \
             hashtags, \n \
             editor, \n \
-            created_at \n \
+            closed_at \n \
             FROM {table} \n \
             LEFT JOIN changesets c ON c.id = {table}.changeset \n \
             WHERE{area}{tags}{hashtag}{date} {limit}; \n \
@@ -84,7 +84,7 @@ def geoFeaturesQuery(params: RawFeaturesParamsDTO, asJson: bool = False):
                 .format(area=params.area) if params.area else "",
             tags=" AND (" + tagsQueryFilter(params.tags, params.table.value) + ") \n" if params.tags else "",
             hashtag=" AND " + hashtagQueryFilter(params.hashtag, params.table.value) if params.hashtag else "",
-            date=" AND created_at >= {dateFrom} AND created_at <= {dateTo}\n"
+            date=" AND closed_at >= {dateFrom} AND closed_at <= {dateTo}\n"
                 .format(dateFrom=params.dateFrom, dateTo=params.dateTo) 
                 if params.dateFrom and params.dateTo else "\n",
             limit=" LIMIT {limit}".format(limit=RESULTS_PER_PAGE)
@@ -115,7 +115,7 @@ def listFeaturesQuery(
                 {table}.timestamp, \n \
                 tags, \n \
                 {table}.changeset, \n \
-                c.created_at \n \
+                c.closed_at \n \
                 FROM {table} \n \
                 LEFT JOIN changesets c ON c.id = {table}.changeset \n \
                 WHERE{fromDate}{toDate}{hashtag}{area}{tags}{order} \
@@ -124,8 +124,8 @@ def listFeaturesQuery(
             type=osmType.value,
             geotype=geoType.value,
             table=table.value,
-            fromDate=" AND created_at >= '{dateFrom}'".format(dateFrom=params.dateFrom) if (params.dateFrom) else "",
-            toDate=" AND created_at <= '{dateTo}'".format(dateTo=params.dateTo) if (params.dateTo) else "",
+            fromDate=" AND closed_at >= '{dateFrom}'".format(dateFrom=params.dateFrom) if (params.dateFrom) else "",
+            toDate=" AND closed_at <= '{dateTo}'".format(dateTo=params.dateTo) if (params.dateTo) else "",
             hashtag=" AND " + hashtagQueryFilter(params.hashtag, table.value) if params.hashtag else "",
             area=" AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({area})))', 4326) )"
                 .format(
@@ -137,7 +137,7 @@ def listFeaturesQuery(
                     order=params.orderBy.value,
                     limit=RESULTS_PER_PAGE_LIST,
                     offset=params.page * RESULTS_PER_PAGE_LIST
-                ) if params.page else ""
+                ) if params.page is not None else " LIMIT {limit} OFFSET {offset}"
             ).replace("WHERE AND", "WHERE")
         if asJson:
             return listQueryToJSON(query, params)
@@ -152,7 +152,7 @@ def listQueryToJSON(query: str, params: ListFeaturesParamsDTO):
                 predata.timestamp, \n \
                 tags, \n \
                 predata.changeset, \n \
-                predata.created_at as created_at, \n \
+                predata.closed_at as closed_at, \n \
                 lat, \n \
                 lon \n \
                 from predata \n \
@@ -163,10 +163,10 @@ def listQueryToJSON(query: str, params: ListFeaturesParamsDTO):
         ) SELECT jsonb_agg(t_features.feature) as result FROM t_features;" \
         .format(
             query=query,
-            date="created_at >= '{dateFrom}' AND created_at <= '{dateTo}'"
+            date="closed_at >= '{dateFrom}' AND closed_at <= '{dateTo}'"
                 .format(
                     dateFrom=params.dateFrom if (params.dateFrom) else "",
-                    dateTo=" AND created_at <= '{dateTo}'".format(dateTo=params.dateTo) if (params.dateTo) else ""
+                    dateTo=" AND closed_at <= '{dateTo}'".format(dateTo=params.dateTo) if (params.dateTo) else ""
                 ) if params.dateFrom and params.dateTo else "",
             orderBy=" AND {orderBy} IS NOT NULL ORDER BY {orderBy} DESC"
             .format(
@@ -238,7 +238,7 @@ class Raw:
         params.table = Table.polygons
         result = await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
         if asJson:
-            return result
+            return result or {}
         return deserializeTags(result)
 
     # Get line features
@@ -250,7 +250,7 @@ class Raw:
         params.table = Table.lines
         result =  await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
         if asJson:
-            return result
+            return result or {}
         return deserializeTags(result)
 
 
@@ -263,7 +263,7 @@ class Raw:
         params.table = Table.nodes
         result = await self.db.run(geoFeaturesQuery(params, asJson), asJson=asJson)
         if asJson:
-            return result
+            return result or {}
         return deserializeTags(result)
 
     # Get all (polygon, line, node) features

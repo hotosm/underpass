@@ -58,21 +58,21 @@ class DB():
         if not self.pool:
             await self.connect()
         if self.pool:
+            result = None
             try:
                 conn = await self.pool.acquire()
                 result = await conn.fetch(query)
+                data = None
                 if asJson:
-                    if singleObject:
-                        return result[0]['result']
-                    return result[0]['result']
+                    data = result[0]['result']
+                elif singleObject:
+                    data = result[0]
                 else:
-                    if singleObject:
-                        return result[0]
-                    return result
+                    data = result
+                await self.pool.release(conn)
+                return data
             except Exception as e: 
                 print("\n******* \n" + query + "\n******* \n")
                 print(e)
                 return None
-            finally:
-                await self.pool.release(conn)
-        return None
+

@@ -44,7 +44,7 @@ def featureCountQuery(params: StatsParamsDTO, asJson: bool = False):
                 .format(area=params.area) if params.area else "",
             tags=" AND (" + tagsQueryFilter(params.tags, params.table.value) + ") \n" if params.tags else "",
             hashtag=" AND " + hashtagQueryFilter(params.hashtag, params.table.value) if params.hashtag else "",
-            date=" AND created_at >= {dateFrom} AND created_at <= {dateTo}\n"
+            date=" AND closed_at >= {dateFrom} AND closed_at <= {dateTo}\n"
                 .format(dateFrom=params.dateFrom, dateTo=params.dateTo) 
                 if params.dateFrom and params.dateTo else "\n"
         ).replace("WHERE AND", "WHERE")
@@ -65,6 +65,7 @@ class Stats:
         result = await self.db.run(featureCountQuery(params), singleObject=True)
         if asJson:
             return json.dumps(dict(result))
+        return result
 
     async def getLinesCount(
         self, 
@@ -75,6 +76,7 @@ class Stats:
         result = await self.db.run(featureCountQuery(params), singleObject=True)
         if asJson:
             return json.dumps(dict(result))
+        return result
 
     async def getPolygonsCount(
         self, 

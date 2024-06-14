@@ -32,14 +32,14 @@ class BaseRequest(BaseModel):
     featureType: str = None
 
 class BaseListRequest(BaseRequest):
-    orderBy: str = None
+    orderBy: str = "id"
     page: int = None
 
 class BaseRawValidationRequest(BaseRequest):
     status: str = None
 
 class RawValidationListRequest(BaseRawValidationRequest):
-    orderBy: str = None
+    orderBy: str = "id"
     page: int = None
 
 class RawRequest(BaseRequest):

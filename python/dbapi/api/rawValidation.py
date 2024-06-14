@@ -30,7 +30,7 @@ from .sharedTypes import Table, GeoType
 from .filters import tagsQueryFilter, hashtagQueryFilter
 from .serialization import queryToJSON
 from .config import RESULTS_PER_PAGE, RESULTS_PER_PAGE_LIST, DEBUG
-from .raw import RawFeaturesParamsDTO, ListFeaturesParamsDTO, rawQueryToJSON, listQueryToJSON
+from .raw import RawFeaturesParamsDTO, ListFeaturesParamsDTO, rawQueryToJSON, listQueryToJSON, OrderBy
 from .serialization import deserializeTags
 import json
 
@@ -92,8 +92,8 @@ def countQuery(
         ) \
         select count, total from  count_validated_features, count_features".format(
             table=params.table.value,
-            dateFrom=" AND created_at >= '{dateFrom}'".format(dateFrom=params.dateFrom) if (params.dateFrom) else "",
-            dateTo=" AND created_at <= '{dateTo}'".format(dateTo=params.dateTo) if (params.dateTo) else "",
+            dateFrom=" AND closed_at >= '{dateFrom}'".format(dateFrom=params.dateFrom) if (params.dateFrom) else "",
+            dateTo=" AND closed_at <= '{dateTo}'".format(dateTo=params.dateTo) if (params.dateTo) else "",
             area=" AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({area})))', 4326) )".format(area=params.area) if params.area else "",
             tags=" AND (" + tagsQueryFilter(params.tags, params.table.value) + ") \n" if params.tags else "",
             hashtag=" AND " + hashtagQueryFilter(params.hashtag, params.table.value) if params.hashtag else "",
@@ -115,7 +115,7 @@ def geoFeaturesQuery(params: RawValidationFeaturesParamsDTO, asJson: bool = Fals
             status, \n \
             hashtags, \n \
             editor, \n \
-            created_at \n \
+            closed_at \n \
             FROM {table} \n \
             LEFT JOIN changesets c ON c.id = {table}.changeset \n \
             LEFT JOIN validation ON validation.osm_id = {table}.osm_id \
@@ -127,7 +127,7 @@ def geoFeaturesQuery(params: RawValidationFeaturesParamsDTO, asJson: bool = Fals
                 .format(area=params.area) if params.area else "",
             tags=" AND (" + tagsQueryFilter(params.tags, params.table.value) + ") \n" if params.tags else "",
             hashtag=" AND " + hashtagQueryFilter(params.hashtag, params.table.value) if params.hashtag else "",
-            date=" AND created_at >= {dateFrom} AND created_at <= {dateTo}\n"
+            date=" AND closed_at >= {dateFrom} AND closed_at <= {dateTo}\n"
                 .format(dateFrom=params.dateFrom, dateTo=params.dateTo) 
                 if params.dateFrom and params.dateTo else "\n",
             status=" AND status = '{status}'".format(status=params.status.value) if (params.status) else "",
@@ -148,6 +148,7 @@ def listFeaturesQuery(
     geoType:GeoType = GeoType[params.table]
     osmType:OsmType = OsmType[params.table]
     table:Table = Table[params.table]
+    orderBy:OrderBy = OrderBy[params.orderBy]
 
     query = "( \
         SELECT '{type}' as type, \n \
@@ -158,7 +159,7 @@ def listFeaturesQuery(
             {table}.timestamp, \n \
             tags, \n \
             {table}.changeset, \n \
-            c.created_at, \n \
+            c.closed_at, \n \
             status \n \
             FROM {table} \n \
             LEFT JOIN changesets c ON c.id = {table}.changeset \n \
@@ -169,8 +170,8 @@ def listFeaturesQuery(
         type=osmType.value,
         geotype=geoType.value,
         table=table.value,
-        fromDate=" AND created_at >= '{dateFrom}'".format(dateFrom=params.dateFrom) if (params.dateFrom) else "",
-        toDate=" AND created_at <= '{dateTo}'".format(dateTo=params.dateTo) if (params.dateTo) else "",
+        fromDate=" AND closed_at >= '{dateFrom}'".format(dateFrom=params.dateFrom) if (params.dateFrom) else "",
+        toDate=" AND closed_at <= '{dateTo}'".format(dateTo=params.dateTo) if (params.dateTo) else "",
         hashtag=" AND " + hashtagQueryFilter(params.hashtag, table.value) if params.hashtag else "",
         area=" AND ST_Intersects(\"geom\", ST_GeomFromText('MULTIPOLYGON((({area})))', 4326) )"
             .format(
@@ -180,10 +181,10 @@ def listFeaturesQuery(
         status=" AND status = '{status}'".format(status=params.status.value) if (params.status) else "",
         order=" AND {order} IS NOT NULL ORDER BY {order} DESC LIMIT {limit} OFFSET {offset}"
             .format(
-                order=params.orderBy.value,
+                order=orderBy.value,
                 limit=RESULTS_PER_PAGE_LIST,
                 offset=params.page * RESULTS_PER_PAGE_LIST
-            ) if params.page else ""
+            ) if params.page is not None else " LIMIT {limit} OFFSET {offset}"
         ).replace("WHERE AND", "WHERE")
     if asJson:
         return listQueryToJSON(query, params)
