@@ -562,7 +562,7 @@ QueryRaw::getWaysByIds(std::string &waysIds, std::map<long, std::shared_ptr<osmo
 #endif
     // Get Ways and it's geometries (Polygon and LineString)
     std::string waysQuery = "SELECT distinct(osm_id), ST_AsText(geom, 4326), 'polygon' as type from ways_poly wp where osm_id = any(ARRAY[" + waysIds + "]) ";
-    waysQuery += "UNION SELECT distinct(osm_id), ST_AsText(geom, 4326), 'linestring' as type from ways_line wp where osm_id = any(ARRAY[" + waysIds + "])";
+    waysQuery += "UNION SELECT distinct(osm_id), ST_AsText(geom, 4326), 'linestring' as type from ways_line wp where osm_id = any(ARRAY[" + waysIds + "]);";
     auto ways_result = dbconn->query(waysQuery);
     if (ways_result.size() == 0) {
         log_debug("No results returned!");
@@ -862,10 +862,8 @@ QueryRaw::getWaysByNodesRefs(std::string &nodeIds) const
 
     // Get all Ways that have references to Nodes from the DB, including Polygons and LineString geometries
     // std::string waysQuery = "SELECT distinct(osm_id), refs, version, tags, uid, changeset from way_refs join ways_poly wp on wp.osm_id = way_id where node_id = any(ARRAY[" + nodeIds + "])";
-    queries.push_back("SELECT distinct(osm_id), refs, version, tags, uid, changeset from ways_poly where refs @> '{" + nodeIds + "}'");
-
-    queries.push_back("SELECT distinct(osm_id), refs, version, tags, uid, changeset from ways_line where refs @> '{" + nodeIds + "}'");
-    // waysQuery += " UNION SELECT distinct(osm_id), refs, version, tags, uid, changeset from way_refs join ways_line wl on wl.osm_id = way_id where node_id = any(ARRAY[" + nodeIds + "]);";
+    queries.push_back("SELECT distinct(osm_id), refs, version, tags, uid, changeset from ways_poly where refs @> '{" + nodeIds + "}';");
+    queries.push_back("SELECT distinct(osm_id), refs, version, tags, uid, changeset from ways_line where refs @> '{" + nodeIds + "}';");
 
     for (auto it = queries.begin(); it != queries.end(); ++it) {
 

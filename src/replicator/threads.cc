@@ -614,30 +614,29 @@ threadOsmChange(OsmChangeTask osmChangeTask)
         }
     }
 
-    // // Update validation table
+    // Update validation table
     if (!config->disable_validation) {
 
         // Validate ways
         auto wayval = osmchanges->validateWays(poly, plugin);
-        for (auto it = task.query.begin(); it != task.query.end(); ++it) {
-            auto result = queryvalidate->ways(wayval, validation_removals);
-            for (auto itt = result->begin(); itt != result->end(); ++itt) {
-                task.query.push_back(*itt);
-            }
+        auto wayval_queries = queryvalidate->ways(wayval, validation_removals);
+        for (auto itt = wayval_queries->begin(); itt != wayval_queries->end(); ++itt) {
+            task.query.push_back(*itt);
         }
 
         // Validate nodes
         auto nodeval = osmchanges->validateNodes(poly, plugin);
-        for (auto it = task.query.begin(); it != task.query.end(); ++it) {
-            auto result = queryvalidate->nodes(nodeval, validation_removals);
-            for (auto itt = result->begin(); itt != result->end(); ++itt) {
-                task.query.push_back(*itt);
-            }
+        auto nodeval_queries = queryvalidate->nodes(nodeval, validation_removals);
+        for (auto itt = nodeval_queries->begin(); itt != nodeval_queries->end(); ++itt) {
+            task.query.push_back(*itt);
         }
 
         // Validate relations
-        // relval = osmchanges->validateRelations(poly, plugin);
-        // queryvalidate->relations(relval, task.query, validation_removals);
+        // auto relval = osmchanges->validateRelations(poly, plugin);
+        // auto relval_queries = queryvalidate->relations(relval, validation_removals);
+        // for (auto itt = relval_queries->begin(); itt != relval_queries->end(); ++itt) {
+        //     task.query.push_back(*itt);
+        // }
 
         // Remove validation entries for removed objects
         task.query.push_back(*queryvalidate->updateValidation(validation_removals));
