@@ -1,0 +1,80 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version="0.6" generator="Osmosis 0.47.4">
+  <create>
+<node id="429245629" visible="true" version="9" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4602624" lon="-65.7819384"/>
+ <node id="10749143330" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4602013" lon="-65.7819400"/>
+ <node id="10749143329" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4602021" lon="-65.7819774"/>
+ <node id="10749143328" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4600267" lon="-65.7819821"/>
+ <node id="10749143327" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4600260" lon="-65.7819500"/>
+ <node id="10749143326" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4599456" lon="-65.7819522"/>
+ <node id="10749143325" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4599464" lon="-65.7819904"/>
+ <node id="10749143324" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4597744" lon="-65.7819951"/>
+ <node id="10749143323" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4597739" lon="-65.7819717"/>
+<node id="429245631" visible="true" version="10" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4597160" lon="-65.7819734"/>
+ <node id="429245633" visible="true" version="9" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4597233" lon="-65.7823023"/>
+<node id="10749143322" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4598488" lon="-65.7822987"/>
+ <node id="10749143321" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4598494" lon="-65.7823247"/>
+ <node id="429245636" visible="true" version="9" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4599249" lon="-65.7823226"/>
+ <node id="1054454535" visible="true" version="5" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4599213" lon="-65.7821596"/>
+ <node id="9685590387" visible="true" version="4" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4599523" lon="-65.7821587"/>
+ <node id="9685590388" visible="true" version="4" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4599544" lon="-65.7822528"/>
+<node id="9685590390" visible="true" version="4" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4600365" lon="-65.7822505"/>
+ <node id="9685590389" visible="true" version="4" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4600340" lon="-65.7821389"/>
+<node id="9685590391" visible="true" version="4" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4601647" lon="-65.7821351"/>
+ <node id="10749143334" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4601654" lon="-65.7821705"/>
+<node id="10749143335" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4601403" lon="-65.7821712"/>
+<node id="10749143336" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4601414" lon="-65.7822232"/>
+<node id="10749143337" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4600897" lon="-65.7822246"/>
+ <node id="10749143338" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4600905" lon="-65.7822633"/>
+ <node id="10749143333" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4599630" lon="-65.7822667"/>
+ <node id="9685590392" visible="true" version="4" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4599643" lon="-65.7823293"/>
+ <node id="10749143331" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4600981" lon="-65.7823258"/>
+ <node id="10749143332" visible="true" version="2" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4600975" lon="-65.7822974"/>
+ <node id="429245637" visible="true" version="9" changeset="144883705" timestamp="2023-12-07T23:30:31Z" user="LeNetsi" uid="16106864" lat="-28.4602696" lon="-65.7822929"/>
+   <way id="36908510" visible="true" version="9" changeset="133910867" timestamp="2023-03-20T18:35:14Z" user="oarias" uid="18769610">
+  <nd ref="429245629"/>
+  <nd ref="10749143330"/>
+  <nd ref="10749143329"/>
+  <nd ref="10749143328"/>
+  <nd ref="10749143327"/>
+  <nd ref="10749143326"/>
+  <nd ref="10749143325"/>
+  <nd ref="10749143324"/>
+  <nd ref="10749143323"/>
+  <nd ref="429245631"/>
+  <nd ref="429245633"/>
+  <nd ref="10749143322"/>
+  <nd ref="10749143321"/>
+  <nd ref="429245636"/>
+  <nd ref="1054454535"/>
+  <nd ref="9685590387"/>
+  <nd ref="9685590388"/>
+  <nd ref="9685590390"/>
+  <nd ref="9685590389"/>
+  <nd ref="9685590391"/>
+  <nd ref="10749143334"/>
+  <nd ref="10749143335"/>
+  <nd ref="10749143336"/>
+  <nd ref="10749143337"/>
+  <nd ref="10749143338"/>
+  <nd ref="10749143333"/>
+  <nd ref="9685590392"/>
+  <nd ref="10749143331"/>
+  <nd ref="10749143332"/>
+  <nd ref="429245637"/>
+  <nd ref="429245629"/>
+  <tag k="addr:city" v="San Fernando del Valle de Catamarca"/>
+  <tag k="addr:postcode" v="4700"/>
+  <tag k="addr:street" v="Avenida Maximio Victoria"/>
+  <tag k="building" v="university"/>
+  <tag k="layer" v="2"/>
+  <tag k="name" v="Facultad de Tecnologia y CS Aplicadas"/>
+  </way>
+  <relation id="357043" visible="true" version="3" changeset="120053541" timestamp="2022-04-22T14:10:27Z" user="Alejandro009" uid="15650815">
+  <member type="way" ref="36908510" role=""/>
+  <tag k="name" v="Fac. de Tecnología"/>
+  <tag k="site" v="university"/>
+  <tag k="type" v="site"/>
+  </relation>
+</create>
+</osmChange>

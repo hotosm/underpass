@@ -49,21 +49,33 @@ namespace bootstrap {
 
 Bootstrap::Bootstrap(void) {}
 
-std::string
+BootstrapQueries
 Bootstrap::allTasksQueries(std::shared_ptr<std::vector<BootstrapTask>> tasks) {
-    std::string queries = "";
+    BootstrapQueries queries;
     for (auto it = tasks->begin(); it != tasks->end(); ++it) {
-        queries += it->query ;
+        for (auto itt = it->query.begin(); itt != it->query.end(); ++itt) {
+            queries.underpass.push_back(*itt);
+        }
+        for (auto itt = it->osmquery.begin(); itt != it->osmquery.end(); ++itt) {
+            queries.osm.push_back(*itt);
+        }
     }
     return queries;
 }
 
 void
 Bootstrap::start(const underpassconfig::UnderpassConfig &config) {
-    std::cout << "Connecting to the database ... " << std::endl;
+    std::cout << "Connecting to OSM database ... " << std::endl;
+    osmdb = std::make_shared<Pq>();
+    if (!osmdb->connect(config.underpass_osm_db_url)) {
+        log_error("Could not connect to OSM DB, aborting bootstrapping thread!");
+        return;
+    }
+
+    std::cout << "Connecting to underpass database ... " << std::endl;
     db = std::make_shared<Pq>();
     if (!db->connect(config.underpass_db_url)) {
-        std::cout << "Could not connect to Underpass DB, aborting bootstrapping thread!" << std::endl;
+        log_error("Could not connect to Underpass DB, aborting bootstrapping thread!");
         return;
     }
 
@@ -86,14 +98,14 @@ Bootstrap::start(const underpassconfig::UnderpassConfig &config) {
 
     validator = creator();
     queryvalidate = std::make_shared<QueryValidate>(db);
-    queryraw = std::make_shared<QueryRaw>(db);
+    queryraw = std::make_shared<QueryRaw>(osmdb);
     page_size = config.bootstrap_page_size;
     concurrency = config.concurrency;
     norefs = config.norefs;
 
     processWays();
     processNodes();
-    // processRelations();
+    processRelations();
 
 }
 
@@ -144,7 +156,15 @@ Bootstrap::processWays() {
 
             pool.join();
 
-            db->query(allTasksQueries(tasks));
+            auto queries = allTasksQueries(tasks);
+
+            for (auto it = queries.underpass.begin(); it != queries.underpass.end(); ++it) {
+                db->query(*it);
+            }
+            for (auto it = queries.osm.begin(); it != queries.osm.end(); ++it) {
+                osmdb->query(*it);
+            }
+
             lastid = ways->back().id;
             for (auto it = tasks->begin(); it != tasks->end(); ++it) {
                 count += it->processed;
@@ -193,7 +213,13 @@ Bootstrap::processNodes() {
 
         pool.join();
 
-        db->query(allTasksQueries(tasks));
+        auto queries = allTasksQueries(tasks);
+        for (auto it = queries.underpass.begin(); it != queries.underpass.end(); ++it) {
+            db->query(*it);
+        }
+        for (auto it = queries.osm.begin(); it != queries.osm.end(); ++it) {
+            osmdb->query(*it);
+        }
         lastid = nodes->back().id;
         for (auto it = tasks->begin(); it != tasks->end(); ++it) {
             count += it->processed;
@@ -241,7 +267,13 @@ Bootstrap::processRelations() {
 
         pool.join();
 
-        db->query(allTasksQueries(tasks));
+        auto queries = allTasksQueries(tasks);
+        for (auto it = queries.underpass.begin(); it != queries.underpass.end(); ++it) {
+            db->query(*it);
+        }
+        for (auto it = queries.osm.begin(); it != queries.osm.end(); ++it) {
+            osmdb->query(*it);
+        }
         lastid = relations->back().id;
         for (auto it = tasks->begin(); it != tasks->end(); ++it) {
             count += it->processed;
@@ -275,16 +307,15 @@ Bootstrap::threadBootstrapWayTask(WayTask wayTask)
         if (i < ways->size()) {
             auto way = ways->at(i);
             wayval->push_back(validator->checkWay(way, "building"));
-            // Fill the way_refs table
-            if (!norefs) {
-                for (auto ref = way.refs.begin(); ref != way.refs.end(); ++ref) {
-                    task.query += "INSERT INTO way_refs (way_id, node_id) VALUES (" + std::to_string(way.id) + "," + std::to_string(*ref) + "); ";
-                }
-            }
             ++processed;
         }
     }
-    queryvalidate->ways(wayval, task.query);
+
+    auto result = queryvalidate->ways(wayval);
+    for (auto it = result->begin(); it != result->end(); ++it) {
+        task.query.push_back(*it);
+    }
+
     task.processed = processed;
     const std::lock_guard<std::mutex> lock(tasks_change_mutex);
     (*tasks)[taskIndex] = task;
@@ -320,7 +351,12 @@ Bootstrap::threadBootstrapNodeTask(NodeTask nodeTask)
             ++processed;
         }
     }
-    queryvalidate->nodes(nodeval, task.query);
+
+    auto result = queryvalidate->nodes(nodeval);
+    for (auto it = result->begin(); it != result->end(); ++it) {
+        task.query.push_back(*it);
+    }
+
     task.processed = processed;
     const std::lock_guard<std::mutex> lock(tasks_change_mutex);
     (*tasks)[taskIndex] = task;
@@ -341,7 +377,7 @@ Bootstrap::threadBootstrapRelationTask(RelationTask relationTask)
     BootstrapTask task;
     int processed = 0;
 
-    // auto relationval = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
+    auto relationval = std::make_shared<std::vector<std::shared_ptr<ValidateStatus>>>();
 
     // Proccesing relations
     for (size_t i = taskIndex * page_size; i < (taskIndex + 1) * page_size; ++i) {
@@ -350,7 +386,7 @@ Bootstrap::threadBootstrapRelationTask(RelationTask relationTask)
             // relationval->push_back(validator->checkRelation(way, "building"));
             // Fill the rel_refs table
             for (auto mit = relation.members.begin(); mit != relation.members.end(); ++mit) {
-                task.query += "INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(mit->ref) + "); ";
+                task.osmquery.push_back("INSERT INTO rel_refs (rel_id, way_id) VALUES (" + std::to_string(relation.id) + "," + std::to_string(mit->ref) + "); ");
             }
             ++processed;
         }

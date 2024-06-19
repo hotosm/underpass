@@ -59,7 +59,10 @@ namespace osmobjects {
 /// Relations contain multipe ways, and are often used for combining
 /// highway segments or administrative boundaries.
 
-typedef enum { none, create, modify, remove } action_t; // delete is a reserved word
+// delete is a reserved word
+// modify_geom is a special action for modifying the geometry only
+typedef enum { none, create, modify, remove, modify_geom } action_t; 
+
 typedef enum { empty, node, way, relation, member } osmtype_t;
 
 /// \class OsmObject
@@ -219,7 +222,7 @@ class OsmRelation : public OsmObject {
     OsmRelation(void) { type = relation; };
 
     multilinestring_t multilinestring; ///< Store the members as a multilinestring
-    multipolygon_t multipolygon; ///< Store the members as a multipolygon
+    polygon_t multipolygon; ///< Store the members as a multipolygon
     point_t center;          ///< Store the centroid of the relation
 
     /// Add a member to this relation
@@ -235,7 +238,7 @@ class OsmRelation : public OsmObject {
     bool isMultiPolygon(void) const
     {
         return (tags.count("type") &&
-            (tags.at("type") == "multipolygon")
+            (tags.at("type") == "multipolygon" || tags.at("type") == "boundary")
         );
     };
 

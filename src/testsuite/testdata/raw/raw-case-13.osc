@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osmChange version="0.6" generator="Osmosis 0.47.4">
+  <create>
+<node id="11537189634" visible="true" version="2" changeset="146521050" timestamp="2024-01-21T17:12:35Z" user="Zalitoar" uid="79602" lat="-34.8050218" lon="-58.3741564"/>
+<node id="4405255616" visible="true" version="3" changeset="146521050" timestamp="2024-01-21T17:12:35Z" user="Zalitoar" uid="79602" lat="-34.8043497" lon="-58.3745757"/>
+<node id="11401786560" visible="true" version="2" changeset="146521050" timestamp="2024-01-21T17:12:35Z" user="Zalitoar" uid="79602" lat="-34.8043325" lon="-58.3746555"/>
+ <node id="4405255628" visible="true" version="3" changeset="146521050" timestamp="2024-01-21T17:12:35Z" user="Zalitoar" uid="79602" lat="-34.8049613" lon="-58.3761403"/>
+<node id="11537189633" visible="true" version="2" changeset="146521050" timestamp="2024-01-21T17:12:35Z" user="Zalitoar" uid="79602" lat="-34.8050927" lon="-58.3741120"/>
+ <node id="11537189631" visible="true" version="2" changeset="146521050" timestamp="2024-01-21T17:12:35Z" user="Zalitoar" uid="79602" lat="-34.8050827" lon="-58.3741513"/>
+ <node id="11537252108" visible="true" version="3" changeset="146521050" timestamp="2024-01-21T17:12:35Z" user="Zalitoar" uid="79602" lat="-34.8050658" lon="-58.3741619">  
+  <tag k="barrier" v="gate"/>
+ </node>
+ <node id="11537189632" visible="true" version="2" changeset="146521050" timestamp="2024-01-21T17:12:35Z" user="Zalitoar" uid="79602" lat="-34.8050491" lon="-58.3741704"/>
+<node id="4405255625" visible="true" version="3" changeset="146521050" timestamp="2024-01-21T17:12:35Z" user="Zalitoar" uid="79602" lat="-34.8065250" lon="-58.3751384"/>
+ <node id="11401786561" visible="true" version="2" changeset="146521050" timestamp="2024-01-21T17:12:35Z" user="Zalitoar" uid="79602" lat="-34.8058114" lon="-58.3737396"/>
+<node id="4405255622" visible="true" version="3" changeset="146521050" timestamp="2024-01-21T17:12:35Z" user="Zalitoar" uid="79602" lat="-34.8057548" lon="-58.3737147"/>
+  <way id="1241680257" visible="true" version="1" changeset="146520009" timestamp="2024-01-21T16:41:32Z" user="Zalitoar" uid="79602">
+  <nd ref="11537189634"/>
+  <nd ref="4405255616"/>
+  <nd ref="11401786560"/>
+  <nd ref="4405255628"/>
+  <tag k="barrier" v="fence"/>
+  <tag k="fence_type" v="bars"/>
+  </way>
+  <way id="1241680258" visible="true" version="1" changeset="146520009" timestamp="2024-01-21T16:41:32Z" user="Zalitoar" uid="79602">
+  <nd ref="11537189633"/>
+  <nd ref="11537189631"/>
+  <nd ref="11537252108"/>
+  <nd ref="11537189632"/>
+  <nd ref="11537189634"/>
+  <tag k="barrier" v="wall"/>
+  </way>
+  <way id="442875643" visible="true" version="7" changeset="146520009" timestamp="2024-01-21T16:41:32Z" user="Zalitoar" uid="79602">
+  <nd ref="4405255625"/>
+  <nd ref="11401786561"/>
+  <nd ref="4405255622"/>
+  <nd ref="11537189633"/>
+  <tag k="barrier" v="fence"/>
+  <tag k="fence_type" v="bars"/>
+  </way>
+  <way id="1241680259" visible="true" version="1" changeset="146520009" timestamp="2024-01-21T16:41:32Z" user="Zalitoar" uid="79602">
+  <nd ref="4405255628"/>
+  <nd ref="4405255625"/>
+  </way>
+  <relation id="17060812" visible="true" version="1" changeset="146520009" timestamp="2024-01-21T16:41:32Z" user="Zalitoar" uid="79602">
+  <member type="way" ref="1241680257" role="outer"/>
+  <member type="way" ref="1241680258" role="outer"/>
+  <member type="way" ref="442875643" role="outer"/>
+  <member type="way" ref="1241680259" role="outer"/>
+  <tag k="bicycle" v="no"/>
+  <tag k="dog" v="leashed"/>
+  <tag k="electric_bicycle" v="no"/>
+  <tag k="foot" v="designated"/>
+  <tag k="inline_skates" v="no"/>
+  <tag k="kick_scooter" v="no"/>
+  <tag k="landuse" v="forest"/>
+  <tag k="leisure" v="park"/>
+  <tag k="motorcycle" v="no"/>
+  <tag k="name" v="Parque saludable Ramón Carrillo"/>
+  <tag k="note" v="Podrían pasarse las etiquetas de restricciones de como motorcycle a un futuro relevamiento de footway, pero las restricciones aplican a todo el predio."/>
+  <tag k="opening_hours" v="Tu-Su 08:00-20:00"/>
+  <tag k="operator" v="Municipalidad de Almirante Brown"/>
+  <tag k="small_electric_vehicle" v="no"/>
+  <tag k="smoking" v="no"/>
+  <tag k="type" v="multipolygon"/>
+  </relation>
+</create>
+</osmChange>

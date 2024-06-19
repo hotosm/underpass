@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Humanitarian OpenStreetMap Team
+// Copyright (c) 2023, 2024 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -23,7 +23,7 @@
 /// \file queryraw.hh
 /// \brief This build raw queries for the database
 ///
-/// This manages the OSM Raw schema in a postgres database. This
+/// This manages the OSM Raw Data schema in a PostgreSQL DB. This
 /// includes building queries for existing data in the database, 
 /// as well for updating the database.
 
@@ -45,45 +45,48 @@ using namespace osmchange;
 /// \namespace queryraw
 namespace queryraw {
 
-/// \class QueryStats
-/// \brief This handles all direct database access
+/// \class QueryRaw
+/// \brief This handles all raw data database access
 ///
-/// This class handles all the queries to the OSM Stats database.
+/// This class handles all the queries to the OSM Raw Data PostgreSQL DB.
 /// This includes querying the database for existing data, as
-/// well as updating the data whenh applying a replication file.
+/// well as updating the data (geometries and tags) applying a replication file.
 class QueryRaw {
   public:
     QueryRaw(void);
     ~QueryRaw(void){};
     QueryRaw(std::shared_ptr<Pq> db);
 
+    // Name of the table for storing polygons
     static const std::string polyTable;
+    // Name of the table for storing linestrings
     static const std::string lineTable;
 
     /// Build query for processed Node
-    std::string applyChange(const OsmNode &node) const;
+    std::shared_ptr<std::vector<std::string>> applyChange(const OsmNode &node) const;
     /// Build query for processed Way
-    std::string applyChange(const OsmWay &way) const;
+    std::shared_ptr<std::vector<std::string>> applyChange(const OsmWay &way) const;
     /// Build query for processed Relation
-    std::string applyChange(const OsmRelation &relation) const;
-    /// Build all geometries for osmchanges
+    std::shared_ptr<std::vector<std::string>> applyChange(const OsmRelation &relation) const;
+    /// Build all geometries for a OsmChange file
     void buildGeometries(std::shared_ptr<OsmChangeFile> osmchanges, const multipolygon_t &poly);
-    /// Get nodes for filling Node cache from ways refs
+    /// Get nodes for filling Node cache from refs on ways 
     void getNodeCacheFromWays(std::shared_ptr<std::vector<OsmWay>> ways, std::map<double, point_t> &nodecache) const;
-    // Get ways by refs
+    // Get ways by node refs (used for ways geometries)
     std::list<std::shared_ptr<OsmWay>> getWaysByNodesRefs(std::string &nodeIds) const;
-    // Get ways by ids (used for getting relations geometries)
+    // Get ways by ids (used for relations geometries)
     void getWaysByIds(std::string &relsForWayCacheIds, std::map<long, std::shared_ptr<osmobjects::OsmWay>> &waycache);
-    // Get relations by referenced ways
+    // Get relations by referenced ways (used for relations geometries)
     std::list<std::shared_ptr<OsmRelation>> getRelationsByWaysRefs(std::string &wayIds) const;
-    // DB connection
+    // OSM DB connection
     std::shared_ptr<Pq> dbconn;
-    // Get ways count
+    // Get object (nodes, ways or relations) count from the database
     int getCount(const std::string &tableName);
-    // Build tags query
+    // Build tags query for insert tags into the databse
     std::string buildTagsQuery(std::map<std::string, std::string> tags) const;
     // Get ways by page
     std::shared_ptr<std::vector<OsmWay>> getWaysFromDB(long lastid, int pageSize, const std::string &tableName);
+    // Get ways by page, without refs (useful for non OSM databases)
     std::shared_ptr<std::vector<OsmWay>> getWaysFromDBWithoutRefs(long lastid, int pageSize, const std::string &tableName);
     // Get nodes by page
     std::shared_ptr<std::vector<OsmNode>> getNodesFromDB(long lastid, int pageSize);

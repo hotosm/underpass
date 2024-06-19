@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021, 2022, 2023 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022, 2023, 2024 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -123,7 +123,8 @@ main(int argc, char *argv[])
             ("disable-raw", "Disable raw OSM data")
             ("norefs", "Disable refs (useful for non OSM data)")
             ("bootstrap", "Bootstrap data tables")
-            ("silent", "Silent");
+            ("silent", "Silent")
+            ("rawdb", opts::value<std::string>(), "Database URI for raw OSM data");
         // clang-format on
 
         opts::store(opts::command_line_parser(argc, argv).options(desc).positional(p).run(), vm);
@@ -156,6 +157,10 @@ main(int argc, char *argv[])
     }
 
     // Database
+    if (vm.count("rawdb")) {
+        config.underpass_osm_db_url = vm["rawdb"].as<std::string>();
+    }
+
     if (vm.count("server")) {
         config.underpass_db_url = vm["server"].as<std::string>();
     }
@@ -291,7 +296,8 @@ main(int argc, char *argv[])
 
         // OsmChanges
         std::thread osmChangeThread;
-        if (!vm.count("changesets")) {
+        if ((!vm.count("changesets") && !vm.count("changeseturl")) ||
+            (vm.count("changeseturl") && (vm.count("timestamp") || vm.count("url")))) {
             multipolygon_t * osmboundary = &poly;
             if (!vm.count("osmnoboundary")) {
                 osmboundary = &geou.boundary;
@@ -300,8 +306,13 @@ main(int argc, char *argv[])
             if (!config.silent) {
                 osmchange->dump();
             }
+#ifdef SINGLE_THREAD            // debugging hack
+            replicatorthreads::startMonitorChanges(std::ref(osmchange),
+                            std::ref(*osmboundary), config);
+#else
             osmChangeThread = std::thread(replicatorthreads::startMonitorChanges, std::ref(osmchange),
                             std::ref(*osmboundary), config);
+#endif
         }
 
         // Changesets
@@ -320,18 +331,23 @@ main(int argc, char *argv[])
             if (!config.silent) {
                 changeset->dump();
             }
+#ifdef SINGLE_THREAD            // debugging hack
+            replicatorthreads::startMonitorChangesets(std::ref(changeset), std::ref(*oscboundary), config);
+#else
             changesetThread = std::thread(replicatorthreads::startMonitorChangesets, 
                 std::ref(changeset), std::ref(*oscboundary), config);
+#endif
         }
 
         // Start processing
-
+#ifndef SINGLE_THREAD
         if (changesetThread.joinable()) {
             changesetThread.join();
         }
         if (osmChangeThread.joinable()) {
             osmChangeThread.join();
         }
+#endif
 
         exit(0);
 

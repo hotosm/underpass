@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021, 2023 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2023, 2024 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -152,29 +152,22 @@ Pq::query(const std::string &query)
 {
     std::scoped_lock write_lock{pqxx_mutex};
     pqxx::work worker(*sdb);
-    auto result = worker.exec(query);
-    worker.commit();
+    pqxx::result result;
+    try {
+        result = worker.exec(query);
+        worker.commit();
+    } catch (std::exception &e) {
+        log_error("ERROR executing query %1%", e.what());
+        // Return an empty result so higher level code can handle the error
+        return result;
+    }
     return result;
 }
 
 std::string
 Pq::escapedString(const std::string &s)
 {
-    std::string newstr;
-    size_t i = 0;
-    while (i < s.size()) {
-        // Single quote (')
-        if (s[i] == '\'') {
-            newstr += "''";
-        // Slash (\)
-        } else if (s[i] == '\\') {
-            newstr += "\\\\";
-        } else {
-            newstr += s[i];
-        }
-        i++;
-    }
-    return sdb->esc(newstr);
+    return sdb->esc(s);
 }
 
 std::string
@@ -182,26 +175,26 @@ Pq::escapedJSON(const std::string &s) {
     std::ostringstream o;
     for (auto c = s.cbegin(); c != s.cend(); c++) {
         switch (*c) {
-        case '\x00': o << "\\u0000"; break;
-        case '\x01': o << " "; break;
-        case '\x02': o << " "; break;
-        case '\x03': o << " "; break;
-        case '\x04': o << " "; break;
-        case '\x05': o << " "; break;
-        case '\x06': o << " "; break;
-        case '\x07': o << " "; break;
-        case '\x08': o << " "; break;
-        case '\x09': o << " "; break;
-        case '\x0a': o << "\\n"; break;
-        case '\x0b': o << " "; break;
-        case '\x0c': o << " "; break;
-        case '\x0d': o << " "; break;
-        case '\x0e': o << " "; break;
-        case '\xfe': o << " "; break;
-        case '\x1f': o << "\\u001f"; break;
-        case '\x22': o << "\\\""; break;
-        case '\x5c': o << "\\\\"; break;
-        default: o << *c;
+            case '\x00': o << "\\u0000"; break;
+            case '\x01': o << " "; break;
+            case '\x02': o << " "; break;
+            case '\x03': o << " "; break;
+            case '\x04': o << " "; break;
+            case '\x05': o << " "; break;
+            case '\x06': o << " "; break;
+            case '\x07': o << " "; break;
+            case '\x08': o << " "; break;
+            case '\x09': o << " "; break;
+            case '\x0a': o << "\n"; break;
+            case '\x0b': o << " "; break;
+            case '\x0c': o << " "; break;
+            case '\x0d': o << " "; break;
+            case '\x0e': o << " "; break;
+            case '\xfe': o << " "; break;
+            case '\x1f': o << "\\u001f"; break;
+            case '\x22': o << "\""; break;
+            case '\x5c': o << "\\"; break;
+            default: o << *c;
         }
     }
     return o.str();

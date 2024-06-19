@@ -67,8 +67,8 @@ AC_DEFUN([AX_BOOST_TIMER],
         [AC_LANG_PUSH([C++])
 			 CXXFLAGS_SAVE=$CXXFLAGS
 
-			 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <boost/timer.hpp>]],
-                                   [[boost::timer timer;]])],
+			 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <boost/timer/timer.hpp>]],
+                                   [[boost::timer::auto_cpu_timer t;]])],
                    ax_cv_boost_timer=yes, ax_cv_boost_timer=no)
 			 CXXFLAGS=$CXXFLAGS_SAVE
              AC_LANG_POP([C++])

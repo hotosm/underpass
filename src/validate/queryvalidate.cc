@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2021, 2022, 2023 Humanitarian OpenStreetMap Team
+// Copyright (c) 2020, 2021, 2022, 2023, 2024 Humanitarian OpenStreetMap Team
 //
 // This file is part of Underpass.
 //
@@ -87,63 +87,67 @@ QueryValidate::QueryValidate(std::shared_ptr<Pq> db) {
     dbconn = db;
 }
 
-std::string
+std::shared_ptr<std::string>
 QueryValidate::updateValidation(std::shared_ptr<std::vector<long>> removals)
 {
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("updateValidation: took %w seconds\n");
 #endif
-    std::string query = "";
+    auto query = std::make_shared<std::string>();
     if (removals->size() > 0) {
-        query = "DELETE FROM validation WHERE osm_id IN(";
+        *query = "DELETE FROM validation WHERE osm_id IN(";
         for (const auto &osm_id : *removals) {
-            query += std::to_string(osm_id) + ",";
+            query->append(std::to_string(osm_id) + ",");
         };
-        query.erase(query.size() - 1);
-        query += ");";
+        query->erase(query->size() - 1);
+        query->append(");");
     }
     return query;
 }
 
-std::string
-QueryValidate::updateValidation(long osm_id, const valerror_t &status, const std::string &source) const
+std::shared_ptr<std::string>
+QueryValidate::updateValidation(long osm_id,
+                                const valerror_t &status,
+                                const std::string &source) const
 {
+    auto query = std::make_shared<std::string>();
     std::string format = "DELETE FROM validation WHERE osm_id = %d and source = '%s' and status = '%s';";
     boost::format fmt(format);
     fmt % osm_id;
     fmt % source;
     fmt % status_list[status];
-    std::string query = fmt.str();
+    *query = fmt.str();
     return query;
 }
 
-std::string
+std::shared_ptr<std::string>
 QueryValidate::updateValidation(long osm_id, const valerror_t &status) const
 {
+    auto query = std::make_shared<std::string>();
     std::string format = "DELETE FROM validation WHERE osm_id = %d and status = '%s';";
     boost::format fmt(format);
     fmt % osm_id;
     fmt % status_list[status];
-    std::string query = fmt.str();
+    *query = fmt.str();
     return query;
 }
 
-std::string
+std::shared_ptr<std::string>
 QueryValidate::applyChange(const ValidateStatus &validation, const valerror_t &status) const
 {
 #ifdef TIMING_DEBUG_X
     boost::timer::auto_cpu_timer timer("applyChange(validation): took %w seconds\n");
 #endif
-    log_debug("Applying Validation data");
+    // log_debug("Applying Validation data");
 
     std::string format;
-    std::string query;
+    auto query = std::make_shared<std::string>();
 
     if (validation.values.size() > 0) {
-        query = "INSERT INTO validation as v (osm_id, changeset, uid, type, status, values, timestamp, location, source, version) VALUES(";
+        *query = "INSERT INTO validation as v (osm_id, changeset, uid, type, status, values, timestamp, location, source, version) VALUES(";
         format = "%d, %d, %g, \'%s\', \'%s\', ARRAY[%s], \'%s\', ST_GeomFromText(\'%s\', 4326), \'%s\', %s) ";
     } else {
-        query = "INSERT INTO validation as v (osm_id, changeset, uid, type, status, timestamp, location, source, version) VALUES(";
+        *query = "INSERT INTO validation as v (osm_id, changeset, uid, type, status, timestamp, location, source, version) VALUES(";
         format = "%d, %d, %g, \'%s\', \'%s\', \'%s\', ST_GeomFromText(\'%s\', 4326), \'%s\', %s) ";
     }
     format += "ON CONFLICT (osm_id, status, source) DO UPDATE SET version = %d,  timestamp = \'%s\' WHERE v.version < %d;";
@@ -177,87 +181,86 @@ QueryValidate::applyChange(const ValidateStatus &validation, const valerror_t &s
     fmt % validation.version;
     fmt % to_simple_string(validation.timestamp);
     fmt % validation.version;
-    query += fmt.str();
+    query->append(fmt.str());
 
     return query;
 }
 
-
-void
-QueryValidate::ways(
-    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> wayval,
-    std::string &task_query
-) {
+std::shared_ptr<std::vector<std::string>>
+QueryValidate::ways(std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> wayval) {
+    auto query = std::make_shared<std::vector<std::string>>();
     for (auto it = wayval->begin(); it != wayval->end(); ++it) {
         if (it->get()->status.size() > 0) {
             for (auto status_it = it->get()->status.begin(); status_it != it->get()->status.end(); ++status_it) {
-                task_query += applyChange(*it->get(), *status_it);
+                query->push_back(*applyChange(*it->get(), *status_it));
             }
         }
     }
+    return query;
 }
 
-void
+std::shared_ptr<std::vector<std::string>>
 QueryValidate::ways(
     std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> wayval,
-    std::string &task_query,
     std::shared_ptr<std::vector<long>> validation_removals
 ) {
+    auto query = std::make_shared<std::vector<std::string>>();
     for (auto it = wayval->begin(); it != wayval->end(); ++it) {
         if (it->get()->status.size() > 0) {
             for (auto status_it = it->get()->status.begin(); status_it != it->get()->status.end(); ++status_it) {
-                task_query += applyChange(*it->get(), *status_it);
+                query->push_back(*applyChange(*it->get(), *status_it));
             }
             if (!it->get()->hasStatus(overlapping)) {
-                task_query += updateValidation(it->get()->osm_id, overlapping, "building");
+                query->push_back(*updateValidation(it->get()->osm_id, overlapping, "building"));
             }
             if (!it->get()->hasStatus(duplicate)) {
-                task_query += updateValidation(it->get()->osm_id, duplicate, "building");
+                query->push_back(*updateValidation(it->get()->osm_id, duplicate, "building"));
             }
             if (!it->get()->hasStatus(badgeom)) {
-                task_query += updateValidation(it->get()->osm_id, badgeom, "building");
+                query->push_back(*updateValidation(it->get()->osm_id, badgeom, "building"));
             }
             if (!it->get()->hasStatus(badvalue)) {
-                task_query += updateValidation(it->get()->osm_id, badvalue);
+                query->push_back(*updateValidation(it->get()->osm_id, badvalue));
             }
         } else {
             validation_removals->push_back(it->get()->osm_id);
         }
     }
+    return query;
 }
 
-void
-QueryValidate::nodes(
-    std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> nodeval,
-    std::string &task_query
-) {
+std::shared_ptr<std::vector<std::string>>
+QueryValidate::nodes(std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> nodeval) {
+    auto query = std::make_shared<std::vector<std::string>>();
     for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
         if (it->get()->status.size() > 0) {
             for (auto status_it = it->get()->status.begin(); status_it != it->get()->status.end(); ++status_it) {
-                task_query += applyChange(*it->get(), *status_it);
+                query->push_back(*applyChange(*it->get(), *status_it));
             }
         }
     }
+    return query;
 }
 
-void
+std::shared_ptr<std::vector<std::string>>
 QueryValidate::nodes(
     std::shared_ptr<std::vector<std::shared_ptr<ValidateStatus>>> nodeval,
-    std::string &task_query,
     std::shared_ptr<std::vector<long>> validation_removals
 ) {
+    auto query = std::make_shared<std::vector<std::string>>();
     for (auto it = nodeval->begin(); it != nodeval->end(); ++it) {
         if (it->get()->status.size() > 0) {
             for (auto status_it = it->get()->status.begin(); status_it != it->get()->status.end(); ++status_it) {
-                task_query += applyChange(*it->get(), *status_it);
+                query->push_back(*applyChange(*it->get(), *status_it));
             }
             if (!it->get()->hasStatus(badvalue)) {
-                task_query += updateValidation(it->get()->osm_id, badvalue);
+                query->push_back(*updateValidation(it->get()->osm_id, badvalue));
             }
         } else {
             validation_removals->push_back(it->get()->osm_id);
         }
     }
+    return query;
 }
 
 } // namespace queryvalidate
