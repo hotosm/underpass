@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/bash 
 #
-# Copyright (c) 2020, 2021, 2023 Humanitarian OpenStreetMap Team
+# Copyright (c) 2020, 2021, 2023, 2024 Humanitarian OpenStreetMap Team
 #
 # This file is part of Underpass.
 #
@@ -33,7 +33,12 @@ prompt()
 {
     eval $1
     echo "Database configuration for ${config['title']} "
-    echo "# Database configuration for ${config['title']}" >> /etc/default/underpass
+    if test -w /etc/default/; then
+	echo "# Database configuration for ${config['title']}" >> /etc/default/underpass
+    else
+	echo "ERROR: You don't have write permission to /etc/default/underpass! use sudo"
+	exit
+    fi
 
     for i in ${!config[@]}; do
 	if test x"$i" == x"title" -o x"$i" == x"prefix"; then
@@ -85,8 +90,8 @@ if [ "$1" = "configure" ]; then
 	touch /etc/default/underpass
     fi
     
-    prompt "$(declare -p config)"
-    
+    declare -A config
+
     # For the Galaxy OSM Stats database
     config['title']="Underpass"
     config['prefix']="UNDERPASS"
