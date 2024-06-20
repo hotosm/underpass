@@ -18,10 +18,8 @@ The tools needed to build Underpass on a Ubuntu/Debian system are:
 * autoconf
 * automake
 * libtool
-* doxygen
 * g++
-* build-essential
-* software-properties-common
+* doxygen
 
 #### Developer Packages
 
@@ -48,9 +46,9 @@ This are the other development packages required to compile Underpass.
 * libboost-program-options-dev
 * libboost-iostreams-dev
 
-#### Building Libpqxx For Debian
+#### Building Libpqxx For Older Debian
 
-Debian 12 (Bookworm) ships libpqxx-6.x, which has a bug that prevents
+Debian 11 (Buster) ships libpqxx-6.x, which has a bug that prevents
 it from working with boost. This bug is fixed in libpqxx-7.x. Ubuntu
 24.04 (noble) ships libpqxx-7.x, and Fedora >38 also ships the latest
 version.
@@ -64,6 +62,17 @@ configure libpqxx like this:
 
 	cmake .. -DBUILD_SHARED_LIBS=1
 	make install
+
+#### Package Building Dependencies
+
+If you want to build a *.deb* package, you need to install a few
+other packages used by the build system.
+
+* build-essential
+* dpkg-dev
+* debhelper
+* rsync
+* software-properties-common
 
 #### Install All Packages
 
@@ -82,6 +91,7 @@ sudo apt-get update \
 	libtool \
 	doxygen \
 	ccache \
+	postgis \
 	postgresql \
 	g++ \
 	python3-dev \
@@ -102,7 +112,8 @@ sudo apt-get update \
 	libboost-timer-dev \
 	libboost-filesystem-dev \
 	libboost-program-options-dev \
-	libboost-iostreams-dev
+	libboost-iostreams-dev \
+	libboost-python-dev
 ```
 
 ### Build Underpass
