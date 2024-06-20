@@ -63,4 +63,4 @@ Countries (-c) is the name of the country inside the region.
 
 Data is downloaded from GeoFabrik, if you are not sure of what name you need to use, please check there.
 
-For advanced users, check the [boostrap script documentation](/underpass/Dev/bootstrapsh).
+For advanced users, check the [boostrap script documentation](../Dev/bootstrapsh.md).

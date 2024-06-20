@@ -1,10 +1,10 @@
 ## Docker
 
-If you want to get started really quick and easy, use the [Docker installation](/underpass/Dev/install-with-docker)
+If you want to get started really quick and easy, use the [Docker installation](../Dev/install-with-docker.md)
 
 ## Build from source
 
-Check the [build documentation](/underpass/get-started/Build)
+Check the [build documentation](../get-started/Build.md)
 
 ## Linux
 
