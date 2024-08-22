@@ -12,7 +12,7 @@ It **updates a local copy of the OSM database** in near real-time, and provides 
 We've deployed a basic demo that keeps a database up-to-date for (some country),
 rendering buildings and highlighting the ones identified as "un-squared":
 
-[https://underpass.live](https://underpass.live)
+~[https://underpass.live](https://underpass.live)~ (currently unavailable, working on it)
 
 <img width="1160" alt="Screenshot 2024-06-05 at 15 51 57" src="https://github.com/hotosm/underpass/assets/1226194/8a95e518-a12f-45c3-b460-d74d81ca3cfe">
 
