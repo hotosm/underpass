@@ -31,8 +31,7 @@ DISTCLEANFILES = docs/html docs/latex .lastmod
 MAINTAINERCLEANFILES = revno.h .lastmod
 ETCDIR = $(subst lib,etc,$(pkglibdir))
 
-SUBDIRS = \
-	src/validate
+SUBDIRS = src/validate
 
 lib_LTLIBRARIES = libunderpass.la
 instdir = /tmp
@@ -50,8 +49,7 @@ BOOST_LIBS = $(BOOST_DATE_TIME_LIB) \
 	$(BOOST_TIMER_LIB) \
 	$(BOOST_PYTHON_LIB)
 
-SQL_FILES = \
-	setup/db/underpass.sql
+SQL_FILES = setup/db/underpass.sql
 
 libunderpass_la_SOURCES = \
 	src/utils/log.cc src/utils/log.hh \
@@ -71,8 +69,7 @@ libunderpass_la_SOURCES = \
 	src/utils/geoutil.cc src/utils/geoutil.hh \
 	src/utils/geo.cc src/utils/geo.hh \
 	src/utils/yaml.hh src/utils/yaml.cc \
-	src/data/pq.hh src/data/pq.cc \
-	setup/db/setupdb.sh
+	src/data/pq.hh src/data/pq.cc
 
 if JEMALLOC
 libunderpass_la_LDFLAGS = -avoid-version -ljemalloc
@@ -109,19 +106,17 @@ AM_CPPFLAGS = \
 # clutter to the output. This should only be enabled when doing performance tuning.
 	-DTIMING_DEBUG
 
-pkgdata_DATA = $(SQL_FILES) setup/db/setupdb.sh $(PYTHON_UTILS)
+pkgdata_DATA = $(SQL_FILES) $(PYTHON_UTILS)
 
 EXTRA_DIST = \
 	$(SQL_FILES) \
 	$(PYTHON_UTILS) \
+	setup/service/underpass.service \
+	setup/db/setupdb.sh \
 	src/testsuite \
-	config/priority.geojson \
-	config/replicator/planetreplicator.yaml \
-	doc \
 	dist/debian \
 	dist/redhat \
 	utils
-
 
 DEJATOOL = libunderpass
 
@@ -130,8 +125,8 @@ EXT := $(shell python3-config --extension-suffix)
 DIR := $(shell python3-config --configdir)
 noinst_LTLIBRARIES = underpass.la
 underpass_la_SOURCES = src/wrappers/python.cc $(libunderpass_la_SOURCES)
-underpass_la_LDFADD = $(BOOST_LIBS) libunderpass.la src/validate/libunderpass.la
-underpass_la_LDFLAGS = -module -avoid-version -no-undefined -rpath /usr/lib64/ src/validate/libunderpass.la $(BOOST_LIBS)
+underpass_la_LIBADD = $(BOOST_LIBS) libunderpass.la src/validate/libunderpass.la
+underpass_la_LDFLAGS = -module -avoid-version -no-undefined -rpath /usr/lib64/ src/validate/libunderpass.la -static $(BOOST_LIBS)
 PY_OBJECTS = $(libunderpass_la_OBJECTS:.lo=.o)
 # /usr/lib/python3.9/lib-dynload/underpass.cpython-39-x86_64-linux-gnu.so
 install-python: underpass.la
@@ -154,16 +149,14 @@ endif
 
 install-data-hook:
 	$(MKDIR_P) $(DESTDIR)$(ETCDIR)
-	cp -rvp $(srcdir)/config/priority.geojson  $(DESTDIR)$(ETCDIR)/
-	cp -rvp $(srcdir)/config/replicator  $(DESTDIR)$(ETCDIR)/
-	cp -rvp $(srcdir)/config/stats  $(DESTDIR)$(ETCDIR)/
-	cp -rvp $(srcdir)/config/default.yaml  $(DESTDIR)$(ETCDIR)/
-	cp -rvp $(srcdir)/setup/service $(DESTDIR)/$(pkglibdir)
-	$(MKDIR_P) $(DESTDIR)$(pkglibdir)/../system
-	cp -rvp $(srcdir)/setup/service/underpass.service  $(DESTDIR)$(pkglibdir)/../system/
+	@rsync -avr $(srcdir)/config $(DESTDIR)$(ETCDIR)/
+	@rsync -avr $(srcdir)/setup $(DESTDIR)/$(pkglibdir)
+	@$(MKDIR_P) $(DESTDIR)$(pkglibdir)/../system
+	cp -rvu $(srcdir)/setup/service/underpass.service $(DESTDIR)$(pkglibdir)/../system/
 
-dist-hook: apidoc
+dist-hook:
 	$(MKDIR_P) $(DESTDIR)/$(docdir)
+	(cd docs && $(DOXYGEN))
 	cp -rvp docs/html $(DESTDIR)/$(docdir)
 
 if ENABLE_PCH
@@ -330,7 +323,7 @@ revno.h:
 	  echo "#define BRANCH_NICK \"$${nick}\"" >> revno.h; \
 	  echo "#define COMMIT_ID \"$${comm_id}\"" >> revno.h; \
 	  echo "#define VERSION \"$(VERSION)\"" >> revno.h; \
-	  touch .lastmod;
+	  touch .lastmod; \
 	fi
 
 .configline: revno.h

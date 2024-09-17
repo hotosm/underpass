@@ -34,7 +34,9 @@ DEB_BUILD_OPTIONS ?= $(shell echo $DEB_BUILD_OPTIONS)
 # the file editing to be done
 snapshot-deb:
 	mv $(distdir) $(PACKAGE)-$(NOW)
-	cd  $(PACKAGE)-$(NOW) ; \
-	dpkg-buildpackage -rfakeroot -d -b
+	cd $(PACKAGE)-$(NOW) ; \
+	$(LN_S) dist/debian .; \
+	$(LN_S) $(srcdir)/config .; \
+    dpkg-buildpackage -rfakeroot -d -b -uc -us
 
 .PHONY : deb snapshot-deb

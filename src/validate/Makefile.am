@@ -51,8 +51,8 @@ AM_CPPFLAGS = \
 	-DETCDIR=\"$(ETCDIR)\" \
 	-DBOOST_LOCALE_HIDE_AUTO_PTR
 
-install-data-hook:
-	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
-	cp -vp .libs/libunderpass.so $(DESTDIR)/$(pkglibdir)
-	$(MKDIR_P) $(DESTDIR)$(ETCDIR)/validate
-	cp -rvp $(top_srcdir)/config/validate/*.yaml $(DESTDIR)$(ETCDIR)/validate
+# install-data-hook:
+# 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)
+# 	cp -vp .libs/libunderpass.so $(DESTDIR)/$(pkglibdir)
+# 	$(MKDIR_P) $(DESTDIR)/$(pkglibdir)/config/validate
+# 	cp -rvp $(top_srcdir)/config/validate/*.yaml $(DESTDIR)/$(pkglibdir)/config/validate
